@@ -89,21 +89,20 @@ export default function Home() {
             {/* Dark glass wordmark */}
             <div className="flex justify-center mb-8">
               <div
-                className="inline-flex items-center justify-center px-14 md:px-20 pt-4 pb-7 md:pt-5 md:pb-8 rounded-[2.5rem]"
+                className="inline-flex items-center justify-center px-14 md:px-20 py-6 md:py-8 rounded-[2.5rem]"
                 style={{
-                  background: "rgba(15, 23, 42, 0.35)",
+                  background: "rgba(255, 255, 255, 0.08)",
                   backdropFilter: "blur(18px)",
                   WebkitBackdropFilter: "blur(18px)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
                 }}
               >
                 <h1
-                  className="text-5xl md:text-7xl tracking-tight leading-none text-center"
+                  className="text-5xl md:text-7xl tracking-tight leading-none text-center text-white"
                   style={{
                     fontFamily: "'Cairo', sans-serif",
                     fontWeight: 800,
-                    color: "#E8C48A",
                   }}
                 >
                   العمودي
