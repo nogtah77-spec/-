@@ -86,6 +86,12 @@ export default function Home() {
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
+            <h1
+              className="text-5xl md:text-7xl text-white mb-6 drop-shadow-lg tracking-tight"
+              style={{ fontFamily: "'Cairo', sans-serif", fontWeight: 800 }}
+            >
+              العمودي
+            </h1>
             <p className="text-sm md:text-base font-semibold text-[#DCD7C9] max-w-2xl mx-auto leading-relaxed mb-6">
               شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص العقارية والاستثمارية في مصر.
             </p>
