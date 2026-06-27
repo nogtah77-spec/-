@@ -89,29 +89,31 @@ export default function Home() {
             {/* Dark glass wordmark */}
             <div className="flex justify-center mb-8">
               <div
-                className="inline-flex items-center justify-center px-14 md:px-20 py-6 md:py-8 rounded-[2.5rem]"
+                className="inline-flex items-center justify-center px-14 md:px-20 h-28 md:h-36 rounded-[2.5rem]"
                 style={{
-                  background: "rgba(255, 255, 255, 0.08)",
-                  backdropFilter: "blur(18px)",
-                  WebkitBackdropFilter: "blur(18px)",
+                  background: "rgba(255, 255, 255, 0.04)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
                   border: "1px solid rgba(255,255,255,0.18)",
                   boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
                 }}
               >
                 <h1
-                  className="text-5xl md:text-7xl tracking-tight leading-none text-center text-white"
+                  className="text-5xl md:text-7xl tracking-tight text-center text-white"
                   style={{
                     fontFamily: "'Cairo', sans-serif",
                     fontWeight: 800,
-                    transform: "translateY(0.07em)",
+                    lineHeight: 1,
+                    margin: 0,
                   }}
                 >
                   العمودي
                 </h1>
               </div>
             </div>
-            <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-relaxed mb-6">
-              شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص العقارية والاستثمارية في مصر.
+            <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose mb-6">
+              <span className="block">شريكك الموثوق في عالم التسويق العقاري والتشطيبات</span>
+              <span className="block">نقدم لك أفضل الفرص العقارية والاستثمارية في مصر</span>
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-2"
