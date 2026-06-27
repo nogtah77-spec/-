@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Search, Gem, ShieldCheck, UserCheck, Plus, ChevronLeft, X,
+  Search, UserCheck, Plus, ChevronLeft, X,
   LayoutGrid, AlignJustify, List, ExternalLink, Play,
-  Clock, Wrench, Building2,
+  Building2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useData } from "@/context/DataContext";
@@ -86,19 +86,17 @@ export default function Home() {
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            <h1
-              className="text-5xl md:text-7xl text-white mb-3 drop-shadow-lg tracking-tight"
-              style={{ fontFamily: "'Cairo', sans-serif", fontWeight: 800 }}
-            >
-              العمودي
-            </h1>
-            <p className="text-sm md:text-base font-semibold text-[#DCD7C9] max-w-2xl mx-auto leading-relaxed mb-5">
+            <p className="text-sm md:text-base font-semibold text-[#DCD7C9] max-w-2xl mx-auto leading-relaxed mb-6">
               شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص العقارية والاستثمارية في مصر.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-2"
                 style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
                 <Link href="/add-property"><Plus className="h-4 w-4" />أضف عقارك لدينا</Link>
+              </Button>
+              <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 gap-2"
+                style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.3)" }}>
+                <Link href="/finishing-services"><Building2 className="h-4 w-4" />خدمات التشطيبات</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-10 px-7 rounded-full font-bold text-sm border-white/40 text-white hover:bg-white/10">
                 <Link href="/consultation">اطرح استفسارك</Link>
@@ -297,24 +295,6 @@ export default function Home() {
               <p className="text-accent text-xs font-medium tracking-widest mb-2 uppercase">خدماتنا</p>
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">خدمات التشطيبات</h2>
               <p className="text-sm text-muted-foreground max-w-lg mx-auto">نقدم خدمات تشطيب متكاملة لجميع أنواع الوحدات بأعلى مستوى من الجودة وأفضل الأسعار</p>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {[
-                { icon: <Gem className="h-6 w-6" />, title: "تشطيب سوبر لوكس", desc: "أعلى مستوى من التشطيبات باستخدام أفضل المواد" },
-                { icon: <ShieldCheck className="h-6 w-6" />, title: "تشطيب لوكس", desc: "تشطيبات عالية الجودة بأسعار معقولة مع ضمان" },
-                { icon: <Wrench className="h-6 w-6" />, title: "تشطيب نصف", desc: "تشطيب جزئي مع ترك مساحة للتخصيص الشخصي" },
-                { icon: <Clock className="h-6 w-6" />, title: "تسليم سريع", desc: "تنفيذ في أقل من 3 أشهر مع ضمان الجودة" },
-              ].map((item, i) => (
-                <Card key={i} className="card-luxury border-none text-center group hover:shadow-md transition-shadow">
-                  <CardContent className="p-5 flex flex-col items-center">
-                    <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-3 group-hover:bg-accent group-hover:text-white transition-colors">
-                      {item.icon}
-                    </div>
-                    <h3 className="text-sm font-bold mb-1.5">{item.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
             <div className="text-center">
               <Button asChild size="lg" variant="outline" className="rounded-full px-8 gap-2 border-accent/40 text-accent hover:bg-accent/10">
