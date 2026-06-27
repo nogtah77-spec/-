@@ -10,15 +10,26 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
+function SidebarBrand() {
+  return (
+    <Link href="/" className="block">
+      <div className="text-lg font-bold text-sidebar-foreground tracking-tight leading-none">
+        العمودي
+      </div>
+      <div className="text-xs font-light text-sidebar-foreground/60 mt-0.5 tracking-wide">
+        للتسويق العقاري
+      </div>
+    </Link>
+  );
+}
+
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-background text-foreground dir-rtl">
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 right-0 border-l border-border bg-sidebar">
-        <div className="p-6 border-b border-sidebar-border flex items-center justify-center">
-          <Link href="/">
-            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-10 w-auto object-contain" />
-          </Link>
+      <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 right-0 border-l border-sidebar-border bg-sidebar">
+        <div className="h-16 px-6 border-b border-sidebar-border flex items-center">
+          <SidebarBrand />
         </div>
         <AdminSidebar />
       </aside>
@@ -36,24 +47,25 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64 p-0 bg-sidebar">
-                <div className="p-6 border-b border-sidebar-border flex items-center justify-center">
-                  <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-10 w-auto object-contain" />
+                <div className="h-16 px-6 border-b border-sidebar-border flex items-center">
+                  <SidebarBrand />
                 </div>
                 <AdminSidebar />
               </SheetContent>
             </Sheet>
           </div>
+
           <div className="flex items-center gap-4 mr-auto">
             <ThemeToggle />
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-medium">
+              <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
                 م
               </div>
               <div className="hidden sm:block text-sm">
                 <p className="font-medium leading-none">مدير النظام</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" data-testid="button-logout">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

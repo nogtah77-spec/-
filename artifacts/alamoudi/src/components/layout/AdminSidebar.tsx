@@ -31,9 +31,6 @@ export function AdminSidebar() {
 
   return (
     <div className="flex-1 overflow-y-auto py-4">
-      <div className="px-6 mb-6">
-        <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-12 w-auto object-contain mx-auto" />
-      </div>
       <nav className="space-y-1 px-3">
         {sidebarItems.map((item) => {
           const isActive = location === item.href || (item.href !== "/admin" && location.startsWith(item.href));
