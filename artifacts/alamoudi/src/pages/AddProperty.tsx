@@ -54,7 +54,7 @@ function validate(form: FormState): Partial<Record<keyof FormState, string>> {
 }
 
 export default function AddProperty() {
-  const { regions, propertyTypes } = useData();
+  const { regions, propertyTypes, addPropertyRequest } = useData();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [images, setImages] = useState<string[]>([]);
@@ -98,7 +98,8 @@ export default function AddProperty() {
       return;
     }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 400));
+    addPropertyRequest({ ...form, images });
     setLoading(false);
     setSubmitted(true);
   };

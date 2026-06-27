@@ -98,6 +98,10 @@ export function Footer() {
             </h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li><Link href="/" className="hover:text-accent transition-colors">الرئيسية</Link></li>
+              <li><Link href="/about" className="hover:text-accent transition-colors">من نحن</Link></li>
+              <li><Link href="/consultation" className="hover:text-accent transition-colors">استشارة عقارية</Link></li>
+              <li><Link href="/finishing-services" className="hover:text-accent transition-colors">خدمات التشطيبات</Link></li>
+              <li><Link href="/add-property" className="hover:text-accent transition-colors">أضف عقارك</Link></li>
               <li><Link href="/favorites" className="hover:text-accent transition-colors">المفضلة</Link></li>
               <li><Link href="/compare" className="hover:text-accent transition-colors">المقارنة</Link></li>
             </ul>
@@ -140,7 +144,7 @@ export function Footer() {
         <div className="mt-10 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>© {new Date().getFullYear()} {settings.companyName}. جميع الحقوق محفوظة.</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-accent transition-colors">سياسة الخصوصية</a>
+            <Link href="/privacy" className="hover:text-accent transition-colors">سياسة الخصوصية</Link>
             <a href="#" className="hover:text-accent transition-colors">شروط الاستخدام</a>
           </div>
         </div>

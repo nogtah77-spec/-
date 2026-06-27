@@ -1,166 +1,345 @@
+import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { PropertyCard } from "@/components/ui/PropertyCard";
-import { Bed, Bath, Square, MapPin, Share2, Heart, Scale, User } from "lucide-react";
-import { useParams } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, MessageCircle,
+  Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers
+} from "lucide-react";
+import { useParams, useLocation, Link } from "wouter";
+import { useData } from "@/context/DataContext";
+import { useUserPrefs } from "@/context/UserPrefsContext";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+const categoryLabels: Record<string, string> = {
+  sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
+  administrative: "إداري", medical: "طبي", commercial: "تجاري",
+};
+
+const finishingLabels: Record<string, string> = {
+  "super-lux": "سوبر لوكس", "lux": "لوكس", "semi-finished": "نصف تشطيب", "core-shell": "هيكل خام",
+};
 
 export default function PropertyDetails() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
+  const { properties, propertyTypes, regions, settings } = useData();
+  const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
+  const { toast } = useToast();
+
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  const property = properties.find(p => p.id === id);
+
+  if (!property) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center bg-background">
+          <div className="text-center">
+            <Building2 className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">العقار غير موجود</h1>
+            <p className="text-muted-foreground mb-6">لم يتم العثور على هذا العقار.</p>
+            <Button asChild className="bg-accent text-white hover:bg-accent/90 rounded-full px-8">
+              <Link href="/">العودة للرئيسية</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const typeName = propertyTypes.find(t => t.id === property.typeId)?.name;
+  const regionName = regions.find(r => r.id === property.regionId)?.name;
+  const similar = properties.filter(p => p.id !== property.id && (p.regionId === property.regionId || p.typeId === property.typeId)).slice(0, 3);
+
+  const waNum = (settings.whatsapp || settings.phone1).replace(/[\s+]/g, "");
+  const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
+  const waHref = waNum ? `https://wa.me/${waNum}?text=${waMsg}` : null;
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) { try { await navigator.share({ title: property.title, url }); return; } catch {} }
+    await navigator.clipboard.writeText(url);
+    toast({ title: "تم نسخ رابط العقار" });
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(property.code);
+    toast({ title: "تم نسخ الكود", description: property.code });
+  };
+
+  const images = property.images?.length ? property.images : [];
 
   return (
-    <div className="min-h-screen flex flex-col dir-rtl bg-background">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      
-      <main className="flex-1 pb-20">
-        {/* Header Section */}
-        <div className="container px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <div className="flex gap-2 mb-2">
-                <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">فيلا</span>
-                <span className="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">للبيع</span>
+
+      {/* Lightbox */}
+      {lightboxIdx !== null && images.length > 0 && (
+        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" onClick={() => setLightboxIdx(null)}>
+          <Button variant="ghost" size="icon" className="absolute top-4 left-4 text-white hover:bg-white/10 z-10" onClick={() => setLightboxIdx(null)}>
+            <X className="h-6 w-6" />
+          </Button>
+          <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10"
+            onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i! + 1) % images.length); }}>
+            <ChevronRight className="h-8 w-8" />
+          </Button>
+          <img src={images[lightboxIdx]} alt="" className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg" onClick={e => e.stopPropagation()} />
+          <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10"
+            onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i! - 1 + images.length) % images.length); }}>
+            <ChevronLeft className="h-8 w-8" />
+          </Button>
+          <div className="absolute bottom-4 text-white/60 text-sm">{lightboxIdx + 1} / {images.length}</div>
+        </div>
+      )}
+
+      <main className="flex-1 pb-16">
+        {/* Breadcrumb */}
+        <div className="container px-6 py-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link href="/" className="hover:text-accent transition-colors">الرئيسية</Link>
+            <ChevronLeft className="h-3 w-3" />
+            <span className="text-foreground font-medium line-clamp-1">{property.title}</span>
+          </div>
+        </div>
+
+        <div className="container px-6">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+            <div className="flex-1">
+              <div className="flex flex-wrap gap-2 mb-3">
+                {typeName && <Badge className="bg-primary/10 text-primary">{typeName}</Badge>}
+                <Badge className="bg-accent/10 text-accent">{categoryLabels[property.category]}</Badge>
+                {property.featured && <Badge className="bg-yellow-100 text-yellow-700">مميز</Badge>}
+                {property.status === "reserved" && <Badge className="bg-amber-100 text-amber-700">محجوز</Badge>}
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">فيلا فاخرة بتصميم عصري وإطلالة بانورامية</h1>
-              <div className="flex items-center text-muted-foreground">
-                <MapPin className="h-4 w-4 ml-1" />
-                <span>الرياض، حي حطين</span>
-              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{property.title}</h1>
+              {regionName && (
+                <div className="flex items-center text-muted-foreground text-sm gap-1">
+                  <MapPin className="h-4 w-4" />{regionName}
+                </div>
+              )}
             </div>
-            <div className="text-left">
-              <div className="text-3xl font-bold text-accent mb-4">3,500,000 <span className="text-lg font-normal text-muted-foreground">ر.س</span></div>
+            <div className="flex flex-col items-end gap-3">
+              <div className="text-3xl font-bold text-accent">{property.price.toLocaleString("ar-EG")} <span className="text-base font-normal text-muted-foreground">ج.م</span></div>
               <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="hover:text-accent">
-                  <Share2 className="h-4 w-4" />
+                <Button variant="outline" size="icon" onClick={handleShare} title="مشاركة"><Share2 className="h-4 w-4" /></Button>
+                <Button variant="outline" size="icon"
+                  className={isFavorite(property.id) ? "text-red-500 border-red-200" : ""}
+                  onClick={() => { toggleFavorite(property.id); toast({ title: isFavorite(property.id) ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة" }); }}
+                  title="المفضلة">
+                  <Heart className={cn("h-4 w-4", isFavorite(property.id) ? "fill-red-500" : "")} />
                 </Button>
-                <Button variant="outline" size="icon" className="hover:text-accent">
-                  <Heart className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="hover:text-accent">
+                <Button variant="outline" size="icon"
+                  className={isInCompare(property.id) ? "text-accent border-accent/30" : ""}
+                  onClick={() => { toggleCompare(property.id); toast({ title: isInCompare(property.id) ? "تمت الإزالة من المقارنة" : "تمت الإضافة للمقارنة" }); }}
+                  title="مقارنة">
                   <Scale className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Image Gallery Placeholder */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 h-[500px]">
-            <div className="md:col-span-2 bg-muted rounded-xl border border-dashed flex items-center justify-center h-full">
-              <span className="text-muted-foreground">صورة العقار الرئيسية</span>
-            </div>
-            <div className="flex flex-col gap-4 h-full">
-              <div className="flex-1 bg-muted rounded-xl border border-dashed flex items-center justify-center">
-                <span className="text-muted-foreground">صورة إضافية</span>
+          {/* Gallery */}
+          {images.length > 0 ? (
+            <div className="grid grid-cols-4 gap-3 mb-10 rounded-2xl overflow-hidden h-[380px]">
+              <div className="col-span-3 cursor-pointer" onClick={() => setLightboxIdx(0)}>
+                <img src={images[0]} alt={property.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
               </div>
-              <div className="flex-1 bg-muted rounded-xl border border-dashed flex items-center justify-center relative">
-                <span className="text-muted-foreground">صورة إضافية</span>
-                <div className="absolute inset-0 bg-background/50 flex items-center justify-center rounded-xl cursor-pointer hover:bg-background/40 transition-colors">
-                  <span className="font-bold text-foreground">+5 صور إضافية</span>
-                </div>
+              <div className="flex flex-col gap-3">
+                {images.slice(1, 3).map((img, i) => (
+                  <div key={i} className="flex-1 cursor-pointer relative overflow-hidden" onClick={() => setLightboxIdx(i + 1)}>
+                    <img src={img} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  </div>
+                ))}
+                {images.length > 3 && (
+                  <div className="flex-1 cursor-pointer relative overflow-hidden" onClick={() => setLightboxIdx(3)}>
+                    <img src={images[3]} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">+{images.length - 3}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="h-64 bg-muted rounded-2xl flex items-center justify-center mb-10 border border-dashed border-border">
+              <div className="text-center text-muted-foreground">
+                <Building2 className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">لا توجد صور لهذا العقار</p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* Features Summary */}
-              <Card>
+              {/* Specs summary */}
+              <Card className="card-luxury">
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-                    <div className="flex flex-col items-center">
-                      <Bed className="h-6 w-6 text-accent mb-2" />
-                      <span className="text-xl font-bold">5</span>
-                      <span className="text-sm text-muted-foreground">غرف نوم</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <Bath className="h-6 w-6 text-accent mb-2" />
-                      <span className="text-xl font-bold">6</span>
-                      <span className="text-sm text-muted-foreground">حمامات</span>
-                    </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+                    {property.beds > 0 && (
+                      <div className="flex flex-col items-center">
+                        <Bed className="h-6 w-6 text-accent mb-2" />
+                        <span className="text-xl font-bold">{property.beds}</span>
+                        <span className="text-xs text-muted-foreground">غرف نوم</span>
+                      </div>
+                    )}
+                    {property.baths > 0 && (
+                      <div className="flex flex-col items-center">
+                        <Bath className="h-6 w-6 text-accent mb-2" />
+                        <span className="text-xl font-bold">{property.baths}</span>
+                        <span className="text-xs text-muted-foreground">حمامات</span>
+                      </div>
+                    )}
                     <div className="flex flex-col items-center">
                       <Square className="h-6 w-6 text-accent mb-2" />
-                      <span className="text-xl font-bold">450</span>
-                      <span className="text-sm text-muted-foreground">متر مربع</span>
+                      <span className="text-xl font-bold">{property.area}</span>
+                      <span className="text-xs text-muted-foreground">م²</span>
                     </div>
-                    <div className="flex flex-col items-center">
-                      <MapPin className="h-6 w-6 text-accent mb-2" />
-                      <span className="text-xl font-bold">حطين</span>
-                      <span className="text-sm text-muted-foreground">المنطقة</span>
-                    </div>
+                    {property.floor > 0 && (
+                      <div className="flex flex-col items-center">
+                        <Layers className="h-6 w-6 text-accent mb-2" />
+                        <span className="text-xl font-bold">{property.floor}</span>
+                        <span className="text-xs text-muted-foreground">الدور</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Full specs table */}
+              <Card className="card-luxury">
+                <CardHeader><CardTitle className="text-base">تفاصيل العقار</CardTitle></CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { label: "كود العقار", value: property.code, copy: true },
+                      { label: "نوع العقار", value: typeName },
+                      { label: "المنطقة", value: regionName },
+                      { label: "فئة العقار", value: categoryLabels[property.category] },
+                      { label: "المساحة", value: property.area ? `${property.area} م²` : null },
+                      { label: "عدد الغرف", value: property.beds || null },
+                      { label: "عدد الحمامات", value: property.baths || null },
+                      { label: "الدور", value: property.floor || null },
+                      { label: "عدد الطوابق", value: property.floors || null },
+                      { label: "التشطيب", value: property.finishing ? (finishingLabels[property.finishing] || property.finishing) : null },
+                      { label: "الفيو", value: property.view || null },
+                    ].filter(r => r.value != null && r.value !== "").map((row, i) => (
+                      <div key={i} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                        <span className="text-sm text-muted-foreground">{row.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{String(row.value)}</span>
+                          {row.copy && (
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Description */}
-              <div>
-                <h2 className="text-2xl font-bold mb-4">وصف العقار</h2>
-                <div className="prose prose-slate max-w-none text-muted-foreground leading-relaxed">
-                  <p>
-                    فيلا فاخرة بتصميم عصري حديث في أرقى أحياء الرياض. تتميز الفيلا بمساحات واسعة وتوزيع ذكي للغرف يوفر أقصى درجات الخصوصية والراحة للعائلة.
-                  </p>
-                  <p>
-                    تحتوي الفيلا على مسبح خاص وحديقة منسقة، بالإضافة إلى موقف يتسع لثلاث سيارات. التشطيبات من أعلى مستويات الجودة مع استخدام الرخام الطبيعي والأخشاب الفاخرة.
-                  </p>
+              {property.description && (
+                <div>
+                  <h2 className="text-xl font-bold mb-3">وصف العقار</h2>
+                  <p className="text-muted-foreground leading-relaxed text-sm">{property.description}</p>
                 </div>
-              </div>
+              )}
+
+              {/* Video */}
+              {property.videoUrl && (
+                <div>
+                  <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><Video className="h-5 w-5 text-accent" />فيديو العقار</h2>
+                  <a href={property.videoUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-accent hover:underline text-sm">
+                    <ExternalLink className="h-4 w-4" />
+                    مشاهدة الفيديو
+                  </a>
+                </div>
+              )}
 
               {/* Map */}
-              <div>
-                <h2 className="text-2xl font-bold mb-4">الموقع على الخريطة</h2>
-                <div className="bg-muted rounded-xl h-[300px] border border-dashed flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <MapPin className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <span>خريطة الموقع</span>
-                  </div>
+              {property.mapsUrl && (
+                <div>
+                  <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-accent" />الموقع على الخريطة</h2>
+                  <a href={property.mapsUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-4 bg-muted rounded-xl hover:bg-muted/70 transition-colors text-sm">
+                    <MapPin className="h-4 w-4 text-red-500" />
+                    <span className="text-muted-foreground">افتح الموقع على خرائط جوجل</span>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground mr-auto" />
+                  </a>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Sidebar Contact Form */}
-            <div>
-              <Card className="sticky top-24">
-                <CardHeader>
-                  <CardTitle>تواصل مع الوكيل</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center">
-                      <User className="h-6 w-6 text-accent" />
-                    </div>
-                    <div>
-                      <div className="font-bold">أحمد محمد</div>
-                      <div className="text-sm text-muted-foreground">مستشار عقاري</div>
-                    </div>
+            {/* Sidebar */}
+            <div className="space-y-4">
+              <Card className="card-luxury sticky top-24">
+                <CardHeader className="pb-3"><CardTitle className="text-base">تواصل بشأن العقار</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">كود العقار</p>
+                    <p className="font-bold text-accent text-lg tracking-wider">{property.code}</p>
                   </div>
-                  <div className="space-y-3">
-                    <Input placeholder="الاسم الكامل" />
-                    <Input placeholder="رقم الهاتف" dir="ltr" className="text-right" />
-                    <Input placeholder="البريد الإلكتروني" type="email" dir="ltr" className="text-right" />
-                    <Textarea placeholder="رسالتك..." className="min-h-[100px]" defaultValue={`أنا مهتم بالعقار رقم ${id}. أرجو التواصل معي.`} />
-                    <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                      إرسال الطلب
-                    </Button>
-                  </div>
+
+                  {waHref && (
+                    <a href={waHref} target="_blank" rel="noopener noreferrer">
+                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 rounded-lg">
+                        <MessageCircle className="h-4 w-4" />
+                        تواصل عبر واتساب
+                      </Button>
+                    </a>
+                  )}
+                  {settings.phone1 && (
+                    <a href={`tel:${settings.phone1.replace(/\s/g, "")}`}>
+                      <Button variant="outline" className="w-full gap-2 rounded-lg mt-2">
+                        <Phone className="h-4 w-4" />
+                        {settings.phone1}
+                      </Button>
+                    </a>
+                  )}
+                  <Button variant="outline" className="w-full gap-2 rounded-lg" onClick={handleCopy}>
+                    <Copy className="h-4 w-4" />
+                    نسخ كود العقار
+                  </Button>
+                  <Button variant="outline" className="w-full gap-2 rounded-lg" onClick={handleShare}>
+                    <Share2 className="h-4 w-4" />
+                    مشاركة العقار
+                  </Button>
+
+                  {property.externalUrl && (
+                    <a href={property.externalUrl} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="w-full gap-2 rounded-lg text-accent border-accent/30 hover:bg-accent/10 mt-2">
+                        <ExternalLink className="h-4 w-4" />
+                        رابط العقار الخارجي
+                      </Button>
+                    </a>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </div>
 
-          {/* Similar Properties */}
-          <div className="mt-20">
-            <h2 className="text-2xl font-bold mb-6">عقارات مشابهة</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <PropertyCard key={i} isLoading={true} />
-              ))}
+          {/* Similar */}
+          {similar.length > 0 && (
+            <div className="mt-16">
+              <h2 className="text-2xl font-bold mb-6">عقارات مشابهة</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {similar.map(p => (
+                  <PropertyCard key={p.id} property={{ ...p, typeName: propertyTypes.find(t => t.id === p.typeId)?.name, regionName: regions.find(r => r.id === p.regionId)?.name }} />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
-
       <Footer />
     </div>
   );
