@@ -80,18 +80,32 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-10 md:py-14 min-h-[360px]">
+        <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-14 md:py-20 min-h-[420px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
           <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(135deg, rgba(44,54,57,0.85) 0%, rgba(63,78,79,0.78) 50%, rgba(44,54,57,0.88) 100%)" }} />
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            <h1
-              className="text-5xl md:text-7xl text-white mb-6 drop-shadow-lg tracking-tight"
-              style={{ fontFamily: "'Cairo', sans-serif", fontWeight: 800 }}
-            >
-              العمودي
-            </h1>
+            {/* Glass wordmark */}
+            <div className="flex justify-center mb-7">
+              <div className="group relative inline-flex flex-col items-center px-12 md:px-16 py-6 md:py-7 rounded-[2rem] border border-white/25 bg-white/10 backdrop-blur-2xl shadow-[0_8px_40px_-8px_rgba(0,0,0,0.45)] overflow-hidden">
+                {/* top sheen */}
+                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                {/* soft glow */}
+                <div className="absolute -inset-px rounded-[2rem] pointer-events-none" style={{ background: "radial-gradient(120% 120% at 50% 0%, rgba(196,154,114,0.18) 0%, transparent 60%)" }} />
+                <h1
+                  className="relative text-5xl md:text-7xl mb-0 tracking-tight bg-clip-text text-transparent"
+                  style={{
+                    fontFamily: "'Cairo', sans-serif",
+                    fontWeight: 800,
+                    backgroundImage: "linear-gradient(135deg, #F4ECE0 0%, #C49A72 55%, #A27B5B 100%)",
+                  }}
+                >
+                  العمودي
+                </h1>
+                <div className="relative mt-3 w-20 h-[3px] rounded-full bg-gradient-to-r from-[#A27B5B] via-[#C49A72] to-[#A27B5B]" />
+              </div>
+            </div>
             <p className="text-sm md:text-base font-semibold text-[#DCD7C9] max-w-2xl mx-auto leading-relaxed mb-6">
               شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص العقارية والاستثمارية في مصر.
             </p>
