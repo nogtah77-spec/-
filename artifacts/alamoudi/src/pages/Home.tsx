@@ -103,6 +103,7 @@ export default function Home() {
                   style={{
                     fontFamily: "'Cairo', sans-serif",
                     fontWeight: 800,
+                    transform: "translateY(0.07em)",
                   }}
                 >
                   العمودي
