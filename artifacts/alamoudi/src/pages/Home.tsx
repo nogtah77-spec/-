@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserCheck, Plus, ChevronLeft, X,
   LayoutGrid, AlignJustify, List, ExternalLink, Play,
-  Building2,
+  Building2, Music,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useData } from "@/context/DataContext";
@@ -87,26 +87,21 @@ export default function Home() {
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
             {/* Glass wordmark */}
-            <div className="flex justify-center mb-7">
-              <div className="group relative inline-flex flex-col items-center px-12 md:px-16 py-6 md:py-7 rounded-[2rem] border border-white/25 bg-white/10 backdrop-blur-2xl shadow-[0_8px_40px_-8px_rgba(0,0,0,0.45)] overflow-hidden">
-                {/* top sheen */}
-                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
-                {/* soft glow */}
-                <div className="absolute -inset-px rounded-[2rem] pointer-events-none" style={{ background: "radial-gradient(120% 120% at 50% 0%, rgba(196,154,114,0.18) 0%, transparent 60%)" }} />
+            <div className="flex justify-center mb-8">
+              <div className="inline-flex items-start justify-center px-14 md:px-20 pt-4 pb-8 md:pt-5 md:pb-10 rounded-[2.5rem] border border-white/20 bg-white/[0.06] backdrop-blur-md shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)]">
                 <h1
-                  className="relative text-5xl md:text-7xl mb-0 tracking-tight bg-clip-text text-transparent"
+                  className="text-5xl md:text-7xl tracking-tight leading-none"
                   style={{
                     fontFamily: "'Cairo', sans-serif",
                     fontWeight: 800,
-                    backgroundImage: "linear-gradient(135deg, #F4ECE0 0%, #C49A72 55%, #A27B5B 100%)",
+                    color: "#F7E7CE",
                   }}
                 >
                   العمودي
                 </h1>
-                <div className="relative mt-3 w-20 h-[3px] rounded-full bg-gradient-to-r from-[#A27B5B] via-[#C49A72] to-[#A27B5B]" />
               </div>
             </div>
-            <p className="text-sm md:text-base font-semibold text-[#DCD7C9] max-w-2xl mx-auto leading-relaxed mb-6">
+            <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-relaxed mb-6">
               شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص العقارية والاستثمارية في مصر.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
@@ -197,20 +192,41 @@ export default function Home() {
         {/* ── TikTok Section ── */}
         <section className="py-12 md:py-14 bg-background">
           <div className="container px-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-              <div>
-                <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">محتوى حصري</p>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                  تابعنا على تيك توك
+            {/* Profile header */}
+            <div className="flex flex-col items-center text-center mb-9">
+              <p className="text-accent text-xs font-medium tracking-widest mb-4 uppercase">محتوى حصري</p>
+              {/* Circular avatar */}
+              <a
+                href={settings.tiktok || "#"}
+                {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                className="block w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                aria-label="حساب تيك توك"
+              >
+                {settings.tiktokAvatar ? (
+                  <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
+                    <Music className="h-8 w-8" />
+                  </span>
+                )}
+              </a>
+              {/* Account name */}
+              <a
+                href={settings.tiktok || "#"}
+                {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                className="mt-3 hover:text-accent transition-colors"
+              >
+                <h2 className="text-xl md:text-2xl font-bold text-foreground">
+                  {settings.tiktokName || "العمودي للتسويق العقاري"}
                 </h2>
-              </div>
-              {settings.tiktok && (
-                <Button asChild variant="outline" className="rounded-full px-6 text-sm gap-2 border-accent/40 text-accent hover:bg-accent/10">
-                  <a href={settings.tiktok} target="_blank" rel="noopener noreferrer">
-                    تابعنا على تيك توك <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </Button>
-              )}
+              </a>
+              <p className="text-xs text-muted-foreground mt-1">تابعنا على تيك توك</p>
+              {/* Follow button */}
+              <Button asChild className="mt-4 rounded-full px-8 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow-md">
+                <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+                  <Music className="h-4 w-4" /> تابعنا الآن
+                </a>
+              </Button>
             </div>
 
             {tiktokVideos.length === 0 ? (

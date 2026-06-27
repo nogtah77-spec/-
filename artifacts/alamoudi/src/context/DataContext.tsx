@@ -98,6 +98,8 @@ export interface SiteSettings {
   whatsapp: string;
   email: string;
   tiktok: string;
+  tiktokName: string;
+  tiktokAvatar: string;
   facebook: string;
   instagram: string;
   mapsUrl: string;
@@ -147,6 +149,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   whatsapp: "+20 10 0000 0000",
   email: "info@alamoudi.com",
   tiktok: "",
+  tiktokName: "العمودي للتسويق العقاري",
+  tiktokAvatar: "",
   facebook: "",
   instagram: "",
   mapsUrl: "https://maps.google.com",

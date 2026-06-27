@@ -26,6 +26,23 @@ export default function Settings() {
   const [editVideo, setEditVideo] = useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const thumbRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
+  const avatarRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) { toast({ title: "الصورة كبيرة جداً (حد 3MB)", variant: "destructive" }); return; }
+    const r = new FileReader();
+    r.onload = ev => setForm(p => ({ ...p, tiktokAvatar: ev.target?.result as string }));
+    r.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleSaveAccount = () => {
+    updateSettings({ tiktok: form.tiktok, tiktokName: form.tiktokName, tiktokAvatar: form.tiktokAvatar });
+    toast({ title: "تم حفظ بيانات الحساب ✓" });
+  };
+
   const handleThumbFile = (file: File, onDone: (b64: string) => void) => {
     if (file.size > 3 * 1024 * 1024) { toast({ title: "الصورة كبيرة جداً (حد 3MB)", variant: "destructive" }); return; }
     const r = new FileReader(); r.onload = e => onDone(e.target?.result as string); r.readAsDataURL(file);
@@ -299,6 +316,50 @@ export default function Settings() {
           {/* ── TikTok Videos ── */}
           <TabsContent value="tiktok" className="mt-6">
             <div className="space-y-5">
+              {/* Account info */}
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Music className="h-4 w-4 text-accent" />بيانات حساب تيك توك</CardTitle>
+                  <CardDescription>الصورة والاسم يظهران في أعلى قسم تيك توك بالصفحة الرئيسية</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>صورة الحساب</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 rounded-full overflow-hidden bg-muted border flex-shrink-0 flex items-center justify-center text-accent">
+                        {form.tiktokAvatar ? (
+                          <img src={form.tiktokAvatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Music className="h-6 w-6" />
+                        )}
+                      </div>
+                      <input type="file" accept="image/*" className="hidden" ref={avatarRef} onChange={handleAvatarFile} />
+                      <Button type="button" variant="outline" size="sm" className="gap-2" onClick={() => avatarRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5" />رفع صورة
+                      </Button>
+                      {form.tiktokAvatar && (
+                        <Button type="button" variant="ghost" size="sm" className="gap-2 text-destructive" onClick={() => setForm(p => ({ ...p, tiktokAvatar: "" }))}>
+                          <X className="h-3.5 w-3.5" />حذف
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>اسم الحساب</Label>
+                    <Input value={form.tiktokName} onChange={set("tiktokName")} placeholder="العمودي للتسويق العقاري" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>رابط حساب تيك توك</Label>
+                    <Input dir="ltr" className="text-right text-xs" value={form.tiktok} onChange={set("tiktok")} placeholder="https://tiktok.com/@..." />
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                  <Button onClick={handleSaveAccount} className="bg-accent text-white hover:bg-accent/90 gap-2">
+                    <Save className="h-4 w-4" />حفظ بيانات الحساب
+                  </Button>
+                </CardFooter>
+              </Card>
+
               {/* Add new video */}
               <Card className="card-luxury">
                 <CardHeader>
