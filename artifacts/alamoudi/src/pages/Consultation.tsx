@@ -34,7 +34,7 @@ export default function Consultation() {
         <div className="bg-card border-b border-border py-12 md:py-16">
           <div className="container px-6 text-center">
             <p className="text-accent text-xs font-medium tracking-widest mb-3 uppercase">خدماتنا</p>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">استشارة عقارية مجانية</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">استشارة عقارية</h1>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
               فريقنا من الخبراء العقاريين جاهز لمساعدتك في اتخاذ القرار الأمثل. أرسل استفسارك وسنتواصل معك خلال 24 ساعة.
             </p>
