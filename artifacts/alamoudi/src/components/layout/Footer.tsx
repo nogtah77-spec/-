@@ -3,9 +3,9 @@ export function Footer() {
     <footer className="border-t bg-card mt-auto">
       <div className="container py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-2">
-            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-16 w-auto object-contain mb-4" />
-            <p className="text-muted-foreground max-w-sm">
+          <div className="md:col-span-2 text-center md:text-right">
+            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-20 w-auto object-contain mb-4 mx-auto md:mx-0" />
+            <p className="text-muted-foreground max-w-sm mx-auto md:mx-0">
               شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.
             </p>
           </div>

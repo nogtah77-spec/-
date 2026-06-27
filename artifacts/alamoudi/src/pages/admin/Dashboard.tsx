@@ -1,15 +1,22 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, Heart, Clock } from "lucide-react";
+import { Building2, Users as UsersIcon, Heart, Clock, Activity } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Activity } from "lucide-react";
+import { useData } from "@/context/DataContext";
 
 export default function Dashboard() {
+  const { properties, regions, users } = useData();
+  
+  const totalProperties = properties.length;
+  const activeProperties = properties.filter(p => p.status === "active" || p.status === "listed").length;
+  const totalRegions = regions.filter(r => r.active).length;
+  const totalUsers = users.length;
+
   const kpis = [
-    { title: "إجمالي العقارات المتاحة", value: "—", icon: Building2 },
-    { title: "زوار اليوم", value: "—", icon: Users },
-    { title: "عمليات الحفظ بالمفضلة", value: "—", icon: Heart },
-    { title: "طلبات معلقة", value: "—", icon: Clock },
+    { title: "إجمالي العقارات المتاحة", value: totalProperties, icon: Building2 },
+    { title: "المناطق النشطة", value: totalRegions, icon: Clock },
+    { title: "المستخدمون", value: totalUsers, icon: UsersIcon },
+    { title: "عقارات نشطة", value: activeProperties, icon: Heart },
   ];
 
   return (

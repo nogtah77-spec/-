@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +7,46 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save, UploadCloud, MapPin } from "lucide-react";
-import { useParams, Link } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
+import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PropertyForm() {
-  const params = useParams();
+  const { regions, propertyTypes, addProperty, updateProperty, properties } = useData();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const params = useParams<{ id?: string }>();
   const isEdit = !!params.id;
+  const existing = isEdit ? properties.find(p => p.id === params.id) : undefined;
+
+  // Form state
+  const [form, setForm] = useState({
+    title: existing?.title ?? "",
+    description: existing?.description ?? "",
+    price: existing?.price ?? 0,
+    area: existing?.area ?? 0,
+    beds: existing?.beds ?? 0,
+    baths: existing?.baths ?? 0,
+    floors: existing?.floors ?? 0,
+    typeId: existing?.typeId ?? "",
+    regionId: existing?.regionId ?? "",
+    category: existing?.category ?? "sale" as PropertyCategory,
+    status: existing?.status ?? "draft" as PropertyStatus,
+  });
+
+  const handleSave = () => {
+    if (!form.title.trim() || !form.typeId || !form.regionId) {
+      toast({ title: "خطأ", description: "يرجى ملء جميع الحقول المطلوبة (العنوان، النوع، المنطقة)", variant: "destructive" });
+      return;
+    }
+    if (isEdit && params.id) {
+      updateProperty(params.id, form);
+    } else {
+      addProperty(form);
+    }
+    toast({ title: "تم الحفظ", description: "تم حفظ العقار بنجاح" });
+    setLocation("/admin/properties");
+  };
 
   return (
     <AdminLayout>
@@ -26,7 +62,7 @@ export default function PropertyForm() {
             <Button variant="outline" asChild>
               <Link href="/admin/properties">إلغاء</Link>
             </Button>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave}>
               <Save className="ml-2 h-4 w-4" />
               حفظ ونشر
             </Button>
@@ -41,21 +77,44 @@ export default function PropertyForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="title">عنوان العقار</Label>
-                  <Input id="title" placeholder="مثال: فيلا فاخرة بتصميم عصري في حطين" />
+                  <Label htmlFor="title">عنوان العقار *</Label>
+                  <Input 
+                    id="title" 
+                    value={form.title} 
+                    onChange={e => setForm({ ...form, title: e.target.value })} 
+                    placeholder="مثال: فيلا فاخرة بتصميم عصري في حطين" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="desc">وصف العقار</Label>
-                  <Textarea id="desc" placeholder="اكتب وصفاً مفصلاً للعقار ومميزاته..." className="min-h-[120px]" />
+                  <Textarea 
+                    id="desc" 
+                    value={form.description} 
+                    onChange={e => setForm({ ...form, description: e.target.value })} 
+                    placeholder="اكتب وصفاً مفصلاً للعقار ومميزاته..." 
+                    className="min-h-[120px]" 
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="price">السعر (جنيه مصري)</Label>
-                    <Input id="price" type="number" placeholder="0" />
+                    <Input 
+                      id="price" 
+                      type="number" 
+                      value={form.price || ""} 
+                      onChange={e => setForm({ ...form, price: Number(e.target.value) })} 
+                      placeholder="0" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="area">المساحة (متر مربع)</Label>
-                    <Input id="area" type="number" placeholder="0" />
+                    <Input 
+                      id="area" 
+                      type="number" 
+                      value={form.area || ""} 
+                      onChange={e => setForm({ ...form, area: Number(e.target.value) })} 
+                      placeholder="0" 
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -83,75 +142,59 @@ export default function PropertyForm() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>فئة العقار</Label>
-                  <Select>
+                  <Select value={form.category} onValueChange={(val: PropertyCategory) => setForm({ ...form, category: val })}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر الفئة" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sale">البيع</SelectItem>
-                      <SelectItem value="rent">الإيجار</SelectItem>
+                      <SelectItem value="sale">للبيع</SelectItem>
+                      <SelectItem value="rent">للإيجار</SelectItem>
                       <SelectItem value="furnished">شقق مفروشة</SelectItem>
-                      <SelectItem value="admin">إداري</SelectItem>
+                      <SelectItem value="administrative">إداري</SelectItem>
                       <SelectItem value="medical">طبي</SelectItem>
                       <SelectItem value="commercial">تجاري</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>نوع العقار</Label>
-                  <Select>
+                  <Label>نوع العقار *</Label>
+                  <Select value={form.typeId} onValueChange={val => setForm({ ...form, typeId: val })}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر النوع" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="apartment">شقة</SelectItem>
-                      <SelectItem value="duplex">دوبلكس</SelectItem>
-                      <SelectItem value="penthouse">بنتهاوس</SelectItem>
-                      <SelectItem value="villa">فيلا</SelectItem>
-                      <SelectItem value="townhouse">تاون هاوس</SelectItem>
-                      <SelectItem value="twinhouse">توين هاوس</SelectItem>
-                      <SelectItem value="studio">استوديو</SelectItem>
-                      <SelectItem value="shop">محل</SelectItem>
-                      <SelectItem value="office">مكتب إداري</SelectItem>
-                      <SelectItem value="clinic">عيادة</SelectItem>
-                      <SelectItem value="medical_center">مركز طبي</SelectItem>
-                      <SelectItem value="restaurant">مطعم</SelectItem>
-                      <SelectItem value="cafe">كافيه</SelectItem>
-                      <SelectItem value="land">أرض</SelectItem>
+                      {propertyTypes.filter(t => t.active).map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>المنطقة</Label>
-                  <Select>
+                  <Label>المنطقة *</Label>
+                  <Select value={form.regionId} onValueChange={val => setForm({ ...form, regionId: val })}>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر المنطقة" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="tagamoa">التجمع الخامس</SelectItem>
-                      <SelectItem value="beit_elwatan">بيت الوطن</SelectItem>
-                      <SelectItem value="narges">النرجس</SelectItem>
-                      <SelectItem value="andalus">الأندلس</SelectItem>
-                      <SelectItem value="west_gam3at">غرب الجامعات</SelectItem>
-                      <SelectItem value="south_academy">جنوب الأكاديمية</SelectItem>
-                      <SelectItem value="mostasmereen">المستثمرين</SelectItem>
-                      <SelectItem value="shorouk">الشروق</SelectItem>
-                      <SelectItem value="rehab">الرحاب</SelectItem>
-                      <SelectItem value="madinaty">مدينتي</SelectItem>
-                      <SelectItem value="new_capital">العاصمة الإدارية</SelectItem>
+                      {regions.filter(r => r.active).map(r => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>الحالة</Label>
-                  <Select defaultValue="active">
+                  <Select value={form.status} onValueChange={(val: PropertyStatus) => setForm({ ...form, status: val })}>
                     <SelectTrigger>
                       <SelectValue placeholder="حالة العقار" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">نشط (معروض)</SelectItem>
+                      <SelectItem value="active">نشط</SelectItem>
+                      <SelectItem value="listed">معروض</SelectItem>
                       <SelectItem value="draft">مسودة</SelectItem>
-                      <SelectItem value="sold">مباع</SelectItem>
+                      <SelectItem value="sold">مباعة</SelectItem>
+                      <SelectItem value="rented">مؤجر</SelectItem>
+                      <SelectItem value="reserved">محجوز</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -166,16 +209,34 @@ export default function PropertyForm() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="beds">غرف النوم</Label>
-                    <Input id="beds" type="number" placeholder="0" />
+                    <Input 
+                      id="beds" 
+                      type="number" 
+                      value={form.beds || ""} 
+                      onChange={e => setForm({ ...form, beds: Number(e.target.value) })} 
+                      placeholder="0" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="baths">الحمامات</Label>
-                    <Input id="baths" type="number" placeholder="0" />
+                    <Input 
+                      id="baths" 
+                      type="number" 
+                      value={form.baths || ""} 
+                      onChange={e => setForm({ ...form, baths: Number(e.target.value) })} 
+                      placeholder="0" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="floors">عدد الطوابق</Label>
-                  <Input id="floors" type="number" placeholder="0" />
+                  <Input 
+                    id="floors" 
+                    type="number" 
+                    value={form.floors || ""} 
+                    onChange={e => setForm({ ...form, floors: Number(e.target.value) })} 
+                    placeholder="0" 
+                  />
                 </div>
               </CardContent>
             </Card>

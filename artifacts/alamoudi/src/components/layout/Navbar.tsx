@@ -16,7 +16,7 @@ export function Navbar() {
       <div className="container flex h-20 items-center justify-between">
         <div className="flex items-center gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-12 w-auto object-contain" />
+            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-14 w-auto object-contain" />
           </Link>
           <nav className="hidden md:flex gap-6">
             {navLinks.map((link) => (

@@ -1,11 +1,18 @@
+import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Roles() {
+  const { toast } = useToast();
+  const [perms, setPerms] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("alamoudi_roles_perms") || "{}"); } catch { return {}; }
+  });
+
   const roles = [
     { id: "admin", name: "مدير النظام", desc: "صلاحيات كاملة على جميع أجزاء المنصة" },
     { id: "agent", name: "مستشار عقاري", desc: "إدارة العقارات والرد على استفسارات العملاء" },
@@ -31,6 +38,19 @@ export default function Roles() {
     }
   ];
 
+  const togglePerm = (roleId: string, permKey: string) => {
+    if (roleId === "admin") return;
+    setPerms((prev: Record<string, Record<string, boolean>>) => ({
+      ...prev,
+      [roleId]: { ...(prev[roleId] || {}), [permKey]: !(prev[roleId]?.[permKey] ?? false) }
+    }));
+  };
+
+  const savePerm = () => {
+    localStorage.setItem("alamoudi_roles_perms", JSON.stringify(perms));
+    toast({ title: "تم الحفظ", description: "تم حفظ الصلاحيات بنجاح" });
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -39,7 +59,7 @@ export default function Roles() {
             <h1 className="text-2xl font-bold text-foreground">الأدوار والصلاحيات</h1>
             <p className="text-muted-foreground mt-1">تحديد مستويات الوصول وصلاحيات كل دور</p>
           </div>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={savePerm}>
             <Save className="ml-2 h-4 w-4" />
             حفظ التغييرات
           </Button>
@@ -61,18 +81,23 @@ export default function Roles() {
                     <div key={i} className="space-y-3">
                       <h4 className="font-semibold text-sm border-b pb-1">{group.category}</h4>
                       <div className="space-y-2">
-                        {group.items.map((item, j) => (
-                          <div key={j} className="flex items-center space-x-2 space-x-reverse">
-                            <Checkbox 
-                              id={`${role.id}-${i}-${j}`} 
-                              defaultChecked={role.id === "admin"} 
-                              disabled={role.id === "admin"}
-                            />
-                            <Label htmlFor={`${role.id}-${i}-${j}`} className="text-sm font-normal cursor-pointer">
-                              {item}
-                            </Label>
-                          </div>
-                        ))}
+                        {group.items.map((item, j) => {
+                          const permKey = `${group.category}-${item}`;
+                          const isChecked = role.id === "admin" || !!(perms[role.id]?.[permKey]);
+                          return (
+                            <div key={j} className="flex items-center space-x-2 space-x-reverse">
+                              <Checkbox 
+                                id={`${role.id}-${i}-${j}`} 
+                                checked={isChecked}
+                                disabled={role.id === "admin"}
+                                onCheckedChange={() => togglePerm(role.id, permKey)}
+                              />
+                              <Label htmlFor={`${role.id}-${i}-${j}`} className="text-sm font-normal cursor-pointer">
+                                {item}
+                              </Label>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -5,15 +6,31 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, MapPin, Home as HomeIcon, Wallet, ShieldCheck, Gem, UserCheck, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useData } from "@/context/DataContext";
 
 export default function Home() {
+  const { properties, regions, propertyTypes } = useData();
+  const [searchCategory, setSearchCategory] = useState<"sale" | "rent" | "furnished">("sale");
+  const [searchSector, setSearchSector] = useState<"residential" | "administrative" | "medical" | "commercial">("residential");
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+
+  const featured = properties.slice(0, 6);
+  const latest = [...properties].reverse().slice(0, 3);
+
+  const resolvePropertyProps = (p: any) => ({
+    ...p,
+    typeName: propertyTypes.find(t => t.id === p.typeId)?.name,
+    regionName: regions.find(r => r.id === p.regionId)?.name,
+  });
+
   return (
     <div className="min-h-screen flex flex-col dir-rtl">
       <Navbar />
       
       <main className="flex-1">
         {/* Section 1 — Hero */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: "var(--gradient-hero)" }}>
+        <section className="relative min-h-[520px] flex flex-col items-center justify-center overflow-hidden pb-10" style={{ background: "var(--gradient-hero)" }}>
           {/* Abstract geometric background elements */}
           <div className="absolute inset-0 z-0">
             <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#3F4E4F] rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
@@ -23,89 +40,90 @@ export default function Home() {
           
           <div className="absolute inset-0 bg-[#2C3639]/40 z-10" />
           
-          <div className="container relative z-20 text-center px-4 pt-20 pb-10">
-            <h1 className="text-4xl md:text-7xl font-bold text-[#DCD7C9] mb-6 max-w-5xl mx-auto leading-tight drop-shadow-lg">
+          <div className="container relative z-20 text-center px-4 pt-16">
+            <h1 className="text-3xl md:text-5xl font-bold text-[#DCD7C9] mb-6 max-w-5xl mx-auto leading-tight drop-shadow-lg">
               اكتشف الفخامة في كل تفاصيل <br />
               <span style={{ color: "#C49A72" }}>منزلك القادم</span>
             </h1>
-            <p className="text-lg md:text-2xl text-[#DCD7C9]/90 mb-16 max-w-3xl mx-auto font-light">
-              نقدم أفضل الفرص العقارية والاستثمارية في القاهرة الجديدة.
+            <p className="text-lg md:text-2xl text-[#DCD7C9]/90 max-w-3xl mx-auto font-light">
+              نقدم أفضل الفرص العقارية والاستثمارية في القاهرة الجديدة
             </p>
-            
-            {/* Search Bar - Integrated in Hero */}
-            <div className="bg-background/95 backdrop-blur-xl rounded-2xl p-3 max-w-5xl mx-auto shadow-2xl flex flex-col md:flex-row gap-3 border border-[#C49A72]/20">
-              <div className="flex-1 relative flex items-center">
-                <HomeIcon className="absolute right-4 h-5 w-5 text-muted-foreground" />
-                <Select>
-                  <SelectTrigger className="w-full border-none shadow-none pl-4 pr-12 bg-transparent h-14 text-base focus:ring-0">
-                    <SelectValue placeholder="نوع العقار" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="apartment">شقة</SelectItem>
-                    <SelectItem value="duplex">دوبلكس</SelectItem>
-                    <SelectItem value="villa">فيلا</SelectItem>
-                    <SelectItem value="twinhouse">توين هاوس</SelectItem>
-                    <SelectItem value="townhouse">تاون هاوس</SelectItem>
-                    <SelectItem value="shop">محل</SelectItem>
-                    <SelectItem value="clinic">عيادة</SelectItem>
-                    <SelectItem value="office">مكتب إداري</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="hidden md:block w-px h-10 bg-border/50 self-center" />
-              <div className="flex-1 relative flex items-center">
-                <MapPin className="absolute right-4 h-5 w-5 text-muted-foreground" />
-                <Select>
-                  <SelectTrigger className="w-full border-none shadow-none pl-4 pr-12 bg-transparent h-14 text-base focus:ring-0">
-                    <SelectValue placeholder="المنطقة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="tagamoa">التجمع الخامس</SelectItem>
-                    <SelectItem value="beit_elwatan">بيت الوطن</SelectItem>
-                    <SelectItem value="shorouk">الشروق</SelectItem>
-                    <SelectItem value="madinaty">مدينتي</SelectItem>
-                    <SelectItem value="new_capital">العاصمة الإدارية</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="hidden md:block w-px h-10 bg-border/50 self-center" />
-              <div className="flex-1 relative flex items-center">
-                <Wallet className="absolute right-4 h-5 w-5 text-muted-foreground" />
-                <Select>
-                  <SelectTrigger className="w-full border-none shadow-none pl-4 pr-12 bg-transparent h-14 text-base focus:ring-0">
-                    <SelectValue placeholder="نطاق السعر" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1-5">1M - 5M ج.م</SelectItem>
-                    <SelectItem value="5-10">5M - 10M ج.م</SelectItem>
-                    <SelectItem value="10-20">10M - 20M ج.م</SelectItem>
-                    <SelectItem value="20+">+20M ج.م</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button size="lg" className="h-14 px-10 text-lg font-bold shadow-lg" style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)", color: "#fff" }}>
-                <Search className="ml-2 h-5 w-5" />
+          </div>
+        </section>
+
+        {/* New Search Widget */}
+        <div className="container px-4">
+          <div className="-mt-10 relative z-20 bg-card rounded-xl shadow-luxury p-6 max-w-4xl mx-auto border border-border">
+            <div className="flex flex-wrap gap-3 mb-6 justify-center md:justify-start">
+              {[
+                { value: "sale", label: "للبيع" },
+                { value: "rent", label: "للإيجار" },
+                { value: "furnished", label: "شقق مفروشة" },
+              ].map(btn => (
+                <button
+                  key={btn.value}
+                  onClick={() => setSearchCategory(btn.value as typeof searchCategory)}
+                  className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all ${
+                    searchCategory === btn.value
+                      ? "bg-accent text-white shadow-md"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >{btn.label}</button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-6 justify-center md:justify-start">
+              {[
+                { value: "residential", label: "سكني" },
+                { value: "administrative", label: "إداري" },
+                { value: "medical", label: "طبي" },
+                { value: "commercial", label: "تجاري" },
+              ].map(btn => (
+                <button
+                  key={btn.value}
+                  onClick={() => setSearchSector(btn.value as typeof searchSector)}
+                  className={`px-5 py-2 rounded-full text-sm font-medium border transition-all ${
+                    searchSector === btn.value
+                      ? "border-accent text-accent bg-accent/10"
+                      : "border-border text-muted-foreground hover:border-accent/50"
+                  }`}
+                >{btn.label}</button>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap gap-3 items-center justify-center md:justify-start">
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger className="w-full md:w-[180px] h-10 text-sm">
+                  <SelectValue placeholder="المنطقة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.filter(r => r.active).map(r => (
+                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="w-full md:w-[180px] h-10 text-sm">
+                  <SelectValue placeholder="نوع العقار" />
+                </SelectTrigger>
+                <SelectContent>
+                  {propertyTypes.filter(t => t.active).map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button className="w-full md:w-auto h-10 px-6 bg-accent text-white hover:bg-accent/90 text-sm" data-testid="button-search">
+                <Search className="ml-2 h-4 w-4" />
                 بحث
               </Button>
             </div>
           </div>
-        </section>
-
-        {/* Section 2 — Advanced Search / Categories */}
-        <section className="py-12 bg-background border-b">
-          <div className="container px-4 text-center">
-            <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
-              {['البيع', 'الإيجار', 'شقق مفروشة', 'إداري', 'طبي', 'تجاري'].map((cat, i) => (
-                <Button key={i} variant={i === 0 ? "default" : "outline"} className={`rounded-full px-8 py-6 text-md font-medium ${i === 0 ? 'bg-primary text-primary-foreground shadow-md' : 'hover:bg-primary/5 hover:text-primary'}`}>
-                  {cat}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </section>
+        </div>
 
         {/* Section 3 — Featured Properties */}
-        <section className="py-24 bg-[#F5F2EC] dark:bg-background">
+        <section className="py-24 bg-[#F5F2EC] dark:bg-background mt-12">
           <div className="container px-4">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-foreground mb-4 inline-block relative">
@@ -115,9 +133,9 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <PropertyCard key={i} isLoading={true} />
-              ))}
+              {featured.length === 0 
+                ? [1, 2, 3, 4, 5, 6].map((i) => <PropertyCard key={i} isLoading={true} />)
+                : featured.map((p) => <PropertyCard key={p.id} property={resolvePropertyProps(p)} />)}
             </div>
           </div>
         </section>
@@ -136,9 +154,9 @@ export default function Home() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <PropertyCard key={i} isLoading={true} />
-              ))}
+              {latest.length === 0 
+                ? [1, 2, 3].map((i) => <PropertyCard key={i} isLoading={true} />)
+                : latest.map((p) => <PropertyCard key={p.id} property={resolvePropertyProps(p)} />)}
             </div>
             
             <div className="mt-10 text-center md:hidden">
@@ -218,7 +236,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Section 7 — Footer */}
       <Footer />
     </div>
   );
