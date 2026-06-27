@@ -12,6 +12,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "الرئيسية" },
+    { href: "/finishing-services", label: "خدمات التشطيبات" },
     { href: "/about", label: "من نحن" },
     { href: "/favorites", label: "المفضلة" },
     { href: "/compare", label: "المقارنة" },

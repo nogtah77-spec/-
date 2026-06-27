@@ -327,44 +327,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── About snippet ── */}
-        <section className="py-12 md:py-14 bg-background">
-          <div className="container px-6">
-            <div className="max-w-4xl mx-auto bg-card border border-border/50 rounded-2xl overflow-hidden card-luxury">
-              <div className="grid grid-cols-1 md:grid-cols-2">
-                <div className="p-8 md:p-10 flex flex-col justify-center">
-                  <p className="text-accent text-xs font-medium tracking-widest mb-3 uppercase">تعرّف علينا</p>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">من نحن</h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                    العمودي للتسويق العقاري شركة متخصصة في التسويق والاستثمار العقاري، تأسست عام 2018، وتمتلك خبرة واسعة في سوق العقارات المصري.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Button asChild variant="outline" className="rounded-full px-6 text-sm gap-2 border-accent/40 text-accent hover:bg-accent/10">
-                      <Link href="/about">اقرأ أكثر<ChevronLeft className="h-4 w-4" /></Link>
-                    </Button>
-                    <Button asChild className="rounded-full px-6 text-sm gap-2 bg-accent text-white hover:bg-accent/90">
-                      <Link href="/consultation">اطرح استفسارك</Link>
-                    </Button>
-                  </div>
-                </div>
-                <div className="hidden md:grid grid-cols-2 gap-4 p-8 bg-[#F5F2EC] dark:bg-muted/10">
-                  {[
-                    { v: "2018", l: "سنة التأسيس" },
-                    { v: `${featuredProps.length}+`, l: "عقار مميز" },
-                    { v: `${regions.filter(r => r.active).length}`, l: "منطقة" },
-                    { v: "100%", l: "رضا العملاء" },
-                  ].map((s, i) => (
-                    <div key={i} className="bg-background rounded-xl p-4 text-center border border-border/50">
-                      <div className="text-2xl font-bold text-accent mb-1">{s.v}</div>
-                      <div className="text-xs text-muted-foreground">{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ── Add Property CTA ── */}
         <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">
           <div className="container px-6">

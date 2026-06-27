@@ -7,18 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wrench, CheckCircle2, Gem, Shield, Clock } from "lucide-react";
+import { Wrench, CheckCircle2 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 
 const finishingTypes = ["سوبر لوكس", "لوكس", "كلاسيك", "مودرن", "بسيط", "متكامل مع الأثاث"];
-
-const services = [
-  { icon: <Gem className="h-5 w-5" />, title: "تشطيب سوبر لوكس", desc: "أعلى مستوى من التشطيبات باستخدام أفضل المواد والخامات العالمية." },
-  { icon: <Shield className="h-5 w-5" />, title: "تشطيب لوكس", desc: "تشطيبات عالية الجودة بأسعار معقولة مع ضمان على جميع أعمال التشطيب." },
-  { icon: <Wrench className="h-5 w-5" />, title: "تشطيب نصف", desc: "تشطيب جزئي مع ترك مساحة للتخصيص وفق ذوق العميل." },
-  { icon: <Clock className="h-5 w-5" />, title: "تسليم سريع", desc: "تنفيذ في أقل من 3 أشهر مع ضمان الجودة والمتابعة المستمرة." },
-];
 
 export default function FinishingServices() {
   const { addFinishingRequest, settings } = useData();
@@ -50,23 +43,6 @@ export default function FinishingServices() {
             </p>
           </div>
         </div>
-
-        {/* Services grid */}
-        <section className="py-12">
-          <div className="container px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
-              {services.map((s, i) => (
-                <Card key={i} className="card-luxury border-none bg-card text-center">
-                  <CardContent className="p-6 flex flex-col items-center">
-                    <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-4">{s.icon}</div>
-                    <h3 className="font-bold text-sm mb-2">{s.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Before/After placeholder */}
         <section className="py-8 bg-background">
