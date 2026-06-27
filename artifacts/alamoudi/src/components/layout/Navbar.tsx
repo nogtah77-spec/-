@@ -12,6 +12,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "الرئيسية" },
+    { href: "/about", label: "من نحن" },
     { href: "/favorites", label: "المفضلة" },
     { href: "/compare", label: "المقارنة" },
   ];
@@ -23,9 +24,9 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full glass-navbar">
-      {/* Desktop layout — 3 equal columns */}
+      {/* Desktop — 3 columns */}
       <div className="container h-16 hidden md:grid grid-cols-3 items-center px-6">
-        {/* Col 1 — Brand (far right in RTL) */}
+        {/* Brand — far right (RTL start) */}
         <div className="flex justify-start items-center">
           <Link href="/" data-testid="link-brand">
             <span className="text-lg font-bold text-primary dark:text-foreground tracking-tight leading-none">
@@ -37,14 +38,14 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Col 2 — Navigation (center) */}
-        <nav className="flex justify-center items-center gap-7">
+        {/* Nav — center */}
+        <nav className="flex justify-center items-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-accent",
+                "text-sm font-medium transition-colors hover:text-accent whitespace-nowrap",
                 location === link.href ? "text-accent" : "text-muted-foreground"
               )}
             >
@@ -53,9 +54,8 @@ export function Navbar() {
           ))}
         </nav>
 
-        {/* Col 3 — Actions (far left in RTL) */}
+        {/* Actions — far left (RTL end) */}
         <div className="flex justify-end items-center gap-2">
-          {/* Quick action icons */}
           {whatsappHref && (
             <a
               href={whatsappHref}
@@ -80,9 +80,7 @@ export function Navbar() {
               <MapPin className="h-4 w-4" />
             </a>
           )}
-
           <div className="w-px h-4 bg-border mx-1" />
-
           <ThemeToggle />
           <Link
             href="/login"
@@ -102,7 +100,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile layout */}
+      {/* Mobile */}
       <div className="container h-14 flex md:hidden items-center justify-between px-4">
         <Sheet>
           <SheetTrigger asChild>
@@ -112,7 +110,7 @@ export function Navbar() {
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-72 bg-background">
-            <div className="mb-8 pt-2">
+            <div className="mb-6 pt-2">
               <span className="text-xl font-bold text-primary dark:text-foreground">العمودي</span>
               <span className="text-sm font-light text-muted-foreground mr-1.5">للتسويق العقاري</span>
             </div>
@@ -122,7 +120,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "py-3 px-3 rounded-md text-base font-medium transition-colors",
+                    "py-2.5 px-3 rounded-md text-base font-medium transition-colors",
                     location === link.href
                       ? "text-accent bg-accent/10"
                       : "text-foreground hover:text-accent hover:bg-accent/5"
@@ -132,23 +130,26 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="my-2 border-t border-border" />
-              <Link href="/login" className="py-3 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
+              <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-medium text-accent hover:bg-accent/10 transition-colors">
+                أضف عقارك
+              </Link>
+              <Link href="/login" className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
                 تسجيل الدخول
               </Link>
-              <Link href="/admin" className="py-3 px-3 rounded-md text-base font-bold text-accent hover:bg-accent/10 transition-colors">
+              <Link href="/admin" className="py-2.5 px-3 rounded-md text-base font-bold text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
                 لوحة التحكم
               </Link>
-              <div className="my-2 border-t border-border" />
+              {(whatsappHref || mapsHref) && <div className="my-2 border-t border-border" />}
               {whatsappHref && (
                 <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
-                  className="py-3 px-3 rounded-md text-base font-medium text-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors flex items-center gap-2">
+                  className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors flex items-center gap-2">
                   <MessageCircle className="h-4 w-4" />
                   واتساب
                 </a>
               )}
               {mapsHref && (
                 <a href={mapsHref} target="_blank" rel="noopener noreferrer"
-                  className="py-3 px-3 rounded-md text-base font-medium text-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">
+                  className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
                   موقعنا
                 </a>

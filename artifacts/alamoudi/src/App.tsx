@@ -8,6 +8,8 @@ import { DataProvider } from "@/context/DataContext";
 
 // Pages
 import Home from "@/pages/Home";
+import About from "@/pages/About";
+import AddProperty from "@/pages/AddProperty";
 import PropertyDetails from "@/pages/PropertyDetails";
 import Favorites from "@/pages/Favorites";
 import Compare from "@/pages/Compare";
@@ -32,11 +34,13 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/about" component={About} />
+      <Route path="/add-property" component={AddProperty} />
       <Route path="/properties/:id" component={PropertyDetails} />
       <Route path="/favorites" component={Favorites} />
       <Route path="/compare" component={Compare} />
       <Route path="/login" component={Login} />
-      
+
       {/* Admin Routes */}
       <Route path="/admin" component={Dashboard} />
       <Route path="/admin/properties" component={Properties} />
