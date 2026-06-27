@@ -1,20 +1,10 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { useData } from "@/context/DataContext";
-import { Gem, ShieldCheck, UserCheck, CheckCircle2, Calendar, MapPin } from "lucide-react";
+import { Gem, ShieldCheck, UserCheck, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
 export default function About() {
-  const { properties, regions } = useData();
-
-  const stats = [
-    { value: "2018", label: "سنة التأسيس", icon: <Calendar className="h-5 w-5" /> },
-    { value: `${properties.length}+`, label: "عقار في المحفظة", icon: <Gem className="h-5 w-5" /> },
-    { value: `${regions.filter(r => r.active).length}+`, label: "منطقة مغطاة", icon: <MapPin className="h-5 w-5" /> },
-    { value: "100%", label: "رضا العملاء", icon: <CheckCircle2 className="h-5 w-5" /> },
-  ];
-
   const values = [
     { icon: <Gem className="h-6 w-6" />, title: "الجودة والحصرية", desc: "نوفر وصولاً لأرقى العقارات والفرص الاستثمارية غير المتاحة في السوق العام." },
     { icon: <ShieldCheck className="h-6 w-6" />, title: "الثقة والموثوقية", desc: "فريق من المستشارين ذوي المعرفة العميقة بالسوق العقاري المصري والسعودي." },
@@ -57,23 +47,6 @@ export default function About() {
                   يقودنا فريق من أمهر المستشارين العقاريين الذين يتمتعون بخبرات عميقة في السوق وشبكة علاقات واسعة تُمكّننا من تقديم فرص حصرية لعملائنا.
                 </p>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats */}
-        <section className="py-12 bg-[#F5F2EC] dark:bg-muted/10">
-          <div className="container px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {stats.map((stat, i) => (
-                <div key={i} className="text-center p-6 bg-background rounded-2xl border border-border/50 shadow-sm">
-                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent mx-auto mb-3">
-                    {stat.icon}
-                  </div>
-                  <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
