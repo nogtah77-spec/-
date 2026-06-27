@@ -110,7 +110,7 @@ export default function About() {
           <div className="container px-6 relative z-10 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-[#DCD7C9] mb-4">هل أنت مهتم بالاستثمار العقاري؟</h2>
             <p className="text-sm text-[#DCD7C9]/75 mb-8 max-w-lg mx-auto">
-              تواصل معنا اليوم واحصل على استشارة مجانية من خبرائنا العقاريين.
+              تواصل معنا اليوم واطرح استفسارك وسيرد عليك أحد خبرائنا العقاريين.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-white" style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>

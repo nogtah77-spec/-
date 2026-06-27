@@ -7,18 +7,45 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MessageCircle, MapPin, Facebook, Instagram, Music } from "lucide-react";
+import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MessageCircle, MapPin, Facebook, Instagram, Music, Plus, Play, ExternalLink } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
-import type { SiteSettings } from "@/context/DataContext";
+import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
+
+const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = { thumbnail: "", title: "", videoUrl: "" };
 
 export default function Settings() {
-  const { settings, updateSettings } = useData();
+  const { settings, updateSettings, addTiktokVideo, updateTiktokVideo, deleteTiktokVideo } = useData();
   const { toast } = useToast();
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newVideo, setNewVideo] = useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [editVideo, setEditVideo] = useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
+  const thumbRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  const handleThumbFile = (file: File, onDone: (b64: string) => void) => {
+    if (file.size > 3 * 1024 * 1024) { toast({ title: "الصورة كبيرة جداً (حد 3MB)", variant: "destructive" }); return; }
+    const r = new FileReader(); r.onload = e => onDone(e.target?.result as string); r.readAsDataURL(file);
+  };
+
+  const handleAddVideo = () => {
+    if (!newVideo.title.trim() || !newVideo.videoUrl.trim()) {
+      toast({ title: "يرجى إدخال العنوان ورابط الفيديو", variant: "destructive" }); return;
+    }
+    addTiktokVideo(newVideo);
+    setNewVideo(EMPTY_VIDEO);
+    toast({ title: "تم إضافة الفيديو" });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingVideoId) return;
+    updateTiktokVideo(editingVideoId, editVideo);
+    setEditingVideoId(null);
+    toast({ title: "تم تحديث الفيديو" });
+  };
 
   const set = (key: keyof SiteSettings) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }));
@@ -60,10 +87,11 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="general">عام</TabsTrigger>
             <TabsTrigger value="contact">التواصل</TabsTrigger>
             <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>
+            <TabsTrigger value="tiktok">تيك توك</TabsTrigger>
             <TabsTrigger value="system">النظام</TabsTrigger>
           </TabsList>
 
@@ -266,6 +294,122 @@ export default function Settings() {
                 )}
               </CardFooter>
             </Card>
+          </TabsContent>
+
+          {/* ── TikTok Videos ── */}
+          <TabsContent value="tiktok" className="mt-6">
+            <div className="space-y-5">
+              {/* Add new video */}
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Plus className="h-4 w-4 text-accent" />إضافة فيديو جديد</CardTitle>
+                  <CardDescription>أضف حتى 3 فيديوهات تظهر في الصفحة الرئيسية</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>عنوان الفيديو *</Label>
+                    <Input value={newVideo.title} onChange={e => setNewVideo(p => ({ ...p, title: e.target.value }))} placeholder="مثال: جولة في مشروع مدينتي" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>رابط الفيديو *</Label>
+                    <Input dir="ltr" className="text-xs" value={newVideo.videoUrl} onChange={e => setNewVideo(p => ({ ...p, videoUrl: e.target.value }))} placeholder="https://tiktok.com/@..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>صورة مصغرة (اختياري)</Label>
+                    <div className="flex gap-3 items-start">
+                      {newVideo.thumbnail && (
+                        <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                          <img src={newVideo.thumbnail} alt="" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setNewVideo(p => ({ ...p, thumbnail: "" }))}
+                            className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive rounded-full text-white flex items-center justify-center">
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" ref={el => { thumbRefs.current["new"] = el; }}
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handleThumbFile(f, b64 => setNewVideo(p => ({ ...p, thumbnail: b64 }))); e.target.value = ""; }} />
+                      <Button type="button" variant="outline" size="sm" className="gap-2"
+                        onClick={() => thumbRefs.current["new"]?.click()}>
+                        <Upload className="h-3.5 w-3.5" />رفع صورة
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                  <Button onClick={handleAddVideo} className="bg-accent text-white hover:bg-accent/90 gap-2">
+                    <Plus className="h-4 w-4" />إضافة الفيديو
+                  </Button>
+                </CardFooter>
+              </Card>
+
+              {/* Existing videos */}
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Play className="h-4 w-4 text-accent" />الفيديوهات الحالية ({(settings.tiktokVideos ?? []).length}/3)</CardTitle>
+                  <CardDescription>الفيديوهات الثلاثة الأولى تظهر في الصفحة الرئيسية</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(settings.tiktokVideos ?? []).length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Play className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">لا توجد فيديوهات مضافة</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {(settings.tiktokVideos ?? []).map((video, idx) => (
+                        <div key={video.id} className="border border-border rounded-xl p-4">
+                          {editingVideoId === video.id ? (
+                            <div className="space-y-3">
+                              <Input value={editVideo.title} onChange={e => setEditVideo(p => ({ ...p, title: e.target.value }))} placeholder="عنوان الفيديو" />
+                              <Input dir="ltr" className="text-xs" value={editVideo.videoUrl} onChange={e => setEditVideo(p => ({ ...p, videoUrl: e.target.value }))} placeholder="رابط الفيديو" />
+                              <div className="flex gap-3 items-center">
+                                {editVideo.thumbnail && (
+                                  <div className="relative w-16 h-11 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                    <img src={editVideo.thumbnail} alt="" className="w-full h-full object-cover" />
+                                    <button type="button" onClick={() => setEditVideo(p => ({ ...p, thumbnail: "" }))}
+                                      className="absolute top-0.5 right-0.5 w-4 h-4 bg-destructive rounded-full text-white flex items-center justify-center">
+                                      <X className="h-2.5 w-2.5" />
+                                    </button>
+                                  </div>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" ref={el => { thumbRefs.current[video.id] = el; }}
+                                  onChange={e => { const f = e.target.files?.[0]; if (f) handleThumbFile(f, b64 => setEditVideo(p => ({ ...p, thumbnail: b64 }))); e.target.value = ""; }} />
+                                <Button type="button" variant="outline" size="sm" className="gap-2 text-xs"
+                                  onClick={() => thumbRefs.current[video.id]?.click()}>
+                                  <Upload className="h-3 w-3" />صورة
+                                </Button>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={handleSaveEdit} className="bg-accent text-white hover:bg-accent/90">حفظ</Button>
+                                <Button size="sm" variant="outline" onClick={() => setEditingVideoId(null)}>إلغاء</Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-4">
+                              <div className="w-16 h-11 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                {video.thumbnail
+                                  ? <img src={video.thumbnail} alt="" className="w-full h-full object-cover" />
+                                  : <div className="w-full h-full flex items-center justify-center"><Play className="h-4 w-4 text-muted-foreground/50" /></div>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{video.title}</p>
+                                <a href={video.videoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:underline flex items-center gap-1 mt-0.5">
+                                  <ExternalLink className="h-3 w-3" />فتح الرابط
+                                </a>
+                              </div>
+                              <div className="flex gap-2 flex-shrink-0">
+                                <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => { setEditingVideoId(video.id); setEditVideo({ title: video.title, thumbnail: video.thumbnail, videoUrl: video.videoUrl }); }}>تعديل</Button>
+                                <Button size="sm" variant="destructive" className="text-xs h-7 px-2" onClick={() => { deleteTiktokVideo(video.id); toast({ title: "تم حذف الفيديو" }); }}>حذف</Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* ── System ── */}

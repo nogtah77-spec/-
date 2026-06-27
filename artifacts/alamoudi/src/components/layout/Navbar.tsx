@@ -33,7 +33,7 @@ export function Navbar() {
               العمودي
             </span>
             <span className="text-xs font-light text-muted-foreground mr-1.5 tracking-wide">
-              للتسويق العقاري
+              شريكك نحو الاستثمار الأفضل
             </span>
           </Link>
         </div>
@@ -112,7 +112,7 @@ export function Navbar() {
           <SheetContent side="right" className="w-72 bg-background">
             <div className="mb-6 pt-2">
               <span className="text-xl font-bold text-primary dark:text-foreground">العمودي</span>
-              <span className="text-sm font-light text-muted-foreground mr-1.5">للتسويق العقاري</span>
+              <span className="text-sm font-light text-muted-foreground mr-1.5">شريكك نحو الاستثمار الأفضل</span>
             </div>
             <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (

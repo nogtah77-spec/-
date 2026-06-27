@@ -5,7 +5,11 @@ import { PropertyCard, type CardSize } from "@/components/ui/PropertyCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Gem, ShieldCheck, UserCheck, CheckCircle2, LayoutGrid, AlignJustify, List, Plus, ChevronLeft, X } from "lucide-react";
+import {
+  Search, Gem, ShieldCheck, UserCheck, Plus, ChevronLeft, X,
+  LayoutGrid, AlignJustify, List, ExternalLink, Play,
+  Clock, Wrench, Building2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
@@ -62,6 +66,7 @@ export default function Home() {
   }, [searchText, properties, propertyTypes, regions]);
 
   const heroImage = settings.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80";
+  const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 3);
 
   const gridClass = cardSize === "compact"
     ? "grid grid-cols-1 md:grid-cols-2 gap-3"
@@ -75,38 +80,37 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-20 md:py-28 min-h-[500px]">
+        <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-10 md:py-14 min-h-[360px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
           <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(135deg, rgba(44,54,57,0.85) 0%, rgba(63,78,79,0.78) 50%, rgba(44,54,57,0.88) 100%)" }} />
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-7xl font-black text-white mb-4 drop-shadow-lg tracking-tight">
+            <h1
+              className="text-5xl md:text-7xl text-white mb-3 drop-shadow-lg tracking-tight"
+              style={{ fontFamily: "'Cairo', sans-serif", fontWeight: 800 }}
+            >
               العمودي
             </h1>
-            <p className="text-xl md:text-2xl font-semibold text-[#DCD7C9] mb-4 leading-snug">
-              اكتشف الفخامة في كل تفاصيل منزلك القادم
-            </p>
-            <p className="text-sm md:text-base text-[#DCD7C9]/80 font-light max-w-2xl mx-auto leading-relaxed mb-8">
-              شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص الاستثمارية في مصر.
+            <p className="text-sm md:text-base font-semibold text-[#DCD7C9] max-w-2xl mx-auto leading-relaxed mb-5">
+              شريكك الموثوق في عالم التسويق العقاري والتشطيبات، نقدم لك أفضل الفرص العقارية والاستثمارية في مصر.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="h-11 px-8 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-2"
+              <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-2"
                 style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
                 <Link href="/add-property"><Plus className="h-4 w-4" />أضف عقارك لدينا</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-11 px-8 rounded-full font-bold text-sm border-white/40 text-white hover:bg-white/10">
-                <Link href="/consultation">استشارة مجانية</Link>
+              <Button asChild size="lg" variant="outline" className="h-10 px-7 rounded-full font-bold text-sm border-white/40 text-white hover:bg-white/10">
+                <Link href="/consultation">اطرح استفسارك</Link>
               </Button>
             </div>
           </div>
         </section>
 
-        {/* ── Search Widget ── */}
+        {/* ── Search / Filter Widget ── */}
         <div className="container px-6">
-          <div className="-mt-8 relative z-20 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-6 max-w-3xl mx-auto">
-            {/* Text search */}
-            <div className="relative mb-4">
+          <div className="-mt-6 relative z-20 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-5 max-w-3xl mx-auto">
+            <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pr-10 h-10"
@@ -121,8 +125,7 @@ export default function Home() {
               )}
             </div>
 
-            {/* Transaction filters */}
-            <div className="flex flex-wrap justify-center gap-2 mb-3">
+            <div className="flex flex-wrap justify-center gap-2 mb-2">
               {[{ value: "sale", label: "للبيع" }, { value: "rent", label: "للإيجار" }, { value: "furnished", label: "مفروش" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchCategory(btn.value as typeof searchCategory)}
                   className={cn("px-5 py-1.5 rounded-full text-sm font-medium transition-all",
@@ -132,7 +135,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
+            <div className="flex flex-wrap justify-center gap-2 mb-3">
               {[{ value: "residential", label: "سكني" }, { value: "administrative", label: "إداري" }, { value: "medical", label: "طبي" }, { value: "commercial", label: "تجاري" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchSector(btn.value as typeof searchSector)}
                   className={cn("px-4 py-1 rounded-full text-sm font-medium border transition-all",
@@ -156,7 +159,6 @@ export default function Home() {
               </Button>
             </div>
 
-            {/* Search results */}
             {searchText && (
               <div className="mt-4 pt-4 border-t border-border">
                 {searchResults.length === 0
@@ -174,8 +176,159 @@ export default function Home() {
           </div>
         </div>
 
+        {/* ── TikTok Section ── */}
+        <section className="py-12 md:py-14 bg-background">
+          <div className="container px-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+              <div>
+                <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">محتوى حصري</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  تابعنا على تيك توك
+                </h2>
+              </div>
+              {settings.tiktok && (
+                <Button asChild variant="outline" className="rounded-full px-6 text-sm gap-2 border-accent/40 text-accent hover:bg-accent/10">
+                  <a href={settings.tiktok} target="_blank" rel="noopener noreferrer">
+                    تابعنا على تيك توك <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </Button>
+              )}
+            </div>
+
+            {tiktokVideos.length === 0 ? (
+              <div className="text-center py-10 rounded-2xl border border-dashed border-border bg-muted/30">
+                <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-3">
+                  <Play className="h-7 w-7" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">لا توجد فيديوهات حالياً</p>
+                <p className="text-xs text-muted-foreground">يمكن للمدير إضافة فيديوهات من لوحة التحكم ← الإعدادات ← تيك توك</p>
+                {settings.tiktok && (
+                  <a href={settings.tiktok} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 mt-4 text-xs text-accent hover:underline">
+                    زيارة صفحتنا على تيك توك <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {tiktokVideos.map(video => (
+                  <a
+                    key={video.id}
+                    href={video.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group block rounded-2xl overflow-hidden border border-border bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <div className="relative aspect-video bg-muted overflow-hidden">
+                      {video.thumbnail ? (
+                        <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                          <Play className="h-10 w-10 text-muted-foreground/40" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                          <Play className="h-5 w-5 text-foreground fill-foreground mr-[-2px]" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">{video.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" />مشاهدة على تيك توك
+                      </p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Featured Properties ── */}
+        <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">
+          <div className="container px-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+              <div>
+                <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">اختيارات حصرية</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-0.5 relative inline-block">
+                  عقارات مميزة
+                  <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
+                </h2>
+              </div>
+              <SizeToggle size={cardSize} onChange={setCardSize} />
+            </div>
+            {featuredProps.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <p className="text-sm">لا توجد عقارات مميزة حالياً. يمكن للمدير تفعيلها من لوحة التحكم.</p>
+              </div>
+            ) : (
+              <div className={gridClass}>
+                {featuredProps.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Latest Properties ── */}
+        <section className="py-12 md:py-14 bg-background">
+          <div className="container px-6">
+            <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
+              <div>
+                <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">جديدنا</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">أحدث العقارات</h2>
+                <p className="text-sm text-muted-foreground mt-1">تصفح أحدث ما أضيف لمجموعتنا العقارية</p>
+              </div>
+              <SizeToggle size={cardSize} onChange={setCardSize} />
+            </div>
+            <div className={gridClass}>
+              {latestProps.length === 0
+                ? [1, 2, 3].map(i => <PropertyCard key={i} isLoading size={cardSize} />)
+                : latestProps.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Finishing Services Preview ── */}
+        <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">
+          <div className="container px-6">
+            <div className="text-center mb-8">
+              <p className="text-accent text-xs font-medium tracking-widest mb-2 uppercase">خدماتنا</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">خدمات التشطيبات</h2>
+              <p className="text-sm text-muted-foreground max-w-lg mx-auto">نقدم خدمات تشطيب متكاملة لجميع أنواع الوحدات بأعلى مستوى من الجودة وأفضل الأسعار</p>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[
+                { icon: <Gem className="h-6 w-6" />, title: "تشطيب سوبر لوكس", desc: "أعلى مستوى من التشطيبات باستخدام أفضل المواد" },
+                { icon: <ShieldCheck className="h-6 w-6" />, title: "تشطيب لوكس", desc: "تشطيبات عالية الجودة بأسعار معقولة مع ضمان" },
+                { icon: <Wrench className="h-6 w-6" />, title: "تشطيب نصف", desc: "تشطيب جزئي مع ترك مساحة للتخصيص الشخصي" },
+                { icon: <Clock className="h-6 w-6" />, title: "تسليم سريع", desc: "تنفيذ في أقل من 3 أشهر مع ضمان الجودة" },
+              ].map((item, i) => (
+                <Card key={i} className="card-luxury border-none text-center group hover:shadow-md transition-shadow">
+                  <CardContent className="p-5 flex flex-col items-center">
+                    <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-3 group-hover:bg-accent group-hover:text-white transition-colors">
+                      {item.icon}
+                    </div>
+                    <h3 className="text-sm font-bold mb-1.5">{item.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="text-center">
+              <Button asChild size="lg" variant="outline" className="rounded-full px-8 gap-2 border-accent/40 text-accent hover:bg-accent/10">
+                <Link href="/finishing-services">
+                  <Building2 className="h-4 w-4" />استعرض خدمات التشطيبات
+                  <ChevronLeft className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* ── About snippet ── */}
-        <section className="py-14 bg-background">
+        <section className="py-12 md:py-14 bg-background">
           <div className="container px-6">
             <div className="max-w-4xl mx-auto bg-card border border-border/50 rounded-2xl overflow-hidden card-luxury">
               <div className="grid grid-cols-1 md:grid-cols-2">
@@ -183,14 +336,24 @@ export default function Home() {
                   <p className="text-accent text-xs font-medium tracking-widest mb-3 uppercase">تعرّف علينا</p>
                   <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">من نحن</h2>
                   <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                    العمودي للتسويق العقاري شركة متخصصة في التسويق والاستثمار العقاري، تأسست عام 2018، وتمتلك خبرة واسعة في سوق العقارات المصري والسعودي.
+                    العمودي للتسويق العقاري شركة متخصصة في التسويق والاستثمار العقاري، تأسست عام 2018، وتمتلك خبرة واسعة في سوق العقارات المصري.
                   </p>
-                  <Button asChild variant="outline" className="w-fit rounded-full px-6 text-sm gap-2 border-accent/40 text-accent hover:bg-accent/10">
-                    <Link href="/about">اقرأ أكثر<ChevronLeft className="h-4 w-4" /></Link>
-                  </Button>
+                  <div className="flex flex-wrap gap-3">
+                    <Button asChild variant="outline" className="rounded-full px-6 text-sm gap-2 border-accent/40 text-accent hover:bg-accent/10">
+                      <Link href="/about">اقرأ أكثر<ChevronLeft className="h-4 w-4" /></Link>
+                    </Button>
+                    <Button asChild className="rounded-full px-6 text-sm gap-2 bg-accent text-white hover:bg-accent/90">
+                      <Link href="/consultation">اطرح استفسارك</Link>
+                    </Button>
+                  </div>
                 </div>
                 <div className="hidden md:grid grid-cols-2 gap-4 p-8 bg-[#F5F2EC] dark:bg-muted/10">
-                  {[{ v: "2018", l: "سنة التأسيس" }, { v: `${featuredProps.length}+`, l: "عقار مميز" }, { v: `${regions.filter(r => r.active).length}`, l: "منطقة" }, { v: "100%", l: "رضا العملاء" }].map((s, i) => (
+                  {[
+                    { v: "2018", l: "سنة التأسيس" },
+                    { v: `${featuredProps.length}+`, l: "عقار مميز" },
+                    { v: `${regions.filter(r => r.active).length}`, l: "منطقة" },
+                    { v: "100%", l: "رضا العملاء" },
+                  ].map((s, i) => (
                     <div key={i} className="bg-background rounded-xl p-4 text-center border border-border/50">
                       <div className="text-2xl font-bold text-accent mb-1">{s.v}</div>
                       <div className="text-xs text-muted-foreground">{s.l}</div>
@@ -202,119 +365,30 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Featured Properties ── */}
-        <section className="py-12 md:py-16 bg-[#F5F2EC] dark:bg-background">
-          <div className="container px-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1 inline-block relative">
-                  عقارات مميزة
-                  <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
-                </h2>
-                <p className="text-xs text-muted-foreground mt-3">العقارات الحصرية التي اخترناها لك</p>
-              </div>
-              <SizeToggle size={cardSize} onChange={setCardSize} />
-            </div>
-            {featuredProps.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p className="text-sm">لا توجد عقارات مميزة حالياً. يمكن للمدير تفعيلها من لوحة التحكم.</p>
-              </div>
-            ) : (
-              <div className={gridClass}>
-                {featuredProps.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* ── Add Property CTA ── */}
-        <section className="py-10 bg-background">
+        <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">
           <div className="container px-6">
             <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-2xl p-8 card-luxury">
               <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-4">
-                <Plus className="h-7 w-7" />
+                <UserCheck className="h-7 w-7" />
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">هل تمتلك عقاراً للبيع أو الإيجار؟</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-md mx-auto">
                 أضف عقارك لدينا واحصل على أفضل عرض سعر. نتواصل معك في أقرب وقت.
               </p>
-              <Button asChild size="lg" className="h-11 px-10 rounded-full font-bold text-sm text-white gap-2"
-                style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                <Link href="/add-property"><Plus className="h-4 w-4" />أضف عقارك الآن</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Latest Properties ── */}
-        <section className="py-12 md:py-16 bg-[#F5F2EC] dark:bg-background">
-          <div className="container px-6">
-            <div className="flex flex-wrap justify-between items-end gap-4 mb-10">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">أحدث العقارات</h2>
-                <p className="text-sm text-muted-foreground">تصفح أحدث ما أضيف لمجموعتنا العقارية</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <SizeToggle size={cardSize} onChange={setCardSize} />
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button asChild size="lg" className="h-11 px-8 rounded-full font-bold text-sm text-white gap-2"
+                  style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
+                  <Link href="/add-property"><Plus className="h-4 w-4" />أضف عقارك الآن</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-11 px-8 rounded-full text-sm border-accent/40 text-accent hover:bg-accent/10">
+                  <Link href="/consultation">اطرح استفسارك</Link>
+                </Button>
               </div>
             </div>
-            <div className={gridClass}>
-              {latestProps.length === 0
-                ? [1, 2, 3].map(i => <PropertyCard key={i} isLoading size={cardSize} />)
-                : latestProps.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
-            </div>
           </div>
         </section>
 
-        {/* ── Why Us ── */}
-        <section className="py-12 md:py-16 bg-background">
-          <div className="container px-6">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">لماذا نحن؟</h2>
-              <p className="text-sm text-muted-foreground max-w-lg mx-auto">نلتزم بتقديم تجربة استثنائية ترتكز على الجودة والاحترافية.</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {[
-                { icon: <Gem className="w-6 h-6" />, title: "عقارات حصرية", desc: "نوفر وصولاً لأرقى العقارات والفرص الاستثمارية غير المتاحة في السوق العام." },
-                { icon: <ShieldCheck className="w-6 h-6" />, title: "خبرة موثوقة", desc: "فريق من المستشارين ذوي المعرفة العميقة بالسوق العقاري المصري." },
-                { icon: <UserCheck className="w-6 h-6" />, title: "خدمة متكاملة", desc: "نرافقك من البحث والمقارنة حتى إنهاء كافة الإجراءات القانونية ونقل الملكية." },
-                { icon: <CheckCircle2 className="w-6 h-6" />, title: "شفافية تامة", desc: "وضوح كامل في التسعير والمواصفات لضمان قرار استثماري سليم وآمن." },
-              ].map((item, i) => (
-                <Card key={i} className="card-luxury bg-card border-none text-center">
-                  <CardContent className="p-6 flex flex-col items-center">
-                    <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent mb-4">{item.icon}</div>
-                    <h3 className="text-sm font-bold mb-2">{item.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── Contact CTA ── */}
-        <section className="py-12 md:py-16 relative overflow-hidden" style={{ background: "var(--gradient-hero)" }}>
-          <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#C49A72 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
-          <div className="container relative z-10 px-6 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#DCD7C9] mb-4">تواصل معنا</h2>
-            <p className="text-sm text-[#DCD7C9]/75 mb-8 max-w-xl mx-auto font-light leading-relaxed">
-              مستشارونا العقاريون جاهزون لتقديم الاستشارة المجانية ومساعدتك في اختيار ما يناسبك.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-white"
-                style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                <Link href="/consultation">استشارة مجانية</Link>
-              </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 rounded-full text-sm border-[#DCD7C9]/40 text-[#DCD7C9] hover:bg-white/10"
-                onClick={() => {
-                  const href = settings.whatsapp ? `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}` : `mailto:${settings.email}`;
-                  window.open(href, "_blank");
-                }} data-testid="button-contact">
-                واتساب مباشر
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
       <Footer />
     </div>

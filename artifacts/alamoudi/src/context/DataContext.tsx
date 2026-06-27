@@ -83,6 +83,13 @@ export interface PropertyRequest {
   createdAt: string;
 }
 
+export interface TiktokVideo {
+  id: string;
+  thumbnail: string;
+  title: string;
+  videoUrl: string;
+}
+
 export interface SiteSettings {
   companyName: string;
   companyDescription: string;
@@ -95,6 +102,7 @@ export interface SiteSettings {
   instagram: string;
   mapsUrl: string;
   heroImageUrl: string;
+  tiktokVideos: TiktokVideo[];
 }
 
 const DEFAULT_REGIONS: Region[] = [
@@ -143,6 +151,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   instagram: "",
   mapsUrl: "https://maps.google.com",
   heroImageUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
+  tiktokVideos: [],
 };
 
 interface DataContextType {
@@ -179,6 +188,9 @@ interface DataContextType {
   addPropertyRequest: (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) => void;
   updatePropertyRequestStatus: (id: string, status: PropertyRequest["status"]) => void;
   deletePropertyRequest: (id: string) => void;
+  addTiktokVideo: (v: Omit<TiktokVideo, "id">) => void;
+  updateTiktokVideo: (id: string, v: Partial<Omit<TiktokVideo, "id">>) => void;
+  deleteTiktokVideo: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -270,6 +282,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPropertyRequests(p => p.map(x => x.id === id ? { ...x, status } : x));
   const deletePropertyRequest = (id: string) => setPropertyRequests(p => p.filter(x => x.id !== id));
 
+  const addTiktokVideo = (v: Omit<TiktokVideo, "id">) =>
+    updateSettings({ tiktokVideos: [...(settings.tiktokVideos ?? []), { ...v, id: genId() }] });
+  const updateTiktokVideo = (id: string, v: Partial<Omit<TiktokVideo, "id">>) =>
+    updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).map(x => x.id === id ? { ...x, ...v } : x) });
+  const deleteTiktokVideo = (id: string) =>
+    updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).filter(x => x.id !== id) });
+
   return (
     <DataContext.Provider value={{
       regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, settings,
@@ -281,6 +300,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addInquiry, updateInquiryStatus, deleteInquiry,
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
+      addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
     }}>
       {children}
     </DataContext.Provider>

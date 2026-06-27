@@ -48,7 +48,7 @@ export default function Consultation() {
               {[
                 { icon: <Clock className="h-5 w-5" />, title: "متاح 24/7", desc: "فريقنا جاهز للرد على استفساراتك في أي وقت." },
                 { icon: <CheckCircle2 className="h-5 w-5" />, title: "خبرة أكثر من 6 سنوات", desc: "تجربة واسعة في السوق العقاري المصري." },
-                { icon: <MessageCircle className="h-5 w-5" />, title: "استشارة مجانية", desc: "نقدم الاستشارة الأولى مجاناً بدون أي التزامات." },
+                { icon: <MessageCircle className="h-5 w-5" />, title: "اطرح استفسارك", desc: "تواصل معنا بسهولة وسيرد عليك فريقنا بدون أي التزامات." },
               ].map((item, i) => (
                 <Card key={i} className="card-luxury border-none bg-card">
                   <CardContent className="p-5 flex items-start gap-4">
