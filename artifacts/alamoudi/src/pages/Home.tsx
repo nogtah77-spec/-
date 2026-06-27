@@ -86,15 +86,24 @@ export default function Home() {
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            {/* Glass wordmark */}
+            {/* Dark glass wordmark */}
             <div className="flex justify-center mb-8">
-              <div className="inline-flex items-start justify-center px-14 md:px-20 pt-4 pb-8 md:pt-5 md:pb-10 rounded-[2.5rem] border border-white/20 bg-white/[0.06] backdrop-blur-md shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)]">
+              <div
+                className="inline-flex items-center justify-center px-14 md:px-20 pt-4 pb-7 md:pt-5 md:pb-8 rounded-[2.5rem]"
+                style={{
+                  background: "rgba(15, 23, 42, 0.35)",
+                  backdropFilter: "blur(18px)",
+                  WebkitBackdropFilter: "blur(18px)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.25)",
+                }}
+              >
                 <h1
-                  className="text-5xl md:text-7xl tracking-tight leading-none"
+                  className="text-5xl md:text-7xl tracking-tight leading-none text-center"
                   style={{
                     fontFamily: "'Cairo', sans-serif",
                     fontWeight: 800,
-                    color: "#F7E7CE",
+                    color: "#E8C48A",
                   }}
                 >
                   العمودي
