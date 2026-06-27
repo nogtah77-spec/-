@@ -41,6 +41,20 @@ export interface User {
   joinedAt: string;
 }
 
+export interface SiteSettings {
+  companyName: string;
+  companyDescription: string;
+  phone1: string;
+  phone2: string;
+  whatsapp: string;
+  email: string;
+  tiktok: string;
+  facebook: string;
+  instagram: string;
+  mapsUrl: string;
+  heroImageUrl: string;
+}
+
 // ---- Default seed data ----
 const DEFAULT_REGIONS: Region[] = [
   { id: "shorouk", name: "مدينة الشروق", active: true },
@@ -76,12 +90,28 @@ const DEFAULT_PROPERTY_TYPES: PropertyType[] = [
   { id: "building", name: "عمارة", active: true },
 ];
 
+const DEFAULT_SETTINGS: SiteSettings = {
+  companyName: "العمودي للتسويق العقاري",
+  companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
+  phone1: "+20 10 0000 0000",
+  phone2: "",
+  whatsapp: "+20 10 0000 0000",
+  email: "info@alamoudi.com",
+  tiktok: "",
+  facebook: "",
+  instagram: "",
+  mapsUrl: "https://maps.google.com",
+  heroImageUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
+};
+
 // ---- Context ----
 interface DataContextType {
   regions: Region[];
   propertyTypes: PropertyType[];
   properties: Property[];
   users: User[];
+  settings: SiteSettings;
+  updateSettings: (s: Partial<SiteSettings>) => void;
   // Regions CRUD
   addRegion: (name: string) => void;
   updateRegion: (id: string, name: string) => void;
@@ -137,11 +167,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(() =>
     loadFromStorage("alamoudi_users", [])
   );
+  const [settings, setSettings] = useState<SiteSettings>(() =>
+    loadFromStorage("alamoudi_settings", DEFAULT_SETTINGS)
+  );
 
   useEffect(() => { saveToStorage("alamoudi_regions", regions); }, [regions]);
   useEffect(() => { saveToStorage("alamoudi_property_types", propertyTypes); }, [propertyTypes]);
   useEffect(() => { saveToStorage("alamoudi_properties", properties); }, [properties]);
   useEffect(() => { saveToStorage("alamoudi_users", users); }, [users]);
+  useEffect(() => { saveToStorage("alamoudi_settings", settings); }, [settings]);
+
+  const updateSettings = (s: Partial<SiteSettings>) =>
+    setSettings(prev => ({ ...prev, ...s }));
 
   // Region operations
   const addRegion = (name: string) =>
@@ -183,7 +220,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider value={{
-      regions, propertyTypes, properties, users,
+      regions, propertyTypes, properties, users, settings,
+      updateSettings,
       addRegion, updateRegion, deleteRegion, toggleRegion,
       addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType,
       addProperty, updateProperty, deleteProperty,

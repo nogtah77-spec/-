@@ -10,7 +10,7 @@ import { useData } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
-  const { properties, regions, propertyTypes } = useData();
+  const { properties, regions, propertyTypes, settings } = useData();
   const [searchCategory, setSearchCategory] = useState<"sale" | "rent" | "furnished">("sale");
   const [searchSector, setSearchSector] = useState<"residential" | "administrative" | "medical" | "commercial">("residential");
   const [selectedRegion, setSelectedRegion] = useState("");
@@ -25,37 +25,35 @@ export default function Home() {
     regionName: regions.find((r) => r.id === p.regionId)?.name,
   });
 
+  const heroImage = settings.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80";
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
       <main className="flex-1">
         {/* ── Hero ── */}
-        <section
-          className="relative flex flex-col items-center justify-center text-center overflow-hidden py-20 md:py-28"
-          style={{ background: "var(--gradient-hero)" }}
-        >
-          {/* Ambient blobs */}
-          <div className="absolute inset-0 z-0 pointer-events-none">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#3F4E4F] rounded-full mix-blend-multiply blur-3xl opacity-25 animate-pulse" />
-            <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-[#A27B5B] rounded-full mix-blend-multiply blur-3xl opacity-15" />
-            <div className="absolute bottom-0 left-1/3 w-[500px] h-[500px] bg-[#2C3639] rounded-full mix-blend-multiply blur-3xl opacity-30" />
-          </div>
-          <div className="absolute inset-0 bg-[#2C3639]/40 z-10" />
-
+        <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-20 md:py-28 min-h-[480px]">
+          {/* Background image */}
+          <div
+            className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${heroImage})` }}
+          />
+          {/* Dark overlay */}
+          <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(135deg, rgba(44,54,57,0.82) 0%, rgba(63,78,79,0.75) 50%, rgba(44,54,57,0.85) 100%)" }} />
           {/* Dot pattern */}
           <div
-            className="absolute inset-0 z-10 opacity-[0.04]"
+            className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none"
             style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }}
           />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            <h1 className="text-3xl md:text-5xl font-bold text-[#DCD7C9] leading-tight mb-4 drop-shadow">
+            <h1 className="text-3xl md:text-5xl font-bold text-[#DCD7C9] leading-tight mb-4 drop-shadow-lg">
               اكتشف الفخامة في كل تفاصيل
               <br />
               <span style={{ color: "#C49A72" }}>منزلك القادم</span>
             </h1>
-            <p className="text-sm md:text-base text-[#DCD7C9]/80 font-light max-w-xl mx-auto leading-relaxed">
+            <p className="text-sm md:text-base text-[#DCD7C9]/85 font-light max-w-xl mx-auto leading-relaxed">
               نقدم أفضل الفرص العقارية والاستثمارية في القاهرة الجديدة
             </p>
           </div>
@@ -63,7 +61,7 @@ export default function Home() {
 
         {/* ── Search Widget ── */}
         <div className="container px-6">
-          <div className="-mt-8 relative z-20 bg-card border border-border rounded-2xl shadow-[var(--shadow-luxury-lg)] p-6 max-w-2xl mx-auto">
+          <div className="-mt-8 relative z-20 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-6 max-w-2xl mx-auto">
             {/* Row 1 — Transaction type */}
             <div className="flex flex-wrap justify-center gap-2 mb-4">
               {[
@@ -169,10 +167,7 @@ export default function Home() {
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-1">أحدث العقارات</h2>
                 <p className="text-sm text-muted-foreground">تصفح أحدث ما أضيف لمجموعتنا العقارية</p>
               </div>
-              <Button
-                variant="outline"
-                className="hidden md:flex text-primary border-primary hover:bg-primary hover:text-primary-foreground rounded-full px-6 text-sm"
-              >
+              <Button variant="outline" className="hidden md:flex text-primary border-primary hover:bg-primary hover:text-primary-foreground rounded-full px-6 text-sm">
                 عرض الكل
               </Button>
             </div>
@@ -200,26 +195,10 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                {
-                  icon: <Gem className="w-6 h-6" />,
-                  title: "عقارات حصرية",
-                  desc: "نوفر وصولاً لأرقى العقارات والفرص الاستثمارية غير المتاحة في السوق العام.",
-                },
-                {
-                  icon: <ShieldCheck className="w-6 h-6" />,
-                  title: "خبرة موثوقة",
-                  desc: "فريق من المستشارين ذوي المعرفة العميقة بالسوق العقاري المصري.",
-                },
-                {
-                  icon: <UserCheck className="w-6 h-6" />,
-                  title: "خدمة متكاملة",
-                  desc: "نرافقك من البحث والمقارنة حتى إنهاء كافة الإجراءات القانونية ونقل الملكية.",
-                },
-                {
-                  icon: <CheckCircle2 className="w-6 h-6" />,
-                  title: "شفافية تامة",
-                  desc: "وضوح كامل في التسعير والمواصفات لضمان قرار استثماري سليم وآمن.",
-                },
+                { icon: <Gem className="w-6 h-6" />, title: "عقارات حصرية", desc: "نوفر وصولاً لأرقى العقارات والفرص الاستثمارية غير المتاحة في السوق العام." },
+                { icon: <ShieldCheck className="w-6 h-6" />, title: "خبرة موثوقة", desc: "فريق من المستشارين ذوي المعرفة العميقة بالسوق العقاري المصري." },
+                { icon: <UserCheck className="w-6 h-6" />, title: "خدمة متكاملة", desc: "نرافقك من البحث والمقارنة حتى إنهاء كافة الإجراءات القانونية ونقل الملكية." },
+                { icon: <CheckCircle2 className="w-6 h-6" />, title: "شفافية تامة", desc: "وضوح كامل في التسعير والمواصفات لضمان قرار استثماري سليم وآمن." },
               ].map((item, i) => (
                 <Card key={i} className="card-luxury bg-background border-none text-center">
                   <CardContent className="p-6 flex flex-col items-center">
@@ -250,6 +229,12 @@ export default function Home() {
               size="lg"
               className="h-12 px-10 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white"
               style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}
+              onClick={() => {
+                const href = settings.whatsapp
+                  ? `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`
+                  : `mailto:${settings.email}`;
+                window.open(href, "_blank");
+              }}
               data-testid="button-contact"
             >
               تواصل معنا الآن
