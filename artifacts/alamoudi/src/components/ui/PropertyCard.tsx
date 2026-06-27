@@ -54,7 +54,7 @@ export function PropertyCard({
   }
 
   return (
-    <Card className="overflow-hidden hover-elevate transition-all border-border shadow-sm group cursor-pointer">
+    <Card className="overflow-hidden hover-elevate transition-all border-border shadow-sm group cursor-pointer card-luxury">
       <div className="relative h-64 overflow-hidden bg-muted">
         <div className="absolute inset-0 bg-secondary/10 group-hover:bg-transparent transition-colors z-10" />
         <div className="absolute top-4 right-4 z-20 flex gap-2">
@@ -78,7 +78,7 @@ export function PropertyCard({
           </h3>
         </div>
         <p className="text-2xl font-bold text-accent mb-6">
-          {new Intl.NumberFormat('ar-SA').format(price)} <span className="text-sm font-normal text-muted-foreground">ر.س</span>
+          {new Intl.NumberFormat('ar-EG').format(price)} <span className="text-sm font-normal text-muted-foreground">ج.م</span>
         </p>
         
         <div className="flex justify-between items-center text-muted-foreground text-sm border-t pt-4">

@@ -50,7 +50,7 @@ export default function PropertyForm() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">السعر (ريال سعودي)</Label>
+                    <Label htmlFor="price">السعر (جنيه مصري)</Label>
                     <Input id="price" type="number" placeholder="0" />
                   </div>
                   <div className="space-y-2">
@@ -82,27 +82,63 @@ export default function PropertyForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label>فئة العقار</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الفئة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sale">البيع</SelectItem>
+                      <SelectItem value="rent">الإيجار</SelectItem>
+                      <SelectItem value="furnished">شقق مفروشة</SelectItem>
+                      <SelectItem value="admin">إداري</SelectItem>
+                      <SelectItem value="medical">طبي</SelectItem>
+                      <SelectItem value="commercial">تجاري</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>نوع العقار</Label>
                   <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر النوع" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="villa">فيلا</SelectItem>
                       <SelectItem value="apartment">شقة</SelectItem>
-                      <SelectItem value="palace">قصر</SelectItem>
+                      <SelectItem value="duplex">دوبلكس</SelectItem>
+                      <SelectItem value="penthouse">بنتهاوس</SelectItem>
+                      <SelectItem value="villa">فيلا</SelectItem>
+                      <SelectItem value="townhouse">تاون هاوس</SelectItem>
+                      <SelectItem value="twinhouse">توين هاوس</SelectItem>
+                      <SelectItem value="studio">استوديو</SelectItem>
+                      <SelectItem value="shop">محل</SelectItem>
+                      <SelectItem value="office">مكتب إداري</SelectItem>
+                      <SelectItem value="clinic">عيادة</SelectItem>
+                      <SelectItem value="medical_center">مركز طبي</SelectItem>
+                      <SelectItem value="restaurant">مطعم</SelectItem>
+                      <SelectItem value="cafe">كافيه</SelectItem>
+                      <SelectItem value="land">أرض</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>المنطقة / المدينة</Label>
+                  <Label>المنطقة</Label>
                   <Select>
                     <SelectTrigger>
                       <SelectValue placeholder="اختر المنطقة" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="riyadh">الرياض</SelectItem>
-                      <SelectItem value="jeddah">جدة</SelectItem>
+                      <SelectItem value="tagamoa">التجمع الخامس</SelectItem>
+                      <SelectItem value="beit_elwatan">بيت الوطن</SelectItem>
+                      <SelectItem value="narges">النرجس</SelectItem>
+                      <SelectItem value="andalus">الأندلس</SelectItem>
+                      <SelectItem value="west_gam3at">غرب الجامعات</SelectItem>
+                      <SelectItem value="south_academy">جنوب الأكاديمية</SelectItem>
+                      <SelectItem value="mostasmereen">المستثمرين</SelectItem>
+                      <SelectItem value="shorouk">الشروق</SelectItem>
+                      <SelectItem value="rehab">الرحاب</SelectItem>
+                      <SelectItem value="madinaty">مدينتي</SelectItem>
+                      <SelectItem value="new_capital">العاصمة الإدارية</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

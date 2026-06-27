@@ -15,11 +15,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <div className="flex min-h-screen bg-background text-foreground dir-rtl">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col fixed inset-y-0 right-0 border-l border-border bg-sidebar">
-        <div className="p-6 border-b border-sidebar-border">
-          <Link href="/" className="text-xl font-bold text-sidebar-primary dark:text-sidebar-primary-foreground">
-            العمودي للعقارات
+        <div className="p-6 border-b border-sidebar-border flex items-center justify-center">
+          <Link href="/">
+            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-10 w-auto object-contain" />
           </Link>
-          <div className="text-xs text-sidebar-foreground mt-1">لوحة التحكم</div>
         </div>
         <AdminSidebar />
       </aside>
@@ -37,10 +36,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-64 p-0 bg-sidebar">
-                <div className="p-6 border-b border-sidebar-border">
-                  <span className="text-xl font-bold text-sidebar-primary dark:text-sidebar-primary-foreground">
-                    العمودي للعقارات
-                  </span>
+                <div className="p-6 border-b border-sidebar-border flex items-center justify-center">
+                  <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-10 w-auto object-contain" />
                 </div>
                 <AdminSidebar />
               </SheetContent>

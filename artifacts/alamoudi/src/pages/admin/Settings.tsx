@@ -2,6 +2,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -25,24 +26,63 @@ export default function Settings() {
           </TabsList>
           
           <TabsContent value="general" className="mt-6">
-            <Card>
+            <Card className="card-luxury">
               <CardHeader>
                 <CardTitle>الإعدادات العامة</CardTitle>
                 <CardDescription>المعلومات الأساسية لمنصة التسويق العقاري</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="siteName">اسم المنصة</Label>
+                  <Label htmlFor="siteName">اسم الشركة</Label>
                   <Input id="siteName" defaultValue="العمودي للتسويق العقاري" />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="siteDesc">وصف الشركة</Label>
+                  <Textarea id="siteDesc" rows={3} defaultValue="شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر." />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="logoUpload">شعار الشركة</Label>
+                  <Input id="logoUpload" type="file" accept="image/*" />
+                  <p className="text-xs text-muted-foreground">صورة بصيغة PNG أو JPG شفافة</p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="contactEmail">البريد الإلكتروني للتواصل</Label>
-                    <Input id="contactEmail" type="email" defaultValue="info@alamoudi.com" dir="ltr" className="text-right" />
+                    <Label htmlFor="contactPhone">رقم الهاتف</Label>
+                    <Input id="contactPhone" defaultValue="+20 10 0000 0000" dir="ltr" className="text-right" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contactPhone">رقم الهاتف</Label>
-                    <Input id="contactPhone" defaultValue="+966 50 000 0000" dir="ltr" className="text-right" />
+                    <Label htmlFor="contactPhone2">رقم الهاتف 2</Label>
+                    <Input id="contactPhone2" placeholder="+20 11 0000 0000" dir="ltr" className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactWhatsapp">واتساب</Label>
+                    <Input id="contactWhatsapp" defaultValue="+20 10 0000 0000" dir="ltr" className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactEmail">البريد الإلكتروني</Label>
+                    <Input id="contactEmail" type="email" defaultValue="info@alamoudi.com" dir="ltr" className="text-right" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="socialTiktok">تيك توك</Label>
+                    <Input id="socialTiktok" placeholder="https://tiktok.com/@alamoudi" dir="ltr" className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="socialFb">فيسبوك</Label>
+                    <Input id="socialFb" placeholder="https://facebook.com/alamoudi" dir="ltr" className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="socialIg">إنستغرام</Label>
+                    <Input id="socialIg" placeholder="https://instagram.com/alamoudi" dir="ltr" className="text-right" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mapUrl">رابط خرائط جوجل</Label>
+                    <Input id="mapUrl" placeholder="https://maps.google.com/..." dir="ltr" className="text-right" />
                   </div>
                 </div>
               </CardContent>

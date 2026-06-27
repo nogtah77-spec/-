@@ -1,10 +1,26 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Home } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
+import { Plus } from "lucide-react";
 
 export default function PropertyTypes() {
+  const propertyTypes = [
+    "شقة",
+    "دوبلكس",
+    "بنتهاوس",
+    "فيلا",
+    "تاون هاوس",
+    "توين هاوس",
+    "استوديو",
+    "محل",
+    "مكتب إداري",
+    "عيادة",
+    "مركز طبي",
+    "مطعم",
+    "كافيه",
+    "أرض"
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -23,24 +39,19 @@ export default function PropertyTypes() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">الأيقونة</TableHead>
                 <TableHead>اسم النوع</TableHead>
                 <TableHead>عدد العقارات</TableHead>
                 <TableHead>الحالة</TableHead>
-                <TableHead className="text-left">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell colSpan={5} className="p-0">
-                  <EmptyState 
-                    icon={<Home className="h-8 w-8" />}
-                    title="لا توجد أنواع مضافة"
-                    description="قم بإضافة أنواع العقارات مثل (فيلا، شقة، قصر) لتصنيف العقارات."
-                    className="border-none py-12 rounded-none"
-                  />
-                </TableCell>
-              </TableRow>
+              {propertyTypes.map((type, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{type}</TableCell>
+                  <TableCell className="text-muted-foreground">—</TableCell>
+                  <TableCell><span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary">نشط</span></TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

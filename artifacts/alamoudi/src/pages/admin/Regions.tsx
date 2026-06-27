@@ -2,10 +2,22 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus } from "lucide-react";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { MapPin } from "lucide-react";
 
 export default function Regions() {
+  const defaultRegions = [
+    "التجمع الخامس",
+    "بيت الوطن",
+    "النرجس",
+    "الأندلس",
+    "غرب الجامعات",
+    "جنوب الأكاديمية",
+    "المستثمرين",
+    "الشروق",
+    "الرحاب",
+    "مدينتي",
+    "العاصمة الإدارية"
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -25,23 +37,18 @@ export default function Regions() {
             <TableHeader>
               <TableRow>
                 <TableHead>اسم المنطقة</TableHead>
-                <TableHead>المدينة</TableHead>
                 <TableHead>عدد العقارات</TableHead>
                 <TableHead>الحالة</TableHead>
-                <TableHead className="text-left">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <TableRow>
-                <TableCell colSpan={5} className="p-0">
-                  <EmptyState 
-                    icon={<MapPin className="h-8 w-8" />}
-                    title="لا توجد مناطق مضافة"
-                    description="لم يتم إضافة أي مناطق حتى الآن. انقر على إضافة منطقة للبدء."
-                    className="border-none py-12 rounded-none"
-                  />
-                </TableCell>
-              </TableRow>
+              {defaultRegions.map((region, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{region}</TableCell>
+                  <TableCell className="text-muted-foreground">—</TableCell>
+                  <TableCell><span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary">نشط</span></TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

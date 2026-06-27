@@ -16,13 +16,12 @@ export default function Login() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-primary dark:text-foreground">
-            <Building2 className="h-8 w-8 text-accent" />
-            <span className="text-2xl font-bold">العمودي</span>
+          <Link href="/" className="inline-flex items-center justify-center text-primary dark:text-foreground">
+            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-20 w-auto object-contain" />
           </Link>
         </div>
 
-        <Card className="border-border shadow-lg">
+        <Card className="border-border shadow-lg card-luxury">
           <CardHeader className="space-y-2 text-center pb-6">
             <CardTitle className="text-2xl font-bold text-foreground">تسجيل الدخول</CardTitle>
             <CardDescription>أدخل بياناتك للوصول إلى حسابك</CardDescription>

@@ -4,9 +4,9 @@ export function Footer() {
       <div className="container py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
-            <h3 className="font-bold text-2xl text-primary dark:text-foreground mb-4">العمودي للتسويق العقاري</h3>
+            <img src="/logo.png" alt="العمودي للتسويق العقاري" className="h-16 w-auto object-contain mb-4" />
             <p className="text-muted-foreground max-w-sm">
-              شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في المملكة العربية السعودية والخليج.
+              شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.
             </p>
           </div>
           <div>
@@ -20,9 +20,9 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-foreground">تواصل معنا</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>الرياض، المملكة العربية السعودية</li>
+              <li>القاهرة، مصر</li>
               <li>info@alamoudi.com</li>
-              <li>+966 50 000 0000</li>
+              <li dir="ltr" className="text-right">+20 10 0000 0000</li>
             </ul>
           </div>
         </div>

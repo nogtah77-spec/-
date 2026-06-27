@@ -1,16 +1,15 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, Heart, Scale } from "lucide-react";
+import { Building2, Users, Heart, Clock } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Skeleton } from "@/components/ui/skeleton";
-import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Activity } from "lucide-react";
 
 export default function Dashboard() {
   const kpis = [
-    { title: "إجمالي العقارات", value: "0", icon: Building2, trend: "+0% من الشهر الماضي" },
-    { title: "المستخدمين النشطين", value: "0", icon: Users, trend: "+0% من الشهر الماضي" },
-    { title: "العقارات المفضلة", value: "0", icon: Heart, trend: "+0% من الشهر الماضي" },
-    { title: "عمليات المقارنة", value: "0", icon: Scale, trend: "+0% من الشهر الماضي" },
+    { title: "إجمالي العقارات المتاحة", value: "—", icon: Building2 },
+    { title: "زوار اليوم", value: "—", icon: Users },
+    { title: "عمليات الحفظ بالمفضلة", value: "—", icon: Heart },
+    { title: "طلبات معلقة", value: "—", icon: Clock },
   ];
 
   return (
@@ -22,38 +21,25 @@ export default function Dashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpis.map((kpi, i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <Card key={i} className="card-luxury relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent z-0 pointer-events-none" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-                <kpi.icon className="h-4 w-4 text-accent" />
+                <div className="p-2 bg-background rounded-md shadow-sm">
+                  <kpi.icon className="h-5 w-5 text-accent" />
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{kpi.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{kpi.trend}</p>
+              <CardContent className="relative z-10 pt-4">
+                <div className="text-3xl font-bold text-foreground">{kpi.value}</div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Charts area */}
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>الزيارات والمشاهدات</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] w-full flex items-center justify-center bg-muted/20 rounded-md border border-dashed">
-                <div className="text-center text-muted-foreground">
-                  <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p>لا توجد بيانات كافية للرسم البياني</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="col-span-1">
+        <div className="grid grid-cols-1 gap-6">
+          <Card className="card-luxury">
             <CardHeader>
               <CardTitle>أحدث النشاطات</CardTitle>
             </CardHeader>
@@ -62,7 +48,7 @@ export default function Dashboard() {
                 icon={<Activity className="h-6 w-6" />}
                 title="لا توجد نشاطات حديثة"
                 description="لم يتم تسجيل أي نشاطات على المنصة حتى الآن."
-                className="py-12 border-none bg-transparent"
+                className="py-16 border-none bg-transparent"
               />
             </CardContent>
           </Card>
@@ -71,6 +57,3 @@ export default function Dashboard() {
     </AdminLayout>
   );
 }
-
-// Temporary imports for the mockup
-import { BarChart3, Activity } from "lucide-react";
