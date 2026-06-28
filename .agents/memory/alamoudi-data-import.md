@@ -32,15 +32,21 @@ The `alamoudi` artifact is UI-only (React + localStorage, no backend, user's exp
 
 ## TikTok videos: inline play + thumbnail + limit
 - Home renders TikTok videos as clickable cards that open a `Dialog` embedding `https://www.tiktok.com/embed/v2/{id}` (id parsed from `/video/(\d{6,})/`), plus a "فتح في تيك توك" external button. Short `vm.tiktok.com` links have no parsable id → modal shows a fallback message + external link only.
-- Thumbnails resolve uploaded image → best-effort `https://www.tiktok.com/oembed?url=...` fetch (CORS may fail, fallback is silent) → Play-icon placeholder. Cards use vertical `aspect-[9/16]` (TikTok is portrait, not 16:9).
+- Thumbnails resolve uploaded image → **same-origin server proxy** `GET /api/tiktok/thumbnail?url=<videoUrl>` (on the `api-server` artifact, `routes/tiktok.ts`) → `onError` Play-icon placeholder. Cards use portrait `aspect-[9/16]`.
+- **Why the proxy:** client-side `oembed` fetch is unreliable for the cover — even though oEmbed sends `access-control-allow-origin: *`, the returned tiktokcdn image is signed (`x-expires`) and blocked by CORP/referrer in the browser. The server proxy fetches oEmbed + streams the image bytes same-origin, bypassing CORS/CSP/CORP/expiry entirely. This is bulletproof and works in prod because `.replit` has `[deployment] router="application"` → the whole monorepo deploys behind the shared proxy, so `api-server` is reachable at `/api` in production too.
+- Proxy is SSRF/DoS-hardened: first hop allowlisted to `tiktok.com`, second hop (thumbnail) allowlisted to `https` + tiktokcdn/ttwstatic hosts, both `AbortSignal.timeout(8000)`, 5MB cap, `image/*` content-type check.
+- **NOTE:** this is the one place alamoudi (otherwise no-backend) depends on the api-server. Keep that dependency stateless/thumbnail-only.
+- Video cards adapt to the card-size toggle via `videoGridClass` (compact/medium/large → 8/6/5 lg columns), kept distinctly smaller than property cards so they don't dominate the page top.
 - Video limit is 6 (was 3): enforced in `Home` `slice(0,6)`, `Settings` labels + `handleAddVideo` `length >= 6` guard. `DataContext.addTiktokVideo` itself has NO cap — keep UI guards in sync if adding new add paths.
-- **Why:** users add bare TikTok links with no thumbnail; oEmbed gives a real preview when CORS allows, and embed lets it play without leaving the site.
 
 ## Default property card size = medium
 - Home `cardSize` localStorage fallback (`alamoudi_card_size`) is `"medium"` for first-open; user's SizeToggle choice persists and overrides. Don't revert to `"large"`.
 
-## Admin sidebar brand (one line, gold word)
-- `AdminLayout`'s `SidebarBrand` is one line: `العمودي` in `text-accent` (gold) + `للتسويق العقاري` lighter, `whitespace-nowrap`. Shared by desktop aside + mobile Sheet. The public `Navbar` header brand is SEPARATE and must NOT be edited per user.
+## Brand wording: gold "العمودي" everywhere
+- Both `AdminLayout` `SidebarBrand` AND the public `Navbar` header brand show `العمودي` in `text-accent` (gold). User later reversed the earlier "don't touch the public header" rule and explicitly asked for the public Navbar brand to be gold + enlarged (tagline "شريكك نحو الاستثمار الأفضل" enlarged too). Both desktop and mobile Navbar variants updated.
+
+## Prices display in Western digits + "EGP"
+- All displayed prices use `toLocaleString("en-US")` (Western digits) + the literal `EGP` (not `ar-EG` / `ج.م`). Applies to PropertyCard, PropertyDetails, Compare, admin Properties table, PropertyRequests badge, and form labels. **Why:** user's explicit request. When adding any new price surface, follow this — do not reintroduce `ar-EG`/`ج.م`.
 
 ## Scroll-to-top on route change
 - App uses wouter. A `ScrollToTop` component (`useLocation` + `useEffect(window.scrollTo(0,0), [location])`) is mounted inside `<WouterRouter>` in `App.tsx` to fix routes opening scrolled to the bottom.

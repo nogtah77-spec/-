@@ -27,7 +27,7 @@ export default function Compare() {
   }).filter(Boolean);
 
   const rows = [
-    { label: "السعر", key: "price", format: (v: any) => v ? `${Number(v).toLocaleString("ar-EG")} ج.م` : "—" },
+    { label: "السعر", key: "price", format: (v: any) => v ? `${Number(v).toLocaleString("en-US")} EGP` : "—" },
     { label: "المنطقة", key: "regionName", format: (v: any) => v || "—" },
     { label: "نوع العقار", key: "typeName", format: (v: any) => v || "—" },
     { label: "فئة العقار", key: "category", format: (v: any) => categoryLabels[v] || "—" },
@@ -89,7 +89,7 @@ export default function Compare() {
                             }
                           </div>
                           <p className="text-xs font-bold text-foreground line-clamp-2 text-center">{p.code}</p>
-                          <p className="text-accent font-bold text-sm mt-1">{Number(p.price).toLocaleString("ar-EG")} ج.م</p>
+                          <p className="text-accent font-bold text-sm mt-1">{Number(p.price).toLocaleString("en-US")} EGP</p>
                         </div>
                       </th>
                     ))}

@@ -105,7 +105,7 @@ export default function Properties() {
                   <TableCell className="font-medium">{property.code}</TableCell>
                   <TableCell>{propertyTypes.find(t => t.id === property.typeId)?.name}</TableCell>
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
-                  <TableCell>{property.price.toLocaleString("ar-EG")} ج.م</TableCell>
+                  <TableCell>{property.price.toLocaleString("en-US")} EGP</TableCell>
                   <TableCell>
                     <Select 
                       value={property.status} 

@@ -55,7 +55,7 @@ export default function PropertyRequests() {
                           {ptype && <Badge variant="outline" className="text-xs">{ptype.name}</Badge>}
                           {req.listingType && <Badge variant="outline" className="text-xs">{req.listingType}</Badge>}
                           {req.area && <Badge variant="outline" className="text-xs">{req.area} م²</Badge>}
-                          {req.price && <Badge className="bg-accent/10 text-accent text-xs border-none">{req.price} ج.م</Badge>}
+                          {req.price && <Badge className="bg-accent/10 text-accent text-xs border-none">{req.price} EGP</Badge>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

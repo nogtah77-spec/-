@@ -127,7 +127,7 @@ export default function PropertyDetails() {
               )}
             </div>
             <div className="flex flex-col items-end gap-3">
-              <div className="text-3xl font-bold text-accent">{property.price.toLocaleString("ar-EG")} <span className="text-base font-normal text-muted-foreground">ج.م</span></div>
+              <div className="text-3xl font-bold text-accent">{property.price.toLocaleString("en-US")} <span className="text-base font-normal text-muted-foreground">EGP</span></div>
               <div className="flex gap-2">
                 <Button variant="outline" size="icon" onClick={handleShare} title="مشاركة"><Share2 className="h-4 w-4" /></Button>
                 <Button variant="outline" size="icon"

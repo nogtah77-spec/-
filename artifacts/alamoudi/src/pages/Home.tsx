@@ -21,43 +21,39 @@ function tiktokId(url: string): string | null {
   return m ? m[1] : null;
 }
 
-function useTiktokThumb(videoUrl: string, uploaded?: string) {
-  const [thumb, setThumb] = useState(uploaded || "");
-  useEffect(() => {
-    if (uploaded) { setThumb(uploaded); return; }
-    let active = true;
-    fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`)
-      .then(r => (r.ok ? r.json() : null))
-      .then(d => { if (active && d?.thumbnail_url) setThumb(d.thumbnail_url); })
-      .catch(() => {});
-    return () => { active = false; };
-  }, [videoUrl, uploaded]);
-  return thumb;
-}
-
 function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void }) {
-  const thumb = useTiktokThumb(video.videoUrl, video.thumbnail);
+  const [failed, setFailed] = useState(false);
+  const src = video.thumbnail
+    ? video.thumbnail
+    : `/api/tiktok/thumbnail?url=${encodeURIComponent(video.videoUrl)}`;
   return (
     <button
       onClick={onPlay}
-      className="group block w-full text-right rounded-xl overflow-hidden border border-border bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+      className="group block w-full text-right rounded-xl overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
     >
       <div className="relative aspect-[9/16] bg-muted overflow-hidden">
-        {thumb ? (
-          <img src={thumb} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {!failed ? (
+          <img
+            src={src}
+            alt={video.title}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setFailed(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <Play className="h-8 w-8 text-muted-foreground/40" />
+            <Play className="h-7 w-7 text-muted-foreground/40" />
           </div>
         )}
-        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center">
-            <Play className="h-5 w-5 text-foreground fill-foreground mr-[-2px]" />
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
+            <Play className="h-4 w-4 text-foreground fill-foreground mr-[-2px]" />
           </div>
         </div>
       </div>
-      <div className="p-2.5">
-        <p className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">{video.title}</p>
+      <div className="p-2">
+        <p className="text-xs font-medium text-foreground group-hover:text-accent transition-colors line-clamp-2 leading-snug">{video.title}</p>
       </div>
     </button>
   );
@@ -122,6 +118,12 @@ export default function Home() {
     : cardSize === "medium"
     ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
     : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+
+  const videoGridClass = cardSize === "compact"
+    ? "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5"
+    : cardSize === "medium"
+    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3"
+    : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -304,7 +306,7 @@ export default function Home() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              <div className={videoGridClass}>
                 {tiktokVideos.map(video => (
                   <TiktokCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
                 ))}

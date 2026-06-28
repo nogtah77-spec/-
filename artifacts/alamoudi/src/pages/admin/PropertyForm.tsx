@@ -127,7 +127,7 @@ export default function PropertyForm() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>السعر (ج.م)</Label>
+                    <Label>السعر (EGP)</Label>
                     <Input type="number" value={form.price || ""} onChange={e => set("price", Number(e.target.value))} placeholder="0" />
                   </div>
                   <div className="space-y-2">

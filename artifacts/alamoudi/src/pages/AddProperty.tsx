@@ -238,7 +238,7 @@ export default function AddProperty() {
                     {errors.area && <p className="text-xs text-destructive">{errors.area}</p>}
                   </div>
                   <div className="space-y-1.5 md:col-span-2" data-error={errors.price}>
-                    <Label htmlFor="price" className="text-sm">السعر (ج.م) <span className="text-destructive">*</span></Label>
+                    <Label htmlFor="price" className="text-sm">السعر (EGP) <span className="text-destructive">*</span></Label>
                     <Input id="price" type="number" value={form.price} onChange={set("price")} placeholder="2500000" className={errors.price ? "border-destructive" : ""} />
                     {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
                   </div>

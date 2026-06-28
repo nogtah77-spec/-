@@ -32,10 +32,10 @@ export function Navbar() {
         {/* Brand — far right (RTL start) */}
         <div className="flex justify-start items-center">
           <Link href="/" data-testid="link-brand">
-            <span className="text-lg font-bold text-primary dark:text-foreground tracking-tight leading-none">
+            <span className="text-2xl font-bold text-accent tracking-tight leading-none">
               العمودي
             </span>
-            <span className="text-xs font-light text-muted-foreground mr-1.5 tracking-wide">
+            <span className="text-sm font-light text-muted-foreground mr-2 tracking-wide">
               شريكك نحو الاستثمار الأفضل
             </span>
           </Link>
@@ -117,8 +117,8 @@ export function Navbar() {
           </SheetTrigger>
           <SheetContent side="right" className="w-72 bg-background">
             <div className="mb-6 pt-2">
-              <span className="text-xl font-bold text-primary dark:text-foreground">العمودي</span>
-              <span className="text-sm font-light text-muted-foreground mr-1.5">شريكك نحو الاستثمار الأفضل</span>
+              <span className="text-2xl font-bold text-accent">العمودي</span>
+              <span className="text-sm font-light text-muted-foreground mr-2">شريكك نحو الاستثمار الأفضل</span>
             </div>
             <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (
@@ -168,7 +168,7 @@ export function Navbar() {
         </Sheet>
 
         <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-          <span className="text-base font-bold text-primary dark:text-foreground">العمودي</span>
+          <span className="text-lg font-bold text-accent">العمودي</span>
         </Link>
 
         <ThemeToggle />

@@ -113,7 +113,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{property.regionName}</p>
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-accent">{property.price.toLocaleString("ar-EG")} <span className="text-[10px] font-normal text-muted-foreground">ج.م</span></p>
+            <p className="text-sm font-bold text-accent">{property.price.toLocaleString("en-US")} <span className="text-[10px] font-normal text-muted-foreground">EGP</span></p>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3" />{property.beds}</span>}
               <span className="flex items-center gap-0.5"><Square className="h-3 w-3" />{property.area}</span>
@@ -164,7 +164,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           {property.code}
         </h3>
         <p className={cn("font-bold text-accent mb-auto", size === "medium" ? "text-lg" : "text-xl")}>
-          {property.price.toLocaleString("ar-EG")} <span className="text-xs font-normal text-muted-foreground">ج.م</span>
+          {property.price.toLocaleString("en-US")} <span className="text-xs font-normal text-muted-foreground">EGP</span>
         </p>
         <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-xs" : "mt-4 pt-4 text-xs")}>
           {property.beds > 0 && <span className="flex items-center gap-1"><Bed className="h-3.5 w-3.5" />{property.beds}</span>}
