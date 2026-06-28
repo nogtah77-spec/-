@@ -91,7 +91,7 @@ export default function Properties() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>العنوان</TableHead>
+                <TableHead>الكود</TableHead>
                 <TableHead>النوع</TableHead>
                 <TableHead>المنطقة</TableHead>
                 <TableHead>السعر</TableHead>
@@ -102,7 +102,7 @@ export default function Properties() {
             <TableBody>
               {filteredProperties.map((property) => (
                 <TableRow key={property.id}>
-                  <TableCell className="font-medium">{property.title}</TableCell>
+                  <TableCell className="font-medium">{property.code}</TableCell>
                   <TableCell>{propertyTypes.find(t => t.id === property.typeId)?.name}</TableCell>
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
                   <TableCell>{property.price.toLocaleString("ar-EG")} ج.م</TableCell>

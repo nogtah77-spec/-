@@ -33,3 +33,9 @@ The `alamoudi` artifact is UI-only (React + localStorage, no backend, user's exp
 ## Scroll-to-top on route change
 - App uses wouter. A `ScrollToTop` component (`useLocation` + `useEffect(window.scrollTo(0,0), [location])`) is mounted inside `<WouterRouter>` in `App.tsx` to fix routes opening scrolled to the bottom.
 - **How to apply:** if hash/deep-link anchors are ever added, gate the reset to pathname-only so it doesn't override anchor navigation.
+
+## Code is the title in ADMIN too + dropdown height/scrollbar convention
+- Admin Properties management table shows `property.code` (header "الكود"), same as public surfaces. The descriptive `title` is never a visible heading anywhere (public OR admin).
+- Dropdown panels (shadcn `SelectContent`, `DropdownMenuContent`) must be capped at `max-h-[min(18rem,var(--radix-*-content-available-height))]` so long lists scroll instead of filling the viewport. A visible draggable thin scrollbar is added via `[scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]` + webkit-scrollbar arbitrary utilities.
+- **Why:** region/type filter lists were growing to full viewport height; user wanted a bounded panel with a drag/touch scrollbar.
+- **Note:** theme `--border` is HSL components (`182 12% 28%`) and `--color-border: hsl(var(--border))`, so `hsl(var(--border))` is the correct wrap for scrollbar-color.
