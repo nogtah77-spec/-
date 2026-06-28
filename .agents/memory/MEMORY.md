@@ -1,0 +1,1 @@
+- [Tailwind v4 container centering](tailwind-v4-container-centering.md) — v4 `container` has no auto margins; bare `container` drifts to start (right in RTL) between breakpoints; fix with `@utility container { margin-inline:auto }`.
