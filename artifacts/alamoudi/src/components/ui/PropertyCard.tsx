@@ -109,7 +109,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         </div>
         <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
           <div>
-            <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.title}</h3>
+            <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{property.regionName}</p>
           </div>
           <div className="flex items-center justify-between">
@@ -160,8 +160,8 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
       </div>
 
       <CardContent className={cn("flex-1 flex flex-col", size === "medium" ? "p-4" : "p-5")}>
-        <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors mb-1.5", size === "medium" ? "text-sm" : "text-base")}>
-          {property.title}
+        <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors mb-1.5", size === "medium" ? "text-base" : "text-lg")}>
+          {property.code}
         </h3>
         <p className={cn("font-bold text-accent mb-auto", size === "medium" ? "text-lg" : "text-xl")}>
           {property.price.toLocaleString("ar-EG")} <span className="text-xs font-normal text-muted-foreground">ج.م</span>

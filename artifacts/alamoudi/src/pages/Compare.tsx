@@ -88,7 +88,7 @@ export default function Compare() {
                               : <div className="w-full h-full flex items-center justify-center"><MapPin className="h-6 w-6 text-muted-foreground/30" /></div>
                             }
                           </div>
-                          <p className="text-xs font-bold text-foreground line-clamp-2 text-center">{p.title}</p>
+                          <p className="text-xs font-bold text-foreground line-clamp-2 text-center">{p.code}</p>
                           <p className="text-accent font-bold text-sm mt-1">{Number(p.price).toLocaleString("ar-EG")} ج.م</p>
                         </div>
                       </th>

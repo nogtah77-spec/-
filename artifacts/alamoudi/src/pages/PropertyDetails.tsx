@@ -105,7 +105,7 @@ export default function PropertyDetails() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-accent transition-colors">الرئيسية</Link>
             <ChevronLeft className="h-3 w-3" />
-            <span className="text-foreground font-medium line-clamp-1">{property.title}</span>
+            <span className="text-foreground font-medium line-clamp-1">{property.code}</span>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export default function PropertyDetails() {
                 {property.featured && <Badge className="bg-yellow-100 text-yellow-700">مميز</Badge>}
                 {property.status === "reserved" && <Badge className="bg-amber-100 text-amber-700">محجوز</Badge>}
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{property.title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{property.code}</h1>
               {regionName && (
                 <div className="flex items-center text-muted-foreground text-sm gap-1">
                   <MapPin className="h-4 w-4" />{regionName}

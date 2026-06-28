@@ -23,3 +23,13 @@ The `alamoudi` artifact is UI-only (React + localStorage, no backend, user's exp
 - `seedSources.ts` must be imported ONLY from admin-only, code-split modules (currently `admin/PropertyForm.tsx`), and all `admin/*` pages are `React.lazy` in `App.tsx`. This keeps source data in the admin JS chunk, which public visitors never download.
 - **Why:** no-backend SPA — the only way to keep data off a visitor's machine is to put it in a route chunk gated behind the (client-side) admin login and never import it from public code.
 - **How to apply:** never import `seedSources` (or render `property.source`) from any non-admin/eagerly-loaded module, or it leaks back into the public bundle. `PropertyDetails` must never show source. Keep admin pages lazy.
+
+## Property CODE is the customer-facing identifier (not the descriptive title)
+- The property `code` (e.g. `Hh1`) is THE reference shown to customers. Display `property.code` as the prominent heading on PropertyCard (all sizes), PropertyDetails (breadcrumb + h1), and Compare header. The long descriptive `title` is NOT shown as a heading.
+- Detailed info (region, specs, description) stays in the card/detail body. `title` is still kept as data and used in non-display contexts only: share metadata, image `alt`, and search matching.
+- **Why:** the business identifies/quotes properties to clients by code; the descriptive title is internal clutter as a heading.
+- **How to apply:** when adding any new property display surface, show the code as the title; never resurrect `property.title` as a visible heading.
+
+## Scroll-to-top on route change
+- App uses wouter. A `ScrollToTop` component (`useLocation` + `useEffect(window.scrollTo(0,0), [location])`) is mounted inside `<WouterRouter>` in `App.tsx` to fix routes opening scrolled to the bottom.
+- **How to apply:** if hash/deep-link anchors are ever added, gate the reset to pathname-only so it doesn't override anchor navigation.
