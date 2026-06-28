@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, MessageCircle,
+  Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/BrandIcons";
+import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { useParams, useLocation, Link } from "wouter";
 import { useData } from "@/context/DataContext";
 import { useUserPrefs } from "@/context/UserPrefsContext";
@@ -32,6 +34,9 @@ export default function PropertyDetails() {
   const { toast } = useToast();
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [detailThumbFailed, setDetailThumbFailed] = useState(false);
+
+  useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
   const property = properties.find(p => p.id === id);
 
@@ -75,6 +80,10 @@ export default function PropertyDetails() {
   };
 
   const images = property.images?.length ? property.images : [];
+  const propHasVideo = hasVideo(property.videoUrl);
+  const detailVideoThumb = images.length === 0 ? getVideoThumbnailUrl(property.videoUrl) : null;
+  const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
+  const showDetailVideoPoster = images.length === 0 && propHasVideo && (!detailVideoThumb || detailThumbFailed);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -168,6 +177,33 @@ export default function PropertyDetails() {
                 )}
               </div>
             </div>
+          ) : showDetailVideoCover || showDetailVideoPoster ? (
+            <a
+              href={property.videoUrl!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative block h-[380px] rounded-2xl overflow-hidden mb-10"
+              data-testid="link-video-cover"
+            >
+              {showDetailVideoCover ? (
+                <img
+                  src={detailVideoThumb!}
+                  alt={property.title}
+                  onError={() => setDetailThumbFailed(true)}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-accent/25 via-muted to-muted/40 flex items-center justify-center">
+                  <Video className="h-16 w-16 text-accent/50" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/30 flex flex-col items-center justify-center gap-3">
+                <span className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                  <Play className="h-9 w-9 text-accent fill-accent translate-x-0.5" />
+                </span>
+                <span className="text-white font-semibold text-sm bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">مشاهدة فيديو العقار</span>
+              </div>
+            </a>
           ) : (
             <div className="h-64 bg-muted rounded-2xl flex items-center justify-center mb-10 border border-dashed border-border">
               <div className="text-center text-muted-foreground">
@@ -263,10 +299,11 @@ export default function PropertyDetails() {
               {property.videoUrl && (
                 <div>
                   <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><Video className="h-5 w-5 text-accent" />فيديو العقار</h2>
-                  <a href={property.videoUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-accent hover:underline text-sm">
-                    <ExternalLink className="h-4 w-4" />
-                    مشاهدة الفيديو
+                  <a href={property.videoUrl} target="_blank" rel="noopener noreferrer" data-testid="link-watch-video">
+                    <Button className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-lg">
+                      <Play className="h-4 w-4 fill-white" />
+                      مشاهدة الفيديو
+                    </Button>
                   </a>
                 </div>
               )}
@@ -298,7 +335,7 @@ export default function PropertyDetails() {
                   {waHref && (
                     <a href={waHref} target="_blank" rel="noopener noreferrer">
                       <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 rounded-lg">
-                        <MessageCircle className="h-4 w-4" />
+                        <WhatsAppIcon className="h-4 w-4" />
                         تواصل عبر واتساب
                       </Button>
                     </a>

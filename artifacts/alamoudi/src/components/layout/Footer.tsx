@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import type { ReactNode } from "react";
-import { Phone, Mail, MessageCircle, MapPin, Facebook, Instagram, Music, ExternalLink } from "lucide-react";
+import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink } from "lucide-react";
+import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 
 export function Footer() {
@@ -18,7 +19,7 @@ export function Footer() {
       href: `tel:${settings.phone2.replace(/\s/g, "")}`,
     },
     settings.whatsapp && {
-      icon: <MessageCircle className="h-4 w-4 flex-shrink-0 text-green-500" />,
+      icon: <WhatsAppIcon className="h-4 w-4 flex-shrink-0 text-green-500" />,
       label: "واتساب",
       href: `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`,
     },
@@ -35,8 +36,13 @@ export function Footer() {
   ].filter(Boolean) as { icon: ReactNode; label: string; href: string }[];
 
   const socialItems = [
+    settings.whatsapp && {
+      icon: <WhatsAppIcon className="h-4 w-4" />,
+      label: "واتساب",
+      href: `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`,
+    },
     settings.tiktok && {
-      icon: <Music className="h-4 w-4" />,
+      icon: <TikTokIcon className="h-4 w-4" />,
       label: "تيك توك",
       href: settings.tiktok,
     },

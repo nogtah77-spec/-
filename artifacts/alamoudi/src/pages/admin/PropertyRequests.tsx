@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClipboardList, Trash2, Phone, MessageCircle } from "lucide-react";
+import { ClipboardList, Trash2, Phone } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { PropertyRequest } from "@/context/DataContext";
@@ -79,7 +80,7 @@ export default function PropertyRequests() {
                         {req.ownerWhatsapp && (
                           <a href={`https://wa.me/${req.ownerWhatsapp.replace(/[\s+]/g, "")}`} target="_blank" rel="noopener noreferrer"
                             className="flex items-center gap-1 text-green-600 hover:text-green-700 transition-colors">
-                            <MessageCircle className="h-3.5 w-3.5" />واتساب
+                            <WhatsAppIcon className="h-3.5 w-3.5" />واتساب
                           </a>
                         )}
                       </div>

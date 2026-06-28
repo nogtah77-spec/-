@@ -53,7 +53,11 @@ export default function Properties() {
     const typeName = propertyTypes.find(t => t.id === p.typeId)?.name || "";
     const regionName = regions.find(r => r.id === p.regionId)?.name || "";
     return (
+      p.code.toLowerCase().includes(term) ||
       p.title.toLowerCase().includes(term) ||
+      (p.description || "").toLowerCase().includes(term) ||
+      (p.location || "").toLowerCase().includes(term) ||
+      (p.subArea || "").toLowerCase().includes(term) ||
       typeName.toLowerCase().includes(term) ||
       regionName.toLowerCase().includes(term)
     );

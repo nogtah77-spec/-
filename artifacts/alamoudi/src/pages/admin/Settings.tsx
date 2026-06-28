@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MessageCircle, MapPin, Facebook, Instagram, Music, Plus, Play, ExternalLink } from "lucide-react";
+import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MapPin, Facebook, Instagram, Plus, Play, ExternalLink } from "lucide-react";
+import { WhatsAppIcon, TikTokIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
@@ -166,7 +167,7 @@ export default function Settings() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                      <MessageCircle className="h-3.5 w-3.5 text-accent" />
+                      <WhatsAppIcon className="h-3.5 w-3.5 text-accent" />
                       رقم واتساب
                     </Label>
                     <Input id="whatsapp" dir="ltr" className="text-right" value={form.whatsapp} onChange={set("whatsapp")} placeholder="+20 10 0000 0000" />
@@ -192,7 +193,7 @@ export default function Settings() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="tiktok" className="flex items-center gap-2">
-                        <Music className="h-3.5 w-3.5 text-accent" />
+                        <TikTokIcon className="h-3.5 w-3.5 text-accent" />
                         رابط تيك توك
                       </Label>
                       <Input id="tiktok" dir="ltr" className="text-right text-xs" value={form.tiktok} onChange={set("tiktok")} placeholder="https://tiktok.com/@..." />
@@ -322,7 +323,7 @@ export default function Settings() {
               {/* Account info */}
               <Card className="card-luxury">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Music className="h-4 w-4 text-accent" />بيانات حساب تيك توك</CardTitle>
+                  <CardTitle className="flex items-center gap-2"><TikTokIcon className="h-4 w-4 text-accent" />بيانات حساب تيك توك</CardTitle>
                   <CardDescription>الصورة والاسم يظهران في أعلى قسم تيك توك بالصفحة الرئيسية</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -333,7 +334,7 @@ export default function Settings() {
                         {form.tiktokAvatar ? (
                           <img src={form.tiktokAvatar} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Music className="h-6 w-6" />
+                          <TikTokIcon className="h-6 w-6" />
                         )}
                       </div>
                       <input type="file" accept="image/*" className="hidden" ref={avatarRef} onChange={handleAvatarFile} />

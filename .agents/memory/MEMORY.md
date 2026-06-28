@@ -1,3 +1,1 @@
-- [alamoudi Postgres backend](alamoudi-data-backend.md) — how the alamoudi app's shared data/auth backend works and its non-obvious constraints.
-- [alamoudi property classification](alamoudi-property-model.md) — Property.category is ONE enum (no "residential"); Home filter UI fakes two dimensions; cards show code not title.
-- [alamoudi data sync](alamoudi-data-sync.md) — Excel Arabic compound prices; gen:seed writes 2 seed files; seed only fills empty table; dev/prod are separate DBs, prod read-only → fix via admin ImportExport re-upload.
+- [Alamoudi platform](alamoudi-platform.md) — Arabic RTL real-estate artifact: search must match p.code (seed titles ≠ code), brand-icon SVGs, video-cover priority + tiktok thumbnail proxy.

@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserCheck, Plus, ChevronLeft, X,
   LayoutGrid, AlignJustify, List, ExternalLink, Play,
-  Building2, Music,
+  Building2,
 } from "lucide-react";
+import { TikTokIcon } from "@/components/icons/BrandIcons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useData, type TiktokVideo } from "@/context/DataContext";
@@ -310,7 +311,7 @@ export default function Home() {
                   <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
                 ) : (
                   <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
-                    <Music className="h-8 w-8" />
+                    <TikTokIcon className="h-8 w-8" />
                   </span>
                 )}
               </a>
@@ -328,7 +329,7 @@ export default function Home() {
               {/* Follow button */}
               <Button asChild className="mt-4 rounded-full px-8 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow-md">
                 <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                  <Music className="h-4 w-4" /> تابعنا الآن
+                  <TikTokIcon className="h-4 w-4" /> تابعنا الآن
                 </a>
               </Button>
             </div>

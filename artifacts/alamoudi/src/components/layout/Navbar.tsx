@@ -1,7 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
-import { Menu, MessageCircle, MapPin } from "lucide-react";
+import { Menu, MapPin } from "lucide-react";
+import { WhatsAppIcon } from "../icons/BrandIcons";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -68,7 +69,7 @@ export function Navbar() {
               className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
               data-testid="link-whatsapp"
             >
-              <MessageCircle className="h-4 w-4" />
+              <WhatsAppIcon className="h-4 w-4" />
             </a>
           )}
           {mapsHref && (
@@ -152,7 +153,7 @@ export function Navbar() {
               {whatsappHref && (
                 <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
                   className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
+                  <WhatsAppIcon className="h-4 w-4" />
                   واتساب
                 </a>
               )}

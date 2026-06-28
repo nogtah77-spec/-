@@ -1,14 +1,17 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, MessageCircle, Phone, Copy, Camera } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink } from "lucide-react";
+import { WhatsAppIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
 
 export type CardSize = "large" | "medium" | "compact";
 
@@ -28,6 +31,9 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
   const { compare, toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const [thumbFailed, setThumbFailed] = useState(false);
+
+  useEffect(() => { setThumbFailed(false); }, [property?.id]);
 
   if (isLoading || !property) {
     if (size === "compact") {
@@ -48,6 +54,11 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
   }
 
   const heroImg = property.images?.[0];
+  const propHasVideo = hasVideo(property.videoUrl);
+  const videoThumb = !heroImg ? getVideoThumbnailUrl(property.videoUrl) : null;
+  const showVideoCover = !heroImg && !!videoThumb && !thumbFailed;
+  const showVideoPoster = !heroImg && propHasVideo && (!videoThumb || thumbFailed);
+  const imageCount = property.images?.length || 0;
   const isNew = () => { try { return Date.now() - new Date(property.createdAt).getTime() < 7 * 86400000; } catch { return false; } };
   const goToDetails = () => navigate(`/properties/${property.id}`);
 
@@ -102,7 +113,18 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
     return (
       <Card onClick={goToDetails} className="flex flex-row overflow-hidden border-border shadow-sm group cursor-pointer card-luxury hover:-translate-y-0.5 transition-all duration-200 h-28">
         <div className="relative w-28 flex-shrink-0 bg-muted overflow-hidden">
-          {heroImg ? <img src={heroImg} alt={property.title} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
+          {heroImg
+            ? <img src={heroImg} alt={property.title} className="w-full h-full object-cover" />
+            : showVideoCover
+              ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
+          {(showVideoCover || showVideoPoster) && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow">
+                <Play className="h-3.5 w-3.5 text-accent fill-accent" />
+              </span>
+            </div>
+          )}
           <div className="absolute top-2 right-2">
             <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
           </div>
@@ -131,9 +153,20 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
       <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", imageHeight)}>
         {heroImg
           ? <img src={heroImg} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
+          : showVideoCover
+            ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            : showVideoPoster
+              ? <div className="w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center"><Video className="h-10 w-10 text-accent/50" /></div>
+              : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
         }
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
+        {(showVideoCover || showVideoPoster) && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+              <Play className="h-5 w-5 text-accent fill-accent translate-x-px" />
+            </span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-[5]" />
 
         <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[70%]">
           <Badge className="bg-background/90 text-foreground backdrop-blur-sm text-[11px] px-2 py-0.5">{property.typeName || "عقار"}</Badge>
@@ -152,10 +185,22 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             <span className="text-white/95 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs">{property.regionName}</span>
           </div>
         )}
-        <div className="absolute bottom-3 left-3 z-20">
-          <span className="text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1">
-            <Camera className="h-3 w-3" />{property.images?.length || 0}
-          </span>
+        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5">
+          {imageCount > 0 && (
+            <span className="text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1">
+              <Camera className="h-3 w-3" />{imageCount}
+            </span>
+          )}
+          {propHasVideo && (
+            <span className="text-white bg-accent/80 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1" title="يوجد فيديو">
+              <Play className="h-3 w-3 fill-white" />فيديو
+            </span>
+          )}
+          {property.externalUrl && (
+            <span className="text-white/90 bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded text-xs flex items-center gap-1" title="رابط خارجي">
+              <ExternalLink className="h-3 w-3" />
+            </span>
+          )}
         </div>
       </div>
 
@@ -192,7 +237,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         </div>
         <div className="flex gap-1.5 w-full">
           <Button variant="outline" size="sm" className="flex-1 h-7 text-green-600 border-green-200 hover:bg-green-50 dark:border-green-900 dark:hover:bg-green-950/30 text-xs gap-1" onClick={handleWhatsApp}>
-            <MessageCircle className="h-3 w-3" />واتساب
+            <WhatsAppIcon className="h-3 w-3" />واتساب
           </Button>
           <Button variant="outline" size="sm" className="flex-1 h-7 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-950/30 text-xs gap-1" onClick={handleCall}>
             <Phone className="h-3 w-3" />اتصال

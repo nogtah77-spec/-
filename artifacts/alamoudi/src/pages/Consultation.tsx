@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, Phone, Clock, CheckCircle2 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -65,7 +66,7 @@ export default function Consultation() {
                   <CardContent className="p-5">
                     <a href={`https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-green-700 dark:text-green-400">
-                      <MessageCircle className="h-5 w-5" />
+                      <WhatsAppIcon className="h-5 w-5" />
                       <div>
                         <p className="font-semibold text-sm">تواصل عبر واتساب</p>
                         <p className="text-xs opacity-75">{settings.whatsapp}</p>
