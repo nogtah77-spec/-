@@ -52,6 +52,9 @@ export default function Settings() {
     if (!newVideo.title.trim() || !newVideo.videoUrl.trim()) {
       toast({ title: "يرجى إدخال العنوان ورابط الفيديو", variant: "destructive" }); return;
     }
+    if ((settings.tiktokVideos ?? []).length >= 6) {
+      toast({ title: "الحد الأقصى 6 فيديوهات", description: "احذف فيديو قبل إضافة فيديو جديد", variant: "destructive" }); return;
+    }
     addTiktokVideo(newVideo);
     setNewVideo(EMPTY_VIDEO);
     toast({ title: "تم إضافة الفيديو" });
@@ -364,7 +367,7 @@ export default function Settings() {
               <Card className="card-luxury">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2"><Plus className="h-4 w-4 text-accent" />إضافة فيديو جديد</CardTitle>
-                  <CardDescription>أضف حتى 3 فيديوهات تظهر في الصفحة الرئيسية</CardDescription>
+                  <CardDescription>أضف حتى 6 فيديوهات تظهر في الصفحة الرئيسية</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -406,8 +409,8 @@ export default function Settings() {
               {/* Existing videos */}
               <Card className="card-luxury">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Play className="h-4 w-4 text-accent" />الفيديوهات الحالية ({(settings.tiktokVideos ?? []).length}/3)</CardTitle>
-                  <CardDescription>الفيديوهات الثلاثة الأولى تظهر في الصفحة الرئيسية</CardDescription>
+                  <CardTitle className="flex items-center gap-2"><Play className="h-4 w-4 text-accent" />الفيديوهات الحالية ({(settings.tiktokVideos ?? []).length}/6)</CardTitle>
+                  <CardDescription>تظهر الفيديوهات في الصفحة الرئيسية</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {(settings.tiktokVideos ?? []).length === 0 ? (

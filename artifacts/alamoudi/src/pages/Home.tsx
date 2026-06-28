@@ -11,9 +11,57 @@ import {
   Building2, Music,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { useData } from "@/context/DataContext";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useData, type TiktokVideo } from "@/context/DataContext";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+
+function tiktokId(url: string): string | null {
+  const m = url.match(/\/video\/(\d{6,})/);
+  return m ? m[1] : null;
+}
+
+function useTiktokThumb(videoUrl: string, uploaded?: string) {
+  const [thumb, setThumb] = useState(uploaded || "");
+  useEffect(() => {
+    if (uploaded) { setThumb(uploaded); return; }
+    let active = true;
+    fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (active && d?.thumbnail_url) setThumb(d.thumbnail_url); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [videoUrl, uploaded]);
+  return thumb;
+}
+
+function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void }) {
+  const thumb = useTiktokThumb(video.videoUrl, video.thumbnail);
+  return (
+    <button
+      onClick={onPlay}
+      className="group block w-full text-right rounded-xl overflow-hidden border border-border bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+    >
+      <div className="relative aspect-[9/16] bg-muted overflow-hidden">
+        {thumb ? (
+          <img src={thumb} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+            <Play className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="w-11 h-11 rounded-full bg-white/90 flex items-center justify-center">
+            <Play className="h-5 w-5 text-foreground fill-foreground mr-[-2px]" />
+          </div>
+        </div>
+      </div>
+      <div className="p-2.5">
+        <p className="text-xs font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">{video.title}</p>
+      </div>
+    </button>
+  );
+}
 
 const CARD_SIZE_KEY = "alamoudi_card_size";
 
@@ -43,7 +91,7 @@ export default function Home() {
   const [selectedType, setSelectedType] = useState("");
   const [searchText, setSearchText] = useState("");
   const [cardSize, setCardSize] = useState<CardSize>(() => {
-    try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "large"; } catch { return "large"; }
+    try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "medium"; } catch { return "medium"; }
   });
 
   useEffect(() => { try { localStorage.setItem(CARD_SIZE_KEY, cardSize); } catch {} }, [cardSize]);
@@ -66,7 +114,8 @@ export default function Home() {
   }, [searchText, properties, propertyTypes, regions]);
 
   const heroImage = settings.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80";
-  const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 3);
+  const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 6);
+  const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
 
   const gridClass = cardSize === "compact"
     ? "grid grid-cols-1 md:grid-cols-2 gap-3"
@@ -255,41 +304,50 @@ export default function Home() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 {tiktokVideos.map(video => (
-                  <a
-                    key={video.id}
-                    href={video.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group block rounded-2xl overflow-hidden border border-border bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                  >
-                    <div className="relative aspect-video bg-muted overflow-hidden">
-                      {video.thumbnail ? (
-                        <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                          <Play className="h-10 w-10 text-muted-foreground/40" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                          <Play className="h-5 w-5 text-foreground fill-foreground mr-[-2px]" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">{video.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <ExternalLink className="h-3 w-3" />مشاهدة على تيك توك
-                      </p>
-                    </div>
-                  </a>
+                  <TiktokCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
                 ))}
               </div>
             )}
           </div>
         </section>
+
+        {/* TikTok player modal */}
+        <Dialog open={!!activeVideo} onOpenChange={o => { if (!o) setActiveVideo(null); }}>
+          <DialogContent className="max-w-[360px] p-0 overflow-hidden gap-0">
+            <DialogTitle className="sr-only">{activeVideo?.title || "فيديو تيك توك"}</DialogTitle>
+            {activeVideo && (() => {
+              const id = tiktokId(activeVideo.videoUrl);
+              return (
+                <>
+                  {id ? (
+                    <iframe
+                      src={`https://www.tiktok.com/embed/v2/${id}`}
+                      title={activeVideo.title}
+                      className="w-full h-[60vh] min-h-[480px] bg-black"
+                      allow="autoplay; encrypted-media; fullscreen"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div className="p-10 text-center">
+                      <Play className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">لا يمكن تشغيل هذا الفيديو داخل الموقع. افتحه على تيك توك.</p>
+                    </div>
+                  )}
+                  <div className="p-3 flex items-center justify-between gap-2 border-t border-border bg-card">
+                    <p className="text-sm font-medium text-foreground line-clamp-1">{activeVideo.title}</p>
+                    <Button asChild size="sm" variant="outline" className="gap-1.5 flex-shrink-0">
+                      <a href={activeVideo.videoUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5" />فتح في تيك توك
+                      </a>
+                    </Button>
+                  </div>
+                </>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
 
         {/* ── Featured Properties ── */}
         <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">

@@ -19,13 +19,9 @@ interface AdminLayoutProps {
 
 function SidebarBrand() {
   return (
-    <Link href="/" className="block">
-      <div className="text-lg font-bold text-sidebar-foreground tracking-tight leading-none">
-        العمودي
-      </div>
-      <div className="text-xs font-light text-sidebar-foreground/60 mt-0.5 tracking-wide">
-        للتسويق العقاري
-      </div>
+    <Link href="/" className="block leading-none whitespace-nowrap">
+      <span className="text-lg font-bold text-accent tracking-tight">العمودي</span>
+      <span className="text-sm font-light text-sidebar-foreground/70 tracking-wide mr-1.5">للتسويق العقاري</span>
     </Link>
   );
 }

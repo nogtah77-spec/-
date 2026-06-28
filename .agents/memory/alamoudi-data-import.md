@@ -30,6 +30,18 @@ The `alamoudi` artifact is UI-only (React + localStorage, no backend, user's exp
 - **Why:** the business identifies/quotes properties to clients by code; the descriptive title is internal clutter as a heading.
 - **How to apply:** when adding any new property display surface, show the code as the title; never resurrect `property.title` as a visible heading.
 
+## TikTok videos: inline play + thumbnail + limit
+- Home renders TikTok videos as clickable cards that open a `Dialog` embedding `https://www.tiktok.com/embed/v2/{id}` (id parsed from `/video/(\d{6,})/`), plus a "فتح في تيك توك" external button. Short `vm.tiktok.com` links have no parsable id → modal shows a fallback message + external link only.
+- Thumbnails resolve uploaded image → best-effort `https://www.tiktok.com/oembed?url=...` fetch (CORS may fail, fallback is silent) → Play-icon placeholder. Cards use vertical `aspect-[9/16]` (TikTok is portrait, not 16:9).
+- Video limit is 6 (was 3): enforced in `Home` `slice(0,6)`, `Settings` labels + `handleAddVideo` `length >= 6` guard. `DataContext.addTiktokVideo` itself has NO cap — keep UI guards in sync if adding new add paths.
+- **Why:** users add bare TikTok links with no thumbnail; oEmbed gives a real preview when CORS allows, and embed lets it play without leaving the site.
+
+## Default property card size = medium
+- Home `cardSize` localStorage fallback (`alamoudi_card_size`) is `"medium"` for first-open; user's SizeToggle choice persists and overrides. Don't revert to `"large"`.
+
+## Admin sidebar brand (one line, gold word)
+- `AdminLayout`'s `SidebarBrand` is one line: `العمودي` in `text-accent` (gold) + `للتسويق العقاري` lighter, `whitespace-nowrap`. Shared by desktop aside + mobile Sheet. The public `Navbar` header brand is SEPARATE and must NOT be edited per user.
+
 ## Scroll-to-top on route change
 - App uses wouter. A `ScrollToTop` component (`useLocation` + `useEffect(window.scrollTo(0,0), [location])`) is mounted inside `<WouterRouter>` in `App.tsx` to fix routes opening scrolled to the bottom.
 - **How to apply:** if hash/deep-link anchors are ever added, gate the reset to pathname-only so it doesn't override anchor navigation.
