@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { SEED_PROPERTIES } from "@/data/seedProperties";
-
-const SEED_VERSION = 1;
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Region { id: string; name: string; active: boolean; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -120,53 +119,6 @@ export interface SiteSettings {
   tiktokVideos: TiktokVideo[];
 }
 
-const DEFAULT_REGIONS: Region[] = [
-  { id: "shorouk", name: "مدينة الشروق", active: true },
-  { id: "madinaty", name: "مدينتي", active: true },
-  { id: "badr", name: "مدينة بدر", active: true },
-  { id: "wasal", name: "كمباوند وصال", active: true },
-  { id: "tagamoa", name: "التجمع", active: true },
-  { id: "beit_elwatan", name: "بيت الوطن", active: true },
-  { id: "rehab", name: "الرحاب", active: true },
-  { id: "new_capital", name: "العاصمة الإدارية الجديدة", active: true },
-  { id: "nasr_city", name: "مدينة نصر", active: true },
-  { id: "mohandeseen", name: "المهندسين", active: true },
-  { id: "sheikh_zayed", name: "الشيخ زايد", active: true },
-  { id: "oct6", name: "6 أكتوبر", active: true },
-];
-
-const DEFAULT_PROPERTY_TYPES: PropertyType[] = [
-  { id: "apartment", name: "شقة", active: true },
-  { id: "duplex", name: "دوبلكس", active: true },
-  { id: "villa", name: "فيلا", active: true },
-  { id: "penthouse", name: "بنت هاوس", active: true },
-  { id: "townhouse", name: "تاون هاوس", active: true },
-  { id: "twinhouse", name: "توين هاوس", active: true },
-  { id: "studio", name: "أستوديو", active: true },
-  { id: "shop", name: "محل", active: true },
-  { id: "office", name: "مكتب إداري", active: true },
-  { id: "clinic", name: "عيادة", active: true },
-  { id: "medical_center", name: "مركز طبي", active: true },
-  { id: "restaurant", name: "مطعم", active: true },
-  { id: "cafe", name: "كافيه", active: true },
-  { id: "land", name: "أرض", active: true },
-  { id: "pharmacy", name: "صيدلية", active: true },
-  { id: "building", name: "عمارة", active: true },
-];
-
-const DEFAULT_USERS: User[] = [
-  {
-    id: "admin-root",
-    name: "مدير النظام",
-    email: "admin@alamoudi.com",
-    username: "admin",
-    password: "admin1234",
-    role: "admin",
-    active: true,
-    joinedAt: new Date("2026-01-01").toISOString(),
-  },
-];
-
 const DEFAULT_SETTINGS: SiteSettings = {
   companyName: "العمودي للتسويق العقاري",
   companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
@@ -185,6 +137,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
 };
 
 interface DataContextType {
+  ready: boolean;
+  reload: () => Promise<void>;
   regions: Region[];
   propertyTypes: PropertyType[];
   properties: Property[];
@@ -226,90 +180,127 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | null>(null);
 
-function load<T>(key: string, def: T): T {
-  try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : def; } catch { return def; }
-}
-function save<T>(key: string, val: T) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-}
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-function migrateProperty(p: any): Property {
-  return {
-    code: p.code || genCode(),
-    floor: p.floor ?? 0,
-    finishing: p.finishing ?? "",
-    view: p.view ?? "",
-    featured: p.featured ?? false,
-    agentType: p.agentType ?? "direct",
-    images: p.images ?? [],
-    videoUrl: p.videoUrl ?? "",
-    externalUrl: p.externalUrl ?? "",
-    mapsUrl: p.mapsUrl ?? "",
-    ...p,
-  };
-}
-
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [regions, setRegions] = useState<Region[]>(() => load("alamoudi_regions", DEFAULT_REGIONS));
-  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>(() => load("alamoudi_property_types", DEFAULT_PROPERTY_TYPES));
-  const [properties, setProperties] = useState<Property[]>(() => {
-    let raw: string | null = null;
-    try { raw = localStorage.getItem("alamoudi_properties"); } catch {}
-    if (raw === null) return SEED_PROPERTIES.map(migrateProperty);
-    let stored: Property[];
-    try { stored = (JSON.parse(raw) as any[]).map(migrateProperty); } catch { return SEED_PROPERTIES.map(migrateProperty); }
-    let seededV = 0;
-    try { seededV = Number(localStorage.getItem("alamoudi_seed_version") || "0"); } catch {}
-    if (seededV >= SEED_VERSION) return stored;
-    const codes = new Set(stored.map(p => p.code));
-    const missing = SEED_PROPERTIES.filter(p => !codes.has(p.code)).map(migrateProperty);
-    return [...missing, ...stored];
-  });
-  const [users, setUsers] = useState<User[]>(() => {
-    const stored = load<User[]>("alamoudi_users", DEFAULT_USERS);
-    const hasActiveAdmin = stored.some(u => u.role === "admin" && u.active);
-    if (hasActiveAdmin) return stored;
-    const withoutDefault = stored.filter(u => u.id !== "admin-root");
-    return [...DEFAULT_USERS, ...withoutDefault];
-  });
-  const [inquiries, setInquiries] = useState<Inquiry[]>(() => load("alamoudi_inquiries", []));
-  const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>(() => load("alamoudi_finishing_requests", []));
-  const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>(() => load("alamoudi_property_requests", []));
-  const [settings, setSettings] = useState<SiteSettings>(() => load("alamoudi_settings", DEFAULT_SETTINGS));
+  const { toast } = useToast();
+  const [ready, setReady] = useState(false);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
+  const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
 
-  useEffect(() => { save("alamoudi_regions", regions); }, [regions]);
-  useEffect(() => { save("alamoudi_property_types", propertyTypes); }, [propertyTypes]);
-  useEffect(() => { save("alamoudi_properties", properties); }, [properties]);
-  useEffect(() => { try { localStorage.setItem("alamoudi_seed_version", String(SEED_VERSION)); } catch {} }, []);
-  useEffect(() => { save("alamoudi_users", users); }, [users]);
-  useEffect(() => { save("alamoudi_inquiries", inquiries); }, [inquiries]);
-  useEffect(() => { save("alamoudi_finishing_requests", finishingRequests); }, [finishingRequests]);
-  useEffect(() => { save("alamoudi_property_requests", propertyRequests); }, [propertyRequests]);
-  useEffect(() => { save("alamoudi_settings", settings); }, [settings]);
+  const reload = useCallback(async () => {
+    const [
+      regionsR, typesR, propertiesR, settingsR,
+      usersR, inquiriesR, finishingR, requestsR,
+    ] = await Promise.allSettled([
+      api.get<Region[]>("/regions"),
+      api.get<PropertyType[]>("/property-types"),
+      api.get<Property[]>("/properties"),
+      api.get<SiteSettings>("/settings"),
+      api.get<User[]>("/users"),
+      api.get<Inquiry[]>("/inquiries"),
+      api.get<FinishingRequest[]>("/finishing-requests"),
+      api.get<PropertyRequest[]>("/property-requests"),
+    ]);
+    if (regionsR.status === "fulfilled") setRegions(regionsR.value);
+    if (typesR.status === "fulfilled") setPropertyTypes(typesR.value);
+    if (propertiesR.status === "fulfilled") setProperties(propertiesR.value);
+    if (settingsR.status === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0) {
+      setSettings({ ...DEFAULT_SETTINGS, ...settingsR.value, tiktokVideos: settingsR.value.tiktokVideos ?? [] });
+    }
+    setUsers(usersR.status === "fulfilled" ? usersR.value : []);
+    setInquiries(inquiriesR.status === "fulfilled" ? inquiriesR.value : []);
+    setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
+    setPropertyRequests(requestsR.status === "fulfilled" ? requestsR.value : []);
+  }, []);
 
-  const updateSettings = (s: Partial<SiteSettings>) => setSettings(p => ({ ...p, ...s }));
+  // Optimistic writes update local state first; if the server rejects, surface
+  // the error and re-sync from the server so the UI never diverges from truth.
+  const persist = useCallback((p: Promise<unknown>) => {
+    p.catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : "تعذّر حفظ التغيير على الخادم";
+      toast({ title: "خطأ في الحفظ", description: message, variant: "destructive" });
+      void reload();
+    });
+  }, [toast, reload]);
 
-  const addRegion = (name: string) => setRegions(p => [...p, { id: genId(), name, active: true }]);
-  const updateRegion = (id: string, name: string) => setRegions(p => p.map(r => r.id === id ? { ...r, name } : r));
-  const deleteRegion = (id: string) => setRegions(p => p.filter(r => r.id !== id));
-  const toggleRegion = (id: string) => setRegions(p => p.map(r => r.id === id ? { ...r, active: !r.active } : r));
+  useEffect(() => {
+    reload().finally(() => setReady(true));
+  }, [reload]);
 
-  const addPropertyType = (name: string) => setPropertyTypes(p => [...p, { id: genId(), name, active: true }]);
-  const updatePropertyType = (id: string, name: string) => setPropertyTypes(p => p.map(t => t.id === id ? { ...t, name } : t));
-  const deletePropertyType = (id: string) => setPropertyTypes(p => p.filter(t => t.id !== id));
-  const togglePropertyType = (id: string) => setPropertyTypes(p => p.map(t => t.id === id ? { ...t, active: !t.active } : t));
+  const updateSettings = (s: Partial<SiteSettings>) => {
+    setSettings(prev => {
+      const next = { ...prev, ...s };
+      persist(api.put("/settings", next));
+      return next;
+    });
+  };
 
-  const addProperty = (p: Omit<Property, "id" | "createdAt" | "code">) =>
-    setProperties(prev => [...prev, { ...p, id: genId(), code: genCode(), createdAt: new Date().toISOString() }]);
-  const updateProperty = (id: string, p: Partial<Property>) =>
+  const addRegion = (name: string) => {
+    const region: Region = { id: genId(), name, active: true };
+    setRegions(p => [...p, region]);
+    persist(api.post("/regions", region));
+  };
+  const updateRegion = (id: string, name: string) => {
+    setRegions(p => p.map(r => r.id === id ? { ...r, name } : r));
+    persist(api.patch(`/regions/${id}`, { name }));
+  };
+  const deleteRegion = (id: string) => {
+    setRegions(p => p.filter(r => r.id !== id));
+    persist(api.del(`/regions/${id}`));
+  };
+  const toggleRegion = (id: string) => {
+    const current = regions.find(r => r.id === id);
+    const active = !(current?.active ?? true);
+    setRegions(p => p.map(r => r.id === id ? { ...r, active } : r));
+    persist(api.patch(`/regions/${id}`, { active }));
+  };
+
+  const addPropertyType = (name: string) => {
+    const t: PropertyType = { id: genId(), name, active: true };
+    setPropertyTypes(p => [...p, t]);
+    persist(api.post("/property-types", t));
+  };
+  const updatePropertyType = (id: string, name: string) => {
+    setPropertyTypes(p => p.map(t => t.id === id ? { ...t, name } : t));
+    persist(api.patch(`/property-types/${id}`, { name }));
+  };
+  const deletePropertyType = (id: string) => {
+    setPropertyTypes(p => p.filter(t => t.id !== id));
+    persist(api.del(`/property-types/${id}`));
+  };
+  const togglePropertyType = (id: string) => {
+    const current = propertyTypes.find(t => t.id === id);
+    const active = !(current?.active ?? true);
+    setPropertyTypes(p => p.map(t => t.id === id ? { ...t, active } : t));
+    persist(api.patch(`/property-types/${id}`, { active }));
+  };
+
+  const addProperty = (p: Omit<Property, "id" | "createdAt" | "code">) => {
+    const property: Property = { ...p, id: genId(), code: genCode(), createdAt: new Date().toISOString() };
+    setProperties(prev => [...prev, property]);
+    persist(api.post("/properties", property));
+  };
+  const updateProperty = (id: string, p: Partial<Property>) => {
     setProperties(prev => prev.map(prop => prop.id === id ? { ...prop, ...p } : prop));
-  const deleteProperty = (id: string) => setProperties(p => p.filter(x => x.id !== id));
+    persist(api.patch(`/properties/${id}`, p));
+  };
+  const deleteProperty = (id: string) => {
+    setProperties(p => p.filter(x => x.id !== id));
+    persist(api.del(`/properties/${id}`));
+  };
 
   const importProperties = (items: Omit<Property, "id" | "createdAt">[]) => {
     let added = 0;
     let updated = 0;
+    const payload: Property[] = [];
     setProperties(prev => {
       const next = [...prev];
       const indexByCode = new Map<string, number>();
@@ -318,44 +309,86 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const code = item.code || genCode();
         const existingIdx = item.code ? indexByCode.get(item.code) : undefined;
         if (existingIdx !== undefined) {
-          next[existingIdx] = { ...next[existingIdx], ...item, code };
+          const merged = { ...next[existingIdx], ...item, code };
+          next[existingIdx] = merged;
+          payload.push(merged);
           updated++;
         } else {
           const created: Property = { ...item, code, id: genId(), createdAt: new Date().toISOString() };
           indexByCode.set(code, next.length);
           next.push(created);
+          payload.push(created);
           added++;
         }
       }
       return next;
     });
+    if (payload.length > 0) persist(api.post("/properties/import", payload));
     return { added, updated };
   };
 
-  const addUser = (u: Omit<User, "id" | "joinedAt">) =>
-    setUsers(p => [...p, { ...u, id: genId(), joinedAt: new Date().toISOString() }]);
-  const updateUser = (id: string, u: Partial<User>) =>
-    setUsers(p => p.map(x => x.id === id ? { ...x, ...u } : x));
-  const deleteUser = (id: string) => setUsers(p => p.filter(x => x.id !== id));
-  const toggleUser = (id: string) => setUsers(p => p.map(x => x.id === id ? { ...x, active: !x.active } : x));
+  const addUser = (u: Omit<User, "id" | "joinedAt">) => {
+    const user: User = { ...u, id: genId(), joinedAt: new Date().toISOString() };
+    setUsers(p => [...p, { ...user, password: undefined }]);
+    persist(api.post("/users", user));
+  };
+  const updateUser = (id: string, u: Partial<User>) => {
+    const { password: _pw, ...rest } = u;
+    setUsers(p => p.map(x => x.id === id ? { ...x, ...rest } : x));
+    persist(api.patch(`/users/${id}`, u));
+  };
+  const deleteUser = (id: string) => {
+    setUsers(p => p.filter(x => x.id !== id));
+    persist(api.del(`/users/${id}`));
+  };
+  const toggleUser = (id: string) => {
+    const current = users.find(x => x.id === id);
+    const active = !(current?.active ?? true);
+    setUsers(p => p.map(x => x.id === id ? { ...x, active } : x));
+    persist(api.patch(`/users/${id}`, { active }));
+  };
 
-  const addInquiry = (i: Omit<Inquiry, "id" | "createdAt" | "status">) =>
-    setInquiries(p => [...p, { ...i, id: genId(), status: "new", createdAt: new Date().toISOString() }]);
-  const updateInquiryStatus = (id: string, status: Inquiry["status"]) =>
+  const addInquiry = (i: Omit<Inquiry, "id" | "createdAt" | "status">) => {
+    const inquiry: Inquiry = { ...i, id: genId(), status: "new", createdAt: new Date().toISOString() };
+    setInquiries(p => [...p, inquiry]);
+    persist(api.post("/inquiries", inquiry));
+  };
+  const updateInquiryStatus = (id: string, status: Inquiry["status"]) => {
     setInquiries(p => p.map(x => x.id === id ? { ...x, status } : x));
-  const deleteInquiry = (id: string) => setInquiries(p => p.filter(x => x.id !== id));
+    persist(api.patch(`/inquiries/${id}`, { status }));
+  };
+  const deleteInquiry = (id: string) => {
+    setInquiries(p => p.filter(x => x.id !== id));
+    persist(api.del(`/inquiries/${id}`));
+  };
 
-  const addFinishingRequest = (r: Omit<FinishingRequest, "id" | "createdAt" | "status">) =>
-    setFinishingRequests(p => [...p, { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() }]);
-  const updateFinishingRequestStatus = (id: string, status: FinishingRequest["status"]) =>
+  const addFinishingRequest = (r: Omit<FinishingRequest, "id" | "createdAt" | "status">) => {
+    const fr: FinishingRequest = { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() };
+    setFinishingRequests(p => [...p, fr]);
+    persist(api.post("/finishing-requests", fr));
+  };
+  const updateFinishingRequestStatus = (id: string, status: FinishingRequest["status"]) => {
     setFinishingRequests(p => p.map(x => x.id === id ? { ...x, status } : x));
-  const deleteFinishingRequest = (id: string) => setFinishingRequests(p => p.filter(x => x.id !== id));
+    persist(api.patch(`/finishing-requests/${id}`, { status }));
+  };
+  const deleteFinishingRequest = (id: string) => {
+    setFinishingRequests(p => p.filter(x => x.id !== id));
+    persist(api.del(`/finishing-requests/${id}`));
+  };
 
-  const addPropertyRequest = (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) =>
-    setPropertyRequests(p => [...p, { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() }]);
-  const updatePropertyRequestStatus = (id: string, status: PropertyRequest["status"]) =>
+  const addPropertyRequest = (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) => {
+    const pr: PropertyRequest = { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() };
+    setPropertyRequests(p => [...p, pr]);
+    persist(api.post("/property-requests", pr));
+  };
+  const updatePropertyRequestStatus = (id: string, status: PropertyRequest["status"]) => {
     setPropertyRequests(p => p.map(x => x.id === id ? { ...x, status } : x));
-  const deletePropertyRequest = (id: string) => setPropertyRequests(p => p.filter(x => x.id !== id));
+    persist(api.patch(`/property-requests/${id}`, { status }));
+  };
+  const deletePropertyRequest = (id: string) => {
+    setPropertyRequests(p => p.filter(x => x.id !== id));
+    persist(api.del(`/property-requests/${id}`));
+  };
 
   const addTiktokVideo = (v: Omit<TiktokVideo, "id">) =>
     updateSettings({ tiktokVideos: [...(settings.tiktokVideos ?? []), { ...v, id: genId() }] });
@@ -366,6 +399,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider value={{
+      ready, reload,
       regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, settings,
       updateSettings,
       addRegion, updateRegion, deleteRegion, toggleRegion,

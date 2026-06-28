@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import type { ReactNode } from "react";
 import { Phone, Mail, MessageCircle, MapPin, Facebook, Instagram, Music, ExternalLink } from "lucide-react";
 import { useData } from "@/context/DataContext";
 
@@ -31,7 +32,7 @@ export function Footer() {
       label: "موقعنا على الخريطة",
       href: settings.mapsUrl,
     },
-  ].filter(Boolean) as { icon: JSX.Element; label: string; href: string }[];
+  ].filter(Boolean) as { icon: ReactNode; label: string; href: string }[];
 
   const socialItems = [
     settings.tiktok && {
@@ -49,7 +50,7 @@ export function Footer() {
       label: "إنستغرام",
       href: settings.instagram,
     },
-  ].filter(Boolean) as { icon: JSX.Element; label: string; href: string }[];
+  ].filter(Boolean) as { icon: ReactNode; label: string; href: string }[];
 
   return (
     <footer className="border-t bg-card mt-auto">

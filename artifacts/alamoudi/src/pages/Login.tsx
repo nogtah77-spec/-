@@ -14,9 +14,13 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = login(identifier, password);
+    setSubmitting(true);
+    const result = await login(identifier, password);
+    setSubmitting(false);
     if (result.ok) {
       navigate("/admin");
     } else {
@@ -90,10 +94,11 @@ export default function Login() {
             <CardFooter className="flex flex-col gap-3 pt-2 pb-6">
               <Button
                 type="submit"
+                disabled={submitting}
                 className="w-full h-10 bg-accent text-white hover:bg-accent/90 font-medium text-sm"
                 data-testid="button-login-submit"
               >
-                تسجيل الدخول
+                {submitting ? "جارٍ تسجيل الدخول…" : "تسجيل الدخول"}
               </Button>
               <Link href="/" className="text-center text-xs text-muted-foreground hover:text-accent">
                 العودة إلى الصفحة الرئيسية

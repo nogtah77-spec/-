@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
-import { DataProvider } from "@/context/DataContext";
+import { DataProvider, useData } from "@/context/DataContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { UserPrefsProvider } from "@/context/UserPrefsContext";
 
@@ -39,7 +39,8 @@ const Backup = lazy(() => import("@/pages/admin/Backup"));
 const queryClient = new QueryClient();
 
 function Protected({ component: Component }: { component: ComponentType }) {
-  const { isStaff } = useAuth();
+  const { isStaff, authReady } = useAuth();
+  if (!authReady) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>;
   if (!isStaff) return <Redirect to="/login" />;
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>}>
@@ -92,6 +93,18 @@ function Router() {
   );
 }
 
+function AppReadyGate({ children }: { children: React.ReactNode }) {
+  const { ready } = useData();
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
+        جارٍ التحميل…
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
@@ -100,10 +113,12 @@ function App() {
           <UserPrefsProvider>
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
-                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                  <ScrollToTop />
-                  <Router />
-                </WouterRouter>
+                <AppReadyGate>
+                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                    <ScrollToTop />
+                    <Router />
+                  </WouterRouter>
+                </AppReadyGate>
                 <Toaster />
               </TooltipProvider>
             </QueryClientProvider>

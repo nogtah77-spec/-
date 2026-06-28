@@ -1,54 +1,54 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useData, User } from "./DataContext";
+import { api, type ApiError } from "@/lib/api";
 
 interface AuthContextType {
   currentUser: User | null;
   isStaff: boolean;
-  login: (identifier: string, password: string) => { ok: boolean; error?: string };
+  authReady: boolean;
+  login: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const SESSION_KEY = "alamoudi_session";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { users } = useData();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(() => {
-    try { return localStorage.getItem(SESSION_KEY); } catch { return null; }
-  });
+  const { reload } = useData();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    try {
-      if (currentUserId) localStorage.setItem(SESSION_KEY, currentUserId);
-      else localStorage.removeItem(SESSION_KEY);
-    } catch {}
-  }, [currentUserId]);
+    api
+      .get<User | null>("/auth/me")
+      .then((u) => setCurrentUser(u ?? null))
+      .catch(() => setCurrentUser(null))
+      .finally(() => setAuthReady(true));
+  }, []);
 
-  const currentUser = users.find(u => u.id === currentUserId && u.active) ?? null;
   const isStaff = !!currentUser && (currentUser.role === "admin" || currentUser.role === "agent");
 
-  const login = (identifier: string, password: string): { ok: boolean; error?: string } => {
-    const id = identifier.trim().toLowerCase();
+  const login = async (identifier: string, password: string): Promise<{ ok: boolean; error?: string }> => {
+    const id = identifier.trim();
     if (!id || !password) return { ok: false, error: "يرجى إدخال اسم المستخدم وكلمة المرور" };
-    const user = users.find(
-      u =>
-        (u.username?.toLowerCase() === id || u.email.toLowerCase() === id) &&
-        u.password === password
-    );
-    if (!user) return { ok: false, error: "اسم المستخدم أو كلمة المرور غير صحيحة" };
-    if (!user.active) return { ok: false, error: "هذا الحساب غير مفعّل. تواصل مع الإدارة." };
-    if (user.role !== "admin" && user.role !== "agent") {
-      return { ok: false, error: "هذه الصفحة مخصّصة للإدارة والموظفين فقط" };
+    try {
+      const user = await api.post<User>("/auth/login", { identifier: id, password });
+      setCurrentUser(user);
+      await reload();
+      return { ok: true };
+    } catch (e) {
+      const err = e as ApiError;
+      return { ok: false, error: err.message || "تعذّر تسجيل الدخول" };
     }
-    setCurrentUserId(user.id);
-    return { ok: true };
   };
 
-  const logout = () => setCurrentUserId(null);
+  const logout = () => {
+    setCurrentUser(null);
+    api.post("/auth/logout").catch(() => {});
+    reload().catch(() => {});
+  };
 
   return (
-    <AuthContext.Provider value={{ currentUser, isStaff, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isStaff, authReady, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
