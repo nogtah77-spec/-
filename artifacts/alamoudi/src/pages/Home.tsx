@@ -31,7 +31,7 @@ function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void 
       onClick={onPlay}
       className="group block w-full text-right rounded-xl overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
     >
-      <div className="relative aspect-[9/16] bg-muted overflow-hidden">
+      <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {!failed ? (
           <img
             src={src}
@@ -86,6 +86,7 @@ export default function Home() {
   const [selectedRegion, setSelectedRegion] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [filtersApplied, setFiltersApplied] = useState(false);
   const [cardSize, setCardSize] = useState<CardSize>(() => {
     try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "medium"; } catch { return "medium"; }
   });
@@ -101,13 +102,29 @@ export default function Home() {
   const featuredProps = useMemo(() => properties.filter(p => p.featured).map(resolve), [properties, propertyTypes, regions]);
   const latestProps = useMemo(() => [...properties].reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
 
-  const searchResults = useMemo(() => {
-    if (!searchText.trim()) return [];
+  const effectiveCategory = searchSector === "residential" ? searchCategory : searchSector;
+  const isFiltering = filtersApplied || searchText.trim() !== "";
+
+  const filterResults = useMemo(() => {
+    let list = properties;
     const q = searchText.trim().toLowerCase();
-    return properties.filter(p =>
-      p.title.toLowerCase().includes(q) || p.code.toLowerCase().includes(q)
-    ).map(resolve);
-  }, [searchText, properties, propertyTypes, regions]);
+    if (q) list = list.filter(p => p.title.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
+    if (filtersApplied) {
+      list = list.filter(p => p.category === effectiveCategory);
+      if (selectedRegion) list = list.filter(p => p.regionId === selectedRegion);
+      if (selectedType) list = list.filter(p => p.typeId === selectedType);
+    }
+    return list.map(resolve);
+  }, [properties, searchText, filtersApplied, effectiveCategory, selectedRegion, selectedType, propertyTypes, regions]);
+
+  const clearFilters = () => {
+    setSearchText("");
+    setSelectedRegion("");
+    setSelectedType("");
+    setSearchCategory("sale");
+    setSearchSector("residential");
+    setFiltersApplied(false);
+  };
 
   const heroImage = settings.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80";
   const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 6);
@@ -229,29 +246,54 @@ export default function Home() {
                 <SelectTrigger className="w-full sm:w-44 h-9 text-sm"><SelectValue placeholder="نوع العقار" /></SelectTrigger>
                 <SelectContent>{propertyTypes.filter(t => t.active).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
               </Select>
-              <Button className="h-9 px-6 bg-accent text-white hover:bg-accent/90 text-sm font-medium gap-1.5" data-testid="button-search">
+              <Button className="h-9 px-6 bg-accent text-white hover:bg-accent/90 text-sm font-medium gap-1.5" data-testid="button-search"
+                onClick={() => setFiltersApplied(true)}>
                 <Search className="h-4 w-4" />بحث
               </Button>
+              {isFiltering && (
+                <Button variant="outline" className="h-9 px-5 text-sm font-medium gap-1.5 border-accent/40 text-accent hover:bg-accent/10"
+                  data-testid="button-clear-filters" onClick={clearFilters}>
+                  <X className="h-4 w-4" />مسح الفلاتر
+                </Button>
+              )}
             </div>
-
-            {searchText && (
-              <div className="mt-4 pt-4 border-t border-border">
-                {searchResults.length === 0
-                  ? <p className="text-sm text-center text-muted-foreground py-2">لا توجد نتائج للبحث "{searchText}"</p>
-                  : (
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-3">{searchResults.length} نتيجة للبحث</p>
-                      <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                        {searchResults.map(p => <PropertyCard key={p.id} property={p} size="compact" />)}
-                      </div>
-                    </div>
-                  )}
-              </div>
-            )}
           </div>
         </div>
 
+        {/* ── Filter / Search Results ── */}
+        {isFiltering && (
+          <section className="py-10 md:py-12 bg-background">
+            <div className="container px-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
+                <div>
+                  <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">نتائج البحث</p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">العقارات المطابقة</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{filterResults.length} عقار</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <SizeToggle size={cardSize} onChange={setCardSize} />
+                  <Button variant="outline" className="h-8 gap-1.5 border-accent/40 text-accent hover:bg-accent/10 text-sm"
+                    onClick={clearFilters}>
+                    <X className="h-4 w-4" />مسح الفلاتر
+                  </Button>
+                </div>
+              </div>
+              {filterResults.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <Search className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-sm">لا توجد عقارات مطابقة لبحثك.</p>
+                </div>
+              ) : (
+                <div className={gridClass}>
+                  {filterResults.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* ── TikTok Section ── */}
+        {!isFiltering && (
         <section className="py-12 md:py-14 bg-background">
           <div className="container px-6">
             {/* Profile header */}
@@ -311,6 +353,7 @@ export default function Home() {
             )}
           </div>
         </section>
+        )}
 
         {/* TikTok player modal */}
         <Dialog open={!!activeVideo} onOpenChange={o => { if (!o) setActiveVideo(null); }}>
@@ -348,6 +391,7 @@ export default function Home() {
           </DialogContent>
         </Dialog>
 
+        {!isFiltering && (<>
         {/* ── Featured Properties ── */}
         <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">
           <div className="container px-6">
@@ -434,6 +478,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+        </>)}
 
       </main>
       <Footer />

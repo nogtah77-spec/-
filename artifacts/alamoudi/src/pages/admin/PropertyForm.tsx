@@ -30,7 +30,7 @@ export default function PropertyForm() {
   const existing = isEdit ? properties.find(p => p.id === params.id) : undefined;
 
   const [form, setForm] = useState({
-    title: existing?.title ?? "",
+    code: existing?.code ?? "",
     description: existing?.description ?? "",
     price: existing?.price ?? 0,
     area: existing?.area ?? 0,
@@ -80,14 +80,15 @@ export default function PropertyForm() {
   };
 
   const handleSave = () => {
-    if (!form.title.trim() || !form.typeId || !form.regionId) {
-      toast({ title: "يرجى ملء الحقول المطلوبة (العنوان، النوع، المنطقة)", variant: "destructive" });
+    if (!form.code.trim() || !form.typeId || !form.regionId) {
+      toast({ title: "يرجى ملء الحقول المطلوبة (الكود، النوع، المنطقة)", variant: "destructive" });
       return;
     }
+    const payload = { ...form, title: form.code.trim(), images };
     if (isEdit && params.id) {
-      updateProperty(params.id, { ...form, images });
+      updateProperty(params.id, payload);
     } else {
-      addProperty({ ...form, images });
+      addProperty(payload);
     }
     toast({ title: "تم الحفظ بنجاح", description: isEdit ? "تم تحديث بيانات العقار." : "تم إضافة العقار الجديد." });
     setLocation("/admin/properties");
@@ -118,8 +119,8 @@ export default function PropertyForm() {
               <CardHeader><CardTitle className="text-sm">المعلومات الأساسية</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>عنوان العقار *</Label>
-                  <Input value={form.title} onChange={e => set("title", e.target.value)} placeholder="مثال: شقة فاخرة في مدينتي" />
+                  <Label>كود العقار *</Label>
+                  <Input value={form.code} onChange={e => set("code", e.target.value)} placeholder="مثال: S50" dir="ltr" className="text-right" />
                 </div>
                 <div className="space-y-2">
                   <Label>وصف العقار</Label>

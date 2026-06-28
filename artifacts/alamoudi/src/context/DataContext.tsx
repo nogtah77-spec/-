@@ -156,7 +156,7 @@ interface DataContextType {
   updatePropertyType: (id: string, name: string) => void;
   deletePropertyType: (id: string) => void;
   togglePropertyType: (id: string) => void;
-  addProperty: (p: Omit<Property, "id" | "createdAt" | "code">) => void;
+  addProperty: (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => void;
   updateProperty: (id: string, p: Partial<Property>) => void;
   deleteProperty: (id: string) => void;
   importProperties: (items: Omit<Property, "id" | "createdAt">[]) => { added: number; updated: number };
@@ -283,8 +283,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     persist(api.patch(`/property-types/${id}`, { active }));
   };
 
-  const addProperty = (p: Omit<Property, "id" | "createdAt" | "code">) => {
-    const property: Property = { ...p, id: genId(), code: genCode(), createdAt: new Date().toISOString() };
+  const addProperty = (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => {
+    const code = p.code?.trim() || genCode();
+    const property: Property = { ...p, code, id: genId(), createdAt: new Date().toISOString() };
     setProperties(prev => [...prev, property]);
     persist(api.post("/properties", property));
   };
