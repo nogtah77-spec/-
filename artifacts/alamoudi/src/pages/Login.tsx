@@ -1,10 +1,29 @@
-import { Link } from "wouter";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Login() {
+  const { login } = useAuth();
+  const [, navigate] = useLocation();
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = login(identifier, password);
+    if (result.ok) {
+      navigate("/admin");
+    } else {
+      setError(result.error || "تعذّر تسجيل الدخول");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -29,54 +48,58 @@ export default function Login() {
 
         <Card className="border-border/60 shadow-luxury-lg card-luxury">
           <CardHeader className="space-y-1 text-center pb-5">
-            <CardTitle className="text-xl font-bold text-foreground">تسجيل الدخول</CardTitle>
-            <CardDescription className="text-sm">أدخل بياناتك للوصول إلى حسابك</CardDescription>
+            <CardTitle className="text-xl font-bold text-foreground">دخول لوحة التحكم</CardTitle>
+            <CardDescription className="text-sm">هذه الصفحة مخصّصة للإدارة والموظفين فقط</CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">البريد الإلكتروني</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                dir="ltr"
-                className="text-left h-10 text-sm"
-                data-testid="input-email"
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium">كلمة المرور</Label>
-                <Link href="/forgot-password" className="text-xs text-accent hover:underline">
-                  نسيت كلمة المرور؟
-                </Link>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-md bg-destructive/10 text-destructive text-sm px-3 py-2" data-testid="text-login-error">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{error}</span>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="identifier" className="text-sm font-medium">اسم المستخدم أو البريد الإلكتروني</Label>
+                <Input
+                  id="identifier"
+                  type="text"
+                  placeholder="admin"
+                  dir="ltr"
+                  className="text-left h-10 text-sm"
+                  value={identifier}
+                  onChange={(e) => { setIdentifier(e.target.value); setError(""); }}
+                  data-testid="input-email"
+                />
               </div>
-              <Input
-                id="password"
-                type="password"
-                dir="ltr"
-                className="h-10 text-sm"
-                data-testid="input-password"
-              />
-            </div>
-          </CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium">كلمة المرور</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  dir="ltr"
+                  className="h-10 text-sm"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(""); }}
+                  data-testid="input-password"
+                />
+              </div>
+            </CardContent>
 
-          <CardFooter className="flex flex-col gap-3 pt-2 pb-6">
-            <Button
-              asChild
-              className="w-full h-10 bg-accent text-white hover:bg-accent/90 font-medium text-sm"
-              data-testid="button-login-submit"
-            >
-              <Link href="/admin">تسجيل الدخول</Link>
-            </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              ليس لديك حساب؟{" "}
-              <Link href="/register" className="text-accent font-medium hover:underline">
-                إنشاء حساب جديد
+            <CardFooter className="flex flex-col gap-3 pt-2 pb-6">
+              <Button
+                type="submit"
+                className="w-full h-10 bg-accent text-white hover:bg-accent/90 font-medium text-sm"
+                data-testid="button-login-submit"
+              >
+                تسجيل الدخول
+              </Button>
+              <Link href="/" className="text-center text-xs text-muted-foreground hover:text-accent">
+                العودة إلى الصفحة الرئيسية
               </Link>
-            </p>
-          </CardFooter>
+            </CardFooter>
+          </form>
         </Card>
       </div>
     </div>

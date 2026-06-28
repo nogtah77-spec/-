@@ -36,6 +36,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  username?: string;
+  password?: string;
   role: "admin" | "agent" | "customer";
   active: boolean;
   joinedAt: string;
@@ -141,6 +143,19 @@ const DEFAULT_PROPERTY_TYPES: PropertyType[] = [
   { id: "building", name: "عمارة", active: true },
 ];
 
+const DEFAULT_USERS: User[] = [
+  {
+    id: "admin-root",
+    name: "مدير النظام",
+    email: "admin@alamoudi.com",
+    username: "admin",
+    password: "admin1234",
+    role: "admin",
+    active: true,
+    joinedAt: new Date("2026-01-01").toISOString(),
+  },
+];
+
 const DEFAULT_SETTINGS: SiteSettings = {
   companyName: "العمودي للتسويق العقاري",
   companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
@@ -228,7 +243,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [regions, setRegions] = useState<Region[]>(() => load("alamoudi_regions", DEFAULT_REGIONS));
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>(() => load("alamoudi_property_types", DEFAULT_PROPERTY_TYPES));
   const [properties, setProperties] = useState<Property[]>(() => (load<any[]>("alamoudi_properties", [])).map(migrateProperty));
-  const [users, setUsers] = useState<User[]>(() => load("alamoudi_users", []));
+  const [users, setUsers] = useState<User[]>(() => {
+    const stored = load<User[]>("alamoudi_users", DEFAULT_USERS);
+    return stored.some(u => u.username === "admin") ? stored : [...DEFAULT_USERS, ...stored];
+  });
   const [inquiries, setInquiries] = useState<Inquiry[]>(() => load("alamoudi_inquiries", []));
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>(() => load("alamoudi_finishing_requests", []));
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>(() => load("alamoudi_property_requests", []));

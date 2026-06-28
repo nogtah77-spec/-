@@ -22,7 +22,9 @@ export default function Users() {
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const { toast } = useToast();
 
-  const [form, setForm] = useState({ name: "", email: "", role: "customer" as any, password: "" });
+  const [form, setForm] = useState({ name: "", email: "", username: "", role: "customer" as any, password: "" });
+
+  const isStaffRole = form.role === "admin" || form.role === "agent";
 
   const filteredUsers = users.filter(u => 
     !search || 
@@ -31,18 +33,39 @@ export default function Users() {
   );
 
   const handleAdd = () => {
-    if (!form.name || !form.email || !form.password) {
-      toast({ title: "خطأ", description: "يرجى ملء جميع الحقول", variant: "destructive" });
+    if (!form.name || !form.email) {
+      toast({ title: "خطأ", description: "يرجى إدخال الاسم والبريد الإلكتروني", variant: "destructive" });
       return;
     }
-    addUser({ name: form.name, email: form.email, role: form.role, active: true });
+    if (isStaffRole && (!form.username || !form.password)) {
+      toast({ title: "خطأ", description: "حسابات الإدارة والموظفين تتطلب اسم مستخدم وكلمة مرور", variant: "destructive" });
+      return;
+    }
+    addUser({
+      name: form.name,
+      email: form.email,
+      role: form.role,
+      username: isStaffRole ? form.username.trim() : undefined,
+      password: isStaffRole ? form.password : undefined,
+      active: true,
+    });
     setShowAddDialog(false);
     toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم بنجاح" });
   };
 
   const handleEdit = () => {
     if (!editTarget || !form.name || !form.email) return;
-    updateUser(editTarget.id, { name: form.name, email: form.email, role: form.role });
+    if (isStaffRole && !form.username) {
+      toast({ title: "خطأ", description: "حسابات الإدارة والموظفين تتطلب اسم مستخدم", variant: "destructive" });
+      return;
+    }
+    updateUser(editTarget.id, {
+      name: form.name,
+      email: form.email,
+      role: form.role,
+      username: isStaffRole ? form.username.trim() : undefined,
+      ...(form.password ? { password: form.password } : {}),
+    });
     setEditTarget(null);
     toast({ title: "تم بنجاح", description: "تم تحديث بيانات المستخدم" });
   };
@@ -60,12 +83,12 @@ export default function Users() {
   };
 
   const openAdd = () => {
-    setForm({ name: "", email: "", role: "customer", password: "" });
+    setForm({ name: "", email: "", username: "", role: "customer", password: "" });
     setShowAddDialog(true);
   };
 
   const openEdit = (u: User) => {
-    setForm({ name: u.name, email: u.email, role: u.role, password: "" });
+    setForm({ name: u.name, email: u.email, username: u.username || "", role: u.role, password: "" });
     setEditTarget(u);
   };
 
@@ -176,10 +199,19 @@ export default function Users() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>كلمة المرور</Label>
-              <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-            </div>
+            {isStaffRole && (
+              <>
+                <p className="text-xs text-muted-foreground">بيانات الدخول للوحة التحكم (للإدارة والموظفين فقط)</p>
+                <div className="space-y-2">
+                  <Label>اسم المستخدم</Label>
+                  <Input dir="ltr" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>كلمة المرور</Label>
+                  <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>إلغاء</Button>
@@ -215,6 +247,19 @@ export default function Users() {
                 </SelectContent>
               </Select>
             </div>
+            {isStaffRole && (
+              <>
+                <p className="text-xs text-muted-foreground">بيانات الدخول للوحة التحكم (للإدارة والموظفين فقط)</p>
+                <div className="space-y-2">
+                  <Label>اسم المستخدم</Label>
+                  <Input dir="ltr" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label>كلمة مرور جديدة <span className="text-muted-foreground font-normal">(اتركها فارغة للإبقاء على الحالية)</span></Label>
+                  <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>

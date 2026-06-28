@@ -1,10 +1,12 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { ComponentType } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import NotFound from "@/pages/not-found";
 import { DataProvider } from "@/context/DataContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { UserPrefsProvider } from "@/context/UserPrefsContext";
 
 import Home from "@/pages/Home";
@@ -36,6 +38,12 @@ import Backup from "@/pages/admin/Backup";
 
 const queryClient = new QueryClient();
 
+function Protected({ component: Component }: { component: ComponentType }) {
+  const { isStaff } = useAuth();
+  if (!isStaff) return <Redirect to="/login" />;
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -50,22 +58,22 @@ function Router() {
       <Route path="/compare" component={Compare} />
       <Route path="/login" component={Login} />
 
-      <Route path="/admin" component={Dashboard} />
-      <Route path="/admin/properties" component={Properties} />
-      <Route path="/admin/properties/new" component={PropertyForm} />
-      <Route path="/admin/properties/:id/edit" component={PropertyForm} />
-      <Route path="/admin/regions" component={Regions} />
-      <Route path="/admin/property-types" component={PropertyTypes} />
-      <Route path="/admin/users" component={Users} />
-      <Route path="/admin/roles" component={Roles} />
-      <Route path="/admin/settings" component={Settings} />
-      <Route path="/admin/analytics" component={Analytics} />
-      <Route path="/admin/activity-logs" component={ActivityLogs} />
-      <Route path="/admin/import-export" component={ImportExport} />
-      <Route path="/admin/inquiries" component={Inquiries} />
-      <Route path="/admin/property-requests" component={PropertyRequests} />
-      <Route path="/admin/finishing-requests" component={FinishingRequests} />
-      <Route path="/admin/backup" component={Backup} />
+      <Route path="/admin">{() => <Protected component={Dashboard} />}</Route>
+      <Route path="/admin/properties">{() => <Protected component={Properties} />}</Route>
+      <Route path="/admin/properties/new">{() => <Protected component={PropertyForm} />}</Route>
+      <Route path="/admin/properties/:id/edit">{() => <Protected component={PropertyForm} />}</Route>
+      <Route path="/admin/regions">{() => <Protected component={Regions} />}</Route>
+      <Route path="/admin/property-types">{() => <Protected component={PropertyTypes} />}</Route>
+      <Route path="/admin/users">{() => <Protected component={Users} />}</Route>
+      <Route path="/admin/roles">{() => <Protected component={Roles} />}</Route>
+      <Route path="/admin/settings">{() => <Protected component={Settings} />}</Route>
+      <Route path="/admin/analytics">{() => <Protected component={Analytics} />}</Route>
+      <Route path="/admin/activity-logs">{() => <Protected component={ActivityLogs} />}</Route>
+      <Route path="/admin/import-export">{() => <Protected component={ImportExport} />}</Route>
+      <Route path="/admin/inquiries">{() => <Protected component={Inquiries} />}</Route>
+      <Route path="/admin/property-requests">{() => <Protected component={PropertyRequests} />}</Route>
+      <Route path="/admin/finishing-requests">{() => <Protected component={FinishingRequests} />}</Route>
+      <Route path="/admin/backup">{() => <Protected component={Backup} />}</Route>
 
       <Route component={NotFound} />
     </Switch>
@@ -76,16 +84,18 @@ function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
       <DataProvider>
-        <UserPrefsProvider>
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Router />
-              </WouterRouter>
-              <Toaster />
-            </TooltipProvider>
-          </QueryClientProvider>
-        </UserPrefsProvider>
+        <AuthProvider>
+          <UserPrefsProvider>
+            <QueryClientProvider client={queryClient}>
+              <TooltipProvider>
+                <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <Router />
+                </WouterRouter>
+                <Toaster />
+              </TooltipProvider>
+            </QueryClientProvider>
+          </UserPrefsProvider>
+        </AuthProvider>
       </DataProvider>
     </ThemeProvider>
   );

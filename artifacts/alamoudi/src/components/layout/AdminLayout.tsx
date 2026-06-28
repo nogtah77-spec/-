@@ -4,7 +4,14 @@ import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
 import { LogOut, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "@/context/AuthContext";
+
+const roleLabels: Record<string, string> = {
+  admin: "مدير النظام",
+  agent: "مستشار عقاري",
+  customer: "عميل",
+};
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -24,6 +31,16 @@ function SidebarBrand() {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
+  const { currentUser, logout } = useAuth();
+  const [, navigate] = useLocation();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const initial = currentUser?.name?.trim()?.charAt(0) || "م";
+
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Desktop Sidebar */}
@@ -59,13 +76,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <ThemeToggle />
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-sm">
-                م
+                {initial}
               </div>
               <div className="hidden sm:block text-sm">
-                <p className="font-medium leading-none">مدير النظام</p>
+                <p className="font-medium leading-none" data-testid="text-current-user">{currentUser?.name || "مستخدم"}</p>
+                {currentUser && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{roleLabels[currentUser.role] || ""}</p>
+                )}
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" data-testid="button-logout">
+            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" data-testid="button-logout" onClick={handleLogout} title="تسجيل الخروج">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>

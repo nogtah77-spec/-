@@ -5,10 +5,12 @@ import { Menu, MessageCircle, MapPin } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [location] = useLocation();
   const { settings } = useData();
+  const { isStaff } = useAuth();
 
   const navLinks = [
     { href: "/", label: "الرئيسية" },
@@ -83,21 +85,24 @@ export function Navbar() {
           )}
           <div className="w-px h-4 bg-border mx-1" />
           <ThemeToggle />
-          <Link
-            href="/login"
-            className="text-sm font-medium text-muted-foreground hover:text-accent transition-colors px-1"
-            data-testid="link-login"
-          >
-            تسجيل الدخول
-          </Link>
-          <Button
-            asChild
-            size="sm"
-            className="bg-accent text-white hover:bg-accent/90 rounded-md px-4 text-sm font-medium"
-            data-testid="button-nav-dashboard"
-          >
-            <Link href="/admin">لوحة التحكم</Link>
-          </Button>
+          {isStaff ? (
+            <Button
+              asChild
+              size="sm"
+              className="bg-accent text-white hover:bg-accent/90 rounded-md px-4 text-sm font-medium"
+              data-testid="button-nav-dashboard"
+            >
+              <Link href="/admin">لوحة التحكم</Link>
+            </Button>
+          ) : (
+            <Link
+              href="/login"
+              className="text-sm font-medium text-muted-foreground hover:text-accent transition-colors px-1"
+              data-testid="link-login"
+            >
+              تسجيل الدخول
+            </Link>
+          )}
         </div>
       </div>
 
@@ -134,12 +139,15 @@ export function Navbar() {
               <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-medium text-accent hover:bg-accent/10 transition-colors">
                 أضف عقارك
               </Link>
-              <Link href="/login" className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
-                تسجيل الدخول
-              </Link>
-              <Link href="/admin" className="py-2.5 px-3 rounded-md text-base font-bold text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
-                لوحة التحكم
-              </Link>
+              {isStaff ? (
+                <Link href="/admin" className="py-2.5 px-3 rounded-md text-base font-bold text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
+                  لوحة التحكم
+                </Link>
+              ) : (
+                <Link href="/login" className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
+                  تسجيل الدخول
+                </Link>
+              )}
               {(whatsappHref || mapsHref) && <div className="my-2 border-t border-border" />}
               {whatsappHref && (
                 <a href={whatsappHref} target="_blank" rel="noopener noreferrer"
