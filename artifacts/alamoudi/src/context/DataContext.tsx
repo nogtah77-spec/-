@@ -245,7 +245,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [properties, setProperties] = useState<Property[]>(() => (load<any[]>("alamoudi_properties", [])).map(migrateProperty));
   const [users, setUsers] = useState<User[]>(() => {
     const stored = load<User[]>("alamoudi_users", DEFAULT_USERS);
-    return stored.some(u => u.username === "admin") ? stored : [...DEFAULT_USERS, ...stored];
+    const hasActiveAdmin = stored.some(u => u.role === "admin" && u.active);
+    if (hasActiveAdmin) return stored;
+    const withoutDefault = stored.filter(u => u.id !== "admin-root");
+    return [...DEFAULT_USERS, ...withoutDefault];
   });
   const [inquiries, setInquiries] = useState<Inquiry[]>(() => load("alamoudi_inquiries", []));
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>(() => load("alamoudi_finishing_requests", []));
