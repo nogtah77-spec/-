@@ -60,15 +60,37 @@ export function parseArea(raw: unknown): number {
 }
 
 export function parsePrice(raw: unknown): number {
-  const s = arabicToWestern(cleanCell(raw)).replace(/[,،]/g, "").trim();
-  if (!s) return 0;
-  const m = s.match(/[\d.]+/);
+  const cleaned = arabicToWestern(cleanCell(raw)).replace(/[,،]/g, "").trim();
+  if (!cleaned) return 0;
+  // When several pricing options are listed (e.g. "5 مليون كاش | 5.5 مليون 6 شهور",
+  // "50 ألف طويل | 55 ألف قصير"), use only the first/primary option.
+  const segment = cleaned.split(/[|\n]/)[0];
+  // Sum every amount within the segment, e.g. "3 مليون و 600 ألف" = 3,600,000.
+  let total = 0;
+  let hasUnit = false;
+  for (const m of segment.matchAll(/([\d.]+)\s*مليون/g)) {
+    const v = parseFloat(m[1]);
+    if (!Number.isNaN(v)) {
+      total += v * 1_000_000;
+      hasUnit = true;
+    }
+  }
+  for (const m of segment.matchAll(/([\d.]+)\s*(?:ألف|الف)/g)) {
+    const v = parseFloat(m[1]);
+    if (!Number.isNaN(v)) {
+      total += v * 1000;
+      hasUnit = true;
+    }
+  }
+  if (hasUnit) return Math.round(total);
+  // No unit word (e.g. "1500 / يوم" or a plain number): take the first numeric run.
+  const m = segment.match(/[\d.]+/);
   if (!m) return 0;
-  const num = parseFloat(m[0]);
-  if (Number.isNaN(num)) return 0;
-  if (/مليون/.test(s)) return Math.round(num * 1_000_000);
-  if (/ألف|الف/.test(s)) return Math.round(num * 1000);
-  return Math.round(num);
+  let token = m[0];
+  // Grouped thousands separators like "3.600.000" -> strip the dots.
+  if (/^\d{1,3}(\.\d{3})+$/.test(token)) token = token.replace(/\./g, "");
+  const num = parseFloat(token);
+  return Number.isNaN(num) ? 0 : Math.round(num);
 }
 
 export function parseLayout(raw: unknown): { beds: number; baths: number } {
