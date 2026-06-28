@@ -2,19 +2,30 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
-const TIKTOK_URL_RE = /^https?:\/\/([a-z0-9-]+\.)?tiktok\.com\//i;
 const THUMB_HOST_RE = /(^|\.)(tiktokcdn(-us)?\.com|tiktokcdn-eu\.com|ttwstatic\.com|tiktok\.com)$/i;
 const MAX_BYTES = 5 * 1024 * 1024;
 
 router.get("/tiktok/thumbnail", async (req, res) => {
-  const url = typeof req.query.url === "string" ? req.query.url : "";
-  if (!url || !TIKTOK_URL_RE.test(url)) {
+  let videoUrl = typeof req.query.url === "string" ? req.query.url.trim() : "";
+  if (!videoUrl) {
+    res.status(400).json({ error: "missing url" });
+    return;
+  }
+  if (!/^https?:\/\//i.test(videoUrl)) videoUrl = `https://${videoUrl}`;
+  let videoHost: string;
+  try {
+    videoHost = new URL(videoUrl).hostname.toLowerCase();
+  } catch {
     res.status(400).json({ error: "invalid url" });
+    return;
+  }
+  if (!/(^|\.)tiktok\.com$/.test(videoHost)) {
+    res.status(400).json({ error: "not a tiktok url" });
     return;
   }
   try {
     const oembedRes = await fetch(
-      `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
+      `https://www.tiktok.com/oembed?url=${encodeURIComponent(videoUrl)}`,
       { headers: { "User-Agent": "Mozilla/5.0" }, signal: AbortSignal.timeout(8000) },
     );
     if (!oembedRes.ok) {

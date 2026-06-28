@@ -297,13 +297,10 @@ export default function Home() {
                   <Play className="h-7 w-7" />
                 </div>
                 <p className="text-sm font-medium text-foreground mb-1">لا توجد فيديوهات حالياً</p>
-                <p className="text-xs text-muted-foreground">يمكن للمدير إضافة فيديوهات من لوحة التحكم ← الإعدادات ← تيك توك</p>
-                {settings.tiktok && (
-                  <a href={settings.tiktok} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 mt-4 text-xs text-accent hover:underline">
-                    زيارة صفحتنا على تيك توك <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
+                <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  className="inline-flex items-center gap-1.5 mt-4 text-xs text-accent hover:underline">
+                  زيارة صفحتنا على تيك توك <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
             ) : (
               <div className={videoGridClass}>
@@ -366,7 +363,7 @@ export default function Home() {
             </div>
             {featuredProps.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">
-                <p className="text-sm">لا توجد عقارات مميزة حالياً. يمكن للمدير تفعيلها من لوحة التحكم.</p>
+                <p className="text-sm">لا توجد عقارات مميزة حالياً.</p>
               </div>
             ) : (
               <div className={gridClass}>
