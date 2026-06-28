@@ -8,6 +8,8 @@ import NotFound from "@/pages/not-found";
 import { DataProvider, useData } from "@/context/DataContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { UserPrefsProvider } from "@/context/UserPrefsContext";
+import { AIChatProvider } from "@/context/AIChatContext";
+import { AIChatWidget } from "@/components/ai/AIChatWidget";
 
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -34,6 +36,7 @@ const ImportExport = lazy(() => import("@/pages/admin/ImportExport"));
 const Inquiries = lazy(() => import("@/pages/admin/Inquiries"));
 const PropertyRequests = lazy(() => import("@/pages/admin/PropertyRequests"));
 const FinishingRequests = lazy(() => import("@/pages/admin/FinishingRequests"));
+const AiLeads = lazy(() => import("@/pages/admin/AiLeads"));
 const Backup = lazy(() => import("@/pages/admin/Backup"));
 
 const queryClient = new QueryClient();
@@ -86,6 +89,7 @@ function Router() {
       <Route path="/admin/inquiries">{() => <Protected component={Inquiries} />}</Route>
       <Route path="/admin/property-requests">{() => <Protected component={PropertyRequests} />}</Route>
       <Route path="/admin/finishing-requests">{() => <Protected component={FinishingRequests} />}</Route>
+      <Route path="/admin/ai-leads">{() => <Protected component={AiLeads} />}</Route>
       <Route path="/admin/backup">{() => <Protected component={Backup} />}</Route>
 
       <Route component={NotFound} />
@@ -113,13 +117,16 @@ function App() {
           <UserPrefsProvider>
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
-                <AppReadyGate>
-                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                    <ScrollToTop />
-                    <Router />
-                  </WouterRouter>
-                </AppReadyGate>
-                <Toaster />
+                <AIChatProvider>
+                  <AppReadyGate>
+                    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                      <ScrollToTop />
+                      <Router />
+                      <AIChatWidget />
+                    </WouterRouter>
+                  </AppReadyGate>
+                  <Toaster />
+                </AIChatProvider>
               </TooltipProvider>
             </QueryClientProvider>
           </UserPrefsProvider>

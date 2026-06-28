@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { useData } from "@/context/DataContext";
+import { getTiktokUrl, getTiktokName } from "@/lib/socials";
 
 export function Footer() {
   const { settings } = useData();
@@ -145,6 +146,23 @@ export function Footer() {
                 القاهرة، مصر
               </p>
             )}
+
+            {/* TikTok account */}
+            <a
+              href={getTiktokUrl(settings)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex items-center gap-3 rounded-xl border border-border bg-muted/40 px-4 py-2.5 hover:border-accent hover:bg-accent/5 transition-colors group"
+              data-testid="link-tiktok-footer"
+            >
+              <span className="w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center group-hover:bg-accent transition-colors flex-shrink-0">
+                <TikTokIcon className="h-4 w-4" />
+              </span>
+              <span className="flex flex-col leading-tight text-right">
+                <span className="text-sm font-semibold text-foreground">{getTiktokName(settings)}</span>
+                <span className="text-[11px] text-muted-foreground">تابعنا على تيك توك</span>
+              </span>
+            </a>
           </div>
         </div>
 

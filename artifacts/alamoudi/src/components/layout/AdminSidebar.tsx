@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -17,6 +17,7 @@ const sidebarItems = [
   { href: "/admin/inquiries", label: "استفسارات العملاء", icon: MessageSquare, badge: "inquiries" },
   { href: "/admin/property-requests", label: "طلبات إضافة عقار", icon: ClipboardList, badge: "propertyRequests" },
   { href: "/admin/finishing-requests", label: "طلبات التشطيبات", icon: Wrench, badge: "finishingRequests" },
+  { href: "/admin/ai-leads", label: "عملاء المستشار الذكي", icon: Sparkles, badge: "aiLeads" },
   { separator: true },
   { href: "/admin/settings", label: "الإعدادات", icon: Settings },
   { href: "/admin/analytics", label: "التحليلات", icon: BarChart3 },
@@ -27,12 +28,13 @@ const sidebarItems = [
 
 export function AdminSidebar() {
   const [location] = useLocation();
-  const { inquiries, propertyRequests, finishingRequests } = useData();
+  const { inquiries, propertyRequests, finishingRequests, aiLeads } = useData();
 
   const badgeCounts: Record<string, number> = {
     inquiries: inquiries.filter(x => x.status === "new").length,
     propertyRequests: propertyRequests.filter(x => x.status === "new").length,
     finishingRequests: finishingRequests.filter(x => x.status === "new").length,
+    aiLeads: aiLeads.filter(x => x.status === "new").length,
   };
 
   return (

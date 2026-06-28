@@ -2,10 +2,11 @@ import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink } from "lucide-react";
-import { WhatsAppIcon } from "../icons/BrandIcons";
+import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
+import { getTiktokUrl, getTiktokName } from "@/lib/socials";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -246,6 +247,17 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             <Copy className="h-3 w-3" />
           </Button>
         </div>
+        <a
+          href={getTiktokUrl(settings)}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center justify-center gap-1.5 w-full text-[11px] text-muted-foreground hover:text-accent transition-colors"
+          title="حساب تيك توك"
+        >
+          <TikTokIcon className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{getTiktokName(settings)}</span>
+        </a>
       </CardFooter>
     </Card>
   );

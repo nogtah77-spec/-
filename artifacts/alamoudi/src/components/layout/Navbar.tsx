@@ -1,17 +1,21 @@
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
-import { Menu, MapPin } from "lucide-react";
-import { WhatsAppIcon } from "../icons/BrandIcons";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
+import { Menu, MapPin, Sparkles } from "lucide-react";
+import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "../ui/sheet";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
+import { useAIChat } from "@/context/AIChatContext";
+import { getTiktokUrl } from "@/lib/socials";
 
 export function Navbar() {
   const [location] = useLocation();
   const { settings } = useData();
   const { isStaff } = useAuth();
+  const { openChat } = useAIChat();
+  const tiktokHref = getTiktokUrl(settings);
 
   const navLinks = [
     { href: "/", label: "الرئيسية" },
@@ -56,6 +60,14 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
+          <button
+            onClick={openChat}
+            className="flex items-center gap-1.5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity whitespace-nowrap"
+            data-testid="button-ai-consultant"
+          >
+            <Sparkles className="h-4 w-4" />
+            المستشار الذكي AI
+          </button>
         </nav>
 
         {/* Actions — far left (RTL end) */}
@@ -72,6 +84,16 @@ export function Navbar() {
               <WhatsAppIcon className="h-4 w-4" />
             </a>
           )}
+          <a
+            href={tiktokHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="تيك توك"
+            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            data-testid="link-tiktok"
+          >
+            <TikTokIcon className="h-4 w-4" />
+          </a>
           {mapsHref && (
             <a
               href={mapsHref}
@@ -136,6 +158,16 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              <SheetClose asChild>
+                <button
+                  onClick={openChat}
+                  className="py-2.5 px-3 rounded-md text-base font-semibold text-accent hover:bg-accent/10 transition-colors flex items-center gap-2 text-right"
+                  data-testid="button-ai-consultant-mobile"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  المستشار الذكي AI
+                </button>
+              </SheetClose>
               <div className="my-2 border-t border-border" />
               <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-medium text-accent hover:bg-accent/10 transition-colors">
                 أضف عقارك
@@ -157,6 +189,11 @@ export function Navbar() {
                   واتساب
                 </a>
               )}
+              <a href={tiktokHref} target="_blank" rel="noopener noreferrer"
+                className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors flex items-center gap-2">
+                <TikTokIcon className="h-4 w-4" />
+                تيك توك
+              </a>
               {mapsHref && (
                 <a href={mapsHref} target="_blank" rel="noopener noreferrer"
                   className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">

@@ -9,6 +9,7 @@ import usersRouter from "./users";
 import inquiriesRouter from "./inquiries";
 import finishingRequestsRouter from "./finishingRequests";
 import propertyRequestsRouter from "./propertyRequests";
+import aiConsultantRouter from "./aiConsultant";
 import settingsRouter from "./settings";
 
 const router: IRouter = Router();
@@ -23,6 +24,7 @@ router.use(usersRouter);
 router.use(inquiriesRouter);
 router.use(finishingRequestsRouter);
 router.use(propertyRequestsRouter);
+router.use(aiConsultantRouter);
 router.use(settingsRouter);
 
 export default router;

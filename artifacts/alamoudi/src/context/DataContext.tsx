@@ -95,6 +95,18 @@ export interface PropertyRequest {
   createdAt: string;
 }
 
+export interface AiLead {
+  id: string;
+  name: string;
+  phone: string;
+  preferredLanguage: string;
+  requirements: string;
+  budget: string;
+  notes: string;
+  status: "new" | "reviewed" | "replied";
+  createdAt: string;
+}
+
 export interface TiktokVideo {
   id: string;
   thumbnail: string;
@@ -126,8 +138,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   phone2: "",
   whatsapp: "+20 10 0000 0000",
   email: "info@alamoudi.com",
-  tiktok: "",
-  tiktokName: "العمودي للتسويق العقاري",
+  tiktok: "https://www.tiktok.com/@alamoudi.realestate",
+  tiktokName: "Alamoudi | الـعـمـودي",
   tiktokAvatar: "",
   facebook: "",
   instagram: "",
@@ -146,6 +158,7 @@ interface DataContextType {
   inquiries: Inquiry[];
   finishingRequests: FinishingRequest[];
   propertyRequests: PropertyRequest[];
+  aiLeads: AiLead[];
   settings: SiteSettings;
   updateSettings: (s: Partial<SiteSettings>) => void;
   addRegion: (name: string) => void;
@@ -173,6 +186,9 @@ interface DataContextType {
   addPropertyRequest: (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) => void;
   updatePropertyRequestStatus: (id: string, status: PropertyRequest["status"]) => void;
   deletePropertyRequest: (id: string) => void;
+  reloadAiLeads: () => Promise<void>;
+  updateAiLeadStatus: (id: string, status: AiLead["status"]) => void;
+  deleteAiLead: (id: string) => void;
   addTiktokVideo: (v: Omit<TiktokVideo, "id">) => void;
   updateTiktokVideo: (id: string, v: Partial<Omit<TiktokVideo, "id">>) => void;
   deleteTiktokVideo: (id: string) => void;
@@ -193,12 +209,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
+  const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
 
   const reload = useCallback(async () => {
     const [
       regionsR, typesR, propertiesR, settingsR,
-      usersR, inquiriesR, finishingR, requestsR,
+      usersR, inquiriesR, finishingR, requestsR, aiLeadsR,
     ] = await Promise.allSettled([
       api.get<Region[]>("/regions"),
       api.get<PropertyType[]>("/property-types"),
@@ -208,6 +225,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       api.get<Inquiry[]>("/inquiries"),
       api.get<FinishingRequest[]>("/finishing-requests"),
       api.get<PropertyRequest[]>("/property-requests"),
+      api.get<AiLead[]>("/ai/leads"),
     ]);
     if (regionsR.status === "fulfilled") setRegions(regionsR.value);
     if (typesR.status === "fulfilled") setPropertyTypes(typesR.value);
@@ -219,6 +237,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setInquiries(inquiriesR.status === "fulfilled" ? inquiriesR.value : []);
     setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
     setPropertyRequests(requestsR.status === "fulfilled" ? requestsR.value : []);
+    if (aiLeadsR.status === "fulfilled") setAiLeads(aiLeadsR.value);
+  }, []);
+
+  const reloadAiLeads = useCallback(async () => {
+    try {
+      setAiLeads(await api.get<AiLead[]>("/ai/leads"));
+    } catch {
+      /* not authorized / not staff — ignore */
+    }
   }, []);
 
   // Optimistic writes update local state first; if the server rejects, surface
@@ -391,6 +418,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     persist(api.del(`/property-requests/${id}`));
   };
 
+  const updateAiLeadStatus = (id: string, status: AiLead["status"]) => {
+    setAiLeads(p => p.map(x => x.id === id ? { ...x, status } : x));
+    persist(api.patch(`/ai/leads/${id}`, { status }));
+  };
+  const deleteAiLead = (id: string) => {
+    setAiLeads(p => p.filter(x => x.id !== id));
+    persist(api.del(`/ai/leads/${id}`));
+  };
+
   const addTiktokVideo = (v: Omit<TiktokVideo, "id">) =>
     updateSettings({ tiktokVideos: [...(settings.tiktokVideos ?? []), { ...v, id: genId() }] });
   const updateTiktokVideo = (id: string, v: Partial<Omit<TiktokVideo, "id">>) =>
@@ -401,8 +437,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       ready, reload,
-      regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, settings,
+      regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, settings,
       updateSettings,
+      reloadAiLeads, updateAiLeadStatus, deleteAiLead,
       addRegion, updateRegion, deleteRegion, toggleRegion,
       addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType,
       addProperty, updateProperty, deleteProperty, importProperties,
