@@ -12,6 +12,7 @@ import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { SEED_SOURCES } from "@/data/seedSources";
 
 const finishingOptions = [
   { value: "super-lux", label: "سوبر لوكس" },
@@ -55,7 +56,7 @@ export default function PropertyForm() {
     elevator: existing?.elevator ?? "",
     floorText: existing?.floorText ?? "",
     location: existing?.location ?? "",
-    source: existing?.source ?? "",
+    source: existing?.source ?? (existing?.code ? SEED_SOURCES[existing.code] ?? "" : ""),
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);

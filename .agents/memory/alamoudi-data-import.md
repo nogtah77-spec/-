@@ -18,6 +18,8 @@ The `alamoudi` artifact is UI-only (React + localStorage, no backend, user's exp
 - **How to apply:** the daily-refresh workflow only stays duplicate-free if source rows carry stable codes. The user's Excel does (genSeed preserves codes, suffixes dup codes with `-2`).
 - Parser lives in `src/lib/propertyImport.ts` (Arabic digit conversion, مليون/ألف price parsing, sheet-name→region/category, source→agentType). Accepts xlsx/xls/csv/txt/tsv.
 
-## `source` privacy limitation (inherent)
-- `source` is hidden from the public UI (never rendered in `PropertyDetails`) but is still present in the shipped bundle (seed file) and in localStorage.
-- **Why:** with no backend, any baked/admin field is technically extractable client-side. True privacy would require a backend + auth. UI-hiding is the max achievable under the user's chosen architecture.
+## `source` is admin-only (code-split, not in public bundle)
+- The deal `source` is private to the admin. It is NOT in `seedProperties.ts`; genSeed splits it into `src/data/seedSources.ts` (`SEED_SOURCES: code→source`).
+- `seedSources.ts` must be imported ONLY from admin-only, code-split modules (currently `admin/PropertyForm.tsx`), and all `admin/*` pages are `React.lazy` in `App.tsx`. This keeps source data in the admin JS chunk, which public visitors never download.
+- **Why:** no-backend SPA — the only way to keep data off a visitor's machine is to put it in a route chunk gated behind the (client-side) admin login and never import it from public code.
+- **How to apply:** never import `seedSources` (or render `property.source`) from any non-admin/eagerly-loaded module, or it leaks back into the public bundle. `PropertyDetails` must never show source. Keep admin pages lazy.

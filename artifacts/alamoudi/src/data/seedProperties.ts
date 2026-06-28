@@ -32,7 +32,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "",
     "floorText": "",
     "location": "",
-    "source": "بروكر",
     "id": "seed-1",
     "createdAt": "2026-06-14T12:00:00.000Z"
   },
@@ -65,7 +64,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "بروكر",
     "id": "seed-2",
     "createdAt": "2026-06-14T11:59:00.000Z"
   },
@@ -98,7 +96,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "بروكر",
     "id": "seed-3",
     "createdAt": "2026-06-14T11:58:00.000Z"
   },
@@ -131,7 +128,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4",
     "location": "",
-    "source": "بروكر",
     "id": "seed-4",
     "createdAt": "2026-06-14T11:57:00.000Z"
   },
@@ -164,7 +160,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-5",
     "createdAt": "2026-06-14T11:56:00.000Z"
   },
@@ -197,7 +192,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-6",
     "createdAt": "2026-06-14T11:55:00.000Z"
   },
@@ -230,7 +224,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "2 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-7",
     "createdAt": "2026-06-14T11:54:00.000Z"
   },
@@ -263,7 +256,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "بروكر",
     "id": "seed-8",
     "createdAt": "2026-06-14T11:53:00.000Z"
   },
@@ -296,7 +288,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4",
     "location": "",
-    "source": "بروكر",
     "id": "seed-9",
     "createdAt": "2026-06-14T11:52:00.000Z"
   },
@@ -329,7 +320,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "مباشر",
     "id": "seed-10",
     "createdAt": "2026-06-14T11:51:00.000Z"
   },
@@ -362,7 +352,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "مباشر",
     "id": "seed-11",
     "createdAt": "2026-06-14T11:50:00.000Z"
   },
@@ -395,7 +384,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-12",
     "createdAt": "2026-06-14T11:49:00.000Z"
   },
@@ -428,7 +416,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-13",
     "createdAt": "2026-06-14T11:48:00.000Z"
   },
@@ -461,7 +448,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-14",
     "createdAt": "2026-06-14T11:47:00.000Z"
   },
@@ -494,7 +480,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-15",
     "createdAt": "2026-06-14T11:46:00.000Z"
   },
@@ -527,7 +512,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-16",
     "createdAt": "2026-06-14T11:45:00.000Z"
   },
@@ -560,7 +544,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-17",
     "createdAt": "2026-06-14T11:44:00.000Z"
   },
@@ -593,7 +576,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (خلفي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-18",
     "createdAt": "2026-06-14T11:43:00.000Z"
   },
@@ -626,7 +608,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-19",
     "createdAt": "2026-06-14T11:42:00.000Z"
   },
@@ -659,7 +640,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-20",
     "createdAt": "2026-06-14T11:41:00.000Z"
   },
@@ -692,7 +672,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "2",
     "location": "",
-    "source": "بروكر",
     "id": "seed-21",
     "createdAt": "2026-06-14T11:40:00.000Z"
   },
@@ -725,7 +704,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "",
     "floorText": "2 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-22",
     "createdAt": "2026-06-14T11:39:00.000Z"
   },
@@ -758,7 +736,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "",
     "floorText": "3 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-23",
     "createdAt": "2026-06-14T11:38:00.000Z"
   },
@@ -791,7 +768,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3 (خلفي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-24",
     "createdAt": "2026-06-14T11:37:00.000Z"
   },
@@ -824,7 +800,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3 (خلفي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-25",
     "createdAt": "2026-06-14T11:36:00.000Z"
   },
@@ -857,7 +832,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-26",
     "createdAt": "2026-06-14T11:35:00.000Z"
   },
@@ -890,7 +864,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3",
     "location": "أمام بوابة ١ نادي هليوبوليس",
-    "source": "بروكر",
     "id": "seed-27",
     "createdAt": "2026-06-14T11:34:00.000Z"
   },
@@ -923,7 +896,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1 (أمامي)",
     "location": "بجوار نادي جرين هيلز",
-    "source": "مباشر",
     "id": "seed-28",
     "createdAt": "2026-06-14T11:33:00.000Z"
   },
@@ -956,7 +928,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (أمامي)",
     "location": "قريب طريق السويس، مول ٣SIDES، المسجد والخدمات",
-    "source": "بروكر",
     "id": "seed-29",
     "createdAt": "2026-06-14T11:32:00.000Z"
   },
@@ -989,7 +960,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (أمامي)",
     "location": "افضل مربع في الشروق ٢\nبجوار الخدمات والمواصلات مباشرة",
-    "source": "مباشر",
     "id": "seed-30",
     "createdAt": "2026-06-14T11:31:00.000Z"
   },
@@ -1022,7 +992,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (أمامي)",
     "location": "بجوار الخدمات، طريق الحرية، مول OVALO",
-    "source": "مباشر",
     "id": "seed-31",
     "createdAt": "2026-06-14T11:30:00.000Z"
   },
@@ -1055,7 +1024,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1 (أمامي)",
     "location": "أمام كمباوند سبرنج حسن علام",
-    "source": "مباشر",
     "id": "seed-32",
     "createdAt": "2026-06-14T11:29:00.000Z"
   },
@@ -1088,7 +1056,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3 (خلفي)",
     "location": "على طريق الأوسط مباشرة\nبجوار مول VIVENS",
-    "source": "مباشر",
     "id": "seed-33",
     "createdAt": "2026-06-14T11:28:00.000Z"
   },
@@ -1121,7 +1088,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-34",
     "createdAt": "2026-06-14T11:27:00.000Z"
   },
@@ -1154,7 +1120,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "مباشر",
     "id": "seed-35",
     "createdAt": "2026-06-14T11:26:00.000Z"
   },
@@ -1187,7 +1152,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3 (أمامي)",
     "location": "موقع استثماري مميز بالشروق ٢\nعلى طريق الحرية مباشرة وأمام المولات التجارية",
-    "source": "مباشر",
     "id": "seed-36",
     "createdAt": "2026-06-14T11:25:00.000Z"
   },
@@ -1220,7 +1184,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-37",
     "createdAt": "2026-06-14T11:24:00.000Z"
   },
@@ -1253,7 +1216,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-38",
     "createdAt": "2026-06-14T11:23:00.000Z"
   },
@@ -1286,7 +1248,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3 (خلفي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-39",
     "createdAt": "2026-06-14T11:22:00.000Z"
   },
@@ -1319,7 +1280,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1 (أمامي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-40",
     "createdAt": "2026-06-14T11:21:00.000Z"
   },
@@ -1352,7 +1312,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "2 (خلفي)",
     "location": "أمام المسجد والمول",
-    "source": "مباشر",
     "id": "seed-41",
     "createdAt": "2026-06-14T11:20:00.000Z"
   },
@@ -1385,7 +1344,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "",
     "floorText": "أرضي (خلفي)",
     "location": "أمام الخدمات مباشرة",
-    "source": "مباشر",
     "id": "seed-42",
     "createdAt": "2026-06-14T11:19:00.000Z"
   },
@@ -1418,7 +1376,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "بدروم",
     "location": "إداري - سكني",
-    "source": "مباشر",
     "id": "seed-43",
     "createdAt": "2026-06-14T11:18:00.000Z"
   },
@@ -1451,7 +1408,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "2 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-44",
     "createdAt": "2026-06-14T11:17:00.000Z"
   },
@@ -1484,7 +1440,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1",
     "location": "",
-    "source": "مباشر",
     "id": "seed-45",
     "createdAt": "2026-06-14T11:16:00.000Z"
   },
@@ -1517,7 +1472,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1",
     "location": "",
-    "source": "مباشر",
     "id": "seed-46",
     "createdAt": "2026-06-14T11:15:00.000Z"
   },
@@ -1550,7 +1504,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "1 (خلفي)",
     "location": "",
-    "source": "مباشر",
     "id": "seed-47",
     "createdAt": "2026-06-14T11:14:00.000Z"
   },
@@ -1583,7 +1536,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "2 (أمامي)",
     "location": "",
-    "source": "بروكر",
     "id": "seed-48",
     "createdAt": "2026-06-14T11:13:00.000Z"
   },
@@ -1616,7 +1568,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "3 (أمامي)",
     "location": "موقع مميز عند بوابة الشروق ٢\nخطوات لطريق السويس\nشهرين تأمين وشهر مقدم",
-    "source": "مباشر",
     "id": "seed-49",
     "createdAt": "2026-06-14T11:12:00.000Z"
   },
@@ -1649,7 +1600,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1",
     "location": "",
-    "source": "بروكر",
     "id": "seed-50",
     "createdAt": "2026-06-14T11:11:00.000Z"
   },
@@ -1682,7 +1632,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4",
     "location": "",
-    "source": "مباشر",
     "id": "seed-51",
     "createdAt": "2026-06-14T11:10:00.000Z"
   },
@@ -1715,7 +1664,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "1",
     "location": "أمام الخدمات",
-    "source": "مباشر",
     "id": "seed-52",
     "createdAt": "2026-06-14T11:09:00.000Z"
   },
@@ -1748,7 +1696,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "5",
     "location": "أقرب منطقة للكرفت زون و ايست هب",
-    "source": "مباشر",
     "id": "seed-53",
     "createdAt": "2026-06-14T11:08:00.000Z"
   },
@@ -1781,7 +1728,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "2",
     "location": "",
-    "source": "مباشر",
     "id": "seed-54",
     "createdAt": "2026-06-14T11:07:00.000Z"
   },
@@ -1814,7 +1760,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3",
     "location": "",
-    "source": "بروكر",
     "id": "seed-55",
     "createdAt": "2026-06-14T11:06:00.000Z"
   },
@@ -1847,7 +1792,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "أرضي",
     "location": "",
-    "source": "بروكر",
     "id": "seed-56",
     "createdAt": "2026-06-14T11:05:00.000Z"
   },
@@ -1880,7 +1824,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "",
     "location": "",
-    "source": "بروكر",
     "id": "seed-57",
     "createdAt": "2026-06-14T11:04:00.000Z"
   },
@@ -1913,7 +1856,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "بروكر",
     "id": "seed-58",
     "createdAt": "2026-06-14T11:03:00.000Z"
   },
@@ -1946,7 +1888,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "",
     "location": "",
-    "source": "بروكر",
     "id": "seed-59",
     "createdAt": "2026-06-14T11:02:00.000Z"
   },
@@ -1979,7 +1920,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3",
     "location": "",
-    "source": "بروكر",
     "id": "seed-60",
     "createdAt": "2026-06-14T11:01:00.000Z"
   },
@@ -2012,7 +1952,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "بروكر",
     "id": "seed-61",
     "createdAt": "2026-06-14T11:00:00.000Z"
   },
@@ -2045,7 +1984,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "3",
     "location": "",
-    "source": "بروكر",
     "id": "seed-62",
     "createdAt": "2026-06-14T10:59:00.000Z"
   },
@@ -2078,7 +2016,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "2",
     "location": "",
-    "source": "مباشر",
     "id": "seed-63",
     "createdAt": "2026-06-14T10:58:00.000Z"
   },
@@ -2111,7 +2048,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "نعم",
     "floorText": "4 (أسانسير)",
     "location": "طريق السويس أمام مدينتي",
-    "source": "مباشر",
     "id": "seed-64",
     "createdAt": "2026-06-14T10:57:00.000Z"
   },
@@ -2144,7 +2080,6 @@ export const SEED_PROPERTIES: Property[] = [
     "elevator": "لا",
     "floorText": "أرضي",
     "location": "",
-    "source": "مباشر",
     "id": "seed-65",
     "createdAt": "2026-06-14T10:56:00.000Z"
   }

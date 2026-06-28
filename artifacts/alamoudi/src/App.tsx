@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { ComponentType } from "react";
+import { ComponentType, Suspense, lazy } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,28 +20,32 @@ import Favorites from "@/pages/Favorites";
 import Compare from "@/pages/Compare";
 import Login from "@/pages/Login";
 
-import Dashboard from "@/pages/admin/Dashboard";
-import Properties from "@/pages/admin/Properties";
-import PropertyForm from "@/pages/admin/PropertyForm";
-import Regions from "@/pages/admin/Regions";
-import PropertyTypes from "@/pages/admin/PropertyTypes";
-import Users from "@/pages/admin/Users";
-import Roles from "@/pages/admin/Roles";
-import Settings from "@/pages/admin/Settings";
-import Analytics from "@/pages/admin/Analytics";
-import ActivityLogs from "@/pages/admin/ActivityLogs";
-import ImportExport from "@/pages/admin/ImportExport";
-import Inquiries from "@/pages/admin/Inquiries";
-import PropertyRequests from "@/pages/admin/PropertyRequests";
-import FinishingRequests from "@/pages/admin/FinishingRequests";
-import Backup from "@/pages/admin/Backup";
+const Dashboard = lazy(() => import("@/pages/admin/Dashboard"));
+const Properties = lazy(() => import("@/pages/admin/Properties"));
+const PropertyForm = lazy(() => import("@/pages/admin/PropertyForm"));
+const Regions = lazy(() => import("@/pages/admin/Regions"));
+const PropertyTypes = lazy(() => import("@/pages/admin/PropertyTypes"));
+const Users = lazy(() => import("@/pages/admin/Users"));
+const Roles = lazy(() => import("@/pages/admin/Roles"));
+const Settings = lazy(() => import("@/pages/admin/Settings"));
+const Analytics = lazy(() => import("@/pages/admin/Analytics"));
+const ActivityLogs = lazy(() => import("@/pages/admin/ActivityLogs"));
+const ImportExport = lazy(() => import("@/pages/admin/ImportExport"));
+const Inquiries = lazy(() => import("@/pages/admin/Inquiries"));
+const PropertyRequests = lazy(() => import("@/pages/admin/PropertyRequests"));
+const FinishingRequests = lazy(() => import("@/pages/admin/FinishingRequests"));
+const Backup = lazy(() => import("@/pages/admin/Backup"));
 
 const queryClient = new QueryClient();
 
 function Protected({ component: Component }: { component: ComponentType }) {
   const { isStaff } = useAuth();
   if (!isStaff) return <Redirect to="/login" />;
-  return <Component />;
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>}>
+      <Component />
+    </Suspense>
+  );
 }
 
 function Router() {
