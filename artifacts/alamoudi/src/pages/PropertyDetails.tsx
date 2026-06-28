@@ -226,10 +226,16 @@ export default function PropertyDetails() {
                       { label: "المساحة", value: property.area ? `${property.area} م²` : null },
                       { label: "عدد الغرف", value: property.beds || null },
                       { label: "عدد الحمامات", value: property.baths || null },
-                      { label: "الدور", value: property.floor || null },
+                      { label: "الدور", value: property.floorText || property.floor || null },
                       { label: "عدد الطوابق", value: property.floors || null },
+                      { label: "النوع", value: property.unitType || null },
+                      { label: "التوزيع", value: property.layout || null },
+                      { label: "ماستر", value: property.master || null },
+                      { label: "أسانسير", value: property.elevator || null },
+                      { label: "المنطقة الفرعية", value: property.subArea || null },
                       { label: "التشطيب", value: property.finishing ? (finishingLabels[property.finishing] || property.finishing) : null },
                       { label: "الفيو", value: property.view || null },
+                      { label: "الموقع", value: property.location || null },
                     ].filter(r => r.value != null && r.value !== "").map((row, i) => (
                       <div key={i} className="flex justify-between items-center py-2 border-b border-border last:border-0">
                         <span className="text-sm text-muted-foreground">{row.label}</span>

@@ -7,6 +7,7 @@ import { UploadCloud, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { parseWorkbookBytes, parseDelimitedText, type ParsedProperty } from "@/lib/propertyImport";
 
 const TEMPLATE_HEADERS = "العنوان,الوصف,السعر,المساحة,غرف_النوم,الحمامات,الدور,التشطيب,الفيو,الفئة,الحالة";
 const TEMPLATE_ROW = "شقة فاخرة,وصف العقار,2500000,120,3,2,4,super-lux,بحري,sale,active";
@@ -20,12 +21,12 @@ function toCSV(rows: Record<string, any>[], headers: string[]): string {
 }
 
 export default function ImportExport() {
-  const { properties, users, inquiries, regions, propertyTypes, addProperty } = useData();
+  const { properties, users, inquiries, regions, propertyTypes, importProperties } = useData();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [exportType, setExportType] = useState("properties");
   const [dragging, setDragging] = useState(false);
-  const [importResult, setImportResult] = useState<{ success: number; errors: number } | null>(null);
+  const [importResult, setImportResult] = useState<{ added: number; updated: number; errors: number; sheets: { name: string; count: number }[] } | null>(null);
 
   const getExportData = () => {
     switch (exportType) {
@@ -79,48 +80,44 @@ export default function ImportExport() {
     URL.revokeObjectURL(url);
   };
 
-  const processImport = (text: string) => {
-    try {
-      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-      if (lines.length < 2) { toast({ title: "الملف فارغ أو غير صحيح", variant: "destructive" }); return; }
-      const headers = lines[0].replace(/^\uFEFF/, "").split(",");
-      let success = 0; let errors = 0;
-      lines.slice(1).forEach(line => {
-        try {
-          const vals = line.split(",");
-          const row: Record<string, string> = {};
-          headers.forEach((h, i) => { row[h.trim()] = (vals[i] ?? "").trim(); });
-          const title = row["العنوان"] || row["title"];
-          if (!title) { errors++; return; }
-          addProperty({
-            title, description: row["الوصف"] || row["description"] || "",
-            price: Number(row["السعر"] || row["price"] || 0),
-            area: Number(row["المساحة"] || row["area"] || 0),
-            beds: Number(row["غرف_النوم"] || row["beds"] || 0),
-            baths: Number(row["الحمامات"] || row["baths"] || 0),
-            floors: 0, floor: Number(row["الدور"] || 0),
-            finishing: row["التشطيب"] || "", view: row["الفيو"] || "",
-            typeId: "", regionId: "",
-            category: (row["الفئة"] || "sale") as any,
-            status: (row["الحالة"] || "draft") as any,
-            featured: false, agentType: "direct",
-            images: [], videoUrl: "", externalUrl: "", mapsUrl: "",
-          });
-          success++;
-        } catch { errors++; }
-      });
-      setImportResult({ success, errors });
-      toast({ title: `تم الاستيراد: ${success} نجح، ${errors} فشل` });
-    } catch {
-      toast({ title: "خطأ في قراءة الملف", variant: "destructive" });
+  const applyImport = (items: ParsedProperty[], sheets: { name: string; count: number }[]) => {
+    const valid = items.filter(p => p.price || p.area || p.code || (p.title && p.title.trim()));
+    const errors = items.length - valid.length;
+    if (valid.length === 0) {
+      toast({ title: "لم يتم العثور على بيانات صالحة في الملف", variant: "destructive" });
+      return;
     }
+    const { added, updated } = importProperties(valid);
+    setImportResult({ added, updated, errors, sheets });
+    toast({ title: `تم الاستيراد بنجاح`, description: `أُضيف ${added} عقار، حُدّث ${updated}، تخطّي ${errors}` });
   };
 
   const handleFile = (file: File) => {
-    if (!file.name.endsWith(".csv")) { toast({ title: "يدعم ملفات CSV فقط", variant: "destructive" }); return; }
+    const name = file.name.toLowerCase();
+    const isExcel = name.endsWith(".xlsx") || name.endsWith(".xls");
+    const isText = name.endsWith(".csv") || name.endsWith(".txt") || name.endsWith(".tsv");
+    if (!isExcel && !isText) {
+      toast({ title: "صيغة غير مدعومة", description: "يدعم Excel (xlsx/xls) و CSV و TXT", variant: "destructive" });
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = e => processImport(e.target?.result as string);
-    reader.readAsText(file, "utf-8");
+    reader.onerror = () => toast({ title: "تعذّر قراءة الملف", variant: "destructive" });
+    reader.onload = e => {
+      try {
+        if (isExcel) {
+          const bytes = new Uint8Array(e.target?.result as ArrayBuffer);
+          const { items, sheets } = parseWorkbookBytes(bytes);
+          applyImport(items, sheets);
+        } else {
+          const { items, sheets } = parseDelimitedText(e.target?.result as string, regions);
+          applyImport(items, sheets);
+        }
+      } catch {
+        toast({ title: "خطأ في معالجة الملف", description: "تأكد أن الملف بالتنسيق الصحيح", variant: "destructive" });
+      }
+    };
+    if (isExcel) reader.readAsArrayBuffer(file);
+    else reader.readAsText(file, "utf-8");
   };
 
   return (
@@ -135,8 +132,8 @@ export default function ImportExport() {
           {/* Import */}
           <Card>
             <CardHeader>
-              <CardTitle>استيراد البيانات</CardTitle>
-              <CardDescription>رفع ملف CSV لاستيراد عقارات</CardDescription>
+              <CardTitle>استيراد العقارات</CardTitle>
+              <CardDescription>رفع ملف Excel أو CSV — يُوزَّع تلقائياً حسب المنطقة والفئة، ويُحدِّث العقار إن تطابق الكود</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div
@@ -148,16 +145,23 @@ export default function ImportExport() {
                 onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
               >
                 <UploadCloud className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm font-medium mb-1">اسحب ملف CSV هنا أو انقر للاختيار</p>
-                <p className="text-xs text-muted-foreground">ملفات CSV فقط</p>
+                <p className="text-sm font-medium mb-1">اسحب الملف هنا أو انقر للاختيار</p>
+                <p className="text-xs text-muted-foreground">Excel (xlsx · xls) · CSV · TXT</p>
               </div>
-              <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { handleFile(f); e.target.value = ""; } }} />
+              <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv,.txt,.tsv" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { handleFile(f); e.target.value = ""; } }} />
 
               {importResult && (
-                <div className={cn("flex items-center gap-3 rounded-lg p-3 text-sm",
+                <div className={cn("rounded-lg p-3 text-sm space-y-2",
                   importResult.errors > 0 ? "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700" : "bg-green-50 dark:bg-green-950/20 text-green-700")}>
-                  {importResult.errors === 0 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-                  نجح: {importResult.success} — فشل: {importResult.errors}
+                  <div className="flex items-center gap-2 font-medium">
+                    {importResult.errors === 0 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                    أُضيف {importResult.added} · حُدِّث {importResult.updated} · تُخطّي {importResult.errors}
+                  </div>
+                  {importResult.sheets.length > 0 && (
+                    <ul className="text-xs space-y-0.5 opacity-80 pr-6 list-disc">
+                      {importResult.sheets.map((s, i) => <li key={i}>{s.name}: {s.count}</li>)}
+                    </ul>
+                  )}
                 </div>
               )}
 

@@ -48,6 +48,14 @@ export default function PropertyForm() {
     videoUrl: existing?.videoUrl ?? "",
     externalUrl: existing?.externalUrl ?? "",
     mapsUrl: existing?.mapsUrl ?? "",
+    unitType: existing?.unitType ?? "",
+    subArea: existing?.subArea ?? "",
+    layout: existing?.layout ?? "",
+    master: existing?.master ?? "",
+    elevator: existing?.elevator ?? "",
+    floorText: existing?.floorText ?? "",
+    location: existing?.location ?? "",
+    source: existing?.source ?? "",
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);
@@ -160,6 +168,34 @@ export default function PropertyForm() {
                   <div className="space-y-2">
                     <Label>الفيو</Label>
                     <Input value={form.view} onChange={e => set("view", e.target.value)} placeholder="بحري / قبلي / حديقة..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>النوع</Label>
+                    <Input value={form.unitType} onChange={e => set("unitType", e.target.value)} placeholder="أرضي / متكرر / أخير..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>الدور (وصف)</Label>
+                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="مثال: ١ (أمامي)" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>التوزيع</Label>
+                    <Input value={form.layout} onChange={e => set("layout", e.target.value)} placeholder="مثال: 3 غرف + 2 حمام" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>ماستر</Label>
+                    <Input value={form.master} onChange={e => set("master", e.target.value)} placeholder="نعم / ماستر + دريسنج..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>أسانسير</Label>
+                    <Input value={form.elevator} onChange={e => set("elevator", e.target.value)} placeholder="نعم / لا" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>المنطقة الفرعية</Label>
+                    <Input value={form.subArea} onChange={e => set("subArea", e.target.value)} placeholder="مثال: المنطقة ١ / B7" />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-3">
+                    <Label>الموقع</Label>
+                    <Input value={form.location} onChange={e => set("location", e.target.value)} placeholder="وصف الموقع التفصيلي..." />
                   </div>
                 </div>
               </CardContent>
@@ -295,6 +331,11 @@ export default function PropertyForm() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">يظهر للمدير فقط</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">المصدر (خاص)</Label>
+                  <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="بروكر / مباشر / اسم المصدر..." />
+                  <p className="text-xs text-muted-foreground">خاص بالإدارة — لا يظهر للزوّار</p>
                 </div>
               </CardContent>
             </Card>

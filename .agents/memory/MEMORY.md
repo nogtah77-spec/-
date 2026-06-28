@@ -1,1 +1,2 @@
 - [Tailwind v4 container centering](tailwind-v4-container-centering.md) — v4 `container` has no auto margins; bare `container` drifts to start (right in RTL) between breakpoints; fix with `@utility container { margin-inline:auto }`.
+- [Alamoudi seed & import](alamoudi-data-import.md) — no-backend app: baked seed + SEED_VERSION merge-by-code, import upserts by code, `source` only UI-hidden (not truly private without a backend).

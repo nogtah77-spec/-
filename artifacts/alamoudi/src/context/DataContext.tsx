@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { SEED_PROPERTIES } from "@/data/seedProperties";
+
+const SEED_VERSION = 1;
 
 export interface Region { id: string; name: string; active: boolean; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -30,6 +33,14 @@ export interface Property {
   externalUrl: string;
   mapsUrl: string;
   createdAt: string;
+  unitType?: string;
+  subArea?: string;
+  layout?: string;
+  master?: string;
+  elevator?: string;
+  floorText?: string;
+  location?: string;
+  source?: string;
 }
 
 export interface User {
@@ -194,6 +205,7 @@ interface DataContextType {
   addProperty: (p: Omit<Property, "id" | "createdAt" | "code">) => void;
   updateProperty: (id: string, p: Partial<Property>) => void;
   deleteProperty: (id: string) => void;
+  importProperties: (items: Omit<Property, "id" | "createdAt">[]) => { added: number; updated: number };
   addUser: (u: Omit<User, "id" | "joinedAt">) => void;
   updateUser: (id: string, u: Partial<User>) => void;
   deleteUser: (id: string) => void;
@@ -242,7 +254,19 @@ function migrateProperty(p: any): Property {
 export function DataProvider({ children }: { children: ReactNode }) {
   const [regions, setRegions] = useState<Region[]>(() => load("alamoudi_regions", DEFAULT_REGIONS));
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>(() => load("alamoudi_property_types", DEFAULT_PROPERTY_TYPES));
-  const [properties, setProperties] = useState<Property[]>(() => (load<any[]>("alamoudi_properties", [])).map(migrateProperty));
+  const [properties, setProperties] = useState<Property[]>(() => {
+    let raw: string | null = null;
+    try { raw = localStorage.getItem("alamoudi_properties"); } catch {}
+    if (raw === null) return SEED_PROPERTIES.map(migrateProperty);
+    let stored: Property[];
+    try { stored = (JSON.parse(raw) as any[]).map(migrateProperty); } catch { return SEED_PROPERTIES.map(migrateProperty); }
+    let seededV = 0;
+    try { seededV = Number(localStorage.getItem("alamoudi_seed_version") || "0"); } catch {}
+    if (seededV >= SEED_VERSION) return stored;
+    const codes = new Set(stored.map(p => p.code));
+    const missing = SEED_PROPERTIES.filter(p => !codes.has(p.code)).map(migrateProperty);
+    return [...missing, ...stored];
+  });
   const [users, setUsers] = useState<User[]>(() => {
     const stored = load<User[]>("alamoudi_users", DEFAULT_USERS);
     const hasActiveAdmin = stored.some(u => u.role === "admin" && u.active);
@@ -258,6 +282,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => { save("alamoudi_regions", regions); }, [regions]);
   useEffect(() => { save("alamoudi_property_types", propertyTypes); }, [propertyTypes]);
   useEffect(() => { save("alamoudi_properties", properties); }, [properties]);
+  useEffect(() => { try { localStorage.setItem("alamoudi_seed_version", String(SEED_VERSION)); } catch {} }, []);
   useEffect(() => { save("alamoudi_users", users); }, [users]);
   useEffect(() => { save("alamoudi_inquiries", inquiries); }, [inquiries]);
   useEffect(() => { save("alamoudi_finishing_requests", finishingRequests); }, [finishingRequests]);
@@ -281,6 +306,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateProperty = (id: string, p: Partial<Property>) =>
     setProperties(prev => prev.map(prop => prop.id === id ? { ...prop, ...p } : prop));
   const deleteProperty = (id: string) => setProperties(p => p.filter(x => x.id !== id));
+
+  const importProperties = (items: Omit<Property, "id" | "createdAt">[]) => {
+    let added = 0;
+    let updated = 0;
+    setProperties(prev => {
+      const next = [...prev];
+      const indexByCode = new Map<string, number>();
+      next.forEach((p, i) => { if (p.code) indexByCode.set(p.code, i); });
+      for (const item of items) {
+        const code = item.code || genCode();
+        const existingIdx = item.code ? indexByCode.get(item.code) : undefined;
+        if (existingIdx !== undefined) {
+          next[existingIdx] = { ...next[existingIdx], ...item, code };
+          updated++;
+        } else {
+          const created: Property = { ...item, code, id: genId(), createdAt: new Date().toISOString() };
+          indexByCode.set(code, next.length);
+          next.push(created);
+          added++;
+        }
+      }
+      return next;
+    });
+    return { added, updated };
+  };
 
   const addUser = (u: Omit<User, "id" | "joinedAt">) =>
     setUsers(p => [...p, { ...u, id: genId(), joinedAt: new Date().toISOString() }]);
@@ -320,7 +370,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateSettings,
       addRegion, updateRegion, deleteRegion, toggleRegion,
       addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType,
-      addProperty, updateProperty, deleteProperty,
+      addProperty, updateProperty, deleteProperty, importProperties,
       addUser, updateUser, deleteUser, toggleUser,
       addInquiry, updateInquiryStatus, deleteInquiry,
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
