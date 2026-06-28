@@ -39,7 +39,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="relative z-10 pt-4">
-                <div className="text-3xl font-bold text-foreground">{kpi.value}</div>
+                <div className="text-3xl font-bold text-foreground text-center">{kpi.value}</div>
               </CardContent>
             </Card>
           ))}
