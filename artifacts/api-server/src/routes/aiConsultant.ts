@@ -158,14 +158,14 @@ async function loadListings(): Promise<Listing[]> {
   });
 }
 
-function rankListings(listings: Listing[], query: string, limit: number): Listing[] {
+// Orders the FULL inventory so the most relevant listings come first, but never
+// drops any listing — the AI sees every available property on the platform.
+function orderListings(listings: Listing[], query: string): Listing[] {
   const tokens = normalize(query)
     .split(/\s+/)
     .filter((t) => t.length >= 2);
   if (tokens.length === 0) {
-    return [...listings]
-      .sort((a, b) => Number(b.featured) - Number(a.featured))
-      .slice(0, limit);
+    return [...listings].sort((a, b) => Number(b.featured) - Number(a.featured));
   }
   const scored = listings.map((l) => {
     let score = 0;
@@ -175,9 +175,9 @@ function rankListings(listings: Listing[], query: string, limit: number): Listin
     if (l.featured) score += 0.25;
     return { l, score };
   });
-  const matched = scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score);
-  const pool = matched.length > 0 ? matched : scored.sort((a, b) => b.score - a.score);
-  return pool.slice(0, limit).map((s) => s.l);
+  return scored
+    .sort((a, b) => b.score - a.score || Number(b.l.featured) - Number(a.l.featured))
+    .map((s) => s.l);
 }
 
 function serializeListing(l: Listing): string {
@@ -204,13 +204,29 @@ function serializeListing(l: Listing): string {
 const LEAD_OPEN = "<<<LEAD>>>";
 const LEAD_CLOSE = "<<<END_LEAD>>>";
 
-function buildSystemPrompt(listingsBlock: string): string {
-  return `أنت "المستشار الذكي" — مستشار عقاري خبير ومحترف يعمل لدى "شركة العمودي للتسويق العقاري والتشطيبات" في مصر.
+function buildSystemPrompt(
+  listingsBlock: string,
+  totalCount: number,
+  shownCount: number,
+): string {
+  const coverageNote =
+    totalCount === 0
+      ? "لا توجد عقارات متاحة على المنصة حاليًا."
+      : shownCount >= totalCount
+        ? `هذه هي قائمة كل العقارات المتاحة حاليًا على المنصة بالكامل (${totalCount} عقار). أنت على اطّلاع تام بكل عقار فيها.`
+        : `إجمالي العقارات المتاحة حاليًا على المنصة ${totalCount} عقار، ومعروض أمامك منها ${shownCount} الأكثر صلة بطلب العميل. إن احتاج العميل خيارات أوسع وجّه استفساره ليظهر له المزيد.`;
+  return `أنت "المستشار الذكي" — مستشار ومسوّق عقاري خبير ومحترف يعمل لدى "شركة العمودي للتسويق العقاري والتشطيبات" في مصر.
 
 # شخصيتك
 - ودود، محترف، ذكي، صبور ومقنع. تتحدث بطبيعية تامة مثل مستشار بشري حقيقي.
 - تشجع العميل بلطف على مواصلة استكشاف المنصة والتواصل مع الشركة.
 - إجاباتك مختصرة ومنظمة وواضحة، واستخدم أسطرًا منفصلة عند الحاجة. لا تستخدم جداول.
+
+# أسلوبك كمسوّق عقاري محترف
+- أبرِز مميزات وقيمة كل عقار بذكاء (الموقع، السعر التنافسي، المساحة، التشطيب، قرب الخدمات) واربطها باحتياج العميل.
+- اخلق حافزًا لطيفًا لاتخاذ القرار دون مبالغة أو ضغط أو ادعاءات غير صحيحة، وكن صادقًا دائمًا.
+- اقترح بدائل مناسبة عند الحاجة، ووجّه العميل بلطف نحو الخطوة التالية: معاينة العقار، التواصل مع الفريق، أو حفظ طلبه للمتابعة.
+- روّج عند المناسبة لخدمات الشركة (التشطيبات، إضافة عقار، الاستشارة العقارية).
 
 # اللغات واللهجات
 - اكتشف لغة العميل ولهجته تلقائيًا وردّ بنفس اللغة/اللهجة.
@@ -225,8 +241,10 @@ function buildSystemPrompt(listingsBlock: string): string {
 افهم احتياج العميل من خلال حوار طبيعي (دون نماذج جامدة): المنطقة المطلوبة، نوع العقار، الميزانية، عدد الغرف والحمامات، المساحة، الحديقة/الروف، مفروش أم لا، كاش أم تقسيط، موعد التسليم، وأي متطلبات إضافية.
 
 # العقارات المتاحة
-اعتمد حصريًا على قائمة العقارات التالية المستخرجة من قاعدة بيانات المنصة. لا تخترع عقارات أو أكوادًا أو أسعارًا غير موجودة.
-- اعرض أفضل العقارات المطابقة أولًا واذكر كود كل عقار ورابطه ليتمكن العميل من فتحه.
+${coverageNote}
+هذه القائمة محدّثة لحظيًا من قاعدة بيانات المنصة (تعكس فورًا أي عقار جديد أو معدَّل أو محذوف). اعتمد عليها حصريًا ولا تخترع عقارات أو أكوادًا أو أسعارًا غير موجودة فيها.
+- العقارات مرتبة بحيث يظهر الأكثر صلة بطلب العميل أولًا، لكنك مطّلع على كل عقار في القائمة.
+- اعرض أنسب العقارات المطابقة واذكر كود كل عقار ورابطه ليتمكن العميل من فتحه.
 - إن لم يوجد تطابق تام اعرض أقرب البدائل واشرح سبب اختيارها.
 - إن لم تتوفر عقارات مناسبة إطلاقًا فاعرض حفظ طلب العميل لمتابعته من قِبل الفريق.
 
@@ -341,9 +359,13 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
 
   try {
     const listings = await loadListings();
-    const top = rankListings(listings, recentUserText || lastUser?.content || "", 18);
-    const block = top.map(serializeListing).join("\n");
-    const system = buildSystemPrompt(block);
+    // Send the AI the FULL current inventory (most relevant first). A high safety
+    // cap only guards against runaway context/cost if the catalog grows huge.
+    const MAX_LISTINGS = 300;
+    const ordered = orderListings(listings, recentUserText || lastUser?.content || "");
+    const included = ordered.slice(0, MAX_LISTINGS);
+    const block = included.map(serializeListing).join("\n");
+    const system = buildSystemPrompt(block, listings.length, included.length);
 
     const raw = await aiChat(system, messages);
     const { cleaned, lead } = extractLead(raw);
