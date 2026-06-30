@@ -1,4 +1,4 @@
-import { Plus, Pencil, Trash2, RefreshCw, Upload, Activity } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, Upload, Activity, LogIn } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ar } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ const ACTION_META: Record<string, { icon: typeof Activity; cls: string }> = {
   deleted: { icon: Trash2, cls: "text-red-600 bg-red-500/10" },
   status: { icon: RefreshCw, cls: "text-amber-600 bg-amber-500/10" },
   imported: { icon: Upload, cls: "text-violet-600 bg-violet-500/10" },
+  login: { icon: LogIn, cls: "text-indigo-600 bg-indigo-500/10" },
 };
 
 function metaFor(action: string) {

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable } from "@workspace/db";
 import { verifyPassword } from "../lib/auth";
+import { logActivity } from "../lib/activityLog";
 
 const router: IRouter = Router();
 
@@ -51,6 +52,12 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
   req.session.userId = user.id;
   req.session.role = user.role;
+  void logActivity({
+    action: "login",
+    entityType: "auth",
+    title: `تسجيل الدخول إلى لوحة التحكم: ${user.name}`,
+    actor: user.role === "agent" ? "موظف" : "الإدارة",
+  });
   res.json(publicUser(user));
 });
 

@@ -13,6 +13,7 @@ import { AIChatWidget } from "@/components/ai/AIChatWidget";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
 import { api } from "@/lib/api";
 import { getVisitorId } from "@/lib/visitorTracking";
+import { LiveVisitorsBubble } from "@/components/ui/LiveVisitorsBubble";
 
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -56,7 +57,11 @@ function Protected({ component: Component }: { component: ComponentType }) {
 }
 
 function VisitorTracker() {
+  const { authReady, isStaff } = useAuth();
   useEffect(() => {
+    // Only count real visitors: skip until auth is resolved, and never track
+    // logged-in staff (admins/agents) so they're excluded from all analytics.
+    if (!authReady || isStaff) return;
     const send = () => {
       if (document.visibilityState !== "visible") return;
       void api.post("/track/heartbeat", { visitorId: getVisitorId() }).catch(() => {
@@ -73,8 +78,16 @@ function VisitorTracker() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
+  }, [authReady, isStaff]);
   return null;
+}
+
+function StaffLiveBubble() {
+  const { authReady, isStaff } = useAuth();
+  const [location] = useLocation();
+  if (!authReady || !isStaff) return null;
+  if (location.startsWith("/admin") || location === "/login") return null;
+  return <LiveVisitorsBubble />;
 }
 
 function ScrollToTop() {
@@ -148,6 +161,7 @@ function App() {
                     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                       <ScrollToTop />
                       <Router />
+                      <StaffLiveBubble />
                       {AI_ASSISTANT_ENABLED && <AIChatWidget />}
                     </WouterRouter>
                   </AppReadyGate>

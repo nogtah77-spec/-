@@ -3,6 +3,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { RollingNumber } from "@/components/ui/RollingNumber";
 import {
   ResponsiveContainer,
   BarChart,
@@ -41,7 +42,7 @@ export default function Analytics() {
 
   useEffect(() => {
     refreshVisitorStats();
-    const interval = setInterval(refreshVisitorStats, 20_000);
+    const interval = setInterval(refreshVisitorStats, 12_000);
     return () => clearInterval(interval);
   }, [refreshVisitorStats]);
 
@@ -129,8 +130,8 @@ export default function Analytics() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-4">
-                  <div className="text-3xl font-bold text-foreground text-center" dir="ltr">
-                    {c.value.toLocaleString("en-US")}
+                  <div className="flex justify-center text-3xl font-bold text-foreground" dir="ltr">
+                    <RollingNumber value={c.value} />
                   </div>
                 </CardContent>
               </Card>
