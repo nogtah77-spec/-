@@ -150,6 +150,7 @@ export default function Home() {
   const [searchSector, setSearchSector] = useState<"residential" | "administrative" | "medical" | "commercial">("residential");
   const [selectedRegion, setSelectedRegion] = useState("");
   const [selectedType, setSelectedType] = useState("");
+  const [selectedFinishing, setSelectedFinishing] = useState("");
   const [searchText, setSearchText] = useState("");
   const [filtersApplied, setFiltersApplied] = useState(false);
   const [cardSize, setCardSize] = useState<CardSize>(() => {
@@ -167,25 +168,42 @@ export default function Home() {
   const featuredProps = useMemo(() => properties.filter(p => p.featured).map(resolve), [properties, propertyTypes, regions]);
   const latestProps = useMemo(() => [...properties].reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
 
+  const finishingFilterOptions = useMemo(
+    () => Array.from(new Set(properties.map(p => (p.finishing || "").trim()).filter(Boolean))).sort(),
+    [properties]
+  );
+
   const effectiveCategory = searchSector === "residential" ? searchCategory : searchSector;
   const isFiltering = filtersApplied || searchText.trim() !== "";
 
   const filterResults = useMemo(() => {
     let list = properties;
     const q = searchText.trim().toLowerCase();
-    if (q) list = list.filter(p => p.title.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
+    if (q) {
+      list = list.filter(p => {
+        const regionName = regions.find(r => r.id === p.regionId)?.name ?? "";
+        const typeName = propertyTypes.find(t => t.id === p.typeId)?.name ?? "";
+        const hay = [
+          p.title, p.code, p.description, p.location, p.subArea,
+          p.finishing, p.view, p.unitType, regionName, typeName,
+        ].filter(Boolean).join(" ").toLowerCase();
+        return hay.includes(q);
+      });
+    }
     if (filtersApplied) {
       list = list.filter(p => p.category === effectiveCategory);
       if (selectedRegion) list = list.filter(p => p.regionId === selectedRegion);
       if (selectedType) list = list.filter(p => p.typeId === selectedType);
+      if (selectedFinishing) list = list.filter(p => (p.finishing || "").trim() === selectedFinishing);
     }
     return list.map(resolve);
-  }, [properties, searchText, filtersApplied, effectiveCategory, selectedRegion, selectedType, propertyTypes, regions]);
+  }, [properties, searchText, filtersApplied, effectiveCategory, selectedRegion, selectedType, selectedFinishing, propertyTypes, regions]);
 
   const clearFilters = () => {
     setSearchText("");
     setSelectedRegion("");
     setSelectedType("");
+    setSelectedFinishing("");
     setSearchCategory("sale");
     setSearchSector("residential");
     setFiltersApplied(false);
@@ -271,7 +289,7 @@ export default function Home() {
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pr-10 h-10"
-                placeholder="ابحث باسم العقار أو كود العقار..."
+                placeholder="ابحث بالكود، اسم العقار، المنطقة، النوع، التشطيب..."
                 value={searchText}
                 onChange={e => setSearchText(e.target.value)}
               />
@@ -311,6 +329,12 @@ export default function Home() {
                 <SelectTrigger className="w-full sm:w-44 h-9 text-sm"><SelectValue placeholder="نوع العقار" /></SelectTrigger>
                 <SelectContent>{propertyTypes.filter(t => t.active).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
               </Select>
+              {finishingFilterOptions.length > 0 && (
+                <Select value={selectedFinishing} onValueChange={setSelectedFinishing}>
+                  <SelectTrigger className="w-full sm:w-40 h-9 text-sm"><SelectValue placeholder="التشطيب" /></SelectTrigger>
+                  <SelectContent>{finishingFilterOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
+                </Select>
+              )}
               <Button className="h-9 px-6 bg-accent text-white hover:bg-accent/90 text-sm font-medium gap-1.5" data-testid="button-search"
                 onClick={() => setFiltersApplied(true)}>
                 <Search className="h-4 w-4" />بحث
