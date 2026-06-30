@@ -103,7 +103,7 @@ export function AIChatWidget() {
       {!open && (
         <button
           onClick={openChat}
-          aria-label="المستشار الذكي"
+          aria-label="ملك | مستشارتك العقارية"
           className="fixed bottom-5 right-5 z-40 group flex items-center gap-2 rounded-full bg-accent text-white shadow-lg shadow-accent/30 pl-4 pr-3 py-3 hover:scale-105 active:scale-95 transition-transform"
         >
           <span className="relative flex h-2.5 w-2.5">
@@ -111,7 +111,7 @@ export function AIChatWidget() {
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
           </span>
           <Sparkles className="h-5 w-5" />
-          <span className="hidden sm:inline text-sm font-semibold">المستشار الذكي</span>
+          <span className="hidden sm:inline text-sm font-semibold">ملك | مستشارتك العقارية</span>
         </button>
       )}
 
@@ -129,7 +129,7 @@ export function AIChatWidget() {
               inset-x-0 bottom-0 h-[88dvh] rounded-t-2xl
               sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[600px] sm:max-h-[85vh] sm:w-[400px] sm:rounded-2xl"
             role="dialog"
-            aria-label="المستشار الذكي"
+            aria-label="ملك | مستشارتك العقارية"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-l from-accent to-accent/80 text-white flex-shrink-0">
@@ -138,7 +138,7 @@ export function AIChatWidget() {
                   <Sparkles className="h-5 w-5" />
                 </span>
                 <div className="leading-tight">
-                  <p className="font-bold text-sm">المستشار الذكي</p>
+                  <p className="font-bold text-sm">ملك | مستشارتك العقارية</p>
                   <p className="text-[11px] text-white/80 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-300" /> متصل الآن
                   </p>
