@@ -35,6 +35,10 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 - **Groq free tier llama-3.3-70b ≈ 12,000 TPM.** Dumping all listings in full made one request ~13,562 tokens → HTTP **413 "Request too large"** (that figure = input + the `max_tokens` reservation, so output cap counts too). Lowered openai-compat `max_tokens` to 1024.
 - **The listings block is built within a CHAR budget**, not a fixed count: top-relevant listings get full `serializeListing()` up to `FULL_DETAIL_BUDGET`, every remaining property gets a compact one-liner `serializeCompact()` up to `TOTAL_BLOCK_BUDGET` (~3200/7000 chars). Keeps the AI aware of the ENTIRE inventory while always fitting the limit and auto-scaling as the catalog grows. `shownCount` (real included count) drives the coverageNote.
 
+## AI assistant visibility toggle (currently OFF)
+- The whole AI consultant is hidden behind one feature flag `AI_ASSISTANT_ENABLED` in `artifacts/alamoudi/src/config/features.ts` (env override `VITE_AI_ASSISTANT_ENABLED`, default **false**). User paused it temporarily (free-tier cost) — NOT deleted; all code, routes (`/admin/ai-leads`), leads data, and backend endpoints stay intact.
+- The flag gates 4 UI entry points: floating chat widget (App.tsx), navbar link desktop+mobile (Navbar.tsx), and the admin sidebar "عملاء المستشار الذكي" item (AdminSidebar.tsx). To re-enable: set flag/env true + redeploy.
+
 ## AI persona (no name, gender-aware)
 - Persona is a **name-less male** real-estate consultant — greeting "معك مستشارك العقاري الذكي". The old female named persona "ملك" was REMOVED at user request (it addressed everyone in feminine, which the user disliked).
 - It must **infer the client's gender from their speech/behavior** and reply masculine to men / feminine to women; stay neutral ("حضرتك") only while gender is unclear. Talks about itself in masculine. Frontend greeting/error strings live in `AIChatContext.tsx`; aria-label in `AIChatWidget.tsx`.

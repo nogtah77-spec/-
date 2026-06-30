@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { UserPrefsProvider } from "@/context/UserPrefsContext";
 import { AIChatProvider } from "@/context/AIChatContext";
 import { AIChatWidget } from "@/components/ai/AIChatWidget";
+import { AI_ASSISTANT_ENABLED } from "@/config/features";
 
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -122,7 +123,7 @@ function App() {
                     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                       <ScrollToTop />
                       <Router />
-                      <AIChatWidget />
+                      {AI_ASSISTANT_ENABLED && <AIChatWidget />}
                     </WouterRouter>
                   </AppReadyGate>
                   <Toaster />

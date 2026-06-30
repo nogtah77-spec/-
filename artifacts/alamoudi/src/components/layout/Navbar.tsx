@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAIChat } from "@/context/AIChatContext";
+import { AI_ASSISTANT_ENABLED } from "@/config/features";
 import { getTiktokUrl } from "@/lib/socials";
 
 export function Navbar() {
@@ -60,14 +61,16 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <button
-            onClick={openChat}
-            className="flex items-center gap-1.5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity whitespace-nowrap"
-            data-testid="button-ai-consultant"
-          >
-            <Sparkles className="h-4 w-4" />
-            المستشار الذكي AI
-          </button>
+          {AI_ASSISTANT_ENABLED && (
+            <button
+              onClick={openChat}
+              className="flex items-center gap-1.5 text-sm font-semibold text-accent hover:opacity-80 transition-opacity whitespace-nowrap"
+              data-testid="button-ai-consultant"
+            >
+              <Sparkles className="h-4 w-4" />
+              المستشار الذكي AI
+            </button>
+          )}
         </nav>
 
         {/* Actions — far left (RTL end) */}
@@ -158,16 +161,18 @@ export function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              <SheetClose asChild>
-                <button
-                  onClick={openChat}
-                  className="py-2.5 px-3 rounded-md text-base font-semibold text-accent hover:bg-accent/10 transition-colors flex items-center gap-2 text-right"
-                  data-testid="button-ai-consultant-mobile"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  المستشار الذكي AI
-                </button>
-              </SheetClose>
+              {AI_ASSISTANT_ENABLED && (
+                <SheetClose asChild>
+                  <button
+                    onClick={openChat}
+                    className="py-2.5 px-3 rounded-md text-base font-semibold text-accent hover:bg-accent/10 transition-colors flex items-center gap-2 text-right"
+                    data-testid="button-ai-consultant-mobile"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    المستشار الذكي AI
+                  </button>
+                </SheetClose>
+              )}
               <div className="my-2 border-t border-border" />
               <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-medium text-accent hover:bg-accent/10 transition-colors">
                 أضف عقارك

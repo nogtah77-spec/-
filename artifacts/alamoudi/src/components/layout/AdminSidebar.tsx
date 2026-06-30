@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
+import { AI_ASSISTANT_ENABLED } from "@/config/features";
 
 const sidebarItems = [
   { href: "/admin", label: "الرئيسية", icon: LayoutDashboard },
@@ -17,7 +18,9 @@ const sidebarItems = [
   { href: "/admin/inquiries", label: "استفسارات العملاء", icon: MessageSquare, badge: "inquiries" },
   { href: "/admin/property-requests", label: "طلبات إضافة عقار", icon: ClipboardList, badge: "propertyRequests" },
   { href: "/admin/finishing-requests", label: "طلبات التشطيبات", icon: Wrench, badge: "finishingRequests" },
-  { href: "/admin/ai-leads", label: "عملاء المستشار الذكي", icon: Sparkles, badge: "aiLeads" },
+  ...(AI_ASSISTANT_ENABLED
+    ? [{ href: "/admin/ai-leads", label: "عملاء المستشار الذكي", icon: Sparkles, badge: "aiLeads" }]
+    : []),
   { separator: true },
   { href: "/admin/settings", label: "الإعدادات", icon: Settings },
   { href: "/admin/analytics", label: "التحليلات", icon: BarChart3 },
