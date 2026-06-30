@@ -11,6 +11,8 @@ import { UserPrefsProvider } from "@/context/UserPrefsContext";
 import { AIChatProvider } from "@/context/AIChatContext";
 import { AIChatWidget } from "@/components/ai/AIChatWidget";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
+import { api } from "@/lib/api";
+import { getVisitorId } from "@/lib/visitorTracking";
 
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -51,6 +53,28 @@ function Protected({ component: Component }: { component: ComponentType }) {
       <Component />
     </Suspense>
   );
+}
+
+function VisitorTracker() {
+  useEffect(() => {
+    const send = () => {
+      if (document.visibilityState !== "visible") return;
+      void api.post("/track/heartbeat", { visitorId: getVisitorId() }).catch(() => {
+        /* best-effort presence tracking; never surface errors to visitors */
+      });
+    };
+    send();
+    const interval = setInterval(send, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") send();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+  return null;
 }
 
 function ScrollToTop() {
@@ -119,6 +143,7 @@ function App() {
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
                 <AIChatProvider>
+                  <VisitorTracker />
                   <AppReadyGate>
                     <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                       <ScrollToTop />

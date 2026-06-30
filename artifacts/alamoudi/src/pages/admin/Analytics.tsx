@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, MapPin, Users } from "lucide-react";
+import { Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import {
   ResponsiveContainer,
@@ -37,7 +37,20 @@ function ChartEmpty({ label }: { label: string }) {
 }
 
 export default function Analytics() {
-  const { properties, regions, propertyTypes, inquiries, finishingRequests, propertyRequests } = useData();
+  const { properties, regions, propertyTypes, inquiries, finishingRequests, propertyRequests, visitorStats, refreshVisitorStats } = useData();
+
+  useEffect(() => {
+    refreshVisitorStats();
+    const interval = setInterval(refreshVisitorStats, 20_000);
+    return () => clearInterval(interval);
+  }, [refreshVisitorStats]);
+
+  const visitorCards = [
+    { key: "online", title: "متواجدون الآن", value: visitorStats.online, icon: Radio, live: true },
+    { key: "today", title: "زوار اليوم", value: visitorStats.today, icon: CalendarDays, live: false },
+    { key: "week", title: "زوار آخر أسبوع", value: visitorStats.week, icon: CalendarRange, live: false },
+    { key: "month", title: "زوار آخر شهر", value: visitorStats.month, icon: CalendarClock, live: false },
+  ];
 
   const totalViews = useMemo(
     () => properties.reduce((sum, p) => sum + (p.views ?? 0), 0),
@@ -94,6 +107,35 @@ export default function Analytics() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">التحليلات والتقارير</h1>
           <p className="text-muted-foreground mt-1">إحصائيات تفصيلية لأداء العقارات والاهتمام بها</p>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-foreground">إحصائيات الزوار</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {visitorCards.map((c) => (
+              <Card key={c.key} className="card-luxury relative overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    {c.live && (
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+                      </span>
+                    )}
+                    {c.title}
+                  </CardTitle>
+                  <div className="p-2 bg-background rounded-md shadow-sm">
+                    <c.icon className={`h-5 w-5 ${c.live ? "text-green-600" : "text-accent"}`} />
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <div className="text-3xl font-bold text-foreground text-center" dir="ltr">
+                    {c.value.toLocaleString("en-US")}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

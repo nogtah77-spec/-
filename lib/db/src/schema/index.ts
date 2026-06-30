@@ -8,3 +8,4 @@ export * from "./propertyRequests";
 export * from "./aiLeads";
 export * from "./settings";
 export * from "./activityLogs";
+export * from "./visitorPings";

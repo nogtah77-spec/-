@@ -12,6 +12,7 @@ import propertyRequestsRouter from "./propertyRequests";
 import aiConsultantRouter from "./aiConsultant";
 import settingsRouter from "./settings";
 import activityLogsRouter from "./activityLogs";
+import visitorsRouter from "./visitors";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(propertyRequestsRouter);
 router.use(aiConsultantRouter);
 router.use(settingsRouter);
 router.use(activityLogsRouter);
+router.use(visitorsRouter);
 
 export default router;
