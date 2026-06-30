@@ -14,16 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { SEED_SOURCES } from "@/data/seedSources";
 
-const finishingOptions = [
-  { value: "سوبر لوكس", label: "سوبر لوكس" },
-  { value: "ألترا سوبر لوكس", label: "ألترا سوبر لوكس" },
-  { value: "متشطب", label: "متشطب" },
-  { value: "نص تشطيب", label: "نص تشطيب" },
-  { value: "تشطيب 75%", label: "تشطيب 75%" },
-  { value: "تشطيب 50%", label: "تشطيب 50%" },
-  { value: "طوب أحمر", label: "طوب أحمر" },
-  { value: "تحت الإنشاء", label: "تحت الإنشاء" },
-];
+import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 
 export default function PropertyForm() {
   const { regions, propertyTypes, addProperty, updateProperty, properties } = useData();

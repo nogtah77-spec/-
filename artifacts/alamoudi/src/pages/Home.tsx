@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useData, type TiktokVideo } from "@/context/DataContext";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
+import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { Link } from "wouter";
 
 function tiktokId(url: string): string | null {
@@ -167,11 +168,6 @@ export default function Home() {
 
   const featuredProps = useMemo(() => properties.filter(p => p.featured).map(resolve), [properties, propertyTypes, regions]);
   const latestProps = useMemo(() => [...properties].reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
-
-  const finishingFilterOptions = useMemo(
-    () => Array.from(new Set(properties.map(p => (p.finishing || "").trim()).filter(Boolean))).sort(),
-    [properties]
-  );
 
   const effectiveCategory = searchSector === "residential" ? searchCategory : searchSector;
   const isFiltering = filtersApplied || searchText.trim() !== "";
@@ -329,12 +325,10 @@ export default function Home() {
                 <SelectTrigger className="w-full sm:w-44 h-9 text-sm"><SelectValue placeholder="نوع العقار" /></SelectTrigger>
                 <SelectContent>{propertyTypes.filter(t => t.active).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
               </Select>
-              {finishingFilterOptions.length > 0 && (
-                <Select value={selectedFinishing} onValueChange={setSelectedFinishing}>
-                  <SelectTrigger className="w-full sm:w-40 h-9 text-sm"><SelectValue placeholder="التشطيب" /></SelectTrigger>
-                  <SelectContent>{finishingFilterOptions.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-                </Select>
-              )}
+              <Select value={selectedFinishing} onValueChange={setSelectedFinishing}>
+                <SelectTrigger className="w-full sm:w-40 h-9 text-sm"><SelectValue placeholder="التشطيب" /></SelectTrigger>
+                <SelectContent>{FINISHING_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+              </Select>
               <Button className="h-9 px-6 bg-accent text-white hover:bg-accent/90 text-sm font-medium gap-1.5" data-testid="button-search"
                 onClick={() => setFiltersApplied(true)}>
                 <Search className="h-4 w-4" />بحث
