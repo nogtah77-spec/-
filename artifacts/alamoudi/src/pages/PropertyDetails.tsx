@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
-  Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers
+  Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { useParams, useLocation, Link } from "wouter";
+import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,7 @@ export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { properties, propertyTypes, regions, settings, trackPropertyView } = useData();
+  const { isStaff } = useAuth();
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
@@ -141,6 +143,14 @@ export default function PropertyDetails() {
             <div className="flex flex-col items-end gap-3">
               <div className="text-3xl font-bold text-accent">{property.price.toLocaleString("en-US")} <span className="text-base font-normal text-muted-foreground">EGP</span></div>
               <div className="flex gap-2">
+                {isStaff && (
+                  <Button
+                    onClick={() => navigate(`/admin/properties/${property.id}/edit`)}
+                    className="bg-accent text-white hover:bg-accent/90 gap-1.5"
+                    title="تعديل هذا العقار">
+                    <Pencil className="h-4 w-4" />تعديل العقار
+                  </Button>
+                )}
                 <Button variant="outline" size="icon" onClick={handleShare} title="مشاركة"><Share2 className="h-4 w-4" /></Button>
                 <Button variant="outline" size="icon"
                   className={isFavorite(property.id) ? "text-red-500 border-red-200" : ""}
