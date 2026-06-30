@@ -29,7 +29,7 @@ const finishingLabels: Record<string, string> = {
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { properties, propertyTypes, regions, settings } = useData();
+  const { properties, propertyTypes, regions, settings, trackPropertyView } = useData();
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
@@ -37,6 +37,8 @@ export default function PropertyDetails() {
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
+
+  useEffect(() => { if (id) trackPropertyView(id); }, [id, trackPropertyView]);
 
   const property = properties.find(p => p.id === id);
 

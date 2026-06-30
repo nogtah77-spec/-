@@ -11,6 +11,7 @@ import finishingRequestsRouter from "./finishingRequests";
 import propertyRequestsRouter from "./propertyRequests";
 import aiConsultantRouter from "./aiConsultant";
 import settingsRouter from "./settings";
+import activityLogsRouter from "./activityLogs";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(finishingRequestsRouter);
 router.use(propertyRequestsRouter);
 router.use(aiConsultantRouter);
 router.use(settingsRouter);
+router.use(activityLogsRouter);
 
 export default router;

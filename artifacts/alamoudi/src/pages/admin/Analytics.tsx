@@ -1,53 +1,199 @@
+import { useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
-import { BarChart3 } from "lucide-react";
+import { Building2, Eye, MapPin, Users } from "lucide-react";
+import { useData } from "@/context/DataContext";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+
+const COLORS = ["#b08d57", "#1f2937", "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6"];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
+  administrative: "إداري",
+  medical: "طبي",
+  commercial: "تجاري",
+};
+
+function ChartEmpty({ label }: { label: string }) {
+  return (
+    <div className="h-[300px] w-full flex items-center justify-center bg-muted/20 rounded-md border border-dashed">
+      <p className="text-muted-foreground text-sm">{label}</p>
+    </div>
+  );
+}
 
 export default function Analytics() {
+  const { properties, regions, propertyTypes, inquiries, finishingRequests, propertyRequests } = useData();
+
+  const totalViews = useMemo(
+    () => properties.reduce((sum, p) => sum + (p.views ?? 0), 0),
+    [properties],
+  );
+  const activeProperties = properties.filter(
+    (p) => p.status === "active" || p.status === "listed",
+  ).length;
+  const totalLeads = inquiries.length + finishingRequests.length + propertyRequests.length;
+
+  const viewsByRegion = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of properties) {
+      map.set(p.regionId, (map.get(p.regionId) ?? 0) + (p.views ?? 0));
+    }
+    return regions
+      .map((r) => ({ name: r.name, value: map.get(r.id) ?? 0 }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+  }, [properties, regions]);
+
+  const typeDistribution = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of properties) {
+      map.set(p.typeId, (map.get(p.typeId) ?? 0) + 1);
+    }
+    return propertyTypes
+      .map((t) => ({ name: t.name, value: map.get(t.id) ?? 0 }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [properties, propertyTypes]);
+
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of properties) {
+      map.set(p.category, (map.get(p.category) ?? 0) + 1);
+    }
+    return Array.from(map.entries())
+      .map(([key, value]) => ({ name: CATEGORY_LABELS[key] ?? key, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [properties]);
+
+  const stats = [
+    { title: "إجمالي العقارات", value: properties.length, icon: Building2 },
+    { title: "إجمالي المشاهدات", value: totalViews, icon: Eye },
+    { title: "عقارات نشطة", value: activeProperties, icon: MapPin },
+    { title: "إجمالي العملاء المحتملين", value: totalLeads, icon: Users },
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">التحليلات والتقارير</h1>
-            <p className="text-muted-foreground mt-1">إحصائيات تفصيلية لأداء العقارات والمبيعات</p>
-          </div>
-          <Button variant="outline">
-            <Calendar className="ml-2 h-4 w-4" />
-            آخر 30 يوماً
-          </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">التحليلات والتقارير</h1>
+          <p className="text-muted-foreground mt-1">إحصائيات تفصيلية لأداء العقارات والاهتمام بها</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((s, i) => (
+            <Card key={i} className="card-luxury relative overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{s.title}</CardTitle>
+                <div className="p-2 bg-background rounded-md shadow-sm">
+                  <s.icon className="h-5 w-5 text-accent" />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="text-3xl font-bold text-foreground text-center" dir="ltr">
+                  {s.value.toLocaleString("en-US")}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="col-span-1">
+          <Card>
             <CardHeader>
               <CardTitle>المشاهدات حسب المنطقة</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] w-full flex items-center justify-center bg-muted/20 rounded-md border border-dashed">
-                <div className="text-center text-muted-foreground">
-                  <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p>البيانات قيد التجميع</p>
-                </div>
-              </div>
+              {viewsByRegion.length === 0 ? (
+                <ChartEmpty label="لا توجد مشاهدات مسجّلة بعد" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={viewsByRegion} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} angle={-15} textAnchor="end" height={60} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                    <Tooltip
+                      formatter={(v: number) => [v.toLocaleString("en-US"), "مشاهدات"]}
+                      contentStyle={{ direction: "rtl", borderRadius: 8 }}
+                    />
+                    <Bar dataKey="value" fill="#b08d57" radius={[4, 4, 0, 0]} name="مشاهدات" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
-          <Card className="col-span-1">
+          <Card>
             <CardHeader>
-              <CardTitle>توزيع العقارات (أنواع)</CardTitle>
+              <CardTitle>توزيع العقارات حسب النوع</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] w-full flex items-center justify-center bg-muted/20 rounded-md border border-dashed">
-                <div className="text-center text-muted-foreground">
-                  <div className="h-24 w-24 rounded-full border-4 border-dashed border-muted-foreground/30 mx-auto mb-4" />
-                  <p>لا توجد بيانات متاحة</p>
-                </div>
-              </div>
+              {typeDistribution.length === 0 ? (
+                <ChartEmpty label="لا توجد بيانات متاحة" />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={typeDistribution}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={(e: { name: string; value: number }) => `${e.name}: ${e.value}`}
+                    >
+                      {typeDistribution.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ direction: "rtl", borderRadius: 8 }} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>العقارات حسب الفئة</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {categoryData.length === 0 ? (
+              <ChartEmpty label="لا توجد بيانات متاحة" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={categoryData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    formatter={(v: number) => [v.toLocaleString("en-US"), "عقارات"]}
+                    contentStyle={{ direction: "rtl", borderRadius: 8 }}
+                  />
+                  <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} name="عقارات" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );

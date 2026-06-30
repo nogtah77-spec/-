@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Users as UsersIcon, Heart, Clock, Activity } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useData } from "@/context/DataContext";
+import { ActivityItem } from "@/components/admin/ActivityItem";
 
 export default function Dashboard() {
-  const { properties, regions, users } = useData();
+  const { properties, regions, users, activityLogs } = useData();
+  const recentActivity = activityLogs.slice(0, 6);
   
   const totalProperties = properties.length;
   const activeProperties = properties.filter(p => p.status === "active" || p.status === "listed").length;
@@ -51,12 +53,20 @@ export default function Dashboard() {
               <CardTitle>أحدث النشاطات</CardTitle>
             </CardHeader>
             <CardContent>
-              <EmptyState 
-                icon={<Activity className="h-6 w-6" />}
-                title="لا توجد نشاطات حديثة"
-                description="لم يتم تسجيل أي نشاطات على المنصة حتى الآن."
-                className="py-16 border-none bg-transparent"
-              />
+              {recentActivity.length === 0 ? (
+                <EmptyState 
+                  icon={<Activity className="h-6 w-6" />}
+                  title="لا توجد نشاطات حديثة"
+                  description="لم يتم تسجيل أي نشاطات على المنصة حتى الآن."
+                  className="py-16 border-none bg-transparent"
+                />
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {recentActivity.map((log) => (
+                    <ActivityItem key={log.id} log={log} />
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

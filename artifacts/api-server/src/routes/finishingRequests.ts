@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, finishingRequestsTable, insertFinishingRequestSchema } from "@workspace/db";
 import { requireStaff } from "../lib/auth";
+import { logActivity, actorFromReq } from "../lib/activityLog";
 
 const router: IRouter = Router();
 
@@ -20,6 +21,12 @@ router.post("/finishing-requests", async (req, res): Promise<void> => {
     return;
   }
   const [row] = await db.insert(finishingRequestsTable).values(parsed.data).returning();
+  await logActivity({
+    action: "created",
+    entityType: "finishing_request",
+    title: `طلب تشطيب جديد من ${row.name || "زائر"}`,
+    actor: "زائر",
+  });
   res.status(201).json(row);
 });
 
@@ -39,12 +46,31 @@ router.patch("/finishing-requests/:id", requireStaff, async (req, res): Promise<
     res.status(404).json({ error: "not found" });
     return;
   }
+  await logActivity({
+    action: "status",
+    entityType: "finishing_request",
+    title: `تم تحديث حالة طلب تشطيب من ${row.name || "زائر"}`,
+    actor: actorFromReq(req),
+  });
   res.json(row);
 });
 
 router.delete("/finishing-requests/:id", requireStaff, async (req, res): Promise<void> => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const [existing] = await db
+    .select({ name: finishingRequestsTable.name })
+    .from(finishingRequestsTable)
+    .where(eq(finishingRequestsTable.id, id))
+    .limit(1);
   await db.delete(finishingRequestsTable).where(eq(finishingRequestsTable.id, id));
+  if (existing) {
+    await logActivity({
+      action: "deleted",
+      entityType: "finishing_request",
+      title: `تم حذف طلب تشطيب من ${existing.name || "زائر"}`,
+      actor: actorFromReq(req),
+    });
+  }
   res.sendStatus(204);
 });
 

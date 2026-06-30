@@ -40,6 +40,7 @@ export interface Property {
   floorText?: string;
   location?: string;
   source?: string;
+  views?: number;
 }
 
 export interface User {
@@ -107,6 +108,15 @@ export interface AiLead {
   createdAt: string;
 }
 
+export interface ActivityLog {
+  id: string;
+  action: string;
+  entityType: string;
+  title: string;
+  actor: string;
+  createdAt: string;
+}
+
 export interface TiktokVideo {
   id: string;
   thumbnail: string;
@@ -159,7 +169,9 @@ interface DataContextType {
   finishingRequests: FinishingRequest[];
   propertyRequests: PropertyRequest[];
   aiLeads: AiLead[];
+  activityLogs: ActivityLog[];
   settings: SiteSettings;
+  trackPropertyView: (id: string) => void;
   updateSettings: (s: Partial<SiteSettings>) => void;
   addRegion: (name: string) => void;
   updateRegion: (id: string, name: string) => void;
@@ -210,12 +222,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
   const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
 
   const reload = useCallback(async () => {
     const [
       regionsR, typesR, propertiesR, settingsR,
-      usersR, inquiriesR, finishingR, requestsR, aiLeadsR,
+      usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR,
     ] = await Promise.allSettled([
       api.get<Region[]>("/regions"),
       api.get<PropertyType[]>("/property-types"),
@@ -226,6 +239,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       api.get<FinishingRequest[]>("/finishing-requests"),
       api.get<PropertyRequest[]>("/property-requests"),
       api.get<AiLead[]>("/ai/leads"),
+      api.get<ActivityLog[]>("/activity-logs"),
     ]);
     if (regionsR.status === "fulfilled") setRegions(regionsR.value);
     if (typesR.status === "fulfilled") setPropertyTypes(typesR.value);
@@ -238,6 +252,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
     setPropertyRequests(requestsR.status === "fulfilled" ? requestsR.value : []);
     if (aiLeadsR.status === "fulfilled") setAiLeads(aiLeadsR.value);
+    if (activityR.status === "fulfilled") setActivityLogs(activityR.value);
+  }, []);
+
+  const trackPropertyView = useCallback((id: string) => {
+    void api.post(`/properties/${id}/view`, {}).catch(() => {
+      /* view tracking is best-effort; never surface errors to visitors */
+    });
   }, []);
 
   const reloadAiLeads = useCallback(async () => {
@@ -437,7 +458,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       ready, reload,
-      regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, settings,
+      regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, activityLogs, settings,
+      trackPropertyView,
       updateSettings,
       reloadAiLeads, updateAiLeadStatus, deleteAiLead,
       addRegion, updateRegion, deleteRegion, toggleRegion,
