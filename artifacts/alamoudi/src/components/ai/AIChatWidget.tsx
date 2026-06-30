@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, X, Send, RefreshCw, Bot, User, AlertCircle } from "lucide-react";
+import { X, Send, RefreshCw, Bot, User, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -132,11 +132,11 @@ export function AIChatWidget() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-l from-accent to-accent/80 text-white flex-shrink-0">
               <div className="flex items-center gap-2.5">
-                <span className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-                  <Sparkles className="h-5 w-5" />
+                <span className="w-9 h-9 rounded-full bg-white text-accent flex items-center justify-center shadow-sm">
+                  <span className="text-[13px] font-extrabold tracking-tight leading-none">AI</span>
                 </span>
                 <div className="leading-tight">
-                  <p className="font-bold text-sm">ملك | مستشارتك العقارية</p>
+                  <p className="font-bold text-sm">مستشارك العقاري الذكي</p>
                   <p className="text-[11px] text-white/80 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-300" /> متصل الآن
                   </p>
