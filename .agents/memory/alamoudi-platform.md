@@ -61,3 +61,8 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 ## AI persona (no name, gender-aware)
 - Persona is a **name-less male** real-estate consultant — greeting "معك مستشارك العقاري الذكي". The old female named persona "ملك" was REMOVED at user request (it addressed everyone in feminine, which the user disliked).
 - It must **infer the client's gender from their speech/behavior** and reply masculine to men / feminine to women; stay neutral ("حضرتك") only while gender is unclear. Talks about itself in masculine. Frontend greeting/error strings live in `AIChatContext.tsx`; aria-label in `AIChatWidget.tsx`.
+
+## Property "finishing" (التشطيب) is free-text Arabic, NOT an enum
+- Real/imported prod data stores the finishing as a raw **Arabic** string (e.g. `متشطب`, `نص تشطيب`, `طوب أحمر`, `ألترا`, `مفروش`, `٥٠%`) — it comes from the Excel import (`lib/propertyImport.ts` maps the `التشطيب` column straight through). The admin `PropertyForm` dropdown is the source of new values, so its options must use **Arabic value=label** to stay consistent with imported data.
+- Display: `PropertyDetails.tsx` and `Compare.tsx` both keep a `finishingLabels` map but render `finishingLabels[v] || v`, so Arabic free-text passes through; the map only translates legacy English codes that the OLD form used (`super-lux`, `lux`, `semi-finished`, `core-shell`). Keep these two maps in sync.
+- `هيكل خام` / `core-shell` was removed as a selectable option; legacy `core-shell` rows are display-mapped to `تحت الإنشاء` so no raw English token leaks. `تحت الإنشاء` is the term used for an under-construction/incomplete building for sale.

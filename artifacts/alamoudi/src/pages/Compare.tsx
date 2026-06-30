@@ -13,7 +13,9 @@ const categoryLabels: Record<string, string> = {
 };
 
 const finishingLabels: Record<string, string> = {
-  "super-lux": "سوبر لوكس", "lux": "لوكس", "semi-finished": "نصف تشطيب", "core-shell": "هيكل خام",
+  "super-lux": "سوبر لوكس", "lux": "لوكس", "semi-finished": "نص تشطيب",
+  "ultra": "ألترا سوبر لوكس", "finished": "متشطب", "red-brick": "طوب أحمر",
+  "under-construction": "تحت الإنشاء", "core-shell": "تحت الإنشاء",
 };
 
 export default function Compare() {
