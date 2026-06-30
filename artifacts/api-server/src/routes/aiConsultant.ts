@@ -99,6 +99,12 @@ interface Listing {
   status: string;
   featured: boolean;
   finishing: string;
+  floor: number;
+  floorText: string;
+  view: string;
+  unitType: string;
+  layout: string;
+  elevator: string;
   location: string;
   subArea: string;
   videoUrl: string;
@@ -130,6 +136,10 @@ async function loadListings(): Promise<Listing[]> {
         p.location,
         p.subArea,
         p.finishing,
+        p.floorText,
+        p.view,
+        p.unitType,
+        p.layout,
         rn,
         tn,
         cat,
@@ -148,6 +158,12 @@ async function loadListings(): Promise<Listing[]> {
       status: p.status,
       featured: p.featured,
       finishing: p.finishing,
+      floor: p.floor,
+      floorText: p.floorText,
+      view: p.view,
+      unitType: p.unitType,
+      layout: p.layout,
+      elevator: p.elevator,
       location: p.location,
       subArea: p.subArea,
       videoUrl: p.videoUrl,
@@ -181,17 +197,31 @@ function orderListings(listings: Listing[], query: string): Listing[] {
 }
 
 function serializeListing(l: Listing): string {
+  const floorLabel = l.floorText
+    ? `الدور ${l.floorText}`
+    : l.floor > 0
+      ? `الدور ${l.floor}`
+      : "";
+  const desc = l.description ? l.description.replace(/\s+/g, " ").trim().slice(0, 180) : "";
   const parts = [
     `الكود ${l.code}`,
+    l.title,
     l.typeName,
+    l.unitType,
     l.category,
     [l.regionName, l.subArea].filter(Boolean).join(" - "),
+    l.location,
     l.price > 0 ? `السعر ${l.price.toLocaleString("en-US")} جنيه` : "",
     l.area > 0 ? `المساحة ${l.area}م²` : "",
     l.beds > 0 ? `${l.beds} غرف` : "",
     l.baths > 0 ? `${l.baths} حمام` : "",
+    floorLabel,
+    l.view ? `الإطلالة ${l.view}` : "",
+    l.layout ? `التقسيم ${l.layout}` : "",
+    l.elevator ? `أسانسير ${l.elevator}` : "",
     l.finishing ? `التشطيب ${l.finishing}` : "",
     l.videoUrl ? "يوجد فيديو" : "",
+    desc ? `الوصف: ${desc}` : "",
     `الرابط /properties/${l.id}`,
   ].filter(Boolean);
   return "- " + parts.join(" | ");
