@@ -295,12 +295,12 @@ export default function PropertyDetails() {
                       { label: "الفيو", value: property.view || null },
                       { label: "الموقع", value: property.location || null },
                     ].filter(r => r.value != null && r.value !== "").map((row, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b border-border last:border-0">
-                        <span className="text-sm text-muted-foreground">{row.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{String(row.value)}</span>
+                      <div key={i} className="flex justify-between items-start gap-3 py-2 border-b border-border last:border-0">
+                        <span className="text-sm text-muted-foreground flex-shrink-0">{row.label}</span>
+                        <div className="flex items-start gap-2 min-w-0">
+                          <span className="text-sm font-medium text-start break-words [overflow-wrap:anywhere]">{String(row.value)}</span>
                           {row.copy && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
                           )}
                         </div>
                       </div>
@@ -311,10 +311,12 @@ export default function PropertyDetails() {
 
               {/* Description */}
               {property.description && (
-                <div>
-                  <h2 className="text-xl font-bold mb-3">وصف العقار</h2>
-                  <p className="text-muted-foreground leading-relaxed text-sm">{property.description}</p>
-                </div>
+                <Card className="card-luxury">
+                  <CardHeader><CardTitle className="text-base">وصف العقار</CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-line break-words [overflow-wrap:anywhere]">{property.description}</p>
+                  </CardContent>
+                </Card>
               )}
 
               {/* Video */}
