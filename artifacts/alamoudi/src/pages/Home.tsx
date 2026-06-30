@@ -14,6 +14,7 @@ import { TikTokIcon } from "@/components/icons/BrandIcons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useData, type TiktokVideo } from "@/context/DataContext";
+import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 
@@ -23,12 +24,13 @@ function tiktokId(url: string): string | null {
 }
 
 function TiktokPlayer({ video }: { video: TiktokVideo }) {
-  const local = tiktokId(video.videoUrl);
+  const cleanUrl = extractVideoUrl(video.videoUrl);
+  const local = tiktokId(cleanUrl);
   const [id, setId] = useState<string | null>(local);
   const [state, setState] = useState<"ready" | "loading" | "failed">(local ? "ready" : "loading");
 
   useEffect(() => {
-    const direct = tiktokId(video.videoUrl);
+    const direct = tiktokId(cleanUrl);
     if (direct) {
       setId(direct);
       setState("ready");
@@ -37,7 +39,7 @@ function TiktokPlayer({ video }: { video: TiktokVideo }) {
     let cancelled = false;
     setId(null);
     setState("loading");
-    fetch(`/api/tiktok/resolve?url=${encodeURIComponent(video.videoUrl)}`)
+    fetch(`/api/tiktok/resolve?url=${encodeURIComponent(cleanUrl)}`)
       .then(r => (r.ok ? r.json() : Promise.reject()))
       .then((data: { videoId?: string }) => {
         if (cancelled) return;
@@ -50,7 +52,7 @@ function TiktokPlayer({ video }: { video: TiktokVideo }) {
       })
       .catch(() => { if (!cancelled) setState("failed"); });
     return () => { cancelled = true; };
-  }, [video.videoUrl]);
+  }, [cleanUrl]);
 
   return (
     <>
@@ -75,7 +77,7 @@ function TiktokPlayer({ video }: { video: TiktokVideo }) {
       <div className="p-3 flex items-center justify-between gap-2 border-t border-border bg-card">
         <p className="text-sm font-medium text-foreground line-clamp-1">{video.title}</p>
         <Button asChild size="sm" variant="outline" className="gap-1.5 flex-shrink-0">
-          <a href={video.videoUrl} target="_blank" rel="noopener noreferrer">
+          <a href={cleanUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="h-3.5 w-3.5" />فتح في تيك توك
           </a>
         </Button>
@@ -88,7 +90,7 @@ function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void 
   const [failed, setFailed] = useState(false);
   const src = video.thumbnail
     ? video.thumbnail
-    : `/api/tiktok/thumbnail?url=${encodeURIComponent(video.videoUrl)}`;
+    : `/api/tiktok/thumbnail?url=${encodeURIComponent(extractVideoUrl(video.videoUrl))}`;
   return (
     <button
       onClick={onPlay}

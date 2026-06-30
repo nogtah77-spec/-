@@ -19,6 +19,11 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 - **TikTok thumbnails are portrait (9:16).** Never force them into a wide landscape box with `object-cover` — they look hugely zoomed/oversized. Use a blurred backdrop copy (`object-cover scale-110 blur-2xl opacity-50`) + the real image `object-contain` on top. Same letterbox pattern is used for the PropertyDetails image carousel slides.
 - PropertyDetails image gallery is a swipeable embla `Carousel` (loop, prev/next arrows manually swapped for RTL — prev on right, next on left), each slide opens the existing lightbox on click.
 
+## TikTok input is untrusted: normalize, never assume a clean link
+- The admin `videoUrl` field stores **whatever the user pastes** — seen in the wild: full `/video/{id}` link, short link (`vt`/`vm.tiktok.com`), and the full TikTok **"Embed" code** (a `<blockquote class="tiktok-embed" cite="…/video/{id}" data-video-id="{id}">…</blockquote><script>` block).
+- Trap: pasting the embed blockquote makes the video **play but show no cover**, because the id regex `/video/(\d+)` still matches inside the HTML, but anything doing `new URL(raw)` (thumbnail proxy) or using `raw` as an `<a href>` breaks. Rule: treat `videoUrl` as raw text and run `extractVideoUrl()` (in `src/lib/videoThumbnail.ts`) at **every** point of use before building a URL/href, not just once.
+- Defense-in-depth: also normalize on admin save so new rows are clean, but keep read-time extraction because old prod rows are already dirty and prod DB is read-only.
+
 ## TikTok player: short links don't embed
 - The embed iframe needs the numeric video id (`https://www.tiktok.com/embed/v2/{id}`). `tiktokId()` only extracts `/video/(\d+)` from the URL, so **share/short links (vm.tiktok.com, vt.tiktok.com, /t/…) have NO inline id → embed shows "لا يمكن تشغيل"**. That's why "one link works, the other doesn't" — full `/video/` link vs short link.
 - Fix: backend `GET /api/tiktok/resolve?url=` follows redirects **manually** (`redirect:"manual"`, max 5 hops) and validates every hop is HTTPS + `*.tiktok.com` before extracting the id. `Home.tsx` `TiktokPlayer` resolves async (regex first, then this endpoint) with loading/ready/failed states.

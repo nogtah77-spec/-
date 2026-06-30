@@ -11,6 +11,7 @@ import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MapPin, Facebook, Ins
 import { WhatsAppIcon, TikTokIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { extractVideoUrl } from "@/lib/videoThumbnail";
 import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
 
 const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = { thumbnail: "", title: "", videoUrl: "" };
@@ -56,14 +57,14 @@ export default function Settings() {
     if ((settings.tiktokVideos ?? []).length >= 6) {
       toast({ title: "الحد الأقصى 6 فيديوهات", description: "احذف فيديو قبل إضافة فيديو جديد", variant: "destructive" }); return;
     }
-    addTiktokVideo(newVideo);
+    addTiktokVideo({ ...newVideo, videoUrl: extractVideoUrl(newVideo.videoUrl) });
     setNewVideo(EMPTY_VIDEO);
     toast({ title: "تم إضافة الفيديو" });
   };
 
   const handleSaveEdit = () => {
     if (!editingVideoId) return;
-    updateTiktokVideo(editingVideoId, editVideo);
+    updateTiktokVideo(editingVideoId, { ...editVideo, videoUrl: extractVideoUrl(editVideo.videoUrl) });
     setEditingVideoId(null);
     toast({ title: "تم تحديث الفيديو" });
   };
