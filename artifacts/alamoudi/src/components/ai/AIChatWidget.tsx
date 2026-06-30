@@ -127,7 +127,7 @@ export function AIChatWidget() {
               inset-x-0 bottom-0 h-[88dvh] rounded-t-2xl
               sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[600px] sm:max-h-[85vh] sm:w-[400px] sm:rounded-2xl"
             role="dialog"
-            aria-label="ملك | مستشارتك العقارية"
+            aria-label="مستشارك العقاري الذكي"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-l from-accent to-accent/80 text-white flex-shrink-0">

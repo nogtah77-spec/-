@@ -13,7 +13,7 @@ interface ChatResponse {
 }
 
 const GREETING =
-  "أهلًا بكِ في العمودي للتسويق العقاري 👋 معكِ ملك، مستشارتك العقارية الذكية.\nاكتبي لي ما تبحثين عنه (المنطقة، نوع العقار، الميزانية...) وسأساعدك في إيجاد الأنسب لك.";
+  "أهلًا بك في العمودي للتسويق العقاري 👋 معك مستشارك العقاري الذكي.\nاكتب لي ما تبحث عنه (المنطقة، نوع العقار، الميزانية...) وسأساعدك في إيجاد الأنسب.";
 
 interface AIChatContextType {
   open: boolean;
@@ -65,7 +65,7 @@ export function AIChatProvider({ children }: { children: ReactNode }) {
       lastInput.current = null;
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "تعذّر الاتصال بملك المستشارة الذكية.";
+        err instanceof Error ? err.message : "تعذّر الاتصال بالمستشار العقاري الذكي.";
       setError(message);
     } finally {
       setSending(false);

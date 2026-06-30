@@ -20,6 +20,27 @@ const router: IRouter = Router();
 const MAX_MESSAGES = 40;
 const MAX_CONTENT = 4000;
 
+// Max chars of conversation history forwarded to the AI provider per request.
+// Combined with the listings budget and the 1024-token output cap, this keeps
+// every request comfortably under the provider's per-minute token limit.
+const HISTORY_BUDGET = 6000;
+
+// Keep the most recent messages whose combined size fits `budget`, preserving
+// chronological order. The latest message is always kept even if it alone
+// exceeds the budget, so the user's current question is never dropped.
+function trimHistory(msgs: ChatMsg[], budget: number): ChatMsg[] {
+  if (msgs.length === 0) return msgs;
+  const kept: ChatMsg[] = [];
+  let used = 0;
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    const size = msgs[i].content.length;
+    if (kept.length > 0 && used + size > budget) break;
+    kept.push(msgs[i]);
+    used += size;
+  }
+  return kept.reverse();
+}
+
 const chatBodySchema = z.object({
   messages: z
     .array(
@@ -244,6 +265,22 @@ function serializeListing(l: Listing): string {
   return "- " + parts.join(" | ");
 }
 
+// Compact one-line form used for less-relevant listings so the AI stays aware of
+// the entire inventory while keeping the prompt within the provider token budget.
+function serializeCompact(l: Listing): string {
+  const parts = [
+    `الكود ${l.code}`,
+    l.typeName,
+    l.category,
+    [l.regionName, l.subArea].filter(Boolean).join(" - "),
+    l.price > 0 ? `${l.price.toLocaleString("en-US")} جنيه` : "",
+    l.area > 0 ? `${l.area}م²` : "",
+    l.beds > 0 ? `${l.beds} غرف` : "",
+    `/properties/${l.id}`,
+  ].filter(Boolean);
+  return "- " + parts.join(" | ");
+}
+
 /* -------------------------------------------------------------------------- */
 /*  System prompt                                                             */
 /* -------------------------------------------------------------------------- */
@@ -262,22 +299,28 @@ function buildSystemPrompt(
       : shownCount >= totalCount
         ? `هذه هي قائمة كل العقارات المتاحة حاليًا على المنصة بالكامل (${totalCount} عقار). أنت على اطّلاع تام بكل عقار فيها.`
         : `إجمالي العقارات المتاحة حاليًا على المنصة ${totalCount} عقار، ومعروض أمامك منها ${shownCount} الأكثر صلة بطلب العميل. إن احتاج العميل خيارات أوسع وجّه استفساره ليظهر له المزيد.`;
-  return `أنتِ "ملك" — مستشارة ومسوّقة عقارية خبيرة ومحترفة تعملين لدى "شركة العمودي للتسويق العقاري والتشطيبات" في مصر.
+  return `أنت "مستشارك العقاري الذكي" — مستشار ومسوّق عقاري خبير ومحترف تعمل لدى "شركة العمودي للتسويق العقاري والتشطيبات" في مصر.
 
 # هويتك
-- اسمك "ملك" وأنتِ أنثى. خاطبي العميل دائمًا بصيغة المؤنث عن نفسك (مثال: "أنا هنا لمساعدتك"، "يسعدني أن أساعدك").
-- في أول رسالة ترحيبية فقط، عرّفي بنفسك بلُطف باسمك، مثل: "أهلاً بك، معك ملك، مستشارتك العقارية الذكية من شركة العمودي" ثم اسألي العميل كيف يمكنك مساعدته. لا تكرري التعريف بنفسك في كل رسالة بعد ذلك.
+- ليس لك اسم شخصي. عرّف عن نفسك دائمًا باسم "مستشارك العقاري الذكي" من شركة العمودي.
+- في أول رسالة ترحيبية فقط، رحّب بإيجاز وعرّف عن نفسك، مثل: "أهلًا بك في العمودي للتسويق العقاري، معك مستشارك العقاري الذكي. اكتب لي ما تبحث عنه (المنطقة، نوع العقار، الميزانية...) لأساعدك في إيجاد الأنسب." ثم اسأل العميل كيف يمكنك مساعدته. لا تكرّر التعريف بنفسك في كل رسالة بعد ذلك.
+
+# مخاطبة العميل (مهم)
+- استنتج بذكاء جنس العميل (ذكر أم أنثى) من سياق كلامه وسلوكه: صيغ الأفعال والضمائر التي يستخدمها عن نفسه، طريقة تعريفه بنفسه، اسمه إن ذكره، أو أي إشارة واضحة. ثم خاطبه بالصيغة المناسبة: بصيغة المذكّر إن كان رجلًا (مثال: "حضرتك تدور على...، تحب أساعدك") وبصيغة المؤنث إن كانت امرأة (مثال: "حضرتك بتدوري على...، تحبي أساعدك").
+- إذا تغيّرت الإشارات أو اتّضح جنس العميل لاحقًا، صحّح صيغة المخاطبة فورًا وتابع بها.
+- ما دام جنس العميل غير واضح، استخدم صيغة محايدة مهذّبة دون افتراض (مثل مخاطبته بـ"حضرتك" أو صياغة الجملة بشكل لا يحدد جنسًا)، ولا تفرض صيغة مذكّر أو مؤنث عشوائيًا.
+- تحدّث عن نفسك دائمًا بصيغة المذكّر بشكل عادي وبسيط (مثال: "أنا هنا لمساعدتك"، "يسعدني أن أساعدك").
 
 # شخصيتك
-- ودودة، محترفة، ذكية، صبورة ومقنعة، وأسلوبك راقٍ ودافئ ومضياف يليق بمستشارة بشرية حقيقية.
-- تشجعين العميل بلطف على مواصلة استكشاف المنصة والتواصل مع الشركة.
-- إجاباتك مختصرة ومنظمة وواضحة، واستخدمي أسطرًا منفصلة عند الحاجة. لا تستخدمي جداول.
+- ودود، محترف، ذكي، صبور ومقنع، وأسلوبك راقٍ ودافئ ومضياف يليق بمستشار بشري حقيقي.
+- تشجّع العميل بلطف على مواصلة استكشاف المنصة والتواصل مع الشركة.
+- إجاباتك مختصرة ومنظمة وواضحة، واستخدم أسطرًا منفصلة عند الحاجة. لا تستخدم جداول.
 
-# أسلوبك كمسوّقة عقارية محترفة
-- أبرِزي مميزات وقيمة كل عقار بذكاء (الموقع، السعر التنافسي، المساحة، التشطيب، قرب الخدمات) واربطيها باحتياج العميل.
-- اخلقي حافزًا لطيفًا لاتخاذ القرار دون مبالغة أو ضغط أو ادعاءات غير صحيحة، وكوني صادقة دائمًا.
-- اقترحي بدائل مناسبة عند الحاجة، ووجّهي العميل بلطف نحو الخطوة التالية: معاينة العقار، التواصل مع الفريق، أو حفظ طلبه للمتابعة.
-- روّجي عند المناسبة لخدمات الشركة (التشطيبات، إضافة عقار، الاستشارة العقارية).
+# أسلوبك كمسوّق عقاري محترف
+- أبرِز مميزات وقيمة كل عقار بذكاء (الموقع، السعر التنافسي، المساحة، التشطيب، قرب الخدمات) واربطها باحتياج العميل.
+- اخلق حافزًا لطيفًا لاتخاذ القرار دون مبالغة أو ضغط أو ادعاءات غير صحيحة، وكن صادقًا دائمًا.
+- اقترح بدائل مناسبة عند الحاجة، ووجّه العميل بلطف نحو الخطوة التالية: معاينة العقار، التواصل مع الفريق، أو حفظ طلبه للمتابعة.
+- روّج عند المناسبة لخدمات الشركة (التشطيبات، إضافة عقار، الاستشارة العقارية).
 
 # اللغات واللهجات
 - اكتشف لغة العميل ولهجته تلقائيًا وردّ بنفس اللغة/اللهجة.
@@ -411,15 +454,38 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
 
   try {
     const listings = await loadListings();
-    // Send the AI the FULL current inventory (most relevant first). A high safety
-    // cap only guards against runaway context/cost if the catalog grows huge.
-    const MAX_LISTINGS = 300;
     const ordered = orderListings(listings, recentUserText || lastUser?.content || "");
-    const included = ordered.slice(0, MAX_LISTINGS);
-    const block = included.map(serializeListing).join("\n");
-    const system = buildSystemPrompt(block, listings.length, included.length);
+    // Build the listings block within a character/token budget so every request
+    // stays comfortably under the AI provider's per-minute token limit and never
+    // fails as the catalog grows. The most relevant listings are sent in full
+    // detail; every remaining property is still included as a compact one-line
+    // entry, so the AI stays aware of the ENTIRE inventory.
+    const FULL_DETAIL_BUDGET = 3200;
+    const TOTAL_BLOCK_BUDGET = 7000;
+    const lines: string[] = [];
+    let blockLen = 0;
+    let shownCount = 0;
+    for (const l of ordered) {
+      const full = serializeListing(l);
+      const compact = serializeCompact(l);
+      let entry: string | null = null;
+      if (blockLen + full.length + 1 <= FULL_DETAIL_BUDGET) entry = full;
+      else if (blockLen + compact.length + 1 <= TOTAL_BLOCK_BUDGET) entry = compact;
+      if (entry === null) break;
+      lines.push(entry);
+      blockLen += entry.length + 1;
+      shownCount++;
+    }
+    const block = lines.join("\n");
+    const system = buildSystemPrompt(block, listings.length, shownCount);
 
-    const raw = await aiChat(system, messages);
+    // Bound the conversation history sent upstream so the total request
+    // (system + history + reserved output) always stays under the provider's
+    // per-minute token limit, no matter how long the chat grows. Keep the most
+    // recent turns within a char budget; always retain the latest user message.
+    const trimmedMessages = trimHistory(messages, HISTORY_BUDGET);
+
+    const raw = await aiChat(system, trimmedMessages);
     const { cleaned, lead } = extractLead(raw);
 
     let leadSaved = false;

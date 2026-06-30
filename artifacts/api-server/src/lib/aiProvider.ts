@@ -10,32 +10,34 @@ interface ResolvedProvider {
   model: string;
 }
 
-// Priority order requested by the project owner:
-//   1. Google Gemini (best quality on the free tier, excellent Arabic + dialects)
-//   2. Groq (fast, strong open models)
+// Provider priority order:
+//   1. Groq (fast, strong open models, usable free tier — current primary)
+//   2. Google Gemini (excellent Arabic + dialects; free tier may be exhausted)
 //   3. OpenRouter (free models)
-// The first provider whose API key is present wins. Keys are read from the
-// environment so they can be filled in later without any code change.
-// Returns every configured provider in priority order. The chat layer walks
-// this list and falls through to the next provider when one is rate limited or
-// out of quota, so adding a second key (e.g. GROQ_API_KEY) gives the AI a real
-// backup when the Gemini free tier is exhausted.
+// Keys are read from the environment so providers can be added/removed without
+// any code change.
+// Returns every configured provider in priority order. The chat layer walks this
+// list and falls through to the next provider when one is rate limited or out of
+// quota, so configuring more than one key gives the AI a real backup when a
+// provider's free tier is exhausted.
 export function resolveProviders(): ResolvedProvider[] {
   const list: ResolvedProvider[] = [];
-  const gemini = process.env.GEMINI_API_KEY?.trim();
-  if (gemini) {
-    list.push({
-      provider: "gemini",
-      key: gemini,
-      model: process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash",
-    });
-  }
+  // Groq first: it has a usable free tier. Gemini is kept as a fallback (its
+  // free tier may be exhausted) and OpenRouter last.
   const groq = process.env.GROQ_API_KEY?.trim();
   if (groq) {
     list.push({
       provider: "groq",
       key: groq,
       model: process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile",
+    });
+  }
+  const gemini = process.env.GEMINI_API_KEY?.trim();
+  if (gemini) {
+    list.push({
+      provider: "gemini",
+      key: gemini,
+      model: process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash",
     });
   }
   const openrouter = process.env.OPENROUTER_API_KEY?.trim();
@@ -148,7 +150,7 @@ async function openaiCompatChat(
   const body = {
     model,
     temperature: 0.7,
-    max_tokens: 2048,
+    max_tokens: 1024,
     messages: [{ role: "system", content: system }, ...messages],
   };
   const res = await fetchWithTimeout(url, {
