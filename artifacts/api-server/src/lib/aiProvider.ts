@@ -16,36 +16,45 @@ interface ResolvedProvider {
 //   3. OpenRouter (free models)
 // The first provider whose API key is present wins. Keys are read from the
 // environment so they can be filled in later without any code change.
-export function resolveProvider(): ResolvedProvider | null {
+// Returns every configured provider in priority order. The chat layer walks
+// this list and falls through to the next provider when one is rate limited or
+// out of quota, so adding a second key (e.g. GROQ_API_KEY) gives the AI a real
+// backup when the Gemini free tier is exhausted.
+export function resolveProviders(): ResolvedProvider[] {
+  const list: ResolvedProvider[] = [];
   const gemini = process.env.GEMINI_API_KEY?.trim();
   if (gemini) {
-    return {
+    list.push({
       provider: "gemini",
       key: gemini,
-      model: process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
-    };
+      model: process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash",
+    });
   }
   const groq = process.env.GROQ_API_KEY?.trim();
   if (groq) {
-    return {
+    list.push({
       provider: "groq",
       key: groq,
       model: process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile",
-    };
+    });
   }
   const openrouter = process.env.OPENROUTER_API_KEY?.trim();
   if (openrouter) {
-    return {
+    list.push({
       provider: "openrouter",
       key: openrouter,
       model: process.env.OPENROUTER_MODEL?.trim() || "google/gemini-2.0-flash-exp:free",
-    };
+    });
   }
-  return null;
+  return list;
+}
+
+export function resolveProvider(): ResolvedProvider | null {
+  return resolveProviders()[0] ?? null;
 }
 
 export function aiConfigured(): boolean {
-  return resolveProvider() !== null;
+  return resolveProviders().length > 0;
 }
 
 export function aiProviderName(): ProviderName | "none" {
@@ -53,6 +62,28 @@ export function aiProviderName(): ProviderName | "none" {
 }
 
 const REQUEST_TIMEOUT_MS = 30_000;
+
+class UpstreamError extends Error {
+  status: number;
+  constructor(status: number) {
+    super("AI_UPSTREAM_ERROR");
+    this.status = status;
+  }
+}
+
+// Gemini free-tier quota is enforced PER MODEL, so when one model is rate
+// limited (429) or temporarily unavailable (503) we retry with the next model
+// which has its own independent quota bucket. Ordered from highest free quota.
+const GEMINI_FALLBACK_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash-lite",
+];
+
+function geminiModelChain(primary: string): string[] {
+  return [primary, ...GEMINI_FALLBACK_MODELS.filter((m) => m !== primary)];
+}
 
 async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
   const controller = new AbortController();
@@ -91,8 +122,8 @@ async function geminiChat(
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    logger.error({ status: res.status, detail: detail.slice(0, 500) }, "gemini upstream error");
-    throw new Error("AI_UPSTREAM_ERROR");
+    logger.error({ status: res.status, model, detail: detail.slice(0, 500) }, "gemini upstream error");
+    throw new UpstreamError(res.status);
   }
   const data = (await res.json()) as {
     candidates?: { content?: { parts?: { text?: string }[] } }[];
@@ -131,7 +162,7 @@ async function openaiCompatChat(
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     logger.error({ provider, status: res.status, detail: detail.slice(0, 500) }, "ai upstream error");
-    throw new Error("AI_UPSTREAM_ERROR");
+    throw new UpstreamError(res.status);
   }
   const data = (await res.json()) as {
     choices?: { message?: { content?: string } }[];
@@ -141,10 +172,37 @@ async function openaiCompatChat(
   return text;
 }
 
+function isRetryableStatus(err: unknown): boolean {
+  // 429 = rate limited / out of quota, 503 = model temporarily overloaded.
+  return err instanceof UpstreamError && (err.status === 429 || err.status === 503);
+}
+
 export async function aiChat(system: string, messages: ChatMsg[]): Promise<string> {
-  const resolved = resolveProvider();
-  if (!resolved) throw new Error("AI_NOT_CONFIGURED");
-  const { provider, key, model } = resolved;
-  if (provider === "gemini") return geminiChat(key, model, system, messages);
-  return openaiCompatChat(provider, key, model, system, messages);
+  const providers = resolveProviders();
+  if (providers.length === 0) throw new Error("AI_NOT_CONFIGURED");
+
+  let lastErr: unknown = new Error("AI_UPSTREAM_ERROR");
+  for (const { provider, key, model } of providers) {
+    // For Gemini we also walk a chain of models, since the free-tier quota is
+    // tracked per model.
+    const attempts: string[] = provider === "gemini" ? geminiModelChain(model) : [model];
+    for (const m of attempts) {
+      try {
+        return provider === "gemini"
+          ? await geminiChat(key, m, system, messages)
+          : await openaiCompatChat(provider, key, m, system, messages);
+      } catch (err) {
+        lastErr = err;
+        if (isRetryableStatus(err)) {
+          logger.warn(
+            { provider, model: m, status: (err as UpstreamError).status },
+            "ai model exhausted, trying next",
+          );
+          continue;
+        }
+        throw err;
+      }
+    }
+  }
+  throw lastErr;
 }
