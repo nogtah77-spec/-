@@ -96,23 +96,23 @@ export function LiveVisitorsBubble() {
       style={{ position: "fixed", left: pos.x, top: pos.y, width: SIZE.w, touchAction: "none", zIndex: 60 }}
       className="select-none cursor-grab active:cursor-grabbing"
     >
-      <div className="flex items-center gap-2 rounded-xl border border-amber-200/70 bg-white/85 px-2.5 py-1.5 shadow-lg shadow-black/10 backdrop-blur-md ring-1 ring-black/5 transition-shadow hover:shadow-xl">
+      <div className="flex items-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-br from-[#1f2937] to-[#0f172a] px-2.5 py-1.5 shadow-lg shadow-black/30 ring-1 ring-white/10 transition-shadow hover:shadow-xl">
         <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#cdab74] to-[#b08d57] text-white shadow-sm">
           <Radio className="h-3.5 w-3.5" />
           <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500 ring-1 ring-white" />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400 ring-1 ring-[#1f2937]" />
           </span>
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col leading-none">
-          <span className="text-[9px] font-medium text-muted-foreground">متواجدون الآن</span>
-          <span className="text-base font-bold text-foreground leading-tight">
+          <span className="text-[9px] font-medium text-amber-200/90">متواجدون الآن</span>
+          <span className="text-lg font-extrabold text-white leading-tight drop-shadow-sm">
             <RollingNumber value={visitorStats.online} />
           </span>
         </div>
 
-        <GripVertical className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+        <GripVertical className="h-3.5 w-3.5 shrink-0 text-white/40" aria-hidden="true" />
       </div>
     </div>
   );
