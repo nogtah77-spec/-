@@ -16,6 +16,13 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 - lucide-react has NO WhatsApp or TikTok brand icons. Custom SVGs live in `src/components/icons/BrandIcons.tsx` (WhatsAppIcon, TikTokIcon). Use these everywhere instead of MessageCircle (whatsapp) / Music (tiktok).
 - Video thumbnail helper: `src/lib/videoThumbnail.ts`. YouTube thumb is derived client-side from the URL; TikTok reuses the backend proxy route `GET /api/tiktok/thumbnail?url=` (artifacts/api-server/src/routes/tiktok.ts, validates tiktok host, returns image bytes). Other hosts → null → branded poster.
 - Cover priority in PropertyCard & PropertyDetails: uploaded image (`images[0]`) ALWAYS wins; only when there is no image AND a videoUrl do we show the thumbnail/poster with a Play overlay. Reset the thumb-failure state on property id change (else sticky fallback across navigations in wouter).
+- **TikTok thumbnails are portrait (9:16).** Never force them into a wide landscape box with `object-cover` — they look hugely zoomed/oversized. Use a blurred backdrop copy (`object-cover scale-110 blur-2xl opacity-50`) + the real image `object-contain` on top. Same letterbox pattern is used for the PropertyDetails image carousel slides.
+- PropertyDetails image gallery is a swipeable embla `Carousel` (loop, prev/next arrows manually swapped for RTL — prev on right, next on left), each slide opens the existing lightbox on click.
+
+## TikTok player: short links don't embed
+- The embed iframe needs the numeric video id (`https://www.tiktok.com/embed/v2/{id}`). `tiktokId()` only extracts `/video/(\d+)` from the URL, so **share/short links (vm.tiktok.com, vt.tiktok.com, /t/…) have NO inline id → embed shows "لا يمكن تشغيل"**. That's why "one link works, the other doesn't" — full `/video/` link vs short link.
+- Fix: backend `GET /api/tiktok/resolve?url=` follows redirects **manually** (`redirect:"manual"`, max 5 hops) and validates every hop is HTTPS + `*.tiktok.com` before extracting the id. `Home.tsx` `TiktokPlayer` resolves async (regex first, then this endpoint) with loading/ready/failed states.
+- **SSRF gotcha (architect-caught):** do NOT use `redirect:"follow"` on the resolve fetch — a tiktok open-redirect could drive the server fetch to an arbitrary host. Validate the host of every redirect target, not just the initial input.
 
 ## Link preview (Open Graph) image
 - The share/link-preview image is `artifacts/alamoudi/public/opengraph.jpg`, referenced by absolute URL in `index.html` og:image / og:image:secure_url / twitter:image with a `?v=N` cache-buster. The official brand image is the ALAMOUDI REAL ESTATE gold-on-dark square logo (951×951).

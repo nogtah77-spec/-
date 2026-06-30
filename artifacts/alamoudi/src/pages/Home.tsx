@@ -22,6 +22,68 @@ function tiktokId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+function TiktokPlayer({ video }: { video: TiktokVideo }) {
+  const local = tiktokId(video.videoUrl);
+  const [id, setId] = useState<string | null>(local);
+  const [state, setState] = useState<"ready" | "loading" | "failed">(local ? "ready" : "loading");
+
+  useEffect(() => {
+    const direct = tiktokId(video.videoUrl);
+    if (direct) {
+      setId(direct);
+      setState("ready");
+      return;
+    }
+    let cancelled = false;
+    setId(null);
+    setState("loading");
+    fetch(`/api/tiktok/resolve?url=${encodeURIComponent(video.videoUrl)}`)
+      .then(r => (r.ok ? r.json() : Promise.reject()))
+      .then((data: { videoId?: string }) => {
+        if (cancelled) return;
+        if (data.videoId) {
+          setId(data.videoId);
+          setState("ready");
+        } else {
+          setState("failed");
+        }
+      })
+      .catch(() => { if (!cancelled) setState("failed"); });
+    return () => { cancelled = true; };
+  }, [video.videoUrl]);
+
+  return (
+    <>
+      {state === "loading" ? (
+        <div className="w-full h-[60vh] min-h-[480px] bg-black flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+        </div>
+      ) : state === "ready" && id ? (
+        <iframe
+          src={`https://www.tiktok.com/embed/v2/${id}`}
+          title={video.title}
+          className="w-full h-[60vh] min-h-[480px] bg-black"
+          allow="autoplay; encrypted-media; fullscreen"
+          allowFullScreen
+        />
+      ) : (
+        <div className="p-10 text-center">
+          <Play className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground">لا يمكن تشغيل هذا الفيديو داخل الموقع. افتحه على تيك توك.</p>
+        </div>
+      )}
+      <div className="p-3 flex items-center justify-between gap-2 border-t border-border bg-card">
+        <p className="text-sm font-medium text-foreground line-clamp-1">{video.title}</p>
+        <Button asChild size="sm" variant="outline" className="gap-1.5 flex-shrink-0">
+          <a href={video.videoUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-3.5 w-3.5" />فتح في تيك توك
+          </a>
+        </Button>
+      </div>
+    </>
+  );
+}
+
 function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void }) {
   const [failed, setFailed] = useState(false);
   const src = video.thumbnail
@@ -360,35 +422,7 @@ export default function Home() {
         <Dialog open={!!activeVideo} onOpenChange={o => { if (!o) setActiveVideo(null); }}>
           <DialogContent className="max-w-[360px] p-0 overflow-hidden gap-0">
             <DialogTitle className="sr-only">{activeVideo?.title || "فيديو تيك توك"}</DialogTitle>
-            {activeVideo && (() => {
-              const id = tiktokId(activeVideo.videoUrl);
-              return (
-                <>
-                  {id ? (
-                    <iframe
-                      src={`https://www.tiktok.com/embed/v2/${id}`}
-                      title={activeVideo.title}
-                      className="w-full h-[60vh] min-h-[480px] bg-black"
-                      allow="autoplay; encrypted-media; fullscreen"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="p-10 text-center">
-                      <Play className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">لا يمكن تشغيل هذا الفيديو داخل الموقع. افتحه على تيك توك.</p>
-                    </div>
-                  )}
-                  <div className="p-3 flex items-center justify-between gap-2 border-t border-border bg-card">
-                    <p className="text-sm font-medium text-foreground line-clamp-1">{activeVideo.title}</p>
-                    <Button asChild size="sm" variant="outline" className="gap-1.5 flex-shrink-0">
-                      <a href={activeVideo.videoUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-3.5 w-3.5" />فتح في تيك توك
-                      </a>
-                    </Button>
-                  </div>
-                </>
-              );
-            })()}
+            {activeVideo && <TiktokPlayer key={activeVideo.id} video={activeVideo} />}
           </DialogContent>
         </Dialog>
 

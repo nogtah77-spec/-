@@ -5,6 +5,67 @@ const router: IRouter = Router();
 const THUMB_HOST_RE = /(^|\.)(tiktokcdn(-us)?\.com|tiktokcdn-eu\.com|ttwstatic\.com|tiktok\.com)$/i;
 const MAX_BYTES = 5 * 1024 * 1024;
 
+router.get("/tiktok/resolve", async (req, res) => {
+  let videoUrl = typeof req.query.url === "string" ? req.query.url.trim() : "";
+  if (!videoUrl) {
+    res.status(400).json({ error: "missing url" });
+    return;
+  }
+  if (!/^https?:\/\//i.test(videoUrl)) videoUrl = `https://${videoUrl}`;
+  let videoHost: string;
+  try {
+    videoHost = new URL(videoUrl).hostname.toLowerCase();
+  } catch {
+    res.status(400).json({ error: "invalid url" });
+    return;
+  }
+  if (!/(^|\.)tiktok\.com$/.test(videoHost)) {
+    res.status(400).json({ error: "not a tiktok url" });
+    return;
+  }
+
+  try {
+    let url = videoUrl;
+    for (let hop = 0; hop < 5; hop++) {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        res.status(400).json({ error: "invalid redirect url" });
+        return;
+      }
+      if (parsed.protocol !== "https:" || !/(^|\.)tiktok\.com$/.test(parsed.hostname.toLowerCase())) {
+        res.status(400).json({ error: "untrusted redirect target" });
+        return;
+      }
+
+      const direct = url.match(/\/video\/(\d{6,})/);
+      if (direct) {
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        res.json({ videoId: direct[1], canonicalUrl: url });
+        return;
+      }
+
+      const r = await fetch(url, {
+        method: "GET",
+        redirect: "manual",
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(8000),
+      });
+      const location = r.headers.get("location");
+      if (r.status >= 300 && r.status < 400 && location) {
+        url = new URL(location, url).toString();
+        continue;
+      }
+      break;
+    }
+    res.status(404).json({ error: "no video id" });
+  } catch (err) {
+    req.log.error({ err }, "tiktok resolve failed");
+    res.status(502).json({ error: "resolve error" });
+  }
+});
+
 router.get("/tiktok/thumbnail", async (req, res) => {
   let videoUrl = typeof req.query.url === "string" ? req.query.url.trim() : "";
   if (!videoUrl) {

@@ -5,6 +5,7 @@ import { PropertyCard } from "@/components/ui/PropertyCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers
@@ -159,41 +160,50 @@ export default function PropertyDetails() {
 
           {/* Gallery */}
           {images.length > 0 ? (
-            <div className="grid grid-cols-4 gap-3 mb-10 rounded-2xl overflow-hidden h-[380px]">
-              <div className="col-span-3 cursor-pointer" onClick={() => setLightboxIdx(0)}>
-                <img src={images[0]} alt={property.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="flex flex-col gap-3">
-                {images.slice(1, 3).map((img, i) => (
-                  <div key={i} className="flex-1 cursor-pointer relative overflow-hidden" onClick={() => setLightboxIdx(i + 1)}>
-                    <img src={img} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                ))}
-                {images.length > 3 && (
-                  <div className="flex-1 cursor-pointer relative overflow-hidden" onClick={() => setLightboxIdx(3)}>
-                    <img src={images[3]} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                      <span className="text-white font-bold text-lg">+{images.length - 3}</span>
+            <div className="relative mb-10">
+              <Carousel opts={{ loop: images.length > 1 }} className="rounded-2xl overflow-hidden bg-muted">
+                <CarouselContent>
+                  {images.map((img, i) => (
+                    <CarouselItem key={i}>
+                      <div
+                        className="relative h-[300px] sm:h-[380px] cursor-pointer overflow-hidden"
+                        onClick={() => setLightboxIdx(i)}
+                      >
+                        <img src={img} aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50" />
+                        <img src={img} alt={property.title} className="relative w-full h-full object-contain" />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                {images.length > 1 && (
+                  <>
+                    <CarouselPrevious className="right-3 left-auto h-9 w-9 bg-white/90 hover:bg-white border-0 shadow-lg" />
+                    <CarouselNext className="left-3 right-auto h-9 w-9 bg-white/90 hover:bg-white border-0 shadow-lg" />
+                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/55 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
+                      {images.length} صور
                     </div>
-                  </div>
+                  </>
                 )}
-              </div>
+              </Carousel>
             </div>
           ) : showDetailVideoCover || showDetailVideoPoster ? (
             <a
               href={property.videoUrl!}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative block h-[380px] rounded-2xl overflow-hidden mb-10"
+              className="group relative block h-[300px] sm:h-[380px] rounded-2xl overflow-hidden mb-10 bg-muted"
               data-testid="link-video-cover"
             >
               {showDetailVideoCover ? (
-                <img
-                  src={detailVideoThumb!}
-                  alt={property.title}
-                  onError={() => setDetailThumbFailed(true)}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
+                <>
+                  <img src={detailVideoThumb!} aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50" />
+                  <img
+                    src={detailVideoThumb!}
+                    alt={property.title}
+                    onError={() => setDetailThumbFailed(true)}
+                    className="relative w-full h-full object-contain"
+                  />
+                </>
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-accent/25 via-muted to-muted/40 flex items-center justify-center">
                   <Video className="h-16 w-16 text-accent/50" />
