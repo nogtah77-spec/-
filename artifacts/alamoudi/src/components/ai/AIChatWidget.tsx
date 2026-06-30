@@ -103,15 +103,17 @@ export function AIChatWidget() {
       {!open && (
         <button
           onClick={openChat}
-          aria-label="ملك | مستشارتك العقارية"
-          className="fixed bottom-5 right-5 z-40 group flex items-center gap-2 rounded-full bg-accent text-white shadow-lg shadow-accent/30 pl-4 pr-3 py-3 hover:scale-105 active:scale-95 transition-transform"
+          aria-label="مستشارك الذكي"
+          className="fixed bottom-5 right-5 z-40 group flex items-center gap-2 rounded-full bg-accent text-white shadow-lg shadow-accent/30 pl-4 pr-2.5 py-2.5 hover:scale-105 active:scale-95 transition-transform"
         >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+          <span className="relative flex items-center justify-center h-8 w-8 rounded-full bg-white/20 ring-1 ring-white/30">
+            <span className="text-[13px] font-extrabold tracking-tight leading-none">AI</span>
+            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/70 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
+            </span>
           </span>
-          <Sparkles className="h-5 w-5" />
-          <span className="hidden sm:inline text-sm font-semibold">ملك | مستشارتك العقارية</span>
+          <span className="hidden sm:inline text-sm font-semibold">مستشارك الذكي</span>
         </button>
       )}
 
