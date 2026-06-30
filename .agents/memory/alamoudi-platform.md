@@ -17,6 +17,11 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 - Video thumbnail helper: `src/lib/videoThumbnail.ts`. YouTube thumb is derived client-side from the URL; TikTok reuses the backend proxy route `GET /api/tiktok/thumbnail?url=` (artifacts/api-server/src/routes/tiktok.ts, validates tiktok host, returns image bytes). Other hosts → null → branded poster.
 - Cover priority in PropertyCard & PropertyDetails: uploaded image (`images[0]`) ALWAYS wins; only when there is no image AND a videoUrl do we show the thumbnail/poster with a Play overlay. Reset the thumb-failure state on property id change (else sticky fallback across navigations in wouter).
 
+## Link preview (Open Graph) image
+- The share/link-preview image is `artifacts/alamoudi/public/opengraph.jpg`, referenced by absolute URL in `index.html` og:image / og:image:secure_url / twitter:image with a `?v=N` cache-buster. The official brand image is the ALAMOUDI REAL ESTATE gold-on-dark square logo (951×951).
+- **Gotcha:** og:image:width/height in index.html MUST match the actual opengraph.jpg pixels, and the file must actually BE the logo — a past bug had a 1280×720 non-logo file while meta claimed 951×951, so no logo showed.
+- **WhatsApp/Facebook cache previews per-URL aggressively.** After changing the image: redeploy, bump `?v=N`, and force a re-scrape via Facebook Sharing Debugger (developers.facebook.com/tools/debug) — WhatsApp reuses FB's crawler cache. A previously-shared link may keep showing the old/no preview until re-scraped.
+
 ## AI consultant ("المستشار الذكي")
 - User REJECTED Replit-managed AI (phone verification broken). Backend is provider-agnostic via direct REST (no SDKs, Node24 global fetch): tries GEMINI_API_KEY → GROQ_API_KEY → OPENROUTER_API_KEY in that order. No key set = endpoints return `{code:"AI_NOT_CONFIGURED"}` gracefully; UI shows Arabic "غير مُفعّل" + retry.
 - Leads: AI emits `<<<LEAD>>>{json}<<<END_LEAD>>>` marker, server parses+saves to `ai_leads` table and strips marker from reply. Admin-only page `/admin/ai-leads`.
