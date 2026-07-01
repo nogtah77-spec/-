@@ -228,7 +228,7 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-14 md:py-20 min-h-[420px]">
+        <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-14 md:py-20 min-h-[420px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
           <div className="absolute inset-0 z-10" style={{ background: `linear-gradient(135deg, rgba(44,54,57,${heroOverlay}) 0%, rgba(63,78,79,${heroOverlay * 0.92}) 50%, rgba(44,54,57,${heroOverlay * 1.04 > 1 ? 1 : heroOverlay * 1.04}) 100%)` }} />
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
