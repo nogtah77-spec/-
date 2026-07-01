@@ -5,7 +5,7 @@ import { PropertyCard } from "@/components/ui/PropertyCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
+import { PropertyGallery } from "@/components/ui/PropertyGallery";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil
@@ -172,32 +172,12 @@ export default function PropertyDetails() {
 
           {/* Gallery */}
           {images.length > 0 ? (
-            <div className="relative mb-10">
-              <Carousel opts={{ loop: images.length > 1 }} className="rounded-2xl overflow-hidden bg-muted">
-                <CarouselContent>
-                  {images.map((img, i) => (
-                    <CarouselItem key={i}>
-                      <div
-                        className="relative h-[300px] sm:h-[380px] cursor-pointer overflow-hidden"
-                        onClick={() => setLightboxIdx(i)}
-                      >
-                        <img src={img} aria-hidden className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-50" />
-                        <img src={img} alt={property.title} className="relative w-full h-full object-contain" />
-                      </div>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-                {images.length > 1 && (
-                  <>
-                    <CarouselPrevious className="right-3 left-auto h-9 w-9 bg-white/90 hover:bg-white border-0 shadow-lg" />
-                    <CarouselNext className="left-3 right-auto h-9 w-9 bg-white/90 hover:bg-white border-0 shadow-lg" />
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/55 backdrop-blur-sm text-white text-xs font-medium px-3 py-1 rounded-full">
-                      {images.length} صور
-                    </div>
-                  </>
-                )}
-              </Carousel>
-            </div>
+            <PropertyGallery
+              images={images}
+              title={property.title}
+              onClickImage={(i) => setLightboxIdx(i)}
+              className="mb-10"
+            />
           ) : showDetailVideoCover || showDetailVideoPoster ? (
             <a
               href={property.videoUrl!}
