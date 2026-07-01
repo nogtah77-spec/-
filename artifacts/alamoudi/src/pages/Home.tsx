@@ -16,7 +16,6 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useData, type TiktokVideo } from "@/context/DataContext";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
-import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { Link } from "wouter";
 
 function tiktokId(url: string): string | null {
@@ -169,6 +168,18 @@ export default function Home() {
   const featuredProps = useMemo(() => properties.filter(p => p.featured).map(resolve), [properties, propertyTypes, regions]);
   const latestProps = useMemo(() => [...properties].reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
 
+  // Derive finishing filter options directly from actual property data so the
+  // dropdown always shows values that exist in the DB — no stale/mismatched list.
+  // Exclude values that are really category names, not finishing descriptors.
+  const CATEGORY_NAMES = new Set(["مفروش", "للبيع", "للإيجار", "مفروش للإيجار", "furnished", "sale", "rent"]);
+  const finishingFilterOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return properties
+      .map(p => (p.finishing || "").trim())
+      .filter(f => f && !CATEGORY_NAMES.has(f) && !seen.has(f) && seen.add(f))
+      .sort((a, b) => a.localeCompare(b, "ar"));
+  }, [properties]);
+
   const effectiveCategory = searchSector === "residential" ? searchCategory : searchSector;
   const isFiltering = filtersApplied || searchText.trim() !== "";
 
@@ -303,7 +314,7 @@ export default function Home() {
               </Select>
               <Select value={selectedFinishing} onValueChange={setSelectedFinishing}>
                 <SelectTrigger className="w-full sm:w-40 h-9 text-sm"><SelectValue placeholder="التشطيب" /></SelectTrigger>
-                <SelectContent>{FINISHING_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                <SelectContent>{finishingFilterOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
               </Select>
               <Button className="h-9 px-6 bg-accent text-white hover:bg-accent/90 text-sm font-medium gap-1.5" data-testid="button-search"
                 onClick={() => setFiltersApplied(true)}>
