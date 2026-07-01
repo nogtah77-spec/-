@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedDatabase } from "./lib/seed";
+import { seedDatabase, normalizeFinishingValues } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -17,6 +17,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 seedDatabase()
+  .then(() => normalizeFinishingValues())
   .then(() => {
     app.listen(port, (err) => {
       if (err) {

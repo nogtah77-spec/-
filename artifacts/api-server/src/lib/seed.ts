@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import {
   db,
   pool,
@@ -138,5 +138,27 @@ export async function seedDatabase(): Promise<void> {
   if (existingSettings.length === 0) {
     await db.insert(settingsTable).values({ id: "main", data: DEFAULT_SETTINGS });
     logger.info("Seeded default settings");
+  }
+}
+
+// Idempotent cleanup: normalise finishing values that were imported with
+// inconsistent spelling so they always match the canonical FINISHING_OPTIONS list.
+const FINISHING_FIXES: Array<{ from: string[]; to: string }> = [
+  { from: ["ألترا سوبرلوكس", "ألترا"], to: "ألترا سوبر لوكس" },
+  { from: ["٥٠%"], to: "تشطيب 50%" },
+  { from: ["٧٥%"], to: "تشطيب 75%" },
+  { from: ["semi-finished", "Semi-finished", "نصف تشطيب"], to: "نص تشطيب" },
+];
+
+export async function normalizeFinishingValues(): Promise<void> {
+  for (const { from, to } of FINISHING_FIXES) {
+    const updated = await db
+      .update(propertiesTable)
+      .set({ finishing: to })
+      .where(inArray(propertiesTable.finishing, from))
+      .returning({ id: propertiesTable.id });
+    if (updated.length > 0) {
+      logger.info({ count: updated.length, to }, "Normalised finishing values");
+    }
   }
 }
