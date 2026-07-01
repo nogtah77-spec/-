@@ -180,8 +180,15 @@ export default function Home() {
       .sort((a, b) => a.localeCompare(b, "ar"));
   }, [properties]);
 
-  const effectiveCategory = searchSector === "residential" ? searchCategory : searchSector;
   const isFiltering = filtersApplied || searchText.trim() !== "";
+
+  // Maps each non-residential sector button to the typeIds that belong to it.
+  // Residential has no explicit group — it's everything NOT in the other groups.
+  const SECTOR_TYPE_GROUPS: Record<string, string[]> = {
+    administrative: ["office"],
+    medical: ["clinic", "medical_center", "pharmacy"],
+    commercial: ["shop", "restaurant", "cafe"],
+  };
 
   const filterResults = useMemo(() => {
     let list = properties;
@@ -198,13 +205,19 @@ export default function Home() {
       });
     }
     if (filtersApplied) {
-      list = list.filter(p => p.category === effectiveCategory);
+      // Always filter by the sale / rent / furnished category tab
+      list = list.filter(p => p.category === searchCategory);
+      // For non-residential sectors, additionally narrow by property type group
+      if (searchSector !== "residential") {
+        const group = SECTOR_TYPE_GROUPS[searchSector] ?? [];
+        if (group.length) list = list.filter(p => group.includes(p.typeId));
+      }
       if (selectedRegion) list = list.filter(p => p.regionId === selectedRegion);
-      if (selectedType) list = list.filter(p => p.typeId === selectedType);
+      if (selectedType)   list = list.filter(p => p.typeId === selectedType);
       if (selectedFinishing) list = list.filter(p => (p.finishing || "").trim() === selectedFinishing);
     }
     return list.map(resolve);
-  }, [properties, searchText, filtersApplied, effectiveCategory, selectedRegion, selectedType, selectedFinishing, propertyTypes, regions]);
+  }, [properties, searchText, filtersApplied, searchCategory, searchSector, selectedRegion, selectedType, selectedFinishing, propertyTypes, regions]);
 
   const clearFilters = () => {
     setSearchText("");
