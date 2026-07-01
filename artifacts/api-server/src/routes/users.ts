@@ -41,7 +41,11 @@ router.post("/users", requireStaff, async (req, res): Promise<void> => {
     return;
   }
   const { password, ...rest } = parsed.data;
-  const passwordHash = password ? await hashPassword(password) : "";
+  if (!password) {
+    res.status(400).json({ error: "كلمة المرور مطلوبة لإنشاء الحساب" });
+    return;
+  }
+  const passwordHash = await hashPassword(password);
   const [row] = await db
     .insert(usersTable)
     .values({ ...rest, passwordHash })

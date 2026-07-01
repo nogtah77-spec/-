@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { eq, or, and, sql } from "drizzle-orm";
 import { db, usersTable } from "@workspace/db";
 import { verifyPassword } from "../lib/auth";
 import { logActivity } from "../lib/activityLog";
@@ -32,12 +33,13 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     res.status(400).json({ error: "يرجى إدخال اسم المستخدم وكلمة المرور" });
     return;
   }
-  const rows = await db.select().from(usersTable);
-  const user = rows.find(
-    (u) =>
-      u.username.toLowerCase() === identifier ||
-      u.email.toLowerCase() === identifier,
+  const rows = await db.select().from(usersTable).where(
+    or(
+      sql`lower(${usersTable.username}) = ${identifier}`,
+      sql`lower(${usersTable.email}) = ${identifier}`,
+    ),
   );
+  const user = rows[0];
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     res.status(401).json({ error: "اسم المستخدم أو كلمة المرور غير صحيحة" });
     return;
@@ -72,8 +74,13 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     res.json(null);
     return;
   }
-  const rows = await db.select().from(usersTable);
-  const user = rows.find((u) => u.id === req.session.userId && u.active);
+  const rows = await db.select().from(usersTable).where(
+    and(
+      eq(usersTable.id, req.session.userId as string),
+      eq(usersTable.active, true),
+    ),
+  );
+  const user = rows[0];
   if (!user) {
     res.json(null);
     return;

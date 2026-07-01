@@ -19,13 +19,14 @@ function isStaffReq(req: Request): boolean {
 }
 
 router.get("/properties", async (req, res): Promise<void> => {
-  const rows = await db.select().from(propertiesTable);
   if (isStaffReq(req)) {
+    const rows = await db.select().from(propertiesTable);
     res.json(rows);
     return;
   }
-  // The deal source (and its derived direct/broker classification) is
-  // manager-only private data — never expose it in the public listing.
+  // Public view: only active listings; strip manager-only fields.
+  const rows = await db.select().from(propertiesTable)
+    .where(eq(propertiesTable.status, "active"));
   const publicRows = rows.map(({ source: _source, agentType: _agentType, ...rest }) => rest);
   res.json(publicRows);
 });
