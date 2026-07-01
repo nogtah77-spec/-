@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
@@ -17,6 +18,62 @@ export function Navbar() {
   const { isStaff } = useAuth();
   const { openChat } = useAIChat();
   const tiktokHref = getTiktokUrl(settings);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeStart = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    const EDGE = 32;
+    const THRESHOLD = 55;
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
+
+    const onStart = (e: TouchEvent) => {
+      if (!isMobile() || e.touches.length !== 1) {
+        tracking = false;
+        return;
+      }
+      const t = e.touches[0];
+      if (window.innerWidth - t.clientX <= EDGE) {
+        startX = t.clientX;
+        startY = t.clientY;
+        tracking = true;
+      } else {
+        tracking = false;
+      }
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (!tracking) return;
+      const t = e.touches[0];
+      const dx = startX - t.clientX;
+      const dy = Math.abs(t.clientY - startY);
+      if (dx > THRESHOLD && dy < 45) {
+        tracking = false;
+        setMenuOpen(true);
+      }
+    };
+
+    const onEnd = () => {
+      tracking = false;
+    };
+
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, []);
 
   const navLinks = [
     { href: "/", label: "الرئيسية" },
@@ -134,14 +191,32 @@ export function Navbar() {
 
       {/* Mobile */}
       <div className="container h-14 flex md:hidden items-center justify-between px-4">
-        <Sheet>
+        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" data-testid="button-mobile-menu">
               <Menu className="h-5 w-5" />
               <span className="sr-only">القائمة</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-72 bg-background">
+          <SheetContent
+            side="right"
+            className="w-72 bg-background"
+            onTouchStart={(e) => {
+              closeStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }}
+            onTouchMove={(e) => {
+              if (!closeStart.current) return;
+              const dx = e.touches[0].clientX - closeStart.current.x;
+              const dy = Math.abs(e.touches[0].clientY - closeStart.current.y);
+              if (dx > 60 && dy < 45) {
+                closeStart.current = null;
+                setMenuOpen(false);
+              }
+            }}
+            onTouchEnd={() => {
+              closeStart.current = null;
+            }}
+          >
             <div className="mb-6 pt-2">
               <span className="text-2xl font-bold text-accent">العمودي</span>
               <span className="text-sm font-light text-muted-foreground mr-2">شريكك نحو الاستثمار الأفضل</span>

@@ -68,7 +68,7 @@ export default function PropertyDetails() {
 
   const typeName = propertyTypes.find(t => t.id === property.typeId)?.name;
   const regionName = regions.find(r => r.id === property.regionId)?.name;
-  const similar = properties.filter(p => p.id !== property.id && (p.regionId === property.regionId || p.typeId === property.typeId)).slice(0, 3);
+  const similar = properties.filter(p => p.id !== property.id && (p.regionId === property.regionId || p.typeId === property.typeId)).slice(0, 6);
 
   const waNum = (settings.whatsapp || settings.phone1 || "").replace(/[\s+]/g, "");
   const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
@@ -400,9 +400,9 @@ export default function PropertyDetails() {
           {similar.length > 0 && (
             <div className="mt-16">
               <h2 className="text-2xl font-bold mb-6">عقارات مشابهة</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {similar.map(p => (
-                  <PropertyCard key={p.id} property={{ ...p, typeName: propertyTypes.find(t => t.id === p.typeId)?.name, regionName: regions.find(r => r.id === p.regionId)?.name }} />
+                  <PropertyCard key={p.id} size="compact" property={{ ...p, typeName: propertyTypes.find(t => t.id === p.typeId)?.name, regionName: regions.find(r => r.id === p.regionId)?.name }} />
                 ))}
               </div>
             </div>
