@@ -155,7 +155,7 @@ export default function Home() {
   const [searchText, setSearchText] = useState("");
   const [filtersApplied, setFiltersApplied] = useState(false);
   const [cardSize, setCardSize] = useState<CardSize>(() => {
-    try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "medium"; } catch { return "medium"; }
+    try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "compact"; } catch { return "compact"; }
   });
 
   useEffect(() => { try { localStorage.setItem(CARD_SIZE_KEY, cardSize); } catch {} }, [cardSize]);
@@ -379,61 +379,68 @@ export default function Home() {
         {!isFiltering && (
         <section className="py-12 md:py-14 bg-background">
           <div className="container px-6">
-            {/* Profile header */}
-            <div className="flex flex-col items-center text-center mb-9">
-              <p className="text-accent text-xs font-medium tracking-widest mb-4 uppercase">محتوى حصري</p>
-              {/* Circular avatar */}
-              <a
-                href={settings.tiktok || "#"}
-                {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                className="block w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
-                aria-label="حساب تيك توك"
-              >
-                {settings.tiktokAvatar ? (
-                  <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
-                    <TikTokIcon className="h-8 w-8" />
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-7 md:p-10">
+              <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#A27B5B 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+              <div className="relative">
+                {/* Profile header */}
+                <div className="flex flex-col items-center text-center mb-9">
+                  {/* Circular avatar */}
+                  <a
+                    href={settings.tiktok || "#"}
+                    {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className="relative block w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                    aria-label="حساب تيك توك"
+                  >
+                    {settings.tiktokAvatar ? (
+                      <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
+                        <TikTokIcon className="h-8 w-8" />
+                      </span>
+                    )}
+                  </a>
+                  <span className="-mt-3 z-10 inline-flex items-center justify-center w-7 h-7 rounded-full bg-foreground text-background shadow-md border-2 border-card">
+                    <TikTokIcon className="h-3.5 w-3.5" />
                   </span>
-                )}
-              </a>
-              {/* Account name */}
-              <a
-                href={settings.tiktok || "#"}
-                {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                className="mt-3 hover:text-accent transition-colors"
-              >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground">
-                  {settings.tiktokName || "العمودي للتسويق العقاري"}
-                </h2>
-              </a>
-              <p className="text-xs text-muted-foreground mt-1">تابعنا على تيك توك</p>
-              {/* Follow button */}
-              <Button asChild className="mt-4 rounded-full px-8 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow-md">
-                <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                  <TikTokIcon className="h-4 w-4" /> تابعنا الآن
-                </a>
-              </Button>
-            </div>
-
-            {tiktokVideos.length === 0 ? (
-              <div className="text-center py-10 rounded-2xl border border-dashed border-border bg-muted/30">
-                <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-3">
-                  <Play className="h-7 w-7" />
+                  {/* Account name */}
+                  <a
+                    href={settings.tiktok || "#"}
+                    {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    className="mt-3 hover:text-accent transition-colors"
+                  >
+                    <h2 className="text-xl md:text-2xl font-bold text-foreground">
+                      {settings.tiktokName || "العمودي للتسويق العقاري"}
+                    </h2>
+                  </a>
+                  <p className="text-xs text-muted-foreground mt-1">تابعنا على تيك توك لمشاهدة أحدث العقارات</p>
+                  {/* Follow button */}
+                  <Button asChild className="mt-4 rounded-full px-8 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow-md">
+                    <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+                      <TikTokIcon className="h-4 w-4" /> تابعنا الآن
+                    </a>
+                  </Button>
                 </div>
-                <p className="text-sm font-medium text-foreground mb-1">لا توجد فيديوهات حالياً</p>
-                <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  className="inline-flex items-center gap-1.5 mt-4 text-xs text-accent hover:underline">
-                  زيارة صفحتنا على تيك توك <ExternalLink className="h-3 w-3" />
-                </a>
+
+                {tiktokVideos.length === 0 ? (
+                  <div className="text-center py-10 rounded-2xl border border-dashed border-border bg-muted/30">
+                    <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-3">
+                      <Play className="h-7 w-7" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground mb-1">لا توجد فيديوهات حالياً</p>
+                    <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="inline-flex items-center gap-1.5 mt-4 text-xs text-accent hover:underline">
+                      زيارة صفحتنا على تيك توك <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                ) : (
+                  <div className={videoGridClass}>
+                    {tiktokVideos.map(video => (
+                      <TiktokCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className={videoGridClass}>
-                {tiktokVideos.map(video => (
-                  <TiktokCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
-                ))}
-              </div>
-            )}
+            </div>
           </div>
         </section>
         )}

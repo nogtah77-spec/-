@@ -129,16 +129,26 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           <div className="absolute top-2 right-2">
             <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
           </div>
+          {propHasVideo && (
+            <div className="absolute bottom-1.5 right-1.5">
+              <span className="bg-accent/90 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
+            </div>
+          )}
         </div>
         <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-          <div>
-            <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{property.regionName}</p>
+          <div className="min-w-0">
+            <div className="flex items-center justify-between gap-1.5">
+              <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
+              {property.typeName && <span className="flex-shrink-0 text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{property.typeName}</span>}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
+            {property.finishing && <p className="text-[10px] text-accent/90 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
           </div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-accent">{property.price.toLocaleString("en-US")} <span className="text-[10px] font-normal text-muted-foreground">EGP</span></p>
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center justify-between gap-1.5">
+            <p className="text-sm font-bold text-accent whitespace-nowrap">{property.price.toLocaleString("en-US")} <span className="text-[10px] font-normal text-muted-foreground">EGP</span></p>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground flex-shrink-0">
               {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3" />{property.beds}</span>}
+              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3 w-3" />{property.baths}</span>}
               <span className="flex items-center gap-0.5"><Square className="h-3 w-3" />{property.area}</span>
             </div>
           </div>
@@ -209,13 +219,21 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors mb-1.5", size === "medium" ? "text-base" : "text-lg")}>
           {property.code}
         </h3>
-        <p className={cn("font-bold text-accent mb-auto", size === "medium" ? "text-lg" : "text-xl")}>
+        <p className={cn("font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
           {property.price.toLocaleString("en-US")} <span className="text-xs font-normal text-muted-foreground">EGP</span>
         </p>
-        <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-xs" : "mt-4 pt-4 text-xs")}>
-          {property.beds > 0 && <span className="flex items-center gap-1"><Bed className="h-3.5 w-3.5" />{property.beds}</span>}
-          {property.baths > 0 && <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5" />{property.baths}</span>}
-          <span className="flex items-center gap-1"><Square className="h-3.5 w-3.5" />{property.area} م²</span>
+        <div className="mt-auto">
+          {(property.finishing || property.view) && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-3">
+              {property.finishing && <span className="text-[11px] bg-accent/10 text-accent px-2 py-0.5 rounded-full line-clamp-1">{property.finishing}</span>}
+              {property.view && <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full line-clamp-1 max-w-[55%]">{property.view}</span>}
+            </div>
+          )}
+          <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-xs" : "mt-4 pt-4 text-xs")}>
+            {property.beds > 0 && <span className="flex items-center gap-1"><Bed className="h-3.5 w-3.5" />{property.beds}</span>}
+            {property.baths > 0 && <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5" />{property.baths}</span>}
+            <span className="flex items-center gap-1"><Square className="h-3.5 w-3.5" />{property.area} م²</span>
+          </div>
         </div>
       </CardContent>
 

@@ -208,9 +208,9 @@ export default function PropertyForm() {
                       <div key={idx} className="relative rounded-lg overflow-hidden aspect-square bg-muted group">
                         <img src={img} alt="" className="w-full h-full object-cover" />
                         {idx === 0 && <div className="absolute bottom-0 inset-x-0 bg-accent/80 text-white text-[9px] font-bold text-center py-0.5">رئيسية</div>}
-                        <button type="button" onClick={() => setImages(p => p.filter((_, i) => i !== idx))}
-                          className="absolute top-1 left-1 w-5 h-5 rounded-full bg-destructive/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <X className="h-3 w-3" />
+                        <button type="button" aria-label="حذف الصورة" onClick={() => setImages(p => p.filter((_, i) => i !== idx))}
+                          className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center shadow-md ring-2 ring-white/70 hover:bg-destructive/90 active:scale-95 transition">
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     ))}
