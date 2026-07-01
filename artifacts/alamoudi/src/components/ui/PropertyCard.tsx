@@ -257,7 +257,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           <Button variant="outline" size="sm" className="flex-1 h-7 text-green-600 border-green-200 hover:bg-green-50 dark:border-green-900 dark:hover:bg-green-950/30 text-xs gap-1" onClick={handleWhatsApp}>
             <WhatsAppIcon className="h-3 w-3" />واتساب
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 h-7 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-950/30 text-xs gap-1" onClick={handleCall}>
+          <Button variant="outline" size="sm" className="flex-1 h-7 text-accent border-accent/30 hover:bg-accent/10 dark:border-accent/20 dark:hover:bg-accent/10 text-xs gap-1" onClick={handleCall}>
             <Phone className="h-3 w-3" />اتصال
           </Button>
           <Button variant="outline" size="sm" className="h-7 text-muted-foreground border-border hover:text-accent text-xs gap-1 px-2" onClick={handleCopy} title="نسخ الكود">
