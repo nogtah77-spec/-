@@ -111,7 +111,13 @@ function parseFloorNumber(raw: unknown): number {
 }
 
 function sourceToAgentType(source: string): "direct" | "broker" {
-  return /بروكر/.test(source) ? "broker" : "direct";
+  const s = source.trim().toLowerCase();
+  if (!s) return "direct";
+  // Explicit "direct owner" wording wins.
+  if (/(مباشر|مالك|صاحب|direct|owner)/.test(s)) return "direct";
+  // Any broker/agent/office wording (Arabic or English) => broker.
+  if (/(بروكر|سمسار|وسيط|مكتب|شركة|broker|agent|agency|office)/.test(s)) return "broker";
+  return "direct";
 }
 
 interface SheetMeta {
@@ -352,7 +358,20 @@ interface RegionLite {
   name: string;
 }
 
-export function parseDelimitedText(text: string, regions: RegionLite[]): ParseResult {
+const STATUS_VALUES = new Set([
+  "active",
+  "listed",
+  "draft",
+  "sold",
+  "rented",
+  "reserved",
+]);
+
+export function parseDelimitedText(
+  text: string,
+  regions: RegionLite[],
+  types: RegionLite[] = [],
+): ParseResult {
   const clean = text.replace(/^\uFEFF/, "");
   const lines = clean.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length < 2) return { items: [], sheets: [] };
@@ -360,6 +379,8 @@ export function parseDelimitedText(text: string, regions: RegionLite[]): ParseRe
   const headers = splitDelimited(lines[0], delim);
 
   const regionByName = new Map(regions.map((r) => [r.name.trim(), r.id]));
+  const typeByName = new Map(types.map((t) => [t.name.trim(), t.id]));
+  const typeIds = new Set(types.map((t) => t.id));
   const catByLabel: Record<string, PropertyCategory> = {
     "للبيع": "sale",
     "بيع": "sale",
@@ -399,11 +420,25 @@ export function parseDelimitedText(text: string, regions: RegionLite[]): ParseRe
     const code = pick(cells, ["الكود", "code"]);
     const finishing = pick(cells, ["التشطيب", "finishing"]);
     const view = pick(cells, ["الفيو", "view"]);
+    const typeRaw = pick(cells, ["النوع", "type", "unitType"]);
+    const statusRaw = pick(cells, ["الحالة", "status"]).trim().toLowerCase();
+    const featuredRaw = pick(cells, ["مميز", "featured"]).trim();
+    const agentRaw = pick(cells, ["نوع_العرض", "agentType"]).trim().toLowerCase();
 
     if (!title && !code && !pick(cells, ["السعر", "price"])) continue;
 
     const regionId = regionByName.get(regionName.trim()) || "";
     const category = catByLabel[catRaw.trim()] || "sale";
+    const typeKey = typeRaw.trim();
+    const typeId = typeByName.get(typeKey) || (typeIds.has(typeKey) ? typeKey : "apartment");
+    const status = (STATUS_VALUES.has(statusRaw) ? statusRaw : "active") as PropertyStatus;
+    const featured = /^(نعم|true|1|yes)$/i.test(featuredRaw);
+    const agentType: "direct" | "broker" =
+      agentRaw === "broker" || agentRaw === "بروكر"
+        ? "broker"
+        : agentRaw === "direct" || agentRaw === "مباشر"
+          ? "direct"
+          : sourceToAgentType(source);
 
     items.push({
       code: code || "",
@@ -417,16 +452,16 @@ export function parseDelimitedText(text: string, regions: RegionLite[]): ParseRe
       floor: parseFloorNumber(pick(cells, ["الدور", "floor"])),
       finishing,
       view,
-      typeId: "apartment",
+      typeId,
       regionId,
       category,
-      status: "active",
-      featured: false,
-      agentType: sourceToAgentType(source),
+      status,
+      featured,
+      agentType,
       images: [],
-      videoUrl: "",
-      externalUrl: "",
-      mapsUrl: "",
+      videoUrl: pick(cells, ["رابط_الفيديو", "الفيديو", "videoUrl"]),
+      externalUrl: pick(cells, ["رابط_خارجي", "externalUrl"]),
+      mapsUrl: pick(cells, ["رابط_الخريطة", "الخريطة", "mapsUrl"]),
       unitType: pick(cells, ["النوع", "unitType"]),
       subArea: pick(cells, ["المنطقة الفرعية", "subArea"]),
       layout: arabicToWestern(layoutRaw),

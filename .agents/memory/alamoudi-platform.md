@@ -77,5 +77,17 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 - **Render-crash trap:** `settings` fields can be undefined if `/settings` returns partial data. Any `settings.<phone/whatsapp>.replace(...)` MUST be short-circuit guarded (`settings.x && ...`) or defaulted (`(a || b || "")`). PropertyDetails `waNum` was the one unguarded spot (fixed). Navbar/Footer already guard with `&&`.
 - **A client's "white page with 404" is the app's own catch-all NotFound, NOT a server/proxy 404.** Production static serve returns index.html (200) for every path incl. nested `/properties/:id` (verified via curl), so don't chase server-side 404s. The scaffold ships a bare English not-found page by default — always replace it with a branded Arabic RTL page (Navbar/Footer + home button) before going live.
 
+## Deal source (المصدر) is manager-only private data
+- `properties.source` (free-text deal source, e.g. مباشر/بروكر/office name) and its derived `properties.agentType` (direct|broker) must NEVER reach public visitors. The public `GET /properties` strips BOTH fields via `.map()` for non-staff (isStaffReq = session userId + role admin/agent); staff get full rows. DataContext reloads after login, so admin PropertyForm still sees source.
+- **Rule:** if you add any new private/manager-only column, strip it in the same public-GET map — do not rely on "it's not displayed in the UI" (the raw JSON was leaking it before). No other public endpoint should `select *` these columns.
+- Frontend `Property.agentType` is **optional** (`agentType?`) precisely because the public payload omits it; don't assume it's present in public components.
+- Import derives agentType from source via `sourceToAgentType()` in `propertyImport.ts`: broker if source matches بروكر/سمسار/وسيط/مكتب/شركة/broker/agent/agency/office; direct if مباشر/مالك/صاحب/direct/owner or empty. The CSV `نوع_العرض` column (broker/بروكر | direct/مباشر) is an explicit override that wins over the derivation.
+
+## CSV import maps every column (parseDelimitedText)
+- `parseDelimitedText(text, regions, types)` — the 3rd `types` arg (propertyTypes) is needed so النوع→typeId resolves by matching type NAME (fallback "apartment"); ImportExport.tsx must pass it. Region matched by exact name→id.
+- Recognized headers land where expected: الكود→code, النوع→typeId, المنطقة→regionId, الفئة→category (للبيع/للإيجار/مفروش/…), الحالة→status (whitelist active/listed/draft/sold/rented/reserved, fallback active), مميز→featured (نعم/true/1/yes), المصدر→source(+derived agentType), نوع_العرض→agentType override, رابط_الفيديو→videoUrl, رابط_الخريطة→mapsUrl, رابط_خارجي→externalUrl.
+- The downloadable CSV template headers (`TEMPLATE_HEADERS` in ImportExport.tsx) must stay in sync with the parser's recognized columns. Export intentionally OMITS المصدر to keep it private.
+- The Excel/workbook path derives region+category from the SHEET NAME and hardcodes typeId="apartment" — only the CSV path does full column mapping.
+
 ## Card default size + card detail density
 - Public listing cards default to **`compact`** size for every new visitor (localStorage `CARD_SIZE_KEY` fallback in `Home.tsx`), user can enlarge and the choice persists. Compact cards intentionally carry rich detail (type chip, region+subArea, finishing, beds/baths/area, `فيديو` badge when `videoUrl` set). Medium/large add a finishing+view chip row above the metrics. `فيديو` badge = `hasVideo(property.videoUrl)`.

@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, propertiesTable, insertPropertySchema } from "@workspace/db";
@@ -11,9 +11,23 @@ function propertyLabel(p: { title?: string | null; code?: string | null }): stri
   return p.title?.trim() || p.code || "عقار";
 }
 
-router.get("/properties", async (_req, res): Promise<void> => {
+function isStaffReq(req: Request): boolean {
+  return !!(
+    req.session?.userId &&
+    (req.session.role === "admin" || req.session.role === "agent")
+  );
+}
+
+router.get("/properties", async (req, res): Promise<void> => {
   const rows = await db.select().from(propertiesTable);
-  res.json(rows);
+  if (isStaffReq(req)) {
+    res.json(rows);
+    return;
+  }
+  // The deal source (and its derived direct/broker classification) is
+  // manager-only private data — never expose it in the public listing.
+  const publicRows = rows.map(({ source: _source, agentType: _agentType, ...rest }) => rest);
+  res.json(publicRows);
 });
 
 router.post("/properties/:id/view", async (req, res): Promise<void> => {

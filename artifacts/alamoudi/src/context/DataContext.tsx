@@ -26,7 +26,7 @@ export interface Property {
   category: PropertyCategory;
   status: PropertyStatus;
   featured: boolean;
-  agentType: "direct" | "broker";
+  agentType?: "direct" | "broker";
   images: string[];
   videoUrl: string;
   externalUrl: string;

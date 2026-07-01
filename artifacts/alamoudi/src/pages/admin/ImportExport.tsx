@@ -9,8 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { parseWorkbookBytes, parseDelimitedText, type ParsedProperty } from "@/lib/propertyImport";
 
-const TEMPLATE_HEADERS = "العنوان,الوصف,السعر,المساحة,غرف_النوم,الحمامات,الدور,التشطيب,الفيو,الفئة,الحالة";
-const TEMPLATE_ROW = "شقة فاخرة,وصف العقار,2500000,120,3,2,4,super-lux,بحري,sale,active";
+const TEMPLATE_HEADERS = "الكود,العنوان,الوصف,النوع,المنطقة,الفئة,الحالة,السعر,المساحة,غرف_النوم,الحمامات,الدور,التشطيب,الفيو,المصدر,مميز,نوع_العرض,رابط_الفيديو,رابط_الخريطة,رابط_خارجي";
+const TEMPLATE_ROW = "ALM-1001,شقة فاخرة بمدينتي,وصف مختصر للعقار,شقة,مدينتي,sale,active,2500000,120,3,2,4,super-lux,بحري,بروكر,لا,broker,,,";
 
 function toCSV(rows: Record<string, any>[], headers: string[]): string {
   const escape = (v: any) => {
@@ -109,7 +109,7 @@ export default function ImportExport() {
           const { items, sheets } = parseWorkbookBytes(bytes);
           applyImport(items, sheets);
         } else {
-          const { items, sheets } = parseDelimitedText(e.target?.result as string, regions);
+          const { items, sheets } = parseDelimitedText(e.target?.result as string, regions, propertyTypes);
           applyImport(items, sheets);
         }
       } catch {
