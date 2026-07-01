@@ -474,8 +474,7 @@ export default function Home() {
         {/* ── Finishing Services Preview ── */}
         <section className="py-12 md:py-14 bg-[#F5F2EC] dark:bg-background">
           <div className="container px-6">
-            <div className="text-center mb-8">
-              <p className="text-accent text-xs font-medium tracking-widest mb-2 uppercase">خدماتنا</p>
+            <div className="text-center mb-5">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">خدمات التشطيبات</h2>
               <p className="text-sm text-muted-foreground max-w-lg mx-auto">نقدم خدمات تشطيب متكاملة لجميع أنواع الوحدات بأعلى مستوى من الجودة وأفضل الأسعار</p>
             </div>
