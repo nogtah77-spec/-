@@ -206,6 +206,7 @@ export default function Home() {
   };
 
   const heroImage = settings.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80";
+  const heroOverlay = Math.min(100, Math.max(0, settings.heroOverlayOpacity ?? 85)) / 100;
   const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 6);
   const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
 
@@ -229,35 +230,10 @@ export default function Home() {
         {/* ── Hero ── */}
         <section className="relative flex flex-col items-center justify-center text-center overflow-hidden py-14 md:py-20 min-h-[420px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
-          <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(135deg, rgba(44,54,57,0.85) 0%, rgba(63,78,79,0.78) 50%, rgba(44,54,57,0.88) 100%)" }} />
+          <div className="absolute inset-0 z-10" style={{ background: `linear-gradient(135deg, rgba(44,54,57,${heroOverlay}) 0%, rgba(63,78,79,${heroOverlay * 0.92}) 50%, rgba(44,54,57,${heroOverlay * 1.04 > 1 ? 1 : heroOverlay * 1.04}) 100%)` }} />
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            {/* Dark glass wordmark */}
-            <div className="flex justify-center mb-8">
-              <div
-                className="inline-flex items-center justify-center px-14 md:px-20 h-28 md:h-36 rounded-[2.5rem]"
-                style={{
-                  background: "rgba(255, 255, 255, 0.04)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255,255,255,0.18)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
-                }}
-              >
-                <h1
-                  className="text-5xl md:text-7xl tracking-tight text-center text-white"
-                  style={{
-                    fontFamily: "'Cairo', sans-serif",
-                    fontWeight: 800,
-                    lineHeight: 1,
-                    margin: 0,
-                  }}
-                >
-                  العمودي
-                </h1>
-              </div>
-            </div>
             <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose mb-6">
               <span className="block">شريكك الموثوق في عالم التسويق العقاري والتشطيبات</span>
               <span className="block">نقدم لك أفضل الفرص العقارية والاستثمارية في مصر</span>

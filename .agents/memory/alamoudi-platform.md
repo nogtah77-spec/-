@@ -89,5 +89,11 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 - The downloadable CSV template headers (`TEMPLATE_HEADERS` in ImportExport.tsx) must stay in sync with the parser's recognized columns. Export intentionally OMITS المصدر to keep it private.
 - The Excel/workbook path derives region+category from the SHEET NAME and hardcodes typeId="apartment" — only the CSV path does full column mapping.
 
+## Site settings storage & keys
+- Settings = a single JSONB blob (`settingsTable` row id="main", column `data`). `GET /settings` public returns the object; `PUT /settings` (requireStaff) overwrites the WHOLE object. No per-field schema/validation — adding a new key needs no migration, just add it to `SiteSettings` + `DEFAULT_SETTINGS` (DataContext.tsx) and the seed default.
+- **Setting keys are FULL descriptive names** (e.g. `heroImageUrl`, `heroOverlayOpacity`), NOT abbreviated. Trust `read` over `rg` here — this repo's grep output can render identifiers as a bare `n`, which is misleading; verify names by reading the file.
+- Backward-compat rule: prod DB is separate/read-only and older rows lack newly-added keys. DataContext merges `{ ...DEFAULT_SETTINGS, ...fetched }`, and consumers should also fallback (`settings.x ?? default`). Never assume a settings field exists.
+- **"Manager only" = admin role, distinct from agent.** Both admin+agent are "staff" (requireStaff / isStaff). To make a settings control admin-only without breaking agents' access to the rest of the shared settings page, gate just that UI block with `currentUser?.role === "admin"` (from useAuth) — the hero overlay-darkness control does this.
+
 ## Card default size + card detail density
 - Public listing cards default to **`compact`** size for every new visitor (localStorage `CARD_SIZE_KEY` fallback in `Home.tsx`), user can enlarge and the choice persists. Compact cards intentionally carry rich detail (type chip, region+subArea, finishing, beds/baths/area, `فيديو` badge when `videoUrl` set). Medium/large add a finishing+view chip row above the metrics. `فيديو` badge = `hasVideo(property.videoUrl)`.

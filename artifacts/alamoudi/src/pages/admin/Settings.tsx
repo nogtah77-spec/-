@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MapPin, Facebook, Instagram, Plus, Play, ExternalLink } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
@@ -18,6 +20,8 @@ const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = { thumbnail: "", title: "", videoUr
 
 export default function Settings() {
   const { settings, updateSettings, addTiktokVideo, updateTiktokVideo, deleteTiktokVideo } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
   const { toast } = useToast();
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
@@ -299,6 +303,71 @@ export default function Settings() {
                     placeholder="https://example.com/image.jpg"
                   />
                 </div>
+
+                {/* Overlay darkness — admin (manager) only */}
+                {isAdmin && (
+                <div className="space-y-3 pt-2 border-t border-border">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <Label>درجة تعتيم الصورة</Label>
+                      <p className="text-xs text-muted-foreground mt-1">كل ما زادت النسبة، أصبحت الصورة أغمق ووضح النص فوقها</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => setForm(prev => ({ ...prev, heroOverlayOpacity: Math.max(0, (prev.heroOverlayOpacity ?? 85) - 5) }))}
+                      >
+                        <X className="h-3 w-3 rotate-45" />
+                      </Button>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        dir="ltr"
+                        className="w-20 text-center"
+                        value={form.heroOverlayOpacity ?? 85}
+                        onChange={(e) => {
+                          const raw = parseInt(e.target.value, 10);
+                          const val = isNaN(raw) ? 0 : Math.min(100, Math.max(0, raw));
+                          setForm(prev => ({ ...prev, heroOverlayOpacity: val }));
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => setForm(prev => ({ ...prev, heroOverlayOpacity: Math.min(100, (prev.heroOverlayOpacity ?? 85) + 5) }))}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <Slider
+                    dir="ltr"
+                    value={[form.heroOverlayOpacity ?? 85]}
+                    min={0}
+                    max={100}
+                    step={1}
+                    onValueChange={(v) => setForm(prev => ({ ...prev, heroOverlayOpacity: v[0] }))}
+                  />
+                  {/* Live preview */}
+                  <div className="relative rounded-xl overflow-hidden h-28 bg-muted border border-border">
+                    {form.heroImageUrl && (
+                      <img src={form.heroImageUrl} alt="معاينة" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    )}
+                    <div
+                      className="absolute inset-0 flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg, rgba(44,54,57,${(form.heroOverlayOpacity ?? 85) / 100}) 0%, rgba(63,78,79,${((form.heroOverlayOpacity ?? 85) / 100) * 0.92}) 50%, rgba(44,54,57,${Math.min(1, ((form.heroOverlayOpacity ?? 85) / 100) * 1.04)}) 100%)` }}
+                    >
+                      <span className="text-white text-sm font-bold">معاينة النص فوق الصورة</span>
+                    </div>
+                  </div>
+                </div>
+                )}
               </CardContent>
               <CardFooter className="border-t pt-4 gap-3">
                 <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90 gap-2">

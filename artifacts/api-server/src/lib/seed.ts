@@ -62,6 +62,7 @@ const DEFAULT_SETTINGS = {
   mapsUrl: "https://maps.google.com",
   heroImageUrl:
     "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
+  heroOverlayOpacity: 85,
   tiktokVideos: [],
 };
 
