@@ -434,7 +434,6 @@ export default function Home() {
           <div className="container px-6">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <div>
-                <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">اختيارات حصرية</p>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-0.5 relative inline-block">
                   عقارات مميزة
                   <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
@@ -459,7 +458,6 @@ export default function Home() {
           <div className="container px-6">
             <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
               <div>
-                <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">جديدنا</p>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">أحدث العقارات</h2>
                 <p className="text-sm text-muted-foreground mt-1">تصفح أحدث ما أضيف لمجموعتنا العقارية</p>
               </div>
