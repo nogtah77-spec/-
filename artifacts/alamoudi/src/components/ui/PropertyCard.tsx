@@ -188,7 +188,6 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           {property.featured && <Badge className="bg-yellow-500 text-white border-none text-[10px] px-1.5 py-0.5">مميز</Badge>}
           {isNew() && <Badge className="bg-emerald-500 text-white border-none text-[10px] px-1.5 py-0.5">جديد</Badge>}
           {property.status === "reserved" && <Badge className="bg-amber-500 text-white border-none text-[10px] px-1.5 py-0.5">محجوز</Badge>}
-          {property.category === "furnished" && <Badge className="bg-purple-500 text-white border-none text-[10px] px-1.5 py-0.5">مفروش</Badge>}
         </div>
 
         {property.regionName && (
@@ -225,7 +224,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         <div className="mt-auto">
           {(property.finishing || property.view) && (
             <div className="flex flex-wrap items-center gap-1.5 pt-3">
-              {property.finishing && <span className="text-[11px] bg-accent/10 text-accent px-2 py-0.5 rounded-full line-clamp-1">{property.finishing}</span>}
+              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span className="text-[11px] bg-accent/10 text-accent px-2 py-0.5 rounded-full line-clamp-1">{property.finishing}</span>}
               {property.view && <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full line-clamp-1 max-w-[55%]">{property.view}</span>}
             </div>
           )}
