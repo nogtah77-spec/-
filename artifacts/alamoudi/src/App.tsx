@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import { getVisitorId } from "@/lib/visitorTracking";
 import { LiveVisitorsBubble } from "@/components/ui/LiveVisitorsBubble";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -163,6 +164,7 @@ function App() {
                       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
                         <ScrollToTop />
                         <Router />
+                        <ScrollToTopButton />
                         <StaffLiveBubble />
                         {AI_ASSISTANT_ENABLED && <AIChatWidget />}
                       </WouterRouter>
