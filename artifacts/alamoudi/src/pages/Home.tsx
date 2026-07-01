@@ -251,10 +251,12 @@ export default function Home() {
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
 
           <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose mb-6">
-              <span className="block">شريكك الموثوق في عالم التسويق العقاري والتشطيبات</span>
-              <span className="block">نقدم لك أفضل الفرص العقارية والاستثمارية في مصر</span>
-            </p>
+            {(settings.heroLine1 || settings.heroLine2) && (
+              <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose mb-6">
+                {settings.heroLine1 && <span className="block">{settings.heroLine1}</span>}
+                {settings.heroLine2 && <span className="block">{settings.heroLine2}</span>}
+              </p>
+            )}
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-2"
                 style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>

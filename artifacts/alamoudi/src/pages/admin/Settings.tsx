@@ -231,6 +231,42 @@ export default function Settings() {
 
           {/* ── Hero Image ── */}
           <TabsContent value="hero" className="mt-6">
+            <div className="space-y-5">
+
+            {/* Hero text */}
+            <Card className="card-luxury">
+              <CardHeader>
+                <CardTitle>نص صفحة الغلاف</CardTitle>
+                <CardDescription>السطران اللذان يظهران فوق الأزرار في الصفحة الرئيسية — اتركهما فارغَين لإخفائهما</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="heroLine1">السطر الأول</Label>
+                  <Input
+                    id="heroLine1"
+                    value={form.heroLine1 ?? ""}
+                    onChange={set("heroLine1")}
+                    placeholder="شريكك الموثوق في عالم التسويق العقاري والتشطيبات"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="heroLine2">السطر الثاني</Label>
+                  <Input
+                    id="heroLine2"
+                    value={form.heroLine2 ?? ""}
+                    onChange={set("heroLine2")}
+                    placeholder="نقدم لك أفضل الفرص العقارية والاستثمارية في مصر"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90 gap-2">
+                  <Save className="h-4 w-4" />
+                  {saving ? "جاري الحفظ..." : "حفظ النص"}
+                </Button>
+              </CardFooter>
+            </Card>
+
             <Card className="card-luxury">
               <CardHeader>
                 <CardTitle>صورة الغلاف الرئيسية</CardTitle>
@@ -385,6 +421,7 @@ export default function Settings() {
                 )}
               </CardFooter>
             </Card>
+            </div>
           </TabsContent>
 
           {/* ── TikTok Videos ── */}

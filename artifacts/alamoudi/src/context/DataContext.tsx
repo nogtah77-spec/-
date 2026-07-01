@@ -127,6 +127,8 @@ export interface TiktokVideo {
 export interface SiteSettings {
   companyName: string;
   companyDescription: string;
+  heroLine1: string;
+  heroLine2: string;
   phone1: string;
   phone2: string;
   whatsapp: string;
@@ -145,6 +147,8 @@ export interface SiteSettings {
 const DEFAULT_SETTINGS: SiteSettings = {
   companyName: "العمودي للتسويق العقاري",
   companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
+  heroLine1: "شريكك الموثوق في عالم التسويق العقاري والتشطيبات",
+  heroLine2: "نقدم لك أفضل الفرص العقارية والاستثمارية في مصر",
   phone1: "+20 10 0000 0000",
   phone2: "",
   whatsapp: "+20 10 0000 0000",
