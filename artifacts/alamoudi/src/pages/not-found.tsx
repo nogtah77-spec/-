@@ -1,21 +1,39 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { Compass } from "lucide-react";
+import { Link } from "wouter";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <Card className="w-full max-w-md mx-4">
-        <CardContent className="pt-6">
-          <div className="flex mb-4 gap-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">404 Page Not Found</h1>
+    <div className="min-h-screen flex flex-col" dir="rtl">
+      <Navbar />
+      <main className="flex-1 flex items-center justify-center px-6 py-20">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mx-auto mb-6">
+            <Compass className="h-10 w-10" />
           </div>
-
-          <p className="mt-4 text-sm text-gray-600">
-            Did you forget to add the page to the router?
+          <p className="text-5xl font-extrabold text-accent mb-3 tracking-tight">٤٠٤</p>
+          <h1 className="text-2xl font-bold text-foreground mb-3">الصفحة غير موجودة</h1>
+          <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+            الصفحة اللي بتدوّر عليها ممكن تكون اتنقلت أو الرابط قديم. تقدر ترجع للرئيسية وتكمّل تصفّح العقارات.
           </p>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/"
+              className="rounded-full px-7 py-2.5 text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors shadow-md"
+            >
+              العودة للرئيسية
+            </Link>
+            <Link
+              href="/consultation"
+              className="rounded-full px-7 py-2.5 text-sm font-medium border border-border text-foreground hover:bg-muted transition-colors"
+            >
+              تواصل معنا
+            </Link>
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
