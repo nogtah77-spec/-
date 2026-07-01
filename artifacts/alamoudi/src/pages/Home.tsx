@@ -412,7 +412,6 @@ export default function Home() {
                       {settings.tiktokName || "العمودي للتسويق العقاري"}
                     </h2>
                   </a>
-                  <p className="text-xs text-muted-foreground mt-1">تابعنا على تيك توك لمشاهدة أحدث العقارات</p>
                   {/* Follow button */}
                   <Button asChild className="mt-4 rounded-full px-8 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow-md">
                     <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
