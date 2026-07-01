@@ -36,7 +36,6 @@ export default function FinishingServices() {
         {/* Hero */}
         <div className="bg-card border-b border-border py-12 md:py-16">
           <div className="container px-6 text-center">
-            <p className="text-accent text-xs font-medium tracking-widest mb-3 uppercase">خدماتنا</p>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">خدمات التشطيبات</h1>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
               نقدم خدمات تشطيب متكاملة لجميع أنواع الوحدات السكنية والإدارية بأعلى مستوى من الجودة وأفضل الأسعار.
