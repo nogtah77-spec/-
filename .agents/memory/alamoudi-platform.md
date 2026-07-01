@@ -71,5 +71,10 @@ description: Non-obvious behaviors of the alamoudi Arabic RTL real-estate artifa
 ## UI gotcha: never gate a control behind hover-only visibility
 - The image-thumbnail delete (X) button in `PropertyForm` was invisible on mobile because it used `opacity-0 group-hover:opacity-100` — touch devices have no hover, so users could never remove a mistakenly-added image. **Rule:** action buttons (delete/remove/edit overlays on cards/thumbnails) must be always-visible (or toggled by tap), never hover-only.
 
+## Client-facing crash safety
+- Routes are gated by `AppReadyGate` (won't render until DataContext `ready`), and prod serves an SPA fallback (`artifact.toml` `[[services.production.rewrites]] /* -> /index.html`) — so the empty-list race and deep-link 404 are already handled; don't re-chase those for "client saw an error page".
+- There is now a global `ErrorBoundary` (`src/components/ErrorBoundary.tsx`) wrapped around `WouterRouter` inside `AppReadyGate` — any render crash shows a friendly Arabic retry/home page instead of a white screen, and logs `[ErrorBoundary]` + componentStack + path to console.
+- **Render-crash trap:** `settings` fields can be undefined if `/settings` returns partial data. Any `settings.<phone/whatsapp>.replace(...)` MUST be short-circuit guarded (`settings.x && ...`) or defaulted (`(a || b || "")`). PropertyDetails `waNum` was the one unguarded spot (fixed). Navbar/Footer already guard with `&&`.
+
 ## Card default size + card detail density
 - Public listing cards default to **`compact`** size for every new visitor (localStorage `CARD_SIZE_KEY` fallback in `Home.tsx`), user can enlarge and the choice persists. Compact cards intentionally carry rich detail (type chip, region+subArea, finishing, beds/baths/area, `فيديو` badge when `videoUrl` set). Medium/large add a finishing+view chip row above the metrics. `فيديو` badge = `hasVideo(property.videoUrl)`.

@@ -70,7 +70,7 @@ export default function PropertyDetails() {
   const regionName = regions.find(r => r.id === property.regionId)?.name;
   const similar = properties.filter(p => p.id !== property.id && (p.regionId === property.regionId || p.typeId === property.typeId)).slice(0, 3);
 
-  const waNum = (settings.whatsapp || settings.phone1).replace(/[\s+]/g, "");
+  const waNum = (settings.whatsapp || settings.phone1 || "").replace(/[\s+]/g, "");
   const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
   const waHref = waNum ? `https://wa.me/${waNum}?text=${waMsg}` : null;
 
