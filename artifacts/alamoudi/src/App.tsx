@@ -100,6 +100,73 @@ function ScrollToTop() {
   return null;
 }
 
+// Global swipe handler — mounted once in App, never re-mounts on navigation.
+// Dispatches a custom event that Navbar listens for, so the drawer opens
+// from any page without depending on Navbar's own mount cycle.
+function SwipeMenuHandler() {
+  useEffect(() => {
+    // Zone: 28–80 px from the right edge.
+    // < 28 px = browser's back-gesture territory (leave it alone).
+    // > 80 px = too far inside; likely a normal scroll.
+    const NEAR = 28;
+    const FAR = 80;
+    const THRESHOLD = 60; // minimum leftward drag (px) to open
+    const MAX_DY = 40;    // max vertical drift before we cancel
+
+    let startX = 0, startY = 0, tracking = false;
+
+    const isMobile = () => window.matchMedia("(max-width: 767px)").matches;
+
+    // Abort if the touch started inside a horizontally-scrollable container
+    // (prevents fighting with carousels / property image sliders).
+    const insideHScroll = (el: EventTarget | null): boolean => {
+      let node = el as Element | null;
+      while (node && node !== document.body) {
+        const st = window.getComputedStyle(node);
+        if (
+          (st.overflowX === "auto" || st.overflowX === "scroll") &&
+          node.scrollWidth > node.clientWidth + 2
+        ) return true;
+        node = node.parentElement;
+      }
+      return false;
+    };
+
+    const onStart = (e: TouchEvent) => {
+      if (!isMobile() || e.touches.length !== 1) { tracking = false; return; }
+      const t = e.touches[0];
+      const dist = window.innerWidth - t.clientX;
+      if (dist < NEAR || dist > FAR) { tracking = false; return; }
+      if (insideHScroll(e.target)) { tracking = false; return; }
+      startX = t.clientX; startY = t.clientY; tracking = true;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (!tracking) return;
+      const t = e.touches[0];
+      const dx = startX - t.clientX; // positive = moving left (toward menu)
+      const dy = Math.abs(t.clientY - startY);
+      if (dy > MAX_DY) { tracking = false; return; }
+      if (dx > THRESHOLD) {
+        tracking = false;
+        window.dispatchEvent(new CustomEvent("open-side-menu"));
+      }
+    };
+
+    const onEnd = () => { tracking = false; };
+
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onEnd);
+    };
+  }, []);
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -159,6 +226,7 @@ function App() {
               <TooltipProvider>
                 <AIChatProvider>
                   <VisitorTracker />
+                  <SwipeMenuHandler />
                   <AppReadyGate>
                     <ErrorBoundary>
                       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
