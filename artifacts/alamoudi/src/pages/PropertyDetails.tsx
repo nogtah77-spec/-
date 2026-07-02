@@ -66,13 +66,17 @@ export default function PropertyDetails() {
   const lbPointerMove = (e: React.PointerEvent) => {
     if (Math.abs(e.clientX - lbDrag.current.startX) > 8) lbDrag.current.moved = true;
   };
+  // سحب فقط — الإغلاق بزر X فقط (منع click-through و ghost click)
   const lbPointerUp = (e: React.PointerEvent) => {
     const dx = e.clientX - lbDrag.current.startX;
     if (Math.abs(dx) >= 40) {
       if (dx > 0) lbPrev(); else lbNext();
-    } else if (!lbDrag.current.moved) {
-      setLightboxIdx(null);
     }
+  };
+  const lbClose = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setLightboxIdx(null);
   };
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
@@ -130,52 +134,56 @@ export default function PropertyDetails() {
       {/* Lightbox */}
       {lightboxIdx !== null && images.length > 0 && (
         <div
-          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none"
+          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none touch-none"
           onPointerDown={lbPointerDown}
           onPointerMove={lbPointerMove}
           onPointerUp={lbPointerUp}
         >
-          {/* X زر الإغلاق */}
+          {/* X — onPointerDown + preventDefault تمنع ghost click على الهامبرجر */}
           <button
-            className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
-            onClick={e => { e.stopPropagation(); setLightboxIdx(null); }}
+            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+            onPointerDown={lbClose}
             aria-label="إغلاق"
           >
             <X className="h-5 w-5 text-white" />
           </button>
 
           {/* العداد */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium tabular-nums pointer-events-none">
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium tabular-nums pointer-events-none">
             {lightboxIdx + 1} / {images.length}
           </div>
 
-          {/* الصورة — مركزية تامة */}
+          {/* الصورة — تمنع الـ pointer events من العبور للعناصر خلفها */}
           <img
             src={images[lightboxIdx]}
             alt=""
             draggable={false}
+            onPointerDown={e => e.stopPropagation()}
+            onPointerUp={e => e.stopPropagation()}
             onClick={e => e.stopPropagation()}
-            className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl pointer-events-none"
+            className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl"
           />
 
-          {/* أسهم — خارج الصورة في الأسفل */}
+          {/* أسهم — onPointerDown/Up مستقلة عن backdrop */}
           {images.length > 1 && (
             <div className="absolute bottom-5 flex items-center gap-4">
               <button
-                onClick={e => { e.stopPropagation(); lbPrev(); }}
-                className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+                onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
+                onPointerUp={e => { e.stopPropagation(); e.preventDefault(); lbPrev(); }}
+                className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
                 aria-label="السابق"
               >
                 <ChevronRight className="h-6 w-6 text-white" />
               </button>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 pointer-events-none">
                 {images.length <= 10 && images.map((_, i) => (
                   <span key={i} className={cn("block rounded-full transition-all", i === lightboxIdx ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40")} />
                 ))}
               </div>
               <button
-                onClick={e => { e.stopPropagation(); lbNext(); }}
-                className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+                onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
+                onPointerUp={e => { e.stopPropagation(); e.preventDefault(); lbNext(); }}
+                className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
                 aria-label="التالي"
               >
                 <ChevronLeft className="h-6 w-6 text-white" />
