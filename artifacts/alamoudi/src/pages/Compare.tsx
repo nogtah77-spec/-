@@ -37,7 +37,7 @@ export default function Compare() {
     { label: "غرف النوم", key: "beds", format: (v: any) => v > 0 ? v : "—" },
     { label: "الحمامات", key: "baths", format: (v: any) => v > 0 ? v : "—" },
     { label: "الدور", key: "floor", format: (v: any) => v > 0 ? v : "—" },
-    { label: "عدد الطوابق", key: "floors", format: (v: any) => v > 0 ? v : "—" },
+    { label: "عدد طوابق العقار", key: "floors", format: (v: any) => v > 0 ? v : "—" },
     { label: "التشطيب", key: "finishing", format: (v: any) => v ? (finishingLabels[v] || v) : "—" },
     { label: "الفيو", key: "view", format: (v: any) => v || "—" },
     { label: "عقار مميز", key: "featured", format: (v: any) => v ? <Check className="h-4 w-4 text-accent mx-auto" /> : <Minus className="h-4 w-4 text-muted-foreground mx-auto" /> },

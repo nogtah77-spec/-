@@ -148,7 +148,7 @@ export default function PropertyForm() {
                     <Input type="number" value={form.baths || ""} onChange={e => set("baths", Number(e.target.value))} placeholder="0" />
                   </div>
                   <div className="space-y-2">
-                    <Label>عدد الطوابق</Label>
+                    <Label>عدد طوابق العقار</Label>
                     <Input type="number" value={form.floors || ""} onChange={e => set("floors", Number(e.target.value))} placeholder="0" />
                   </div>
                   <div className="space-y-2">
@@ -167,12 +167,12 @@ export default function PropertyForm() {
                     <Input value={form.view} onChange={e => set("view", e.target.value)} placeholder="بحري / قبلي / حديقة..." />
                   </div>
                   <div className="space-y-2">
-                    <Label>النوع</Label>
+                    <Label>نوع الطابق</Label>
                     <Input value={form.unitType} onChange={e => set("unitType", e.target.value)} placeholder="أرضي / متكرر / أخير..." />
                   </div>
                   <div className="space-y-2">
-                    <Label>الدور (وصف)</Label>
-                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="مثال: ١ (أمامي)" />
+                    <Label>الواجهة</Label>
+                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="أمامي / خلفي / ركني..." />
                   </div>
                   <div className="space-y-2">
                     <Label>التوزيع</Label>
