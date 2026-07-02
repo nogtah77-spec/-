@@ -211,9 +211,8 @@ export default function PropertyDetails() {
                 {property.featured && <Badge className="bg-yellow-100 text-yellow-700">مميز</Badge>}
                 {property.status === "reserved" && <Badge className="bg-amber-100 text-amber-700">محجوز</Badge>}
               </div>
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{property.code}</h1>
-                <span className="font-mono text-xs bg-accent/10 text-accent border border-accent/25 px-2 py-0.5 rounded tracking-wider">#{property.code}</span>
+              <div className="mb-2">
+                <h1 className="text-2xl md:text-3xl font-bold font-mono tracking-widest text-accent">{property.code}</h1>
               </div>
               {regionName && (
                 <div className="flex items-center text-muted-foreground text-sm gap-1">
@@ -221,9 +220,9 @@ export default function PropertyDetails() {
                 </div>
               )}
             </div>
-            <div className="flex flex-col items-end gap-3">
+            <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
               <div className="text-3xl font-bold text-accent">{property.price.toLocaleString("en-US")} <span className="text-base font-normal text-muted-foreground">EGP</span></div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {isStaff && (
                   <Button
                     onClick={() => navigate(`/admin/properties/${property.id}/edit`)}
@@ -247,6 +246,50 @@ export default function PropertyDetails() {
                 </Button>
               </div>
             </div>
+          </div>
+
+          {/* Specs chips — mobile only, shown above gallery */}
+          <div className="flex flex-wrap gap-2 mb-4 lg:hidden">
+            {property.beds > 0 && (
+              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                <Bed className="h-4 w-4 text-accent flex-shrink-0" />
+                <span className="font-semibold">{property.beds}</span>
+                <span className="text-muted-foreground text-xs">غرف</span>
+              </div>
+            )}
+            {property.baths > 0 && (
+              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                <Bath className="h-4 w-4 text-accent flex-shrink-0" />
+                <span className="font-semibold">{property.baths}</span>
+                <span className="text-muted-foreground text-xs">حمام</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+              <Square className="h-4 w-4 text-accent flex-shrink-0" />
+              <span className="font-semibold">{property.area}</span>
+              <span className="text-muted-foreground text-xs">م²</span>
+            </div>
+            {property.floor > 0 && (
+              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                <Layers className="h-4 w-4 text-accent flex-shrink-0" />
+                <span className="font-semibold">{property.floor}</span>
+                <span className="text-muted-foreground text-xs">دور</span>
+              </div>
+            )}
+            {property.finishing && (
+              <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-xl px-3 py-2 text-sm">
+                <span className="text-accent text-xs font-medium">{finishingLabels[property.finishing] || property.finishing}</span>
+              </div>
+            )}
+            {property.videoUrl && (
+              <button
+                onClick={() => openVideoLink(property.videoUrl!)}
+                className="flex items-center gap-1.5 bg-accent text-white rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+              >
+                <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
+                <span className="text-xs font-medium">فيديو العقار</span>
+              </button>
+            )}
           </div>
 
           {/* Gallery */}
@@ -300,8 +343,8 @@ export default function PropertyDetails() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-5">
 
-              {/* Compact specs row */}
-              <div className="flex flex-wrap gap-2">
+              {/* Compact specs row — desktop only (mobile version is above gallery) */}
+              <div className="hidden lg:flex flex-wrap gap-2">
                 {property.beds > 0 && (
                   <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
                     <Bed className="h-4 w-4 text-accent flex-shrink-0" />
