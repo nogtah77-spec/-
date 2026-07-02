@@ -54,29 +54,22 @@ export default function PropertyDetails() {
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
-  const lbDrag = useRef<{ startX: number; moved: boolean }>({ startX: 0, moved: false });
+  const lbTouch = useRef<{ x: number; y: number } | null>(null);
 
   const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
   const lbNext = useCallback(() => setLightboxIdx(i => i === null ? null : (i + 1) % images.length), [images.length]);
 
-  const lbPointerDown = (e: React.PointerEvent) => {
-    lbDrag.current = { startX: e.clientX, moved: false };
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  const lbTouchStart = (e: React.TouchEvent) => {
+    lbTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
   };
-  const lbPointerMove = (e: React.PointerEvent) => {
-    if (Math.abs(e.clientX - lbDrag.current.startX) > 8) lbDrag.current.moved = true;
-  };
-  // سحب فقط — الإغلاق بزر X فقط (منع click-through و ghost click)
-  const lbPointerUp = (e: React.PointerEvent) => {
-    const dx = e.clientX - lbDrag.current.startX;
-    if (Math.abs(dx) >= 40) {
+  const lbTouchEnd = (e: React.TouchEvent) => {
+    if (!lbTouch.current) return;
+    const dx = e.changedTouches[0].clientX - lbTouch.current.x;
+    const dy = e.changedTouches[0].clientY - lbTouch.current.y;
+    lbTouch.current = null;
+    if (Math.abs(dx) > Math.abs(dy) + 10 && Math.abs(dx) >= 48) {
       if (dx > 0) lbPrev(); else lbNext();
     }
-  };
-  const lbClose = (e: React.PointerEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setLightboxIdx(null);
   };
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
@@ -135,14 +128,13 @@ export default function PropertyDetails() {
       {lightboxIdx !== null && images.length > 0 && (
         <div
           className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none touch-none"
-          onPointerDown={lbPointerDown}
-          onPointerMove={lbPointerMove}
-          onPointerUp={lbPointerUp}
+          onTouchStart={lbTouchStart}
+          onTouchEnd={lbTouchEnd}
         >
-          {/* X — onPointerDown + preventDefault تمنع ghost click على الهامبرجر */}
+          {/* X على اليسار — بعيد عن الهامبرجر اليميني */}
           <button
-            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
-            onPointerDown={lbClose}
+            className="absolute top-4 left-4 z-20 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
+            onClick={() => setLightboxIdx(null)}
             aria-label="إغلاق"
           >
             <X className="h-5 w-5 text-white" />
@@ -153,23 +145,19 @@ export default function PropertyDetails() {
             {lightboxIdx + 1} / {images.length}
           </div>
 
-          {/* الصورة — تمنع الـ pointer events من العبور للعناصر خلفها */}
+          {/* الصورة — pointer-events-none يمنع click-through */}
           <img
             src={images[lightboxIdx]}
             alt=""
             draggable={false}
-            onPointerDown={e => e.stopPropagation()}
-            onPointerUp={e => e.stopPropagation()}
-            onClick={e => e.stopPropagation()}
-            className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl"
+            className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl pointer-events-none"
           />
 
-          {/* أسهم — onPointerDown/Up مستقلة عن backdrop */}
+          {/* أسهم بـ onClick بسيط — تشتغل لأنه مفيش setPointerCapture */}
           {images.length > 1 && (
             <div className="absolute bottom-5 flex items-center gap-4">
               <button
-                onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
-                onPointerUp={e => { e.stopPropagation(); e.preventDefault(); lbPrev(); }}
+                onClick={lbPrev}
                 className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
                 aria-label="السابق"
               >
@@ -181,8 +169,7 @@ export default function PropertyDetails() {
                 ))}
               </div>
               <button
-                onPointerDown={e => { e.stopPropagation(); e.preventDefault(); }}
-                onPointerUp={e => { e.stopPropagation(); e.preventDefault(); lbNext(); }}
+                onClick={lbNext}
                 className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
                 aria-label="التالي"
               >
