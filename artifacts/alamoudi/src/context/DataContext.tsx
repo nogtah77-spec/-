@@ -173,6 +173,7 @@ export interface VisitorStats {
 
 interface DataContextType {
   ready: boolean;
+  fetching: boolean;
   reload: () => Promise<void>;
   regions: Region[];
   propertyTypes: PropertyType[];
@@ -227,7 +228,7 @@ function genId() { return Date.now().toString(36) + Math.random().toString(36).s
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
 const CACHE_KEY = "alm_cache_v3";
-const CACHE_TTL = 4 * 60 * 1000;
+const CACHE_TTL = 30 * 60 * 1000;
 
 interface CachePayload {
   ts: number;
@@ -254,6 +255,7 @@ function writeCache(payload: Omit<CachePayload, "ts">) {
 export function DataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [ready, setReady] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [regions, setRegions] = useState<Region[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -403,6 +405,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
 
         if (gotData) {
+          setFetching(false);
           setReady(true);
           writeCache({
             regions:    newRegions  ?? cached?.regions  ?? [],
@@ -416,6 +419,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           const delay = retryCount <= 2 ? 2000 : 4000;
           retryTimer = setTimeout(fetchCritical, delay);
         } else {
+          setFetching(false);
           setReady(true);
         }
       });
@@ -603,7 +607,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   return (
     <DataContext.Provider value={{
-      ready, reload,
+      ready, fetching, reload,
       regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, activityLogs, settings,
       visitorStats,
       trackPropertyView, refreshVisitorStats,

@@ -1,5 +1,5 @@
 import { Switch, Route, Router as WouterRouter, Redirect, useLocation } from "wouter";
-import { ComponentType, Suspense, lazy, useEffect, useState } from "react";
+import { ComponentType, Suspense, lazy, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -206,25 +206,10 @@ function Router() {
 
 function AppReadyGate({ children }: { children: React.ReactNode }) {
   const { ready } = useData();
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    if (ready) return;
-    const t = setInterval(() => setElapsed((s: number) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [ready]);
-
   if (!ready) {
-    const msg = elapsed < 8
-      ? "جارٍ التحميل…"
-      : elapsed < 20
-      ? "جارٍ الاتصال بالخادم…"
-      : "الخادم يستغرق وقتاً أطول من المعتاد، يرجى الانتظار…";
-
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-        <p className="text-muted-foreground text-sm" dir="rtl">{msg}</p>
+      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
+        <div className="w-9 h-9 rounded-full border-4 border-primary border-t-transparent animate-spin" />
       </div>
     );
   }

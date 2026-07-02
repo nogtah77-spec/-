@@ -44,7 +44,7 @@ const finishingLabels: Record<string, string> = {
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { properties, propertyTypes, regions, settings, trackPropertyView } = useData();
+  const { properties, propertyTypes, regions, settings, trackPropertyView, fetching } = useData();
   const { isStaff } = useAuth();
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
@@ -77,6 +77,17 @@ export default function PropertyDetails() {
   useEffect(() => { if (id) trackPropertyView(id); }, [id, trackPropertyView]);
 
   if (!property) {
+    if (fetching) {
+      return (
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-1 flex items-center justify-center bg-background">
+            <div className="w-9 h-9 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          </main>
+          <Footer />
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
