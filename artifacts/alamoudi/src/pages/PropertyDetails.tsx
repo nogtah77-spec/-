@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -19,6 +19,17 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
+/** فتح رابط الفيديو — يحول روابط Telegram لـ deep link مباشر */
+function openVideoLink(url: string) {
+  // t.me/channelname/postId → tg://resolve?domain=channelname&post=postId
+  const tm = url.match(/^https?:\/\/t\.me\/([A-Za-z0-9_]{3,})\/(\d+)/i);
+  if (tm) {
+    window.location.href = `tg://resolve?domain=${tm[1]}&post=${tm[2]}`;
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 const categoryLabels: Record<string, string> = {
   sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
   administrative: "إداري", medical: "طبي", commercial: "تجاري",
@@ -38,14 +49,35 @@ export default function PropertyDetails() {
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
+  const property = properties.find(p => p.id === id);
+  const images = property?.images?.length ? property.images : [];
+
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
+  const lbDrag = useRef<{ startX: number; moved: boolean }>({ startX: 0, moved: false });
+
+  const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
+  const lbNext = useCallback(() => setLightboxIdx(i => i === null ? null : (i + 1) % images.length), [images.length]);
+
+  const lbPointerDown = (e: React.PointerEvent) => {
+    lbDrag.current = { startX: e.clientX, moved: false };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const lbPointerMove = (e: React.PointerEvent) => {
+    if (Math.abs(e.clientX - lbDrag.current.startX) > 8) lbDrag.current.moved = true;
+  };
+  const lbPointerUp = (e: React.PointerEvent) => {
+    const dx = e.clientX - lbDrag.current.startX;
+    if (Math.abs(dx) >= 40) {
+      if (dx > 0) lbPrev(); else lbNext();
+    } else if (!lbDrag.current.moved) {
+      setLightboxIdx(null);
+    }
+  };
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
   useEffect(() => { if (id) trackPropertyView(id); }, [id, trackPropertyView]);
-
-  const property = properties.find(p => p.id === id);
 
   if (!property) {
     return (
@@ -86,7 +118,6 @@ export default function PropertyDetails() {
     toast({ title: "تم نسخ الكود", description: property.code });
   };
 
-  const images = property.images?.length ? property.images : [];
   const propHasVideo = hasVideo(property.videoUrl);
   const detailVideoThumb = images.length === 0 ? getVideoThumbnailUrl(property.videoUrl) : null;
   const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
@@ -98,20 +129,59 @@ export default function PropertyDetails() {
 
       {/* Lightbox */}
       {lightboxIdx !== null && images.length > 0 && (
-        <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" onClick={() => setLightboxIdx(null)}>
-          <Button variant="ghost" size="icon" className="absolute top-4 left-4 text-white hover:bg-white/10 z-10" onClick={() => setLightboxIdx(null)}>
-            <X className="h-6 w-6" />
-          </Button>
-          <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10"
-            onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i! + 1) % images.length); }}>
-            <ChevronRight className="h-8 w-8" />
-          </Button>
-          <img src={images[lightboxIdx]} alt="" className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg" onClick={e => e.stopPropagation()} />
-          <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/10"
-            onClick={(e) => { e.stopPropagation(); setLightboxIdx(i => (i! - 1 + images.length) % images.length); }}>
-            <ChevronLeft className="h-8 w-8" />
-          </Button>
-          <div className="absolute bottom-4 text-white/60 text-sm">{lightboxIdx + 1} / {images.length}</div>
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none"
+          onPointerDown={lbPointerDown}
+          onPointerMove={lbPointerMove}
+          onPointerUp={lbPointerUp}
+        >
+          {/* X زر الإغلاق */}
+          <button
+            className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+            onClick={e => { e.stopPropagation(); setLightboxIdx(null); }}
+            aria-label="إغلاق"
+          >
+            <X className="h-5 w-5 text-white" />
+          </button>
+
+          {/* العداد */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium tabular-nums pointer-events-none">
+            {lightboxIdx + 1} / {images.length}
+          </div>
+
+          {/* الصورة — مركزية تامة */}
+          <img
+            src={images[lightboxIdx]}
+            alt=""
+            draggable={false}
+            onClick={e => e.stopPropagation()}
+            className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl pointer-events-none"
+          />
+
+          {/* أسهم — خارج الصورة في الأسفل */}
+          {images.length > 1 && (
+            <div className="absolute bottom-5 flex items-center gap-4">
+              <button
+                onClick={e => { e.stopPropagation(); lbPrev(); }}
+                className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+                aria-label="السابق"
+              >
+                <ChevronRight className="h-6 w-6 text-white" />
+              </button>
+              <div className="flex gap-1.5">
+                {images.length <= 10 && images.map((_, i) => (
+                  <span key={i} className={cn("block rounded-full transition-all", i === lightboxIdx ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40")} />
+                ))}
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); lbNext(); }}
+                className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 flex items-center justify-center transition-colors backdrop-blur-sm"
+                aria-label="التالي"
+              >
+                <ChevronLeft className="h-6 w-6 text-white" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -182,8 +252,8 @@ export default function PropertyDetails() {
             <div
               role="button"
               tabIndex={0}
-              onClick={() => window.open(property.videoUrl!, "_blank", "noopener,noreferrer")}
-              onKeyDown={e => e.key === "Enter" && window.open(property.videoUrl!, "_blank", "noopener,noreferrer")}
+              onClick={() => openVideoLink(property.videoUrl!)}
+              onKeyDown={e => e.key === "Enter" && openVideoLink(property.videoUrl!)}
               className="group relative block h-[300px] sm:h-[380px] rounded-2xl overflow-hidden mb-10 bg-muted cursor-pointer"
               data-testid="link-video-cover"
             >
@@ -309,7 +379,7 @@ export default function PropertyDetails() {
                   <Button
                     className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-lg"
                     data-testid="link-watch-video"
-                    onClick={() => window.open(property.videoUrl!, "_blank", "noopener,noreferrer")}
+                    onClick={() => openVideoLink(property.videoUrl!)}
                   >
                     <Play className="h-4 w-4 fill-white" />
                     مشاهدة الفيديو
