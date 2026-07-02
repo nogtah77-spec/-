@@ -186,10 +186,6 @@ export default function PropertyForm() {
                     <Label>أسانسير</Label>
                     <Input value={form.elevator} onChange={e => set("elevator", e.target.value)} placeholder="نعم / لا" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>المنطقة الفرعية</Label>
-                    <Input value={form.subArea} onChange={e => set("subArea", e.target.value)} placeholder="مثال: المنطقة ١ / B7" />
-                  </div>
                   <div className="space-y-2 col-span-2 sm:col-span-3">
                     <Label>الموقع</Label>
                     <Input value={form.location} onChange={e => set("location", e.target.value)} placeholder="وصف الموقع التفصيلي..." />
@@ -285,6 +281,10 @@ export default function PropertyForm() {
                     <SelectTrigger><SelectValue placeholder="اختر المنطقة" /></SelectTrigger>
                     <SelectContent>{regions.filter(r => r.active).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>المنطقة الفرعية</Label>
+                  <Input value={form.subArea} onChange={e => set("subArea", e.target.value)} placeholder="مثال: المنطقة ١ / B7" />
                 </div>
                 <div className="space-y-2">
                   <Label>الحالة</Label>
