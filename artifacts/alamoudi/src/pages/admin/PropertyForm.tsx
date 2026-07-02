@@ -239,15 +239,15 @@ export default function PropertyForm() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>رابط فيديو خارجي</Label>
-                  <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} placeholder="https://youtube.com/..." dir="ltr" />
+                  <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} placeholder="أي رابط — YouTube، TikTok، Telegram، وغيره" dir="ltr" />
                 </div>
                 <div className="space-y-2">
                   <Label>رابط خارجي للعقار</Label>
-                  <Input value={form.externalUrl} onChange={e => set("externalUrl", e.target.value)} placeholder="https://..." dir="ltr" />
+                  <Input value={form.externalUrl} onChange={e => set("externalUrl", e.target.value)} placeholder="أي رابط خارجي للعقار" dir="ltr" />
                 </div>
                 <div className="space-y-2">
-                  <Label>رابط خرائط Google</Label>
-                  <Input value={form.mapsUrl} onChange={e => set("mapsUrl", e.target.value)} placeholder="https://maps.google.com/..." dir="ltr" />
+                  <Label>رابط الموقع على الخريطة</Label>
+                  <Input value={form.mapsUrl} onChange={e => set("mapsUrl", e.target.value)} placeholder="رابط Google Maps أو أي خريطة" dir="ltr" />
                 </div>
               </CardContent>
             </Card>

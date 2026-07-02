@@ -179,11 +179,12 @@ export default function PropertyDetails() {
               className="mb-10"
             />
           ) : showDetailVideoCover || showDetailVideoPoster ? (
-            <a
-              href={property.videoUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative block h-[300px] sm:h-[380px] rounded-2xl overflow-hidden mb-10 bg-muted"
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => window.open(property.videoUrl!, "_blank", "noopener,noreferrer")}
+              onKeyDown={e => e.key === "Enter" && window.open(property.videoUrl!, "_blank", "noopener,noreferrer")}
+              className="group relative block h-[300px] sm:h-[380px] rounded-2xl overflow-hidden mb-10 bg-muted cursor-pointer"
               data-testid="link-video-cover"
             >
               {showDetailVideoCover ? (
@@ -207,7 +208,7 @@ export default function PropertyDetails() {
                 </span>
                 <span className="text-white font-semibold text-sm bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">مشاهدة فيديو العقار</span>
               </div>
-            </a>
+            </div>
           ) : (
             <div className="h-64 bg-muted rounded-2xl flex items-center justify-center mb-10 border border-dashed border-border">
               <div className="text-center text-muted-foreground">
@@ -305,12 +306,14 @@ export default function PropertyDetails() {
               {property.videoUrl && (
                 <div>
                   <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><Video className="h-5 w-5 text-accent" />فيديو العقار</h2>
-                  <a href={property.videoUrl} target="_blank" rel="noopener noreferrer" data-testid="link-watch-video">
-                    <Button className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-lg">
-                      <Play className="h-4 w-4 fill-white" />
-                      مشاهدة الفيديو
-                    </Button>
-                  </a>
+                  <Button
+                    className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-lg"
+                    data-testid="link-watch-video"
+                    onClick={() => window.open(property.videoUrl!, "_blank", "noopener,noreferrer")}
+                  >
+                    <Play className="h-4 w-4 fill-white" />
+                    مشاهدة الفيديو
+                  </Button>
                 </div>
               )}
 
@@ -318,12 +321,14 @@ export default function PropertyDetails() {
               {property.mapsUrl && (
                 <div>
                   <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-accent" />الموقع على الخريطة</h2>
-                  <a href={property.mapsUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-4 bg-muted rounded-xl hover:bg-muted/70 transition-colors text-sm">
-                    <MapPin className="h-4 w-4 text-red-500" />
-                    <span className="text-muted-foreground">افتح الموقع على خرائط جوجل</span>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground mr-auto" />
-                  </a>
+                  <button
+                    onClick={() => window.open(property.mapsUrl!, "_blank", "noopener,noreferrer")}
+                    className="w-full flex items-center gap-2 p-4 bg-muted rounded-xl hover:bg-muted/70 transition-colors text-sm text-right"
+                  >
+                    <MapPin className="h-4 w-4 text-red-500 flex-shrink-0" />
+                    <span className="text-muted-foreground flex-1">افتح الموقع على خرائط جوجل</span>
+                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  </button>
                 </div>
               )}
             </div>
@@ -364,12 +369,14 @@ export default function PropertyDetails() {
                   </Button>
 
                   {property.externalUrl && (
-                    <a href={property.externalUrl} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="w-full gap-2 rounded-lg text-accent border-accent/30 hover:bg-accent/10 mt-2">
-                        <ExternalLink className="h-4 w-4" />
-                        رابط العقار الخارجي
-                      </Button>
-                    </a>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 rounded-lg text-accent border-accent/30 hover:bg-accent/10 mt-2"
+                      onClick={() => window.open(property.externalUrl!, "_blank", "noopener,noreferrer")}
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      رابط العقار الخارجي
+                    </Button>
                   )}
                 </CardContent>
               </Card>
