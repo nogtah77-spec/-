@@ -105,13 +105,13 @@ function ScrollToTop() {
 // from any page without depending on Navbar's own mount cycle.
 function SwipeMenuHandler() {
   useEffect(() => {
-    // Zone: 28–80 px from the right edge.
-    // < 28 px = browser's back-gesture territory (leave it alone).
-    // > 80 px = too far inside; likely a normal scroll.
-    const NEAR = 28;
-    const FAR = 80;
-    const THRESHOLD = 60; // minimum leftward drag (px) to open
-    const MAX_DY = 40;    // max vertical drift before we cancel
+    // Zone: 16–140 px from the right edge.
+    // < 16 px = browser's back-gesture territory (leave it alone).
+    // > 140 px = too far inside; likely a normal scroll.
+    const NEAR = 16;
+    const FAR = 140;
+    const THRESHOLD = 48; // minimum leftward drag (px) to open
+    const MAX_DY = 55;    // max vertical drift before we cancel
 
     let startX = 0, startY = 0, tracking = false;
 

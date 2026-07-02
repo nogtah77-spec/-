@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
@@ -29,6 +29,13 @@ function SidebarBrand() {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { currentUser, logout } = useAuth();
   const [, navigate] = useLocation();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setSheetOpen(true);
+    window.addEventListener("open-side-menu", handler);
+    return () => window.removeEventListener("open-side-menu", handler);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -52,7 +59,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         {/* Topbar */}
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
           <div className="flex items-center md:hidden">
-            <Sheet>
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="mr-[-8px]">
                   <Menu className="h-5 w-5" />
