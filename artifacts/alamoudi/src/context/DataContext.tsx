@@ -351,8 +351,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setReady(true);
     }
 
-    let settled = false;
+    let destroyed = false;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 8;
+    const REQUEST_TIMEOUT_MS = 12000;
 
     const loadSecondary = () => void Promise.allSettled([
       api.get<User[]>("/users"),
@@ -363,6 +366,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       api.get<ActivityLog[]>("/activity-logs"),
       api.get<VisitorStats>("/visitors/stats"),
     ]).then(([usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR, visitorStatsR]) => {
+      if (destroyed) return;
       setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
       setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
       setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
@@ -372,47 +376,55 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
     });
 
-    const fetchCritical = () => void Promise.allSettled([
-      api.get<Region[]>("/regions"),
-      api.get<PropertyType[]>("/property-types"),
-      api.get<Property[]>("/properties"),
-      api.get<SiteSettings>("/settings"),
-    ]).then(([regionsR, typesR, propertiesR, settingsR]) => {
-      const newRegions  = regionsR.status   === "fulfilled" ? regionsR.value   : null;
-      const newTypes    = typesR.status     === "fulfilled" ? typesR.value     : null;
-      const newProps    = propertiesR.status === "fulfilled" ? propertiesR.value : null;
-      const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
-                          ? settingsR.value : null;
+    const fetchCritical = () => {
+      const controller = new AbortController();
+      const abortTimer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-      const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
+      void Promise.allSettled([
+        api.get<Region[]>("/regions", controller.signal),
+        api.get<PropertyType[]>("/property-types", controller.signal),
+        api.get<Property[]>("/properties", controller.signal),
+        api.get<SiteSettings>("/settings", controller.signal),
+      ]).then(([regionsR, typesR, propertiesR, settingsR]) => {
+        clearTimeout(abortTimer);
+        if (destroyed) return;
 
-      if (newRegions)  setRegions(newRegions);
-      if (newTypes)    setPropertyTypes(newTypes);
-      if (newProps)    setProperties(newProps);
-      if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
+        const newRegions  = regionsR.status   === "fulfilled" ? regionsR.value   : null;
+        const newTypes    = typesR.status     === "fulfilled" ? typesR.value     : null;
+        const newProps    = propertiesR.status === "fulfilled" ? propertiesR.value : null;
+        const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
+                            ? settingsR.value : null;
 
-      settled = true;
-      setReady(true);
+        const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
 
-      if (gotData) {
-        writeCache({
-          regions:    newRegions  ?? cached?.regions  ?? [],
-          types:      newTypes    ?? cached?.types    ?? [],
-          properties: newProps    ?? cached?.properties ?? [],
-          settings:   newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
-        });
-        loadSecondary();
-      } else if (!cached) {
-        retryTimer = setTimeout(fetchCritical, 5000);
-      }
-    });
+        if (newRegions)  setRegions(newRegions);
+        if (newTypes)    setPropertyTypes(newTypes);
+        if (newProps)    setProperties(newProps);
+        if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
+
+        if (gotData) {
+          setReady(true);
+          writeCache({
+            regions:    newRegions  ?? cached?.regions  ?? [],
+            types:      newTypes    ?? cached?.types    ?? [],
+            properties: newProps    ?? cached?.properties ?? [],
+            settings:   newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
+          });
+          loadSecondary();
+        } else if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          const delay = retryCount <= 2 ? 2000 : 4000;
+          retryTimer = setTimeout(fetchCritical, delay);
+        } else {
+          setReady(true);
+        }
+      });
+    };
 
     fetchCritical();
 
-    const fallback = setTimeout(() => { if (!settled) setReady(true); }, 12000);
-
     return () => {
-      clearTimeout(fallback);
+      destroyed = true;
       if (retryTimer) clearTimeout(retryTimer);
     };
   }, []);
