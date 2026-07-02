@@ -226,7 +226,7 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v1";
+const CACHE_KEY = "alm_cache_v3";
 const CACHE_TTL = 4 * 60 * 1000;
 
 interface CachePayload {
@@ -351,56 +351,70 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setReady(true);
     }
 
-    const fallback = setTimeout(() => setReady(true), 8000);
+    let settled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-    Promise.allSettled([
+    const loadSecondary = () => void Promise.allSettled([
+      api.get<User[]>("/users"),
+      api.get<Inquiry[]>("/inquiries"),
+      api.get<FinishingRequest[]>("/finishing-requests"),
+      api.get<PropertyRequest[]>("/property-requests"),
+      api.get<AiLead[]>("/ai/leads"),
+      api.get<ActivityLog[]>("/activity-logs"),
+      api.get<VisitorStats>("/visitors/stats"),
+    ]).then(([usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR, visitorStatsR]) => {
+      setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
+      setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
+      setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
+      setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
+      if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
+      if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
+      if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
+    });
+
+    const fetchCritical = () => void Promise.allSettled([
       api.get<Region[]>("/regions"),
       api.get<PropertyType[]>("/property-types"),
       api.get<Property[]>("/properties"),
       api.get<SiteSettings>("/settings"),
     ]).then(([regionsR, typesR, propertiesR, settingsR]) => {
-      clearTimeout(fallback);
+      const newRegions  = regionsR.status   === "fulfilled" ? regionsR.value   : null;
+      const newTypes    = typesR.status     === "fulfilled" ? typesR.value     : null;
+      const newProps    = propertiesR.status === "fulfilled" ? propertiesR.value : null;
+      const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
+                          ? settingsR.value : null;
 
-      const newRegions   = regionsR.status   === "fulfilled" ? regionsR.value   : cached?.regions   ?? null;
-      const newTypes     = typesR.status     === "fulfilled" ? typesR.value     : cached?.types     ?? null;
-      const newProps     = propertiesR.status === "fulfilled" ? propertiesR.value : cached?.properties ?? null;
-      const newSettings  = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
-                           ? settingsR.value : cached?.settings ?? null;
+      const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
 
       if (newRegions)  setRegions(newRegions);
       if (newTypes)    setPropertyTypes(newTypes);
       if (newProps)    setProperties(newProps);
       if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
 
+      settled = true;
       setReady(true);
 
-      writeCache({
-        regions:    newRegions  ?? [],
-        types:      newTypes    ?? [],
-        properties: newProps    ?? [],
-        settings:   newSettings ?? DEFAULT_SETTINGS,
-      });
-
-      void Promise.allSettled([
-        api.get<User[]>("/users"),
-        api.get<Inquiry[]>("/inquiries"),
-        api.get<FinishingRequest[]>("/finishing-requests"),
-        api.get<PropertyRequest[]>("/property-requests"),
-        api.get<AiLead[]>("/ai/leads"),
-        api.get<ActivityLog[]>("/activity-logs"),
-        api.get<VisitorStats>("/visitors/stats"),
-      ]).then(([usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR, visitorStatsR]) => {
-        setUsers(usersR.status           === "fulfilled" ? usersR.value           : []);
-        setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value       : []);
-        setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
-        setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
-        if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
-        if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
-        if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
-      });
+      if (gotData) {
+        writeCache({
+          regions:    newRegions  ?? cached?.regions  ?? [],
+          types:      newTypes    ?? cached?.types    ?? [],
+          properties: newProps    ?? cached?.properties ?? [],
+          settings:   newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
+        });
+        loadSecondary();
+      } else if (!cached) {
+        retryTimer = setTimeout(fetchCritical, 5000);
+      }
     });
 
-    return () => clearTimeout(fallback);
+    fetchCritical();
+
+    const fallback = setTimeout(() => { if (!settled) setReady(true); }, 12000);
+
+    return () => {
+      clearTimeout(fallback);
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
 
   const updateSettings = (s: Partial<SiteSettings>) => {
