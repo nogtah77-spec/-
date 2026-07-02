@@ -224,7 +224,7 @@ export default function Home() {
 
   const heroImage = settings.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80";
   const heroOverlay = Math.min(100, Math.max(0, settings.heroOverlayOpacity ?? 85)) / 100;
-  const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 6);
+  const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 3);
   const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
 
   const gridClass = cardSize === "compact"
@@ -245,7 +245,7 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-14 md:py-20 min-h-[420px]">
+        <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-10 md:py-14 min-h-[315px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
           <div className="absolute inset-0 z-10" style={{ background: `linear-gradient(135deg, rgba(44,54,57,${heroOverlay}) 0%, rgba(63,78,79,${heroOverlay * 0.92}) 50%, rgba(44,54,57,${heroOverlay * 1.04 > 1 ? 1 : heroOverlay * 1.04}) 100%)` }} />
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
@@ -372,67 +372,67 @@ export default function Home() {
 
         {/* ── TikTok Section ── */}
         {!isFiltering && (
-        <section className="py-12 md:py-14 bg-background">
+        <section className="py-8 md:py-10 bg-background">
           <div className="container px-6">
-            <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-7 md:p-10">
-              <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#A27B5B 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
-              <div className="relative">
-                {/* Profile header */}
-                <div className="flex flex-col items-center text-center mb-9">
-                  {/* Circular avatar */}
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-[0_4px_24px_-6px_rgba(44,54,57,0.15)] p-5 md:p-6">
+              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(#A27B5B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+              <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
+
+                {/* Profile column */}
+                <div className="flex flex-col items-center text-center sm:w-36 shrink-0">
                   <a
                     href={settings.tiktok || "#"}
                     {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="relative block w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                    className="relative block w-16 h-16 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
                     aria-label="حساب تيك توك"
                   >
                     {settings.tiktokAvatar ? (
                       <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
                     ) : (
                       <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
-                        <TikTokIcon className="h-8 w-8" />
+                        <TikTokIcon className="h-7 w-7" />
                       </span>
                     )}
                   </a>
-                  <span className="-mt-3 z-10 inline-flex items-center justify-center w-7 h-7 rounded-full bg-foreground text-background shadow-md border-2 border-card">
-                    <TikTokIcon className="h-3.5 w-3.5" />
+                  <span className="-mt-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-foreground text-background shadow border-2 border-card">
+                    <TikTokIcon className="h-3 w-3" />
                   </span>
-                  {/* Account name */}
                   <a
                     href={settings.tiktok || "#"}
                     {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="mt-3 hover:text-accent transition-colors"
+                    className="mt-2 hover:text-accent transition-colors"
                   >
-                    <h2 className="text-xl md:text-2xl font-bold text-foreground">
+                    <h2 className="text-sm font-bold text-foreground leading-snug">
                       {settings.tiktokName || "العمودي للتسويق العقاري"}
                     </h2>
                   </a>
-                  {/* Follow button */}
-                  <Button asChild className="mt-4 rounded-full px-8 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow-md">
+                  <Button asChild size="sm" className="mt-3 rounded-full px-5 text-xs gap-1.5 bg-accent text-white hover:bg-accent/90 shadow h-8">
                     <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                      <TikTokIcon className="h-4 w-4" /> تابعنا الآن
+                      <TikTokIcon className="h-3 w-3" /> تابعنا
                     </a>
                   </Button>
                 </div>
 
-                {tiktokVideos.length === 0 ? (
-                  <div className="text-center py-10 rounded-2xl border border-dashed border-border bg-muted/30">
-                    <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-3">
-                      <Play className="h-7 w-7" />
+                {/* Videos */}
+                <div className="flex-1 w-full">
+                  {tiktokVideos.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full min-h-[120px] rounded-xl border border-dashed border-border bg-muted/30 gap-2 py-6">
+                      <Play className="h-6 w-6 text-accent/50" />
+                      <p className="text-xs text-muted-foreground">لا توجد فيديوهات حالياً</p>
+                      <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                        className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
+                        زيارة الحساب <ExternalLink className="h-3 w-3" />
+                      </a>
                     </div>
-                    <p className="text-sm font-medium text-foreground mb-1">لا توجد فيديوهات حالياً</p>
-                    <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      className="inline-flex items-center gap-1.5 mt-4 text-xs text-accent hover:underline">
-                      زيارة صفحتنا على تيك توك <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                ) : (
-                  <div className={videoGridClass}>
-                    {tiktokVideos.map(video => (
-                      <TiktokCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
-                    ))}
-                  </div>
-                )}
+                  ) : (
+                    <div className="grid grid-cols-3 gap-3">
+                      {tiktokVideos.map(video => (
+                        <TiktokCard key={video.id} video={video} onPlay={() => setActiveVideo(video)} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
           </div>
