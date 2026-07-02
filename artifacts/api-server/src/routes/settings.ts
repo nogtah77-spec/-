@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, settingsTable } from "@workspace/db";
 import { requireStaff } from "../lib/auth";
+import { logActivity, actorFromReq } from "../lib/activityLog";
 
 const router: IRouter = Router();
 
@@ -19,6 +20,12 @@ router.put("/settings", requireStaff, async (req, res): Promise<void> => {
     .insert(settingsTable)
     .values({ id: "main", data: body })
     .onConflictDoUpdate({ target: settingsTable.id, set: { data: body } });
+  await logActivity({
+    action: "updated",
+    entityType: "settings",
+    title: "تم تعديل إعدادات المنصة",
+    actor: actorFromReq(req),
+  });
   res.json(body);
 });
 

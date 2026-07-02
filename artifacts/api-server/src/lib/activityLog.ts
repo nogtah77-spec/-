@@ -11,7 +11,8 @@ type LogEntry = {
 
 export function actorFromReq(req: Request): string {
   if (req.session?.userId) {
-    return req.session.role === "agent" ? "موظف" : "الإدارة";
+    const name = req.session.userName ? ` (${req.session.userName})` : "";
+    return req.session.role === "agent" ? `موظف${name}` : `الإدارة${name}`;
   }
   return "زائر";
 }

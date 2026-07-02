@@ -54,16 +54,25 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   }
   req.session.userId = user.id;
   req.session.role = user.role;
+  req.session.userName = user.name;
   void logActivity({
     action: "login",
     entityType: "auth",
     title: `تسجيل الدخول إلى لوحة التحكم: ${user.name}`,
-    actor: user.role === "agent" ? "موظف" : "الإدارة",
+    actor: user.role === "agent" ? `موظف (${user.name})` : `الإدارة (${user.name})`,
   });
   res.json(publicUser(user));
 });
 
 router.post("/auth/logout", async (req, res): Promise<void> => {
+  const name = req.session?.userName ?? "";
+  const role = req.session?.role ?? "";
+  void logActivity({
+    action: "logout",
+    entityType: "auth",
+    title: `تسجيل الخروج: ${name || "مستخدم"}`,
+    actor: role === "agent" ? `موظف (${name})` : `الإدارة (${name})`,
+  });
   req.session.destroy(() => {
     res.json({ ok: true });
   });
