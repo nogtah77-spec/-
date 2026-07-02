@@ -8,32 +8,52 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wrench, CheckCircle2 } from "lucide-react";
-import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 const finishingTypes = ["سوبر لوكس", "لوكس", "كلاسيك", "مودرن", "بسيط", "متكامل مع الأثاث"];
 
+function genId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
 export default function FinishingServices() {
-  const { addFinishingRequest, settings } = useData();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", location: "", area: "", finishingType: "", description: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.finishingType) {
-      toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" }); return;
+      toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" });
+      return;
     }
-    addFinishingRequest(form);
-    setSubmitted(true);
-    toast({ title: "تم إرسال طلبك", description: "سنتواصل معك قريباً لمناقشة تفاصيل التشطيب." });
+    setLoading(true);
+    try {
+      await api.post("/finishing-requests", {
+        ...form,
+        id: genId(),
+        status: "new",
+        createdAt: new Date().toISOString(),
+      });
+      setSubmitted(true);
+      toast({ title: "تم إرسال طلبك", description: "سنتواصل معك قريباً لمناقشة تفاصيل التشطيب." });
+    } catch {
+      toast({
+        title: "خطأ في الإرسال",
+        description: "فشل إرسال الطلب، يرجى المحاولة مرة أخرى",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 bg-[#F5F2EC] dark:bg-background">
-        {/* Hero */}
         <div className="bg-card border-b border-border py-12 md:py-16">
           <div className="container px-6 text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">خدمات التشطيبات</h1>
@@ -43,7 +63,6 @@ export default function FinishingServices() {
           </div>
         </div>
 
-        {/* Before/After placeholder */}
         <section className="py-8 bg-background">
           <div className="container px-6 max-w-4xl mx-auto">
             <h2 className="text-xl font-bold text-foreground mb-6 text-center">أعمالنا السابقة</h2>
@@ -60,7 +79,6 @@ export default function FinishingServices() {
           </div>
         </section>
 
-        {/* Request form */}
         <section className="py-12">
           <div className="container px-6 max-w-2xl mx-auto">
             {submitted ? (
@@ -113,8 +131,8 @@ export default function FinishingServices() {
                       <Label>وصف إضافي</Label>
                       <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="أي تفاصيل إضافية أو متطلبات خاصة..." className="min-h-[100px]" />
                     </div>
-                    <Button type="submit" className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg">
-                      إرسال الطلب
+                    <Button type="submit" disabled={loading} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg">
+                      {loading ? "جاري الإرسال..." : "إرسال الطلب"}
                     </Button>
                   </form>
                 </CardContent>

@@ -10,28 +10,50 @@ import { MessageCircle, Phone, Clock, CheckCircle2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+
+function genId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
 export default function Consultation() {
-  const { addInquiry, settings } = useData();
+  const { settings } = useData();
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "", subject: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.subject || !form.message) {
-      toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" }); return;
+      toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" });
+      return;
     }
-    addInquiry(form);
-    setSubmitted(true);
-    toast({ title: "تم إرسال طلب الاستشارة", description: "سنتواصل معك في أقرب وقت ممكن." });
+    setLoading(true);
+    try {
+      await api.post("/inquiries", {
+        ...form,
+        id: genId(),
+        status: "new",
+        createdAt: new Date().toISOString(),
+      });
+      setSubmitted(true);
+      toast({ title: "تم إرسال طلب الاستشارة", description: "سنتواصل معك في أقرب وقت ممكن." });
+    } catch {
+      toast({
+        title: "خطأ في الإرسال",
+        description: "فشل إرسال الاستفسار، يرجى المحاولة مرة أخرى",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 bg-[#F5F2EC] dark:bg-background">
-        {/* Hero */}
         <div className="bg-card border-b border-border py-12 md:py-16">
           <div className="container px-6 text-center">
             <p className="text-accent text-xs font-medium tracking-widest mb-3 uppercase">خدماتنا</p>
@@ -44,7 +66,6 @@ export default function Consultation() {
 
         <div className="container px-6 py-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Info cards */}
             <div className="space-y-4">
               {[
                 { icon: <Clock className="h-5 w-5" />, title: "متاح 24/7", desc: "فريقنا جاهز للرد على استفساراتك في أي وقت." },
@@ -90,7 +111,6 @@ export default function Consultation() {
               )}
             </div>
 
-            {/* Form */}
             <div className="lg:col-span-2">
               {submitted ? (
                 <Card className="card-luxury border-none text-center py-16">
@@ -100,7 +120,8 @@ export default function Consultation() {
                     </div>
                     <h2 className="text-xl font-bold text-foreground mb-2">تم إرسال طلبك بنجاح</h2>
                     <p className="text-sm text-muted-foreground">سيتواصل معك فريقنا خلال 24 ساعة على رقم الهاتف الذي أدخلته.</p>
-                    <Button className="mt-6 bg-accent text-white hover:bg-accent/90 rounded-full px-8" onClick={() => { setSubmitted(false); setForm({ name: "", phone: "", email: "", subject: "", message: "" }); }}>
+                    <Button className="mt-6 bg-accent text-white hover:bg-accent/90 rounded-full px-8"
+                      onClick={() => { setSubmitted(false); setForm({ name: "", phone: "", email: "", subject: "", message: "" }); }}>
                       إرسال استفسار آخر
                     </Button>
                   </CardContent>
@@ -132,8 +153,8 @@ export default function Consultation() {
                         <Label>تفاصيل الاستفسار *</Label>
                         <Textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="اكتب تفاصيل استفسارك هنا..." className="min-h-[120px]" />
                       </div>
-                      <Button type="submit" className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg">
-                        إرسال الاستشارة
+                      <Button type="submit" disabled={loading} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg">
+                        {loading ? "جاري الإرسال..." : "إرسال الاستشارة"}
                       </Button>
                     </form>
                   </CardContent>

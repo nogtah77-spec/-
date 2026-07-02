@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, CheckCircle2, Phone, Mail, User, MapPin, ImagePlus } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 import { Link } from "wouter";
 
 interface FormState {
@@ -41,6 +43,10 @@ const EMPTY_FORM: FormState = {
   notes: "",
 };
 
+function genId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
 function validate(form: FormState): Partial<Record<keyof FormState, string>> {
   const errors: Partial<Record<keyof FormState, string>> = {};
   if (!form.ownerName.trim()) errors.ownerName = "الاسم مطلوب";
@@ -54,7 +60,8 @@ function validate(form: FormState): Partial<Record<keyof FormState, string>> {
 }
 
 export default function AddProperty() {
-  const { regions, propertyTypes, addPropertyRequest } = useData();
+  const { regions, propertyTypes } = useData();
+  const { toast } = useToast();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [images, setImages] = useState<string[]>([]);
@@ -74,14 +81,25 @@ export default function AddProperty() {
 
   const handleImages = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    let skipped = 0;
     files.slice(0, 10 - images.length).forEach(file => {
-      if (file.size > 5 * 1024 * 1024) return;
+      if (file.size > 5 * 1024 * 1024) {
+        skipped++;
+        return;
+      }
       const reader = new FileReader();
       reader.onload = ev => {
         setImages(prev => [...prev, ev.target?.result as string]);
       };
       reader.readAsDataURL(file);
     });
+    if (skipped > 0) {
+      toast({
+        title: `تم تخطي ${skipped} ${skipped === 1 ? "صورة" : "صور"}`,
+        description: "حجم الصورة يجب ألا يتجاوز 5 ميجا",
+        variant: "destructive",
+      });
+    }
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -98,10 +116,24 @@ export default function AddProperty() {
       return;
     }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 400));
-    addPropertyRequest({ ...form, images });
-    setLoading(false);
-    setSubmitted(true);
+    try {
+      await api.post("/property-requests", {
+        ...form,
+        images,
+        id: genId(),
+        status: "new",
+        createdAt: new Date().toISOString(),
+      });
+      setSubmitted(true);
+    } catch {
+      toast({
+        title: "خطأ في الإرسال",
+        description: "فشل إرسال الطلب، يرجى المحاولة مرة أخرى",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -137,7 +169,6 @@ export default function AddProperty() {
       <Navbar />
       <main className="flex-1 bg-[#F5F2EC] dark:bg-background py-12 md:py-16">
         <div className="container px-6 max-w-3xl mx-auto">
-          {/* Header */}
           <div className="text-center mb-10">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">أضف عقارك لدينا</h1>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -146,7 +177,6 @@ export default function AddProperty() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Owner Info */}
             <Card className="card-luxury">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -180,7 +210,6 @@ export default function AddProperty() {
               </CardContent>
             </Card>
 
-            {/* Property Info */}
             <Card className="card-luxury">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -250,7 +279,6 @@ export default function AddProperty() {
               </CardContent>
             </Card>
 
-            {/* Images */}
             <Card className="card-luxury">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -290,7 +318,6 @@ export default function AddProperty() {
               </CardContent>
             </Card>
 
-            {/* Additional */}
             <Card className="card-luxury">
               <CardHeader className="pb-4">
                 <CardTitle className="text-base">معلومات إضافية</CardTitle>
@@ -309,7 +336,6 @@ export default function AddProperty() {
               </CardContent>
             </Card>
 
-            {/* Submit */}
             <div className="flex flex-col sm:flex-row gap-3 pb-4">
               <Button type="submit" disabled={loading} className="flex-1 h-12 bg-accent text-white hover:bg-accent/90 rounded-xl font-bold text-sm">
                 {loading ? "جاري الإرسال..." : "إرسال الطلب"}
