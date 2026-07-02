@@ -374,50 +374,51 @@ export default function Home() {
         {!isFiltering && (
         <section className="py-8 md:py-10 bg-background">
           <div className="container px-6">
-            <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-[0_4px_24px_-6px_rgba(44,54,57,0.15)] p-5 md:p-6">
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(#A27B5B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
-              <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            {/* max-w-xl: يحافظ على الحجم المناسب على أي شاشة */}
+            <div className="max-w-xl mx-auto">
+              <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-[0_4px_24px_-6px_rgba(44,54,57,0.15)] p-5 md:p-6">
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(#A27B5B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                <div className="relative">
 
-                {/* Profile column */}
-                <div className="flex flex-col items-center text-center sm:w-36 shrink-0">
-                  <a
-                    href={settings.tiktok || "#"}
-                    {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="relative block w-16 h-16 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
-                    aria-label="حساب تيك توك"
-                  >
-                    {settings.tiktokAvatar ? (
-                      <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
-                        <TikTokIcon className="h-7 w-7" />
-                      </span>
-                    )}
-                  </a>
-                  <span className="-mt-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-foreground text-background shadow border-2 border-card">
-                    <TikTokIcon className="h-3 w-3" />
-                  </span>
-                  <a
-                    href={settings.tiktok || "#"}
-                    {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="mt-2 hover:text-accent transition-colors"
-                  >
-                    <h2 className="text-sm font-bold text-foreground leading-snug">
-                      {settings.tiktokName || "العمودي للتسويق العقاري"}
-                    </h2>
-                  </a>
-                  <Button asChild size="sm" className="mt-3 rounded-full px-5 text-xs gap-1.5 bg-accent text-white hover:bg-accent/90 shadow h-8">
-                    <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                      <TikTokIcon className="h-3 w-3" /> تابعنا
+                  {/* Profile — مركّز عمودي */}
+                  <div className="flex flex-col items-center text-center mb-5">
+                    <a
+                      href={settings.tiktok || "#"}
+                      {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="block w-16 h-16 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                      aria-label="حساب تيك توك"
+                    >
+                      {settings.tiktokAvatar ? (
+                        <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
+                          <TikTokIcon className="h-7 w-7" />
+                        </span>
+                      )}
                     </a>
-                  </Button>
-                </div>
+                    <span className="-mt-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-foreground text-background shadow border-2 border-card">
+                      <TikTokIcon className="h-3 w-3" />
+                    </span>
+                    <a
+                      href={settings.tiktok || "#"}
+                      {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="mt-2 hover:text-accent transition-colors"
+                    >
+                      <h2 className="text-base font-bold text-foreground">
+                        {settings.tiktokName || "العمودي للتسويق العقاري"}
+                      </h2>
+                    </a>
+                    <Button asChild size="sm" className="mt-3 rounded-full px-6 text-sm gap-2 bg-accent text-white hover:bg-accent/90 shadow">
+                      <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+                        <TikTokIcon className="h-3.5 w-3.5" /> تابعنا الآن
+                      </a>
+                    </Button>
+                  </div>
 
-                {/* Videos */}
-                <div className="flex-1 w-full">
+                  {/* Videos */}
                   {tiktokVideos.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full min-h-[120px] rounded-xl border border-dashed border-border bg-muted/30 gap-2 py-6">
-                      <Play className="h-6 w-6 text-accent/50" />
+                    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 gap-2 py-8">
+                      <Play className="h-6 w-6 text-accent/40" />
                       <p className="text-xs text-muted-foreground">لا توجد فيديوهات حالياً</p>
                       <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                         className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
@@ -431,8 +432,8 @@ export default function Home() {
                       ))}
                     </div>
                   )}
-                </div>
 
+                </div>
               </div>
             </div>
           </div>
