@@ -19,14 +19,8 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-/** فتح رابط الفيديو — يحول روابط Telegram لـ deep link مباشر */
+/** فتح رابط الفيديو — دايماً في المتصفح علشان يشتغل حتى بدون تطبيق */
 function openVideoLink(url: string) {
-  // t.me/channelname/postId → tg://resolve?domain=channelname&post=postId
-  const tm = url.match(/^https?:\/\/t\.me\/([A-Za-z0-9_]{3,})\/(\d+)/i);
-  if (tm) {
-    window.location.href = `tg://resolve?domain=${tm[1]}&post=${tm[2]}`;
-    return;
-  }
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
