@@ -226,6 +226,31 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
+const CACHE_KEY = "alm_cache_v1";
+const CACHE_TTL = 4 * 60 * 1000;
+
+interface CachePayload {
+  ts: number;
+  regions: Region[];
+  types: PropertyType[];
+  properties: Property[];
+  settings: SiteSettings;
+}
+
+function readCache(): CachePayload | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed: CachePayload = JSON.parse(raw);
+    if (Date.now() - parsed.ts > CACHE_TTL) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+function writeCache(payload: Omit<CachePayload, "ts">) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), ...payload })); } catch {}
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [ready, setReady] = useState(false);
@@ -258,19 +283,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
       api.get<ActivityLog[]>("/activity-logs"),
       api.get<VisitorStats>("/visitors/stats"),
     ]);
-    if (regionsR.status === "fulfilled") setRegions(regionsR.value);
-    if (typesR.status === "fulfilled") setPropertyTypes(typesR.value);
-    if (propertiesR.status === "fulfilled") setProperties(propertiesR.value);
-    if (settingsR.status === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0) {
-      setSettings({ ...DEFAULT_SETTINGS, ...settingsR.value, tiktokVideos: settingsR.value.tiktokVideos ?? [] });
-    }
-    setUsers(usersR.status === "fulfilled" ? usersR.value : []);
-    setInquiries(inquiriesR.status === "fulfilled" ? inquiriesR.value : []);
+    const newRegions  = regionsR.status   === "fulfilled" ? regionsR.value   : null;
+    const newTypes    = typesR.status     === "fulfilled" ? typesR.value     : null;
+    const newProps    = propertiesR.status === "fulfilled" ? propertiesR.value : null;
+    const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
+                        ? settingsR.value : null;
+    if (newRegions)  setRegions(newRegions);
+    if (newTypes)    setPropertyTypes(newTypes);
+    if (newProps)    setProperties(newProps);
+    if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
+    setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
+    setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
     setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
-    setPropertyRequests(requestsR.status === "fulfilled" ? requestsR.value : []);
-    if (aiLeadsR.status === "fulfilled") setAiLeads(aiLeadsR.value);
-    if (activityR.status === "fulfilled") setActivityLogs(activityR.value);
+    setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
+    if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
+    if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
     if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
+    if (newRegions || newTypes || newProps || newSettings) {
+      writeCache({
+        regions:    newRegions  ?? [],
+        types:      newTypes    ?? [],
+        properties: newProps    ?? [],
+        settings:   newSettings ?? DEFAULT_SETTINGS,
+      });
+    }
   }, []);
 
   const trackPropertyView = useCallback((id: string) => {
@@ -306,8 +342,66 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [toast, reload]);
 
   useEffect(() => {
-    reload().finally(() => setReady(true));
-  }, [reload]);
+    const cached = readCache();
+    if (cached) {
+      setRegions(cached.regions);
+      setPropertyTypes(cached.types);
+      setProperties(cached.properties);
+      setSettings({ ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [] });
+      setReady(true);
+    }
+
+    const fallback = setTimeout(() => setReady(true), 8000);
+
+    Promise.allSettled([
+      api.get<Region[]>("/regions"),
+      api.get<PropertyType[]>("/property-types"),
+      api.get<Property[]>("/properties"),
+      api.get<SiteSettings>("/settings"),
+    ]).then(([regionsR, typesR, propertiesR, settingsR]) => {
+      clearTimeout(fallback);
+
+      const newRegions   = regionsR.status   === "fulfilled" ? regionsR.value   : cached?.regions   ?? null;
+      const newTypes     = typesR.status     === "fulfilled" ? typesR.value     : cached?.types     ?? null;
+      const newProps     = propertiesR.status === "fulfilled" ? propertiesR.value : cached?.properties ?? null;
+      const newSettings  = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
+                           ? settingsR.value : cached?.settings ?? null;
+
+      if (newRegions)  setRegions(newRegions);
+      if (newTypes)    setPropertyTypes(newTypes);
+      if (newProps)    setProperties(newProps);
+      if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
+
+      setReady(true);
+
+      writeCache({
+        regions:    newRegions  ?? [],
+        types:      newTypes    ?? [],
+        properties: newProps    ?? [],
+        settings:   newSettings ?? DEFAULT_SETTINGS,
+      });
+
+      void Promise.allSettled([
+        api.get<User[]>("/users"),
+        api.get<Inquiry[]>("/inquiries"),
+        api.get<FinishingRequest[]>("/finishing-requests"),
+        api.get<PropertyRequest[]>("/property-requests"),
+        api.get<AiLead[]>("/ai/leads"),
+        api.get<ActivityLog[]>("/activity-logs"),
+        api.get<VisitorStats>("/visitors/stats"),
+      ]).then(([usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR, visitorStatsR]) => {
+        setUsers(usersR.status           === "fulfilled" ? usersR.value           : []);
+        setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value       : []);
+        setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
+        setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
+        if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
+        if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
+        if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
+      });
+    });
+
+    return () => clearTimeout(fallback);
+  }, []);
 
   const updateSettings = (s: Partial<SiteSettings>) => {
     setSettings(prev => {
