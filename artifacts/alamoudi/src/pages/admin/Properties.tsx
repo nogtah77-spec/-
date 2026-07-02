@@ -106,7 +106,9 @@ export default function Properties() {
             <TableBody>
               {filteredProperties.map((property) => (
                 <TableRow key={property.id}>
-                  <TableCell className="font-medium">{property.code}</TableCell>
+                  <TableCell>
+                    <span className="font-mono text-xs font-semibold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap">{property.code}</span>
+                  </TableCell>
                   <TableCell>{propertyTypes.find(t => t.id === property.typeId)?.name}</TableCell>
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
                   <TableCell>{property.price.toLocaleString("en-US")} EGP</TableCell>

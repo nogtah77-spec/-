@@ -200,7 +200,10 @@ export default function PropertyDetails() {
                 {property.featured && <Badge className="bg-yellow-100 text-yellow-700">مميز</Badge>}
                 {property.status === "reserved" && <Badge className="bg-amber-100 text-amber-700">محجوز</Badge>}
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{property.code}</h1>
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{property.code}</h1>
+                <span className="font-mono text-xs bg-accent/10 text-accent border border-accent/25 px-2 py-0.5 rounded tracking-wider">#{property.code}</span>
+              </div>
               {regionName && (
                 <div className="flex items-center text-muted-foreground text-sm gap-1">
                   <MapPin className="h-4 w-4" />{regionName}
@@ -284,46 +287,68 @@ export default function PropertyDetails() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              {/* Specs summary */}
-              <Card className="card-luxury">
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-                    {property.beds > 0 && (
-                      <div className="flex flex-col items-center">
-                        <Bed className="h-6 w-6 text-accent mb-2" />
-                        <span className="text-xl font-bold">{property.beds}</span>
-                        <span className="text-xs text-muted-foreground">غرف نوم</span>
-                      </div>
-                    )}
-                    {property.baths > 0 && (
-                      <div className="flex flex-col items-center">
-                        <Bath className="h-6 w-6 text-accent mb-2" />
-                        <span className="text-xl font-bold">{property.baths}</span>
-                        <span className="text-xs text-muted-foreground">حمامات</span>
-                      </div>
-                    )}
-                    <div className="flex flex-col items-center">
-                      <Square className="h-6 w-6 text-accent mb-2" />
-                      <span className="text-xl font-bold">{property.area}</span>
-                      <span className="text-xs text-muted-foreground">م²</span>
-                    </div>
-                    {property.floor > 0 && (
-                      <div className="flex flex-col items-center">
-                        <Layers className="h-6 w-6 text-accent mb-2" />
-                        <span className="text-xl font-bold">{property.floor}</span>
-                        <span className="text-xs text-muted-foreground">الدور</span>
-                      </div>
-                    )}
+            <div className="lg:col-span-2 space-y-5">
+
+              {/* Compact specs row */}
+              <div className="flex flex-wrap gap-2">
+                {property.beds > 0 && (
+                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                    <Bed className="h-4 w-4 text-accent flex-shrink-0" />
+                    <span className="font-semibold">{property.beds}</span>
+                    <span className="text-muted-foreground text-xs">غرف</span>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+                {property.baths > 0 && (
+                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                    <Bath className="h-4 w-4 text-accent flex-shrink-0" />
+                    <span className="font-semibold">{property.baths}</span>
+                    <span className="text-muted-foreground text-xs">حمام</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                  <Square className="h-4 w-4 text-accent flex-shrink-0" />
+                  <span className="font-semibold">{property.area}</span>
+                  <span className="text-muted-foreground text-xs">م²</span>
+                </div>
+                {property.floor > 0 && (
+                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                    <Layers className="h-4 w-4 text-accent flex-shrink-0" />
+                    <span className="font-semibold">{property.floor}</span>
+                    <span className="text-muted-foreground text-xs">دور</span>
+                  </div>
+                )}
+                {property.finishing && (
+                  <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-xl px-3 py-2 text-sm">
+                    <span className="text-accent text-xs font-medium">{finishingLabels[property.finishing] || property.finishing}</span>
+                  </div>
+                )}
+                {property.videoUrl && (
+                  <button
+                    onClick={() => openVideoLink(property.videoUrl!)}
+                    data-testid="link-watch-video"
+                    className="flex items-center gap-1.5 bg-accent text-white rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+                  >
+                    <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
+                    <span className="text-xs font-medium">فيديو العقار</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Description — before full details */}
+              {property.description && (
+                <Card className="card-luxury">
+                  <CardHeader className="pb-3"><CardTitle className="text-base">وصف العقار</CardTitle></CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-line break-words [overflow-wrap:anywhere]">{property.description}</p>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Full specs table */}
               <Card className="card-luxury">
-                <CardHeader><CardTitle className="text-base">تفاصيل العقار</CardTitle></CardHeader>
+                <CardHeader className="pb-3"><CardTitle className="text-base">تفاصيل العقار</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
                     {[
                       { label: "كود العقار", value: property.code, copy: true },
                       { label: "نوع العقار", value: typeName },
@@ -344,12 +369,15 @@ export default function PropertyDetails() {
                       { label: "الفيو", value: property.view || null },
                       { label: "الموقع", value: property.location || null },
                     ].filter(r => r.value != null && r.value !== "").map((row, i) => (
-                      <div key={i} className="flex justify-between items-start gap-3 py-2 border-b border-border last:border-0">
+                      <div key={i} className="flex justify-between items-start gap-3 py-2.5 border-b border-border last:border-0">
                         <span className="text-sm text-muted-foreground flex-shrink-0">{row.label}</span>
-                        <div className="flex items-start gap-2 min-w-0">
-                          <span className="text-sm font-medium text-start break-words [overflow-wrap:anywhere]">{String(row.value)}</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {row.copy
+                            ? <span className="text-sm font-mono font-semibold text-accent tracking-wide">{String(row.value)}</span>
+                            : <span className="text-sm font-medium text-start break-words [overflow-wrap:anywhere]">{String(row.value)}</span>
+                          }
                           {row.copy && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0 text-accent/60 hover:text-accent" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
                           )}
                         </div>
                       </div>
@@ -357,31 +385,6 @@ export default function PropertyDetails() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Description */}
-              {property.description && (
-                <Card className="card-luxury">
-                  <CardHeader><CardTitle className="text-base">وصف العقار</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-line break-words [overflow-wrap:anywhere]">{property.description}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Video */}
-              {property.videoUrl && (
-                <div>
-                  <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><Video className="h-5 w-5 text-accent" />فيديو العقار</h2>
-                  <Button
-                    className="gap-2 bg-accent text-white hover:bg-accent/90 rounded-lg"
-                    data-testid="link-watch-video"
-                    onClick={() => openVideoLink(property.videoUrl!)}
-                  >
-                    <Play className="h-4 w-4 fill-white" />
-                    مشاهدة الفيديو
-                  </Button>
-                </div>
-              )}
 
               {/* Map */}
               {property.mapsUrl && (

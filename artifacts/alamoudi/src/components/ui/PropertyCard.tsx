@@ -130,10 +130,13 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
           </div>
           {propHasVideo && (
-            <div className="absolute bottom-1.5 right-1.5">
-              <span className="bg-accent/90 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
+            <div className="absolute top-2 left-2">
+              <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-sm"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
             </div>
           )}
+          <div className="absolute bottom-1.5 inset-x-0 flex justify-center">
+            <span className="bg-black/50 text-white/90 text-[9px] px-2 py-0.5 rounded font-mono tracking-wide backdrop-blur-sm">{property.code}</span>
+          </div>
         </div>
         <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
           <div className="min-w-0">
@@ -177,33 +180,37 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-[5]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
-        <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[70%]">
+        <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[65%]">
           <Badge className="bg-background/90 text-foreground backdrop-blur-sm text-[11px] px-2 py-0.5">{property.typeName || "عقار"}</Badge>
           <Badge className="bg-accent text-white border-none text-[11px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
         </div>
 
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
+          {propHasVideo && (
+            <span className="bg-black/65 text-white backdrop-blur-sm text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+              <Play className="h-2.5 w-2.5 fill-white flex-shrink-0" />فيديو
+            </span>
+          )}
           {property.featured && <Badge className="bg-yellow-500 text-white border-none text-[10px] px-1.5 py-0.5">مميز</Badge>}
           {isNew() && <Badge className="bg-emerald-500 text-white border-none text-[10px] px-1.5 py-0.5">جديد</Badge>}
           {property.status === "reserved" && <Badge className="bg-amber-500 text-white border-none text-[10px] px-1.5 py-0.5">محجوز</Badge>}
         </div>
 
-        {property.regionName && (
-          <div className="absolute bottom-3 right-3 z-20">
+        <div className="absolute bottom-3 right-3 z-20">
+          {property.regionName && (
             <span className="text-white/95 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs">{property.regionName}</span>
-          </div>
-        )}
+          )}
+        </div>
+
         <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5">
+          <span className="bg-black/55 text-white/95 backdrop-blur-sm px-2 py-0.5 rounded font-mono text-[11px] tracking-wide font-medium">
+            {property.code}
+          </span>
           {imageCount > 0 && (
             <span className="text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1">
               <Camera className="h-3 w-3" />{imageCount}
-            </span>
-          )}
-          {propHasVideo && (
-            <span className="text-white bg-accent/80 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1" title="يوجد فيديو">
-              <Play className="h-3 w-3 fill-white" />فيديو
             </span>
           )}
           {property.externalUrl && (
@@ -215,9 +222,14 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
       </div>
 
       <CardContent className={cn("flex-1 flex flex-col", size === "medium" ? "p-4" : "p-5")}>
-        <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors mb-1.5", size === "medium" ? "text-base" : "text-lg")}>
-          {property.code}
-        </h3>
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors", size === "medium" ? "text-base" : "text-lg")}>
+            {property.code}
+          </h3>
+          <span className="flex-shrink-0 font-mono text-[10px] text-accent/70 bg-accent/8 border border-accent/20 px-1.5 py-0.5 rounded text-nowrap">
+            #{property.code}
+          </span>
+        </div>
         <p className={cn("font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
           {property.price.toLocaleString("en-US")} <span className="text-xs font-normal text-muted-foreground">EGP</span>
         </p>
