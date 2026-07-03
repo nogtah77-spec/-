@@ -19,17 +19,8 @@ function getActiveAds(ads: Ad[]): Ad[] {
 
 // ─── AdImage: صندوق داخل صندوق (مُصدَّر للاستخدام في الأدمن) ─────────────────
 //
-//  الفكرة:
-//  ┌──────────────────────────────┐  ← container (rounded)
-//  │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│  ← طبقة بلر (نفس ألوان الصورة)
-//  │░░┌──────────────────────┐░░░│
-//  │░░│                      │░░░│  ← الصورة الكاملة والواضحة (مقوّسة)
-//  │░░│  صورة واضحة بالكامل │░░░│
-//  │░░└──────────────────────┘░░░│
-//  │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-//  └──────────────────────────────┘
-//
-//  blurSize → يتحكم في عرض الإطار الـ blur + قوة التضبيب
+//  طبقة blur (نفس ألوان الصورة) + الصورة الكاملة والواضحة داخلها.
+//  blurSize = 0  →  صورة عادية بدون إطار
 
 export function AdImage({
   src,
@@ -42,24 +33,19 @@ export function AdImage({
   blurSize: number;
   opacity?: number;
 }) {
-  const inset  = blurSize === 0 ? 0 : Math.max(4, blurSize * 2);   // عرض إطار الـ blur
-  const blurPx = blurSize === 0 ? 0 : Math.max(6, blurSize * 2.5); // قوة التضبيب
-  // rounded-2xl = 16px → الصورة الداخلية تحتاج نفس الـ radius ناقص المسافة من الحافة
-  const outerRadius = 16; // يطابق rounded-2xl بالضبط
-  const radius = blurSize === 0 ? 0 : Math.max(2, outerRadius - inset);
+  const inset      = blurSize === 0 ? 0 : Math.max(4, blurSize * 2);
+  const blurPx     = blurSize === 0 ? 0 : Math.max(6, blurSize * 2.5);
+  const outerR     = 16;
+  const innerR     = blurSize === 0 ? 0 : Math.max(2, outerR - inset);
 
   return (
     <div
       className="absolute inset-0 w-full h-full"
       style={{ opacity, transition: "opacity 0.7s ease" }}
     >
-      {/* ── طبقة الخلف: نسخة مضببة من الصورة تملأ الصندوق بالكامل ── */}
       {blurSize > 0 && (
         <img
-          src={src}
-          alt=""
-          aria-hidden
-          draggable={false}
+          src={src} alt="" aria-hidden draggable={false}
           className="absolute object-cover object-center"
           style={{
             inset:  `-${blurPx * 0.4}px`,
@@ -69,19 +55,14 @@ export function AdImage({
           }}
         />
       )}
-
-      {/* ── الصورة الكاملة والواضحة داخل الإطار ── */}
       <img
-        src={src}
-        alt={alt}
-        draggable={false}
-        loading="lazy"
+        src={src} alt={alt} draggable={false} loading="lazy"
         className="absolute object-cover object-center"
         style={{
           inset:        `${inset}px`,
           width:        `calc(100% - ${inset * 2}px)`,
           height:       `calc(100% - ${inset * 2}px)`,
-          borderRadius: `${radius}px`,
+          borderRadius: `${innerR}px`,
           boxShadow:    blurSize > 0 ? "0 2px 12px rgba(0,0,0,0.18)" : undefined,
         }}
       />
@@ -92,21 +73,10 @@ export function AdImage({
 // ─── AdSlot ─────────────────────────────────────────────────────────────────
 
 function AdSlot({
-  ad,
-  allAds,
-  currentIdx,
-  blurSize,
-  onClick,
-  className,
-  crossfade = false,
+  ad, allAds, currentIdx, blurSize, onClick, className, crossfade = false,
 }: {
-  ad: Ad;
-  allAds: Ad[];
-  currentIdx: number;
-  blurSize: number;
-  onClick: (ad: Ad) => void;
-  className?: string;
-  crossfade?: boolean;
+  ad: Ad; allAds: Ad[]; currentIdx: number; blurSize: number;
+  onClick: (ad: Ad) => void; className?: string; crossfade?: boolean;
 }) {
   return (
     <div
@@ -119,29 +89,15 @@ function AdSlot({
     >
       {crossfade
         ? allAds.map((a, i) => (
-            <AdImage
-              key={a.id}
-              src={a.imageUrl}
-              alt={a.title || `إعلان ${i + 1}`}
-              blurSize={blurSize}
-              opacity={i === currentIdx ? 1 : 0}
-            />
+            <AdImage key={a.id} src={a.imageUrl} alt={a.title || `إعلان ${i + 1}`}
+              blurSize={blurSize} opacity={i === currentIdx ? 1 : 0} />
           ))
-        : <AdImage
-            src={ad.imageUrl}
-            alt={ad.title || "إعلان"}
-            blurSize={blurSize}
-            opacity={1}
-          />
+        : <AdImage src={ad.imageUrl} alt={ad.title || "إعلان"} blurSize={blurSize} />
       }
-
-      {/* عنوان الإعلان */}
       {ad.title && (
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/55 to-transparent pointer-events-none px-4 py-3 z-20">
-          <p className={cn(
-            "text-white font-semibold leading-snug line-clamp-1 drop-shadow-sm",
-            crossfade ? "text-sm" : "text-xs"
-          )}>
+          <p className={cn("text-white font-semibold leading-snug line-clamp-1 drop-shadow-sm",
+            crossfade ? "text-sm" : "text-xs")}>
             {ad.title}
           </p>
         </div>
@@ -152,10 +108,7 @@ function AdSlot({
 
 // ─── المكوّن الرئيسي ────────────────────────────────────────────────────────
 
-interface Props {
-  ads: Ad[];
-  blurSize?: number;
-}
+interface Props { ads: Ad[]; blurSize?: number; }
 
 export function AdsBanner({ ads, blurSize = 6 }: Props) {
   const active  = getActiveAds(ads);
@@ -170,7 +123,6 @@ export function AdsBanner({ ads, blurSize = 6 }: Props) {
   const prev = useCallback(() => go(current - 1), [go, current]);
 
   useEffect(() => { setCurrent(0); }, [count]);
-
   useEffect(() => {
     if (count <= 1 || paused) return;
     const ms = (active[current]?.duration ?? 6) * 1000;
@@ -180,8 +132,7 @@ export function AdsBanner({ ads, blurSize = 6 }: Props) {
 
   const onDragStart = (x: number) => { dragStartX.current = x; isDragging.current = false; };
   const onDragMove  = (x: number) => {
-    if (dragStartX.current !== null && Math.abs(x - dragStartX.current) > 8)
-      isDragging.current = true;
+    if (dragStartX.current !== null && Math.abs(x - dragStartX.current) > 8) isDragging.current = true;
   };
   const onDragEnd = (x: number) => {
     if (dragStartX.current === null) return;
@@ -189,7 +140,6 @@ export function AdsBanner({ ads, blurSize = 6 }: Props) {
     if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
     dragStartX.current = null;
   };
-
   const handleClick = (ad: Ad) => {
     if (!isDragging.current && ad.linkUrl)
       window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
@@ -201,7 +151,7 @@ export function AdsBanner({ ads, blurSize = 6 }: Props) {
   const sideAd1 = count >= 2 ? active[(current + 1) % count] : null;
   const sideAd2 = count >= 3 ? active[(current + 2) % count] : null;
 
-  const wrapperEvents = {
+  const events = {
     onMouseEnter: () => setPaused(true),
     onMouseLeave: () => { setPaused(false); dragStartX.current = null; isDragging.current = false; },
     onMouseDown:  (e: React.MouseEvent)  => onDragStart(e.clientX),
@@ -214,82 +164,64 @@ export function AdsBanner({ ads, blurSize = 6 }: Props) {
 
   return (
     <section className="container px-4 sm:px-6 pt-4 sm:pt-5">
-      <div className="select-none" {...wrapperEvents}>
+      <div className="select-none" {...events}>
 
-        {/* جوال + تابلت */}
-        <div className="lg:hidden">
-          <AdSlot
-            ad={mainAd} allAds={active} currentIdx={current}
+        {/* ══ جوال + تابلت: 16:9 ══ */}
+        <div className="lg:hidden w-full" style={{ aspectRatio: "16/9" }}>
+          <AdSlot ad={mainAd} allAds={active} currentIdx={current}
             blurSize={blurSize} onClick={handleClick} crossfade
-            className="h-36 sm:h-44 w-full rounded-2xl shadow-md"
-          />
+            className="w-full h-full rounded-2xl shadow-md" />
         </div>
 
-        {/* ديسكتوب — إعلان واحد */}
-        {count === 1 && (
-          <div className="hidden lg:block">
-            <AdSlot
-              ad={mainAd} allAds={active} currentIdx={current}
-              blurSize={blurSize} onClick={handleClick} crossfade
-              className="h-52 w-full rounded-2xl shadow-md"
-            />
-          </div>
-        )}
+        {/* ══ ديسكتوب ══
+            الفكرة: wrapper واحد بارتفاع ثابت = 38vw (يتوافق مع 21:9 تقريباً)
+            ثم grid بداخله بحيث كل شيء يتكيّف معه */}
+        <div
+          className="hidden lg:grid gap-3"
+          style={{
+            gridTemplateColumns: count >= 2 ? "3fr 2fr" : "1fr",
+            height: "260px",
+          }}
+        >
+          {/* الرئيسي */}
+          <AdSlot ad={mainAd} allAds={active} currentIdx={current}
+            blurSize={blurSize} onClick={handleClick} crossfade
+            className="w-full h-full rounded-2xl shadow-md" />
 
-        {/* ديسكتوب — إعلانان */}
-        {count === 2 && (
-          <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
-            <AdSlot
-              ad={mainAd} allAds={active} currentIdx={current}
-              blurSize={blurSize} onClick={handleClick} crossfade
-              className="rounded-2xl shadow-md"
-            />
-            <AdSlot
-              ad={sideAd1!} allAds={active} currentIdx={current}
+          {/* جانبي واحد */}
+          {count === 2 && sideAd1 && (
+            <AdSlot ad={sideAd1} allAds={active} currentIdx={current}
               blurSize={blurSize} onClick={handleClick}
-              className="rounded-2xl shadow-sm"
-            />
-          </div>
-        )}
+              className="w-full h-full rounded-2xl shadow-sm" />
+          )}
 
-        {/* ديسكتوب — ثلاثة إعلانات */}
-        {count === 3 && (
-          <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
-            <AdSlot
-              ad={mainAd} allAds={active} currentIdx={current}
-              blurSize={blurSize} onClick={handleClick} crossfade
-              className="rounded-2xl shadow-md"
-            />
+          {/* جانبيان — يتقاسمان الارتفاع مناصفةً */}
+          {count === 3 && (
             <div className="flex flex-col gap-2.5 h-full">
-              <AdSlot
-                ad={sideAd1!} allAds={active} currentIdx={current}
-                blurSize={blurSize} onClick={handleClick}
-                className="flex-1 rounded-xl shadow-sm"
-              />
-              <AdSlot
-                ad={sideAd2!} allAds={active} currentIdx={current}
-                blurSize={blurSize} onClick={handleClick}
-                className="flex-1 rounded-xl shadow-sm"
-              />
+              {sideAd1 && (
+                <AdSlot ad={sideAd1} allAds={active} currentIdx={current}
+                  blurSize={blurSize} onClick={handleClick}
+                  className="flex-1 rounded-xl shadow-sm" />
+              )}
+              {sideAd2 && (
+                <AdSlot ad={sideAd2} allAds={active} currentIdx={current}
+                  blurSize={blurSize} onClick={handleClick}
+                  className="flex-1 rounded-xl shadow-sm" />
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* نقاط التنقل */}
         {count > 1 && (
           <div className="flex justify-center gap-1.5 mt-2.5">
             {active.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => go(i)}
-                className={cn(
-                  "rounded-full transition-all duration-300",
+              <button key={i} onClick={() => go(i)}
+                className={cn("rounded-full transition-all duration-300",
                   i === current
                     ? "w-5 h-1.5 bg-accent"
-                    : "w-1.5 h-1.5 bg-foreground/20 hover:bg-foreground/40"
-                )}
-                aria-label={`انتقل للإعلان ${i + 1}`}
-              />
+                    : "w-1.5 h-1.5 bg-foreground/20 hover:bg-foreground/40")}
+                aria-label={`انتقل للإعلان ${i + 1}`} />
             ))}
           </div>
         )}
