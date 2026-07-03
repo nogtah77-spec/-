@@ -265,7 +265,7 @@ function SecondaryCarousel({
       {/* ─ Desktop / Tablet (sm+): two columns, proportional height ─ */}
       <div
         className={cn(
-          "hidden sm:grid gap-3",
+          "hidden sm:grid gap-3 items-start",
           ads.length === 1 ? "grid-cols-1 max-w-xl" : "grid-cols-2",
         )}
       >
