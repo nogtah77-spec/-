@@ -17,7 +17,56 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .slice(0, 3);
 }
 
-// ─── single image slot ───────────────────────────────────────────────────────
+// ─── AdImage: يعرض الصورة كاملة بدون قطع + خلفية blur ──────────────────────
+//
+//  الفكرة: طبقتان فوق بعض:
+//   1) خلفية blur  — نفس الصورة بـ object-cover + blur لملء المساحات
+//   2) الصورة الفعلية — بـ object-contain لعرض التفاصيل كاملة
+//
+//  هكذا لا يُقطع أي جزء من الإعلان بغض النظر عن حجم الشاشة.
+
+function AdImage({
+  src,
+  alt,
+  opacity = 1,
+}: {
+  src: string;
+  alt: string;
+  opacity?: number;
+}) {
+  return (
+    <>
+      {/* طبقة الخلفية المضبّبة */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="absolute inset-0 w-full h-full object-cover scale-110 pointer-events-none"
+        style={{
+          opacity: opacity * 0.85,
+          filter: "blur(18px) brightness(0.55) saturate(1.2)",
+          transition: "opacity 0.7s ease",
+        }}
+      />
+
+      {/* طبقة الصورة الفعلية — كاملة بدون قطع */}
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+        style={{
+          opacity,
+          transition: "opacity 0.7s ease",
+        }}
+      />
+    </>
+  );
+}
+
+// ─── AdSlot: حاوية الإعلان الواحد ──────────────────────────────────────────
 
 function AdSlot({
   ad,
@@ -37,46 +86,31 @@ function AdSlot({
   return (
     <div
       className={cn(
-        "relative overflow-hidden",
+        "relative overflow-hidden bg-black",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
         className
       )}
       onClick={() => onClick(ad)}
     >
-      {/* fallback bg while image loads */}
-      <div className="absolute inset-0 bg-muted/60" />
-
       {crossfade ? (
-        // Main slot: all images stacked, fade in/out
+        // الـ slot الرئيسي: جميع الصور مكدّسة — تتلاشى بالـ opacity
         allAds.map((a, i) => (
-          <img
+          <AdImage
             key={a.id}
             src={a.imageUrl}
             alt={a.title || `إعلان ${i + 1}`}
-            loading="lazy"
-            draggable={false}
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover object-center pointer-events-none",
-              "transition-opacity duration-700",
-              i === currentIdx ? "opacity-100" : "opacity-0"
-            )}
+            opacity={i === currentIdx ? 1 : 0}
           />
         ))
       ) : (
-        <img
-          src={ad.imageUrl}
-          alt={ad.title || "إعلان"}
-          loading="lazy"
-          draggable={false}
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-        />
+        <AdImage src={ad.imageUrl} alt={ad.title || "إعلان"} />
       )}
 
-      {/* title overlay */}
+      {/* عنوان الإعلان — شريط سفلي شفّاف */}
       {ad.title && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none px-4 py-2.5">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none px-4 py-3">
           <p className={cn(
-            "text-white font-semibold leading-snug line-clamp-1",
+            "text-white font-semibold leading-snug line-clamp-1 drop-shadow",
             crossfade ? "text-sm" : "text-xs"
           )}>
             {ad.title}
@@ -84,15 +118,15 @@ function AdSlot({
         </div>
       )}
 
-      {/* clickable hover ring */}
+      {/* حلقة hover للروابط */}
       {ad.linkUrl && (
-        <div className="absolute inset-0 ring-inset ring-2 ring-transparent hover:ring-white/20 transition-all rounded-[inherit]" />
+        <div className="absolute inset-0 ring-inset ring-2 ring-transparent hover:ring-white/25 transition-all rounded-[inherit] pointer-events-none" />
       )}
     </div>
   );
 }
 
-// ─── main component ──────────────────────────────────────────────────────────
+// ─── المكوّن الرئيسي ────────────────────────────────────────────────────────
 
 interface Props { ads: Ad[]; }
 
@@ -110,10 +144,10 @@ export function AdsBanner({ ads }: Props) {
 
   useEffect(() => { setCurrent(0); }, [count]);
 
-  // كل إعلان له مدة ظهوره الخاصة (duration بالثانية، افتراضي 5)
+  // مدة ظهور مستقلة لكل إعلان (duration بالثانية)
   useEffect(() => {
     if (count <= 1 || paused) return;
-    const ms = (active[current]?.duration ?? 5) * 1000;
+    const ms = (active[current]?.duration ?? 6) * 1000;
     const id = setTimeout(next, ms);
     return () => clearTimeout(id);
   }, [count, paused, current, next, active]);
@@ -156,33 +190,33 @@ export function AdsBanner({ ads }: Props) {
     <section className="container px-4 sm:px-6 pt-4 sm:pt-5">
       <div className="select-none" {...wrapperEvents}>
 
-        {/* ══ MOBILE + TABLET (< lg): carousel واحد ══════════════════════ */}
+        {/* ══ جوال + تابلت (< lg) ══════════════════════════════════════════ */}
         <div className="lg:hidden">
           <AdSlot
             ad={mainAd} allAds={active} currentIdx={current}
             onClick={handleClick} crossfade
-            className="h-28 sm:h-32 w-full rounded-2xl shadow-sm"
+            className="h-36 sm:h-44 w-full rounded-2xl shadow-md"
           />
         </div>
 
-        {/* ══ DESKTOP — 1 إعلان: عرض كامل ════════════════════════════════ */}
+        {/* ══ ديسكتوب — إعلان واحد ═══════════════════════════════════════ */}
         {count === 1 && (
           <div className="hidden lg:block">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
               onClick={handleClick} crossfade
-              className="h-40 w-full rounded-2xl shadow-sm"
+              className="h-52 w-full rounded-2xl shadow-md"
             />
           </div>
         )}
 
-        {/* ══ DESKTOP — 2 إعلانات: 60% + 40% ════════════════════════════ */}
+        {/* ══ ديسكتوب — إعلانان ══════════════════════════════════════════ */}
         {count === 2 && (
-          <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-40">
+          <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
               onClick={handleClick} crossfade
-              className="rounded-2xl shadow-sm"
+              className="rounded-2xl shadow-md"
             />
             <AdSlot
               ad={sideAd1!} allAds={active} currentIdx={current}
@@ -192,19 +226,17 @@ export function AdsBanner({ ads }: Props) {
           </div>
         )}
 
-        {/* ══ DESKTOP — 3 إعلانات: رئيسي 60% + جانبيان 40% ══════════════
-            الرئيسي يدور بين جميع الإعلانات بمدة كل منها.
-            الجانبيان يعرضان الإعلانات التالية في الترتيب (معاينة قادمة).  */}
+        {/* ══ ديسكتوب — ثلاثة إعلانات ════════════════════════════════════
+            الرئيسي (60%) يدور بمدة كل إعلان.
+            الجانبيان (40%) يعرضان الإعلانات التالية معاينةً.           */}
         {count === 3 && (
-          <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-40">
-            {/* اللوحة الكبيرة — تتبدل بمدة كل إعلان */}
+          <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
               onClick={handleClick} crossfade
               className="rounded-2xl shadow-md"
             />
-            {/* اللوحتان الجانبيتان — تعرضان الإعلانات التالية */}
-            <div className="flex flex-col gap-2 h-full">
+            <div className="flex flex-col gap-2.5 h-full">
               <AdSlot
                 ad={sideAd1!} allAds={active} currentIdx={current}
                 onClick={handleClick}
@@ -221,7 +253,7 @@ export function AdsBanner({ ads }: Props) {
 
         {/* ══ نقاط التنقل ══════════════════════════════════════════════════ */}
         {count > 1 && (
-          <div className="flex justify-center gap-1.5 mt-2">
+          <div className="flex justify-center gap-1.5 mt-2.5">
             {active.map((_, i) => (
               <button
                 key={i}
