@@ -17,29 +17,65 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .slice(0, 3);
 }
 
-// ─── طبقة Blur على الحواف فقط ───────────────────────────────────────────────
+// ─── تأثير الـ Blur على الحواف ───────────────────────────────────────────────
 //
-//  backdrop-filter: blur()  →  تضبّب فعلي للبكسلات خلف الطبقة
-//  mask-image (radial-gradient)  →  المركز شفاف (الصورة واضحة)،
-//                                   الحواف معتمة (Blur يظهر هناك فقط)
-//
-//  overflow:hidden + border-radius على الـ container يقلّم كل شيء
-//  فتبدو حواف الصورة ناعمة ومقوّسة تلقائياً.
+//  الطريقة الصحيحة:
+//  - طبقة أولى (خلف): نفس الصورة ممتدة خارج الحدود + filter:blur → حواف مضببة
+//  - طبقة ثانية (أمام): نفس الصورة بـ mask دائري → المركز واضح، الحواف شفافة
+//  → النتيجة: مركز الصورة حاد، حواف الصورة تتحول تدريجياً للنسخة المضببة
 
-function EdgeBlur({ size }: { size: number }) {
-  if (size === 0) return null;
-  // نسبة مساحة المركز الصافي: كلما زاد الـ blur كلما ضاق المركز الواضح
-  const clearPct = Math.max(20, 90 - size * 3.5);
+function AdImage({
+  src,
+  alt,
+  blurSize,
+  opacity = 1,
+  className,
+}: {
+  src: string;
+  alt: string;
+  blurSize: number;
+  opacity?: number;
+  className?: string;
+}) {
+  // نسبة وضوح المركز: كلما زاد blurSize كلما ضاق الجزء الواضح
+  const clearStart = Math.max(20, 72 - blurSize * 2.2);
+  const clearEnd   = Math.min(98, clearStart + 30);
+
   return (
     <div
-      className="absolute inset-0 pointer-events-none rounded-[inherit] z-10"
-      style={{
-        backdropFilter: `blur(${size}px)`,
-        WebkitBackdropFilter: `blur(${size}px)`,
-        maskImage: `radial-gradient(ellipse 80% 80% at 50% 50%, transparent ${clearPct}%, black 100%)`,
-        WebkitMaskImage: `radial-gradient(ellipse 80% 80% at 50% 50%, transparent ${clearPct}%, black 100%)`,
-      }}
-    />
+      className={cn("absolute inset-0 w-full h-full pointer-events-none", className)}
+      style={{ opacity, transition: "opacity 0.7s ease" }}
+    >
+      {/* طبقة الخلف: صورة مضببة ممتدة خارج الحدود (تظهر كحواف مضببة) */}
+      {blurSize > 0 && (
+        <img
+          src={src}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="absolute object-cover object-center"
+          style={{
+            inset: `-${blurSize * 2}px`,
+            width:  `calc(100% + ${blurSize * 4}px)`,
+            height: `calc(100% + ${blurSize * 4}px)`,
+            filter: `blur(${blurSize}px)`,
+          }}
+        />
+      )}
+
+      {/* طبقة الأمام: نفس الصورة واضحة بـ mask يعرض المركز فقط */}
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover object-center"
+        style={blurSize > 0 ? {
+          maskImage: `radial-gradient(ellipse 85% 85% at 50% 50%, black ${clearStart}%, transparent ${clearEnd}%)`,
+          WebkitMaskImage: `radial-gradient(ellipse 85% 85% at 50% 50%, black ${clearStart}%, transparent ${clearEnd}%)`,
+        } : undefined}
+      />
+    </div>
   );
 }
 
@@ -71,36 +107,26 @@ function AdSlot({
       )}
       onClick={() => onClick(ad)}
     >
-      {/* ── الصورة الكاملة ── */}
       {crossfade ? (
         allAds.map((a, i) => (
-          <img
+          <AdImage
             key={a.id}
             src={a.imageUrl}
             alt={a.title || `إعلان ${i + 1}`}
-            draggable={false}
-            loading="lazy"
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover object-center pointer-events-none",
-              "transition-opacity duration-700"
-            )}
-            style={{ opacity: i === currentIdx ? 1 : 0 }}
+            blurSize={blurSize}
+            opacity={i === currentIdx ? 1 : 0}
           />
         ))
       ) : (
-        <img
+        <AdImage
           src={ad.imageUrl}
           alt={ad.title || "إعلان"}
-          draggable={false}
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+          blurSize={blurSize}
+          opacity={1}
         />
       )}
 
-      {/* ── Blur حقيقي على الحواف فقط ── */}
-      <EdgeBlur size={blurSize} />
-
-      {/* ── عنوان الإعلان ── */}
+      {/* عنوان الإعلان */}
       {ad.title && (
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/55 to-transparent pointer-events-none px-4 py-3 z-20">
           <p className={cn(
@@ -181,73 +207,66 @@ export function AdsBanner({ ads, blurSize = 8 }: Props) {
     <section className="container px-4 sm:px-6 pt-4 sm:pt-5">
       <div className="select-none" {...wrapperEvents}>
 
-        {/* ══ جوال + تابلت ═══════════════════════════════════════════════ */}
+        {/* جوال + تابلت */}
         <div className="lg:hidden">
           <AdSlot
             ad={mainAd} allAds={active} currentIdx={current}
-            blurSize={blurSize}
-            onClick={handleClick} crossfade
+            blurSize={blurSize} onClick={handleClick} crossfade
             className="h-36 sm:h-44 w-full rounded-2xl shadow-md"
           />
         </div>
 
-        {/* ══ ديسكتوب — إعلان واحد ════════════════════════════════════════ */}
+        {/* ديسكتوب — إعلان واحد */}
         {count === 1 && (
           <div className="hidden lg:block">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
-              blurSize={blurSize}
-              onClick={handleClick} crossfade
+              blurSize={blurSize} onClick={handleClick} crossfade
               className="h-52 w-full rounded-2xl shadow-md"
             />
           </div>
         )}
 
-        {/* ══ ديسكتوب — إعلانان ═══════════════════════════════════════════ */}
+        {/* ديسكتوب — إعلانان */}
         {count === 2 && (
           <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
-              blurSize={blurSize}
-              onClick={handleClick} crossfade
+              blurSize={blurSize} onClick={handleClick} crossfade
               className="rounded-2xl shadow-md"
             />
             <AdSlot
               ad={sideAd1!} allAds={active} currentIdx={current}
-              blurSize={blurSize}
-              onClick={handleClick}
+              blurSize={blurSize} onClick={handleClick}
               className="rounded-2xl shadow-sm"
             />
           </div>
         )}
 
-        {/* ══ ديسكتوب — ثلاثة إعلانات ════════════════════════════════════ */}
+        {/* ديسكتوب — ثلاثة إعلانات */}
         {count === 3 && (
           <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
-              blurSize={blurSize}
-              onClick={handleClick} crossfade
+              blurSize={blurSize} onClick={handleClick} crossfade
               className="rounded-2xl shadow-md"
             />
             <div className="flex flex-col gap-2.5 h-full">
               <AdSlot
                 ad={sideAd1!} allAds={active} currentIdx={current}
-                blurSize={blurSize}
-                onClick={handleClick}
+                blurSize={blurSize} onClick={handleClick}
                 className="flex-1 rounded-xl shadow-sm"
               />
               <AdSlot
                 ad={sideAd2!} allAds={active} currentIdx={current}
-                blurSize={blurSize}
-                onClick={handleClick}
+                blurSize={blurSize} onClick={handleClick}
                 className="flex-1 rounded-xl shadow-sm"
               />
             </div>
           </div>
         )}
 
-        {/* ══ نقاط التنقل ══════════════════════════════════════════════════ */}
+        {/* نقاط التنقل */}
         {count > 1 && (
           <div className="flex justify-center gap-1.5 mt-2.5">
             {active.map((_, i) => (
