@@ -62,11 +62,19 @@ function AdForm({
             onChange={e => { const f = e.target.files?.[0]; if (f) onImageFile(f); e.target.value = ""; }}
           />
         </div>
+        {/* Recommended dimensions hint */}
+        <p className="text-xs text-muted-foreground leading-relaxed" dir="rtl">
+          📐 المقاس الموصى به:{" "}
+          <strong className="text-foreground">1200 × 350 بكسل</strong>{" "}
+          — نسبة العرض إلى الارتفاع 3.4:1 — احرص على وضع المحتوى المهم في
+          <strong> وسط الصورة</strong> ولا تترك هوامش بيضاء
+        </p>
         {value.imageUrl && (
           <img
             src={value.imageUrl}
             alt="معاينة"
-            className="mt-2 w-full max-h-32 object-cover rounded-lg border border-border"
+            className="mt-2 w-full object-cover rounded-lg border border-border"
+            style={{ height: "80px" }}
           />
         )}
       </div>
@@ -216,19 +224,42 @@ export default function Ads() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-foreground">إدارة الإعلانات</h1>
-            <p className="text-muted-foreground mt-1">تحكم في الإعلانات التي تظهر في الصفحة الرئيسية</p>
+            <p className="text-muted-foreground mt-1">
+              تحكم في الإعلانات التي تظهر في الصفحة الرئيسية
+              {" "}
+              <span className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                ads.length >= 3
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {ads.length} / 3
+              </span>
+            </p>
           </div>
-          <Button className="gap-2 bg-accent text-white hover:bg-accent/90" onClick={() => { setNewAd({ ...EMPTY_AD, order: ads.length }); setShowAdd(true); }}>
+          <Button
+            className="gap-2 bg-accent text-white hover:bg-accent/90 disabled:opacity-50"
+            disabled={ads.length >= 3}
+            title={ads.length >= 3 ? "وصلت للحد الأقصى (3 إعلانات)" : undefined}
+            onClick={() => { setNewAd({ ...EMPTY_AD, order: ads.length }); setShowAdd(true); }}
+          >
             <Plus className="h-4 w-4" /> إضافة إعلان
           </Button>
         </div>
 
         {/* Info note */}
-        <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground leading-relaxed" dir="rtl">
+        <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground leading-relaxed space-y-1.5" dir="rtl">
           <p>
-            الإعلانات تظهر في الصفحة الرئيسية بعد صورة الغلاف مباشرةً.
-            عند وجود <strong>3 إعلانات أو أكثر</strong>: يظهر إعلان رئيسي كبير + إعلانان جانبيان على الديسكتوب.
-            على الجوال والتابلت: تظهر دائماً كـ Carousel تلقائي.
+            📍 الإعلانات تظهر في الصفحة الرئيسية بعد صورة الغلاف مباشرةً — الحد الأقصى <strong className="text-foreground">3 إعلانات</strong>
+          </p>
+          <p>
+            🖥️ <strong className="text-foreground">الديسكتوب:</strong> عند 3 إعلانات — الإعلان الأول (★ مميّز) يأخذ 60% من العرض، والثاني والثالث يقتسمان 40% بجانبه
+          </p>
+          <p>
+            📱 <strong className="text-foreground">الجوال والتابلت:</strong> يعرض إعلاناً واحداً في كل مرة مع Carousel تلقائي كل 5 ثوانٍ
+          </p>
+          <p>
+            🎨 <strong className="text-foreground">مهم للتصميم:</strong> المقاس الأمثل <strong>1200 × 350 بكسل</strong> — ضع المحتوى المهم في وسط الصورة — لا تترك هوامش بيضاء حول التصميم
           </p>
         </div>
 
