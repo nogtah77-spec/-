@@ -25,6 +25,9 @@ function getActiveAds(ads: Ad[]): Ad[] {
 //
 //  هكذا لا يُقطع أي جزء من الإعلان بغض النظر عن حجم الشاشة.
 
+// حجم الإطار البلر من كل الجهات (بكسل)
+const BLUR_INSET = 10;
+
 function AdImage({
   src,
   alt,
@@ -36,28 +39,32 @@ function AdImage({
 }) {
   return (
     <>
-      {/* طبقة الخلفية المضبّبة */}
+      {/* ① خلفية blur من كل الجهات — تُكبَّر قليلاً لتغطية الحواف */}
       <img
         src={src}
         alt=""
         aria-hidden
         draggable={false}
-        className="absolute inset-0 w-full h-full object-cover scale-110 pointer-events-none"
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         style={{
-          opacity: opacity * 0.85,
-          filter: "blur(18px) brightness(0.55) saturate(1.2)",
+          opacity: opacity * 0.9,
+          filter: "blur(14px) brightness(0.45) saturate(1.25)",
+          transform: "scale(1.08)",
           transition: "opacity 0.7s ease",
         }}
       />
 
-      {/* طبقة الصورة الفعلية — كاملة بدون قطع */}
+      {/* ② الصورة الفعلية — كاملة بلا قطع، مع إطار موحّد من كل الجهات */}
       <img
         src={src}
         alt={alt}
         draggable={false}
         loading="lazy"
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+        className="absolute object-contain pointer-events-none"
         style={{
+          inset: BLUR_INSET,
+          width:  `calc(100% - ${BLUR_INSET * 2}px)`,
+          height: `calc(100% - ${BLUR_INSET * 2}px)`,
           opacity,
           transition: "opacity 0.7s ease",
         }}
