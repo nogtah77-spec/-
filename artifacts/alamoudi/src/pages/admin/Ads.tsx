@@ -743,9 +743,12 @@ export default function Ads() {
           </div>
         ) : (
           <div className="rounded-xl border border-border overflow-hidden">
-            {/* رأس الجدول */}
-            <div className="hidden md:grid bg-muted/50 px-4 py-2.5 text-xs font-semibold text-muted-foreground border-b border-border"
-              style={{ gridTemplateColumns: "2rem 5rem 1fr 6rem 7rem 5rem 5rem 5rem 7rem" }}>
+
+            {/* ── رأس الجدول (md+) ── */}
+            <div
+              className="hidden md:grid bg-muted/60 border-b border-border px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide"
+              style={{ gridTemplateColumns: "2rem 5rem 1fr 6rem 7rem 5rem 5rem 4.5rem 9rem" }}
+            >
               <span />
               <span>صورة</span>
               <span>الإعلان</span>
@@ -757,133 +760,199 @@ export default function Ads() {
               <span className="text-center">إجراءات</span>
             </div>
 
-            {/* صفوف الجدول */}
-            <div>
-              {ads.map((ad, idx) => {
-                const status    = getAdStatus(ad);
-                const cfg       = STATUS_CONFIG[status];
-                const StatusIcon = cfg.icon;
-                const ctr       = (ad.views ?? 0) > 0
-                  ? (((ad.clicks ?? 0) / (ad.views ?? 1)) * 100).toFixed(1) + "%"
-                  : "—";
-                const thumb = ad.desktopImageUrl || ad.imageUrl || "";
+            {/* ── صفوف ── */}
+            {ads.map((ad, idx) => {
+              const status     = getAdStatus(ad);
+              const cfg        = STATUS_CONFIG[status];
+              const StatusIcon = cfg.icon;
+              const ctr        = (ad.views ?? 0) > 0
+                ? (((ad.clicks ?? 0) / (ad.views ?? 1)) * 100).toFixed(1) + "%"
+                : "—";
+              const thumb = ad.desktopImageUrl || ad.imageUrl || "";
+              const typeLabel = ad.type === "premium" ? "🏆 Premium" : "📌 Secondary";
+              const typeCls   = ad.type === "premium"
+                ? "border-yellow-300 text-yellow-700 bg-yellow-50"
+                : "border-blue-300 text-blue-700 bg-blue-50";
 
-                return (
+              const dragProps = {
+                draggable: true,
+                onDragStart: () => onDragStart(idx),
+                onDragOver:  (e: React.DragEvent) => onDragOver(e, idx),
+                onDrop:      (e: React.DragEvent) => onDrop(e, idx),
+                onDragEnd:   onDragEnd,
+              };
+
+              const actions = (
+                <>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="إحصائيات"
+                    onClick={() => navigate(`/admin/ads/${ad.id}/analytics`)}>
+                    <BarChart2 className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title={ad.active ? "تعطيل" : "تفعيل"}
+                    onClick={() => handleToggle(ad)}>
+                    {ad.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="تعديل"
+                    onClick={() => setEditTarget(ad)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="حذف"
+                    onClick={() => setDeleteTarget(ad)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              );
+
+              return (
+                <div
+                  key={ad.id}
+                  className={cn(
+                    "border-b border-border last:border-b-0 transition-colors",
+                    dragOver === idx && "bg-accent/5",
+                    !ad.active && "opacity-60"
+                  )}
+                >
+                  {/* ── Desktop / Tablet (md+): صف جدول ── */}
                   <div
-                    key={ad.id}
-                    draggable
-                    onDragStart={() => onDragStart(idx)}
-                    onDragOver={e  => onDragOver(e, idx)}
-                    onDrop={e      => onDrop(e, idx)}
-                    onDragEnd={onDragEnd}
-                    className={cn(
-                      "grid items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 transition-colors",
-                      "grid-cols-[2rem_1fr] md:grid-cols-[2rem_5rem_1fr_6rem_7rem_5rem_5rem_5rem_7rem]",
-                      dragOver === idx && "bg-accent/5 border-accent/30",
-                      !ad.active && "opacity-60"
-                    )}
+                    {...dragProps}
+                    className="hidden md:grid items-center gap-x-3 px-4 py-3 cursor-default"
+                    style={{ gridTemplateColumns: "2rem 5rem 1fr 6rem 7rem 5rem 5rem 4.5rem 9rem" }}
                   >
                     {/* مقبض السحب */}
                     <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors">
                       <GripVertical className="h-5 w-5" />
                     </div>
 
-                    {/* الصورة المصغرة */}
-                    <div className="hidden md:block rounded-lg overflow-hidden bg-muted aspect-video">
+                    {/* صورة */}
+                    <div className="rounded-md overflow-hidden bg-muted" style={{ aspectRatio: "16/9" }}>
                       {thumb
                         ? <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
                         : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-4 w-4 text-muted-foreground/30" /></div>
                       }
                     </div>
 
-                    {/* معلومات */}
+                    {/* الإعلان */}
                     <div className="min-w-0">
-                      <div className="flex items-start gap-2">
-                        {/* الصورة على الجوال */}
-                        <div className="md:hidden flex-shrink-0 rounded-lg overflow-hidden bg-muted w-14 h-10">
-                          {thumb
-                            ? <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
-                            : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-3 w-3 text-muted-foreground/30" /></div>
-                          }
-                        </div>
-                        <div className="min-w-0">
-                          {ad.title
-                            ? <p className="font-semibold text-sm truncate">{ad.title}</p>
-                            : <p className="text-sm text-muted-foreground italic">بدون عنوان</p>
-                          }
-                          {ad.linkUrl && (
-                            <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer"
-                              className="text-xs text-accent hover:underline flex items-center gap-1 truncate mt-0.5">
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">{ad.linkUrl}</span>
-                            </a>
-                          )}
-                          <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
-                            {ad.startDate && <span>من {ad.startDate}</span>}
-                            {ad.endDate   && <span>حتى {ad.endDate}</span>}
-                            <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{ad.duration}ث</span>
-                          </div>
-                        </div>
-                      </div>
-                      {/* على الجوال: النوع والحالة */}
-                      <div className="md:hidden flex gap-2 mt-2">
-                        <Badge variant="outline" className={cn("text-[10px]", ad.type === "premium" ? "border-yellow-300 text-yellow-700 bg-yellow-50" : "border-blue-300 text-blue-700 bg-blue-50")}>
-                          {ad.type === "premium" ? "🏆 Premium" : "📌 Secondary"}
-                        </Badge>
-                        <span className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border", cfg.color)}>
-                          <StatusIcon className="h-3 w-3" />{cfg.label}
-                        </span>
+                      {ad.title
+                        ? <p className="font-semibold text-sm truncate">{ad.title}</p>
+                        : <p className="text-sm text-muted-foreground italic">بدون عنوان</p>
+                      }
+                      {ad.linkUrl && (
+                        <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-accent hover:underline inline-flex items-center gap-1 max-w-full truncate mt-0.5">
+                          <ExternalLink className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{ad.linkUrl}</span>
+                        </a>
+                      )}
+                      <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
+                        {ad.startDate && <span>من {ad.startDate}</span>}
+                        {ad.endDate   && <span>حتى {ad.endDate}</span>}
+                        <span className="inline-flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{ad.duration}ث</span>
                       </div>
                     </div>
 
                     {/* النوع */}
-                    <div className="hidden md:flex justify-center">
-                      <Badge variant="outline" className={cn("text-xs", ad.type === "premium" ? "border-yellow-300 text-yellow-700 bg-yellow-50" : "border-blue-300 text-blue-700 bg-blue-50")}>
-                        {ad.type === "premium" ? "🏆 Premium" : "📌 Secondary"}
+                    <div className="flex justify-center">
+                      <Badge variant="outline" className={cn("text-[11px] whitespace-nowrap", typeCls)}>
+                        {typeLabel}
                       </Badge>
                     </div>
 
                     {/* الحالة */}
-                    <div className="hidden md:flex justify-center">
-                      <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border", cfg.color)}>
+                    <div className="flex justify-center">
+                      <span className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap", cfg.color)}>
                         <StatusIcon className="h-3 w-3" />{cfg.label}
                       </span>
                     </div>
 
                     {/* مشاهدات */}
-                    <div className="hidden md:flex justify-center text-sm font-medium">
+                    <div className="flex justify-center text-sm font-semibold tabular-nums">
                       {(ad.views ?? 0).toLocaleString()}
                     </div>
 
                     {/* نقرات */}
-                    <div className="hidden md:flex justify-center text-sm font-medium">
+                    <div className="flex justify-center text-sm font-semibold tabular-nums">
                       {(ad.clicks ?? 0).toLocaleString()}
                     </div>
 
                     {/* CTR */}
-                    <div className="hidden md:flex justify-center text-sm font-medium">
+                    <div className="flex justify-center text-sm font-semibold tabular-nums">
                       {ctr}
                     </div>
 
                     {/* إجراءات */}
-                    <div className="flex items-center gap-1 md:justify-center flex-wrap">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="إحصائيات" onClick={() => navigate(`/admin/ads/${ad.id}/analytics`)}>
-                        <BarChart2 className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title={ad.active ? "تعطيل" : "تفعيل"} onClick={() => handleToggle(ad)}>
-                        {ad.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" title="تعديل" onClick={() => setEditTarget(ad)}>
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="حذف" onClick={() => setDeleteTarget(ad)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                    <div className="flex items-center justify-center gap-0.5">
+                      {actions}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+
+                  {/* ── Mobile (< md): بطاقة ── */}
+                  <div {...dragProps} className="md:hidden p-3 space-y-2.5">
+
+                    {/* ─ صف 1: مقبض + صورة + معلومات ─ */}
+                    <div className="flex items-start gap-2">
+                      <div className="cursor-grab active:cursor-grabbing text-muted-foreground/30 mt-0.5 shrink-0">
+                        <GripVertical className="h-4 w-4" />
+                      </div>
+                      <div className="w-[4.5rem] h-10 rounded-md overflow-hidden bg-muted shrink-0">
+                        {thumb
+                          ? <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
+                          : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-3.5 w-3.5 text-muted-foreground/30" /></div>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        {ad.title
+                          ? <p className="font-semibold text-sm leading-snug truncate">{ad.title}</p>
+                          : <p className="text-sm text-muted-foreground italic">بدون عنوان</p>
+                        }
+                        {ad.linkUrl && (
+                          <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-accent hover:underline inline-flex items-center gap-1 max-w-full truncate mt-0.5">
+                            <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                            <span className="truncate">{ad.linkUrl}</span>
+                          </a>
+                        )}
+                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5 text-[10px] text-muted-foreground">
+                          {ad.startDate && <span>من {ad.startDate}</span>}
+                          {ad.endDate   && <span>حتى {ad.endDate}</span>}
+                          <span className="inline-flex items-center gap-0.5"><Clock className="h-2 w-2" />{ad.duration}ث</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ─ صف 2: النوع + الحالة ─ */}
+                    <div className="flex items-center gap-2 pr-6">
+                      <Badge variant="outline" className={cn("text-[10px] h-5", typeCls)}>
+                        {typeLabel}
+                      </Badge>
+                      <span className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border h-5", cfg.color)}>
+                        <StatusIcon className="h-2.5 w-2.5" />{cfg.label}
+                      </span>
+                    </div>
+
+                    {/* ─ صف 3: الإحصائيات ─ */}
+                    <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden bg-border pr-6">
+                      {[
+                        { label: "مشاهدات", value: (ad.views ?? 0).toLocaleString() },
+                        { label: "نقرات",   value: (ad.clicks ?? 0).toLocaleString() },
+                        { label: "CTR",     value: ctr },
+                      ].map(stat => (
+                        <div key={stat.label} className="bg-muted/50 text-center py-1.5">
+                          <p className="text-[9px] text-muted-foreground leading-none mb-0.5">{stat.label}</p>
+                          <p className="text-xs font-bold tabular-nums">{stat.value}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* ─ صف 4: الإجراءات ─ */}
+                    <div className="flex items-center gap-0.5 pt-1.5 border-t border-border pr-6">
+                      {actions}
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

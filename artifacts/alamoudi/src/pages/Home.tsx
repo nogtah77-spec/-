@@ -376,69 +376,58 @@ export default function Home() {
 
         {/* ── TikTok Section ── */}
         {!isFiltering && (
-        <section className="py-5 md:py-6 bg-background">
+        <section className="py-4 md:py-5 bg-background">
           <div className="container px-4 sm:px-6">
-            <div className="max-w-4xl mx-auto">
-              <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-4 sm:p-5">
+            <div className="max-w-3xl mx-auto">
+              <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(#A27B5B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
-                <div className="relative flex flex-col sm:flex-row items-stretch gap-4 sm:gap-5">
+                <div className="relative flex flex-row items-center gap-3 sm:gap-4">
 
                   {/* ── عمود البروفايل (يمين في RTL) ── */}
-                  <div className="flex flex-row sm:flex-col items-center sm:items-center sm:justify-center gap-3 sm:gap-2 sm:w-36 sm:shrink-0 sm:border-l sm:border-border sm:pl-5">
+                  <div className="flex flex-col items-center gap-2 w-24 sm:w-28 shrink-0 border-l border-border pl-3 sm:pl-4">
                     {/* صورة الحساب */}
-                    <div className="relative shrink-0">
+                    <div className="relative">
                       <a
                         href={settings.tiktok || "#"}
                         {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className="block w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                        className="block w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
                         aria-label="حساب تيك توك"
                       >
                         {settings.tiktokAvatar ? (
                           <img src={settings.tiktokAvatar} alt={settings.tiktokName || "تيك توك"} className="w-full h-full object-cover" />
                         ) : (
                           <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
-                            <TikTokIcon className="h-6 w-6" />
+                            <TikTokIcon className="h-5 w-5" />
                           </span>
                         )}
                       </a>
                       {/* شارة تيك توك */}
-                      <span className="absolute -bottom-1 -left-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-foreground text-background shadow border-2 border-card">
-                        <TikTokIcon className="h-2.5 w-2.5" />
+                      <span className="absolute -bottom-1 -left-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-foreground text-background shadow border-2 border-card">
+                        <TikTokIcon className="h-2 w-2" />
                       </span>
                     </div>
 
-                    {/* اسم الحساب */}
-                    <div className="flex-1 sm:flex-none sm:text-center">
-                      <a
-                        href={settings.tiktok || "#"}
-                        {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className="hover:text-accent transition-colors"
-                      >
-                        <p className="text-sm font-bold text-foreground leading-snug line-clamp-2 sm:text-center">
-                          {settings.tiktokName || "العمودي للتسويق العقاري"}
-                        </p>
-                      </a>
+                    {/* اسم الحساب — سطر واحد دائماً */}
+                    <a
+                      href={settings.tiktok || "#"}
+                      {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="w-full text-center hover:text-accent transition-colors"
+                      title={settings.tiktokName || "العمودي للتسويق العقاري"}
+                    >
+                      <p className="text-xs font-bold text-foreground truncate">
+                        {settings.tiktokName || "العمودي"}
+                      </p>
+                    </a>
 
-                      {/* زر المتابعة */}
-                      <Button
-                        asChild
-                        size="sm"
-                        className="mt-2 w-full rounded-full text-xs gap-1.5 bg-foreground text-background hover:bg-foreground/80 shadow-sm h-8"
-                      >
-                        <a href={settings.tiktok || "#"} {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                          <TikTokIcon className="h-3 w-3" /> متابعة
-                        </a>
-                      </Button>
-
-                      {/* رابط مشاهدة الكل */}
-                      <a
-                        href={settings.tiktok || "#"}
-                        {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className="mt-1.5 flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-accent transition-colors"
-                      >
-                        مشاهدة الكل <ExternalLink className="h-2.5 w-2.5" />
-                      </a>
-                    </div>
+                    {/* زر المتابعة */}
+                    <a
+                      href={settings.tiktok || "#"}
+                      {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="w-full inline-flex items-center justify-center gap-1 rounded-full bg-foreground text-background hover:bg-foreground/80 transition-colors text-[11px] font-semibold h-7 px-2 shadow-sm"
+                    >
+                      <TikTokIcon className="h-2.5 w-2.5 shrink-0" />
+                      <span>متابعة</span>
+                    </a>
                   </div>
 
                   {/* ── الفيديوهات (يسار في RTL) ── */}
