@@ -9,3 +9,4 @@ export * from "./aiLeads";
 export * from "./settings";
 export * from "./activityLogs";
 export * from "./visitorPings";
+export * from "./adEvents";

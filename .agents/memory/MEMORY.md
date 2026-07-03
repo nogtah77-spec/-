@@ -1,1 +1,2 @@
 - [Alamoudi platform](alamoudi-platform.md) — Arabic RTL real-estate artifact: search must match p.code (seed titles ≠ code), brand-icon SVGs, video-cover priority + tiktok thumbnail proxy.
+- [Ad Analytics system](ad-analytics.md) — Real tracking in ad_events table (raw SQL created, drizzle push needs TTY so use executeSql). Analytics endpoint at GET /api/ads/:id/analytics (requireStaff). View/click endpoints are public — skip staff server-side.

@@ -246,8 +246,9 @@ interface DataContextType {
   addAd: (a: Omit<Ad, "id">) => void;
   updateAd: (id: string, a: Partial<Omit<Ad, "id">>) => void;
   deleteAd: (id: string) => void;
-  trackAdView: (id: string) => void;
-  trackAdClick: (id: string) => void;
+  reorderAds: (ordered: Ad[]) => void;
+  trackAdView: (id: string, payload?: Record<string, unknown>) => void;
+  trackAdClick: (id: string, payload?: Record<string, unknown>) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -628,21 +629,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateSettings({ ads: (settings.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x) });
   const deleteAd = (id: string) =>
     updateSettings({ ads: (settings.ads ?? []).filter(x => x.id !== id) });
-  // تتبّع المشاهدات والنقرات — يُرسَل للـ API وهي تتجاهل الأدمن والموظفين تلقائياً
+  // إعادة ترتيب الإعلانات دفعةً واحدة — يُحدَّث الترتيب في استدعاء settings واحد
+  const reorderAds = (ordered: Ad[]) =>
+    updateSettings({ ads: ordered.map((a, i) => ({ ...a, order: i + 1 })) });
+  // تتبّع المشاهدات والنقرات — يُرسَل للـ API مع بيانات تفصيلية
   // best-effort: لا نعرض خطأ أبداً، ونحدّث الـ state المحلي فوراً للتجاوب
-  const trackAdView = useCallback((id: string) => {
+  const trackAdView = useCallback((id: string, payload?: Record<string, unknown>) => {
     setSettings(prev => ({
       ...prev,
       ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, views: (x.views ?? 0) + 1 } : x),
     }));
-    void api.post(`/ads/${id}/view`, {}).catch(() => { /* best-effort */ });
+    void api.post(`/ads/${id}/view`, payload ?? {}).catch(() => { /* best-effort */ });
   }, []);
-  const trackAdClick = useCallback((id: string) => {
+  const trackAdClick = useCallback((id: string, payload?: Record<string, unknown>) => {
     setSettings(prev => ({
       ...prev,
       ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, clicks: (x.clicks ?? 0) + 1 } : x),
     }));
-    void api.post(`/ads/${id}/click`, {}).catch(() => { /* best-effort */ });
+    void api.post(`/ads/${id}/click`, payload ?? {}).catch(() => { /* best-effort */ });
   }, []);
 
   return (
@@ -661,7 +665,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
-      addAd, updateAd, deleteAd, trackAdView, trackAdClick,
+      addAd, updateAd, deleteAd, reorderAds, trackAdView, trackAdClick,
     }}>
       {children}
     </DataContext.Provider>

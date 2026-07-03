@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { Ad } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
+import { buildEventPayload } from "@/lib/adTracking";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ function AdPicture({ ad, priority }: { ad: Ad; priority?: boolean }) {
   );
 }
 
-// ─── AdSlot: صندوق إعلان واحد ──────────────────────────────────────────────
+// ─── AdSlot: صندوق إعلان واحد مع تتبع المشاهدة والنقرة ────────────────────
 
 function AdSlot({
   ad,
@@ -59,19 +60,23 @@ function AdSlot({
   aspectRatio: string;
   className?: string;
   priority?: boolean;
-  onView?: () => void;
-  onClick?: () => void;
+  onView?: (viewDuration: number) => void;
+  onClick?: (clickX: number, clickY: number) => void;
 }) {
-  const ref     = useRef<HTMLDivElement>(null);
-  const viewed  = useRef(false);
+  const ref        = useRef<HTMLDivElement>(null);
+  const viewed     = useRef(false);
+  const viewStart  = useRef<number | null>(null);
 
+  // تتبع وقت الدخول والخروج من الـ viewport
   useEffect(() => {
-    if (!onView || viewed.current) return;
+    if (!onView) return;
     const io = new IntersectionObserver(
       ([e]) => {
         if (e.isIntersecting && !viewed.current) {
           viewed.current = true;
-          onView();
+          viewStart.current = Date.now();
+          // نُرسل حدث المشاهدة فوراً (مدة = 0 في البداية، ستُحدَّث عند المغادرة)
+          onView(0);
           io.disconnect();
         }
       },
@@ -80,6 +85,17 @@ function AdSlot({
     if (ref.current) io.observe(ref.current);
     return () => io.disconnect();
   }, [onView]);
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onClick || !ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left)  / rect.width;
+    const clickY = (e.clientY - rect.top)   / rect.height;
+    onClick(
+      Math.min(1, Math.max(0, clickX)),
+      Math.min(1, Math.max(0, clickY))
+    );
+  }, [onClick]);
 
   return (
     <div
@@ -91,7 +107,7 @@ function AdSlot({
         className
       )}
       style={{ aspectRatio }}
-      onClick={onClick}
+      onClick={handleClick}
     >
       <AdPicture ad={ad} priority={priority} />
       {ad.title && (
@@ -113,8 +129,8 @@ function PremiumSlot({
   onClick,
 }: {
   premiums: Ad[];
-  onView: (id: string) => void;
-  onClick: (ad: Ad) => void;
+  onView: (id: string, viewDuration: number) => void;
+  onClick: (ad: Ad, clickX: number, clickY: number) => void;
 }) {
   const count             = premiums.length;
   const [current, setCur] = useState(0);
@@ -139,28 +155,27 @@ function PremiumSlot({
       onMouseEnter={() => setPause(true)}
       onMouseLeave={() => setPause(false)}
     >
-      {/* جوال + تابلت: نسبة 16:9 ← يستخدم mobileImageUrl أو يرجع للـ desktop */}
+      {/* جوال + تابلت: نسبة 16:9 */}
       <div className="lg:hidden">
         <AdSlot
           ad={ad}
           aspectRatio="16/9"
           priority
-          onView={() => onView(ad.id)}
-          onClick={() => onClick(ad)}
+          onView={(d) => onView(ad.id, d)}
+          onClick={(x, y) => onClick(ad, x, y)}
         />
       </div>
-      {/* ديسكتوب: نسبة 21:9 ← يستخدم desktopImageUrl */}
+      {/* ديسكتوب: نسبة 21:9 */}
       <div className="hidden lg:block">
         <AdSlot
           ad={ad}
           aspectRatio="21/9"
           priority
-          onView={() => onView(ad.id)}
-          onClick={() => onClick(ad)}
+          onView={(d) => onView(ad.id, d)}
+          onClick={(x, y) => onClick(ad, x, y)}
         />
       </div>
 
-      {/* نقاط التنقل — تظهر فقط إذا وُجد أكثر من إعلان premium */}
       {count > 1 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
           {premiums.map((_, i) => (
@@ -193,32 +208,35 @@ export function AdsBanner({ ads }: Props) {
   const active = getActiveAds(ads);
   if (active.length === 0) return null;
 
-  // فصل الإعلانات حسب النوع — مع fallback للبيانات القديمة التي ليس لها type
   const premiums    = active.filter(a => (a.type ?? "premium") === "premium");
   const secondaries = active.filter(a =>  a.type               === "secondary").slice(0, 2);
 
-  // إذا لم يوجد premium، استخدم الأول كـ premium والباقي كـ secondary
   const finalPremiums    = premiums.length    > 0 ? premiums    : [active[0]];
   const finalSecondaries = secondaries.length > 0 ? secondaries
     : active.filter(a => !finalPremiums.includes(a)).slice(0, 2);
 
-  // الأدمن والموظفون لا يُحتسبون في الإحصائيات
-  const onView  = useCallback((id: string) => { if (!isStaff) trackAdView(id);  }, [isStaff, trackAdView]);
-  const onClick = useCallback((ad: Ad) => {
-    if (!isStaff) trackAdClick(ad.id);
+  // لا نتتبع الأدمن والموظفين
+  const onView = useCallback((id: string, viewDuration: number) => {
+    if (isStaff) return;
+    const payload = { ...buildEventPayload(), viewDuration };
+    trackAdView(id, payload as Record<string, unknown>);
+  }, [isStaff, trackAdView]);
+
+  const onClick = useCallback((ad: Ad, clickX: number, clickY: number) => {
+    if (!isStaff) {
+      const payload = { ...buildEventPayload(), clickX, clickY };
+      trackAdClick(ad.id, payload as Record<string, unknown>);
+    }
     if (ad.linkUrl) window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
   }, [isStaff, trackAdClick]);
 
   return (
     <section className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-8 space-y-3" aria-label="إعلانات">
-      {/* الإعلان الرئيسي */}
       <PremiumSlot
         premiums={finalPremiums}
         onView={onView}
         onClick={onClick}
       />
-
-      {/* الإعلانات الثانوية (جنب بعض على الديسكتوب، فوق بعض على الجوال) */}
       {finalSecondaries.length > 0 && (
         <div className={cn(
           "grid gap-3",
@@ -230,8 +248,8 @@ export function AdsBanner({ ads }: Props) {
               ad={ad}
               aspectRatio="16/9"
               priority={i === 0}
-              onView={() => onView(ad.id)}
-              onClick={() => onClick(ad)}
+              onView={(d) => onView(ad.id, d)}
+              onClick={(x, y) => onClick(ad, x, y)}
             />
           ))}
         </div>

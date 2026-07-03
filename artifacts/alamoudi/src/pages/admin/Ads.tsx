@@ -9,11 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useLocation } from "wouter";
 import {
   Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink,
   Eye, EyeOff, Clock, Info, GripVertical, Monitor, Tablet, Smartphone,
   CheckCircle2, CalendarClock, XCircle, MinusCircle, MousePointerClick, TrendingUp,
-  AlertTriangle, UploadCloud,
+  AlertTriangle, UploadCloud, BarChart2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -527,8 +528,9 @@ function AdDialog({
 // ─── الصفحة الرئيسية ──────────────────────────────────────────────────────────
 
 export default function Ads() {
-  const { settings, addAd, updateAd, deleteAd } = useData();
+  const { settings, addAd, updateAd, deleteAd, reorderAds } = useData();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const ads = [...(settings.ads ?? [])].sort((a, b) => a.order - b.order);
 
@@ -549,8 +551,8 @@ export default function Ads() {
     const reordered = [...ads];
     const [moved]   = reordered.splice(dragIdx.current, 1);
     reordered.splice(dropIdx, 0, moved);
-    // تحديث ترتيب الإعلانات
-    reordered.forEach((ad, i) => updateAd(ad.id, { order: i + 1 }));
+    // تحديث الترتيب دفعةً واحدة في استدعاء settings واحد
+    reorderAds(reordered);
     dragIdx.current = null;
     setDragOver(null);
   };
@@ -784,6 +786,9 @@ export default function Ads() {
 
                     {/* إجراءات */}
                     <div className="flex items-center gap-1 md:justify-center flex-wrap">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="إحصائيات" onClick={() => navigate(`/admin/ads/${ad.id}/analytics`)}>
+                        <BarChart2 className="h-3.5 w-3.5" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8" title={ad.active ? "تعطيل" : "تفعيل"} onClick={() => handleToggle(ad)}>
                         {ad.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                       </Button>
