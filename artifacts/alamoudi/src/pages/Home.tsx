@@ -275,7 +275,7 @@ export default function Home() {
         </section>
 
         {/* ── Ads Banner ── */}
-        {!isFiltering && <AdsBanner ads={settings.ads ?? []} blurSize={settings.adsBlurSize ?? 8} />}
+        {!isFiltering && <AdsBanner ads={settings.ads ?? []} />}
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">

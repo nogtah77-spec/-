@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Ad } from "@/context/DataContext";
+import { useData } from "@/context/DataContext";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -13,91 +14,88 @@ function getActiveAds(ads: Ad[]): Ad[] {
       if (ad.endDate   && new Date(ad.endDate)   < now) return false;
       return true;
     })
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 3);
+    .sort((a, b) => a.order - b.order);
 }
 
-// ─── AdImage: صندوق داخل صندوق (مُصدَّر للاستخدام في الأدمن) ─────────────────
-//
-//  طبقة blur (نفس ألوان الصورة) + الصورة الكاملة والواضحة داخلها.
-//  blurSize = 0  →  صورة عادية بدون إطار
+function getDesktopSrc(ad: Ad): string {
+  return ad.desktopImageUrl || ad.imageUrl || "";
+}
+function getMobileSrc(ad: Ad): string {
+  return ad.mobileImageUrl || ad.desktopImageUrl || ad.imageUrl || "";
+}
 
-export function AdImage({
-  src,
-  alt,
-  blurSize,
-  opacity = 1,
-}: {
-  src: string;
-  alt: string;
-  blurSize: number;
-  opacity?: number;
-}) {
-  const inset      = blurSize === 0 ? 0 : Math.max(4, blurSize * 2);
-  const blurPx     = blurSize === 0 ? 0 : Math.max(6, blurSize * 2.5);
-  const outerR     = 16;
-  const innerR     = blurSize === 0 ? 0 : Math.max(2, outerR - inset);
+// ─── AdPicture: صورة متجاوبة باستخدام <picture> ────────────────────────────
 
+function AdPicture({ ad, priority }: { ad: Ad; priority?: boolean }) {
+  const desktop = getDesktopSrc(ad);
+  const mobile  = getMobileSrc(ad);
   return (
-    <div
-      className="absolute inset-0 w-full h-full"
-      style={{ opacity, transition: "opacity 0.7s ease" }}
-    >
-      {blurSize > 0 && (
-        <img
-          src={src} alt="" aria-hidden draggable={false}
-          className="absolute object-cover object-center"
-          style={{
-            inset:  `-${blurPx * 0.4}px`,
-            width:  `calc(100% + ${blurPx * 0.8}px)`,
-            height: `calc(100% + ${blurPx * 0.8}px)`,
-            filter: `blur(${blurPx}px) brightness(0.85)`,
-          }}
-        />
-      )}
+    <picture className="absolute inset-0 w-full h-full">
+      <source media="(min-width: 1024px)" srcSet={desktop} />
       <img
-        src={src} alt={alt} draggable={false} loading="lazy"
-        className="absolute object-cover object-center"
-        style={{
-          inset:        `${inset}px`,
-          width:        `calc(100% - ${inset * 2}px)`,
-          height:       `calc(100% - ${inset * 2}px)`,
-          borderRadius: `${innerR}px`,
-          boxShadow:    blurSize > 0 ? "0 2px 12px rgba(0,0,0,0.18)" : undefined,
-        }}
+        src={mobile}
+        alt={ad.title || "إعلان"}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        draggable={false}
+        className="w-full h-full object-cover object-center"
       />
-    </div>
+    </picture>
   );
 }
 
-// ─── AdSlot ─────────────────────────────────────────────────────────────────
+// ─── AdSlot: صندوق إعلان واحد ──────────────────────────────────────────────
 
 function AdSlot({
-  ad, allAds, currentIdx, blurSize, onClick, className, crossfade = false,
+  ad,
+  aspectRatio,
+  className,
+  priority,
+  onView,
+  onClick,
 }: {
-  ad: Ad; allAds: Ad[]; currentIdx: number; blurSize: number;
-  onClick: (ad: Ad) => void; className?: string; crossfade?: boolean;
+  ad: Ad;
+  aspectRatio: string;
+  className?: string;
+  priority?: boolean;
+  onView?: () => void;
+  onClick?: () => void;
 }) {
+  const ref     = useRef<HTMLDivElement>(null);
+  const viewed  = useRef(false);
+
+  useEffect(() => {
+    if (!onView || viewed.current) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !viewed.current) {
+          viewed.current = true;
+          onView();
+          io.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    if (ref.current) io.observe(ref.current);
+    return () => io.disconnect();
+  }, [onView]);
+
   return (
     <div
+      ref={ref}
+      role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative overflow-hidden bg-neutral-900",
+        "relative overflow-hidden rounded-2xl bg-neutral-200 shadow-sm",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
         className
       )}
-      onClick={() => onClick(ad)}
+      style={{ aspectRatio }}
+      onClick={onClick}
     >
-      {crossfade
-        ? allAds.map((a, i) => (
-            <AdImage key={a.id} src={a.imageUrl} alt={a.title || `إعلان ${i + 1}`}
-              blurSize={blurSize} opacity={i === currentIdx ? 1 : 0} />
-          ))
-        : <AdImage src={ad.imageUrl} alt={ad.title || "إعلان"} blurSize={blurSize} />
-      }
+      <AdPicture ad={ad} priority={priority} />
       {ad.title && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/55 to-transparent pointer-events-none px-4 py-3 z-20">
-          <p className={cn("text-white font-semibold leading-snug line-clamp-1 drop-shadow-sm",
-            crossfade ? "text-sm" : "text-xs")}>
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent pointer-events-none px-4 pb-3 pt-10 z-10">
+          <p className="text-white font-semibold text-sm leading-snug drop-shadow line-clamp-1 text-right">
             {ad.title}
           </p>
         </div>
@@ -106,126 +104,134 @@ function AdSlot({
   );
 }
 
-// ─── المكوّن الرئيسي ────────────────────────────────────────────────────────
+// ─── PremiumSlot: الإعلان الرئيسي (مع تدوير تلقائي إذا وُجد أكثر من premium) ─
 
-interface Props { ads: Ad[]; blurSize?: number; }
+function PremiumSlot({
+  premiums,
+  onView,
+  onClick,
+}: {
+  premiums: Ad[];
+  onView: (id: string) => void;
+  onClick: (ad: Ad) => void;
+}) {
+  const count             = premiums.length;
+  const [current, setCur] = useState(0);
+  const [paused, setPause]= useState(false);
+  const ad                = premiums[current];
 
-export function AdsBanner({ ads, blurSize = 6 }: Props) {
-  const active  = getActiveAds(ads);
-  const count   = active.length;
-  const [current, setCurrent] = useState(0);
-  const [paused,  setPaused]  = useState(false);
-  const dragStartX = useRef<number | null>(null);
-  const isDragging = useRef(false);
+  const next = useCallback(() => setCur(i => (i + 1) % count), [count]);
 
-  const go   = useCallback((i: number) => setCurrent(((i % count) + count) % count), [count]);
-  const next = useCallback(() => go(current + 1), [go, current]);
-  const prev = useCallback(() => go(current - 1), [go, current]);
-
-  useEffect(() => { setCurrent(0); }, [count]);
+  useEffect(() => { setCur(0); }, [count]);
   useEffect(() => {
     if (count <= 1 || paused) return;
-    const ms = (active[current]?.duration ?? 6) * 1000;
-    const id = setTimeout(next, ms);
-    return () => clearTimeout(id);
-  }, [count, paused, current, next, active]);
+    const ms = (ad?.duration ?? 6) * 1000;
+    const t  = setTimeout(next, ms);
+    return () => clearTimeout(t);
+  }, [count, paused, current, ad, next]);
 
-  const onDragStart = (x: number) => { dragStartX.current = x; isDragging.current = false; };
-  const onDragMove  = (x: number) => {
-    if (dragStartX.current !== null && Math.abs(x - dragStartX.current) > 8) isDragging.current = true;
-  };
-  const onDragEnd = (x: number) => {
-    if (dragStartX.current === null) return;
-    const diff = dragStartX.current - x;
-    if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
-    dragStartX.current = null;
-  };
-  const handleClick = (ad: Ad) => {
-    if (!isDragging.current && ad.linkUrl)
-      window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
-  };
-
-  if (count === 0) return null;
-
-  const mainAd  = active[current];
-  const sideAd1 = count >= 2 ? active[(current + 1) % count] : null;
-  const sideAd2 = count >= 3 ? active[(current + 2) % count] : null;
-
-  const events = {
-    onMouseEnter: () => setPaused(true),
-    onMouseLeave: () => { setPaused(false); dragStartX.current = null; isDragging.current = false; },
-    onMouseDown:  (e: React.MouseEvent)  => onDragStart(e.clientX),
-    onMouseMove:  (e: React.MouseEvent)  => onDragMove(e.clientX),
-    onMouseUp:    (e: React.MouseEvent)  => onDragEnd(e.clientX),
-    onTouchStart: (e: React.TouchEvent)  => onDragStart(e.touches[0].clientX),
-    onTouchMove:  (e: React.TouchEvent)  => onDragMove(e.touches[0].clientX),
-    onTouchEnd:   (e: React.TouchEvent)  => onDragEnd(e.changedTouches[0].clientX),
-  };
+  if (!ad) return null;
 
   return (
-    <section className="container px-4 sm:px-6 pt-4 sm:pt-5">
-      <div className="select-none" {...events}>
-
-        {/* ══ جوال + تابلت: 16:9 ══ */}
-        <div className="lg:hidden w-full" style={{ aspectRatio: "16/9" }}>
-          <AdSlot ad={mainAd} allAds={active} currentIdx={current}
-            blurSize={blurSize} onClick={handleClick} crossfade
-            className="w-full h-full rounded-2xl shadow-md" />
-        </div>
-
-        {/* ══ ديسكتوب ══
-            الفكرة: wrapper واحد بارتفاع ثابت = 38vw (يتوافق مع 21:9 تقريباً)
-            ثم grid بداخله بحيث كل شيء يتكيّف معه */}
-        <div
-          className="hidden lg:grid gap-3"
-          style={{
-            gridTemplateColumns: count >= 2 ? "3fr 2fr" : "1fr",
-            height: "260px",
-          }}
-        >
-          {/* الرئيسي */}
-          <AdSlot ad={mainAd} allAds={active} currentIdx={current}
-            blurSize={blurSize} onClick={handleClick} crossfade
-            className="w-full h-full rounded-2xl shadow-md" />
-
-          {/* جانبي واحد */}
-          {count === 2 && sideAd1 && (
-            <AdSlot ad={sideAd1} allAds={active} currentIdx={current}
-              blurSize={blurSize} onClick={handleClick}
-              className="w-full h-full rounded-2xl shadow-sm" />
-          )}
-
-          {/* جانبيان — يتقاسمان الارتفاع مناصفةً */}
-          {count === 3 && (
-            <div className="flex flex-col gap-2.5 h-full">
-              {sideAd1 && (
-                <AdSlot ad={sideAd1} allAds={active} currentIdx={current}
-                  blurSize={blurSize} onClick={handleClick}
-                  className="flex-1 rounded-xl shadow-sm" />
-              )}
-              {sideAd2 && (
-                <AdSlot ad={sideAd2} allAds={active} currentIdx={current}
-                  blurSize={blurSize} onClick={handleClick}
-                  className="flex-1 rounded-xl shadow-sm" />
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* نقاط التنقل */}
-        {count > 1 && (
-          <div className="flex justify-center gap-1.5 mt-2.5">
-            {active.map((_, i) => (
-              <button key={i} onClick={() => go(i)}
-                className={cn("rounded-full transition-all duration-300",
-                  i === current
-                    ? "w-5 h-1.5 bg-accent"
-                    : "w-1.5 h-1.5 bg-foreground/20 hover:bg-foreground/40")}
-                aria-label={`انتقل للإعلان ${i + 1}`} />
-            ))}
-          </div>
-        )}
+    <div
+      className="relative"
+      onMouseEnter={() => setPause(true)}
+      onMouseLeave={() => setPause(false)}
+    >
+      {/* جوال + تابلت: نسبة 16:9 ← يستخدم mobileImageUrl أو يرجع للـ desktop */}
+      <div className="lg:hidden">
+        <AdSlot
+          ad={ad}
+          aspectRatio="16/9"
+          priority
+          onView={() => onView(ad.id)}
+          onClick={() => onClick(ad)}
+        />
       </div>
+      {/* ديسكتوب: نسبة 21:9 ← يستخدم desktopImageUrl */}
+      <div className="hidden lg:block">
+        <AdSlot
+          ad={ad}
+          aspectRatio="21/9"
+          priority
+          onView={() => onView(ad.id)}
+          onClick={() => onClick(ad)}
+        />
+      </div>
+
+      {/* نقاط التنقل — تظهر فقط إذا وُجد أكثر من إعلان premium */}
+      {count > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+          {premiums.map((_, i) => (
+            <button
+              key={i}
+              onClick={e => { e.stopPropagation(); setCur(i); }}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                i === current
+                  ? "w-5 h-1.5 bg-white shadow"
+                  : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"
+              )}
+              aria-label={`إعلان رئيسي ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── المكوّن الرئيسي ────────────────────────────────────────────────────────
+
+interface Props { ads: Ad[]; }
+
+export function AdsBanner({ ads }: Props) {
+  const { trackAdView, trackAdClick } = useData();
+
+  const active = getActiveAds(ads);
+  if (active.length === 0) return null;
+
+  // فصل الإعلانات حسب النوع — مع fallback للبيانات القديمة التي ليس لها type
+  const premiums    = active.filter(a => (a.type ?? "premium") === "premium");
+  const secondaries = active.filter(a =>  a.type               === "secondary").slice(0, 2);
+
+  // إذا لم يوجد premium، استخدم الأول كـ premium والباقي كـ secondary
+  const finalPremiums    = premiums.length    > 0 ? premiums    : [active[0]];
+  const finalSecondaries = secondaries.length > 0 ? secondaries
+    : active.filter(a => !finalPremiums.includes(a)).slice(0, 2);
+
+  const handleClick = useCallback((ad: Ad) => {
+    trackAdClick(ad.id);
+    if (ad.linkUrl) window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
+  }, [trackAdClick]);
+
+  return (
+    <section className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-8 space-y-3" aria-label="إعلانات">
+      {/* الإعلان الرئيسي */}
+      <PremiumSlot
+        premiums={finalPremiums}
+        onView={trackAdView}
+        onClick={handleClick}
+      />
+
+      {/* الإعلانات الثانوية (جنب بعض على الديسكتوب، فوق بعض على الجوال) */}
+      {finalSecondaries.length > 0 && (
+        <div className={cn(
+          "grid gap-3",
+          finalSecondaries.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
+        )}>
+          {finalSecondaries.map((ad, i) => (
+            <AdSlot
+              key={ad.id}
+              ad={ad}
+              aspectRatio="16/9"
+              priority={i === 0}
+              onView={() => trackAdView(ad.id)}
+              onClick={() => handleClick(ad)}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

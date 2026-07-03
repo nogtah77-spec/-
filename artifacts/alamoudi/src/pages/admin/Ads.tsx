@@ -1,277 +1,577 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useData } from "@/context/DataContext";
-import type { Ad } from "@/context/DataContext";
+import type { Ad, AdType } from "@/context/DataContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { AdImage } from "@/components/ui/AdsBanner";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink, Eye, EyeOff, Clock, Info, Blend } from "lucide-react";
+import {
+  Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink,
+  Eye, EyeOff, Clock, Info, GripVertical, Monitor, Tablet, Smartphone,
+  CheckCircle2, CalendarClock, XCircle, MinusCircle, MousePointerClick, TrendingUp,
+  AlertTriangle, UploadCloud,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-// ─── الإعلان الفارغ الافتراضي ────────────────────────────────────────────────
-const EMPTY_AD: Omit<Ad, "id"> = {
-  imageUrl: "",
-  linkUrl: "",
-  title: "",
-  order: 1,
-  duration: 6,
-  startDate: "",
-  endDate: "",
-  active: true,
+// ─── النسب المطلوبة لكل نوع صورة ──────────────────────────────────────────
+
+const RATIO_SPECS = {
+  premium_desktop:  { w: 21, h: 9,  label: "21:9",  example: "2520×1080 أو 1680×720 أو 840×360" },
+  premium_mobile:   { w: 16, h: 9,  label: "16:9",  example: "1280×720 أو 1920×1080" },
+  secondary_desktop:{ w: 16, h: 9,  label: "16:9",  example: "1280×720 أو 1920×1080" },
+  secondary_mobile: { w: 16, h: 9,  label: "16:9",  example: "1280×720 أو 1920×1080" },
+} as const;
+
+// ─── حساب حالة الإعلان ──────────────────────────────────────────────────────
+
+function getAdStatus(ad: Ad): "active" | "scheduled" | "expired" | "disabled" {
+  if (!ad.active) return "disabled";
+  const now = new Date();
+  if (ad.startDate && new Date(ad.startDate) > now) return "scheduled";
+  if (ad.endDate   && new Date(ad.endDate)   < now) return "expired";
+  return "active";
+}
+
+const STATUS_CONFIG = {
+  active:   { label: "نشط",     color: "bg-green-100 text-green-800 border-green-200",   icon: CheckCircle2 },
+  scheduled:{ label: "مجدول",   color: "bg-blue-100 text-blue-800 border-blue-200",      icon: CalendarClock },
+  expired:  { label: "منتهي",   color: "bg-red-100 text-red-800 border-red-200",         icon: XCircle },
+  disabled: { label: "معطّل",   color: "bg-neutral-100 text-neutral-600 border-neutral-200", icon: MinusCircle },
 };
 
-// ─── نموذج الإعلان ────────────────────────────────────────────────────────────
-function AdForm({
-  value,
-  onChange,
-  onImageFile,
-  imageRef,
-  isFirst,
-}: {
-  value: Omit<Ad, "id">;
-  onChange: (patch: Partial<Omit<Ad, "id">>) => void;
-  onImageFile: (file: File) => void;
-  imageRef: React.RefObject<HTMLInputElement | null>;
-  isFirst?: boolean;
-}) {
-  return (
-    <div className="space-y-4">
+// ─── ضغط الصورة وتحويلها لـ WebP مع التحقق من النسبة ──────────────────────
 
-      {/* الصورة */}
-      <div className="space-y-1.5">
-        <Label>
-          صورة الإعلان <span className="text-destructive">*</span>
+interface ImageResult {
+  dataUrl: string;
+  width: number;
+  height: number;
+  error?: string;
+}
+
+async function validateAndCompress(
+  file: File,
+  spec: { w: number; h: number },
+  tolerance = 0.03
+): Promise<ImageResult> {
+  if (file.size > 10 * 1024 * 1024)
+    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير جداً — الحد الأقصى 10 ميجابايت" };
+
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { naturalWidth: w, naturalHeight: h } = img;
+      const actual   = w / h;
+      const expected = spec.w / spec.h;
+      if (Math.abs(actual - expected) / expected > tolerance) {
+        resolve({
+          dataUrl: "", width: 0, height: 0,
+          error: `النسبة غير صحيحة — صورتك: ${w}×${h} (${(actual).toFixed(2)}:1) — المطلوب: ${spec.w}:${spec.h} (${(expected).toFixed(2)}:1)`,
+        });
+        return;
+      }
+      const canvas = document.createElement("canvas");
+      const MAX    = 1920;
+      const scale  = w > MAX ? MAX / w : 1;
+      canvas.width  = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve({ dataUrl: canvas.toDataURL("image/webp", 0.85), width: canvas.width, height: canvas.height });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({ dataUrl: "", width: 0, height: 0, error: "تعذّر قراءة الصورة" });
+    };
+    img.src = url;
+  });
+}
+
+// ─── مكوّن رفع الصورة مع التحقق ─────────────────────────────────────────────
+
+function ImageUploader({
+  label,
+  sublabel,
+  value,
+  spec,
+  onResult,
+  required,
+}: {
+  label: string;
+  sublabel: string;
+  value: string;
+  spec: { w: number; h: number; label: string; example: string };
+  onResult: (dataUrl: string, error?: string) => void;
+  required?: boolean;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState<string>();
+
+  const handleFile = async (file: File) => {
+    setLoading(true);
+    setError(undefined);
+    const result = await validateAndCompress(file, spec);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+      onResult("", result.error);
+    } else {
+      setError(undefined);
+      onResult(result.dataUrl);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-semibold">
+          {label}
+          {required && <span className="text-destructive mr-1">*</span>}
         </Label>
+        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+          نسبة: <strong>{spec.label}</strong>
+        </span>
+      </div>
+
+      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 space-y-2">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Info className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
+          <span>{sublabel} — مثال: <strong>{spec.example}</strong></span>
+        </div>
+
         <div className="flex gap-2">
           <Input
             placeholder="https://..."
-            value={value.imageUrl}
-            onChange={e => onChange({ imageUrl: e.target.value })}
-            className="flex-1"
+            value={value}
+            onChange={e => onResult(e.target.value)}
+            className="flex-1 text-sm h-9"
           />
           <Button
             type="button"
             variant="outline"
-            size="icon"
-            title="رفع صورة من الجهاز"
-            onClick={() => imageRef.current?.click()}
+            size="sm"
+            className="gap-1.5 shrink-0 h-9"
+            disabled={loading}
+            onClick={() => inputRef.current?.click()}
           >
-            <ImageIcon className="h-4 w-4" />
+            <UploadCloud className="h-3.5 w-3.5" />
+            {loading ? "جارٍ الفحص..." : "رفع"}
           </Button>
           <input
-            ref={imageRef}
+            ref={inputRef}
             type="file"
             accept="image/*"
             className="hidden"
             onChange={e => {
               const f = e.target.files?.[0];
-              if (f) onImageFile(f);
+              if (f) handleFile(f);
               e.target.value = "";
             }}
           />
         </div>
 
-        {/* مواصفات الصورة */}
-        <div className="rounded-lg bg-muted/40 border border-border p-2.5 space-y-1 text-xs text-muted-foreground" dir="rtl">
-          <p className="font-semibold text-foreground flex items-center gap-1.5">
-            <Info className="h-3.5 w-3.5" />
-            مواصفات الصورة المناسبة للبانر
-          </p>
-          <p>📐 المقاس الموصى به: <strong className="text-foreground">1200 × 350 بكسل</strong> (نسبة عرض 3.4:1)</p>
-          <p>🎯 ضع النص والشعار في <strong className="text-foreground">وسط الصورة</strong> لأن الحواف قد تُقطع على بعض الشاشات</p>
-          <p>🚫 لا تترك هوامش أو مساحات بيضاء حول التصميم — امتلئ كل مساحة الصورة</p>
-          <p>📁 الصيغ المقبولة: JPG, PNG, WebP — الحد الأقصى 5MB</p>
-        </div>
+        {error && (
+          <div className="flex items-start gap-2 rounded bg-destructive/10 border border-destructive/20 px-3 py-2 text-xs text-destructive">
+            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+            {error}
+          </div>
+        )}
 
-        {/* معاينة */}
-        {value.imageUrl && (
-          <div className="mt-2 relative rounded-lg border border-border overflow-hidden bg-muted/30" style={{ height: "90px" }}>
-            <img
-              src={value.imageUrl}
-              alt="معاينة"
-              className="w-full h-full object-cover object-center"
-            />
-            <div className="absolute inset-0 flex items-end justify-start p-1.5 pointer-events-none">
-              <span className="text-[10px] bg-black/50 text-white rounded px-1.5 py-0.5">معاينة البانر</span>
+        {value && !error && (
+          <div className="relative rounded overflow-hidden border border-border bg-muted" style={{ aspectRatio: `${spec.w}/${spec.h}` }}>
+            <img src={value} alt="معاينة" className="absolute inset-0 w-full h-full object-cover object-center" />
+            {/* Safe Area Overlay */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div
+                className="absolute border-2 border-dashed border-white/70 rounded"
+                style={{ inset: "10% 15%" }}
+              />
+              <div className="absolute bottom-[10%] right-[15%] bg-black/50 text-white text-[9px] px-1 py-0.5 rounded">
+                منطقة آمنة
+              </div>
             </div>
           </div>
         )}
-      </div>
-
-      {/* العنوان */}
-      <div className="space-y-1.5">
-        <Label>
-          العنوان <span className="text-muted-foreground text-xs">(اختياري — يظهر على الصورة)</span>
-        </Label>
-        <Input
-          placeholder="مثال: مجمع سكني فاخر — الساحل الشمالي"
-          value={value.title ?? ""}
-          onChange={e => onChange({ title: e.target.value })}
-        />
-      </div>
-
-      {/* رابط الإعلان */}
-      <div className="space-y-1.5">
-        <Label>
-          رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري — الضغط على الإعلان يفتحه)</span>
-        </Label>
-        <div className="flex gap-2">
-          <Input
-            placeholder="https://..."
-            value={value.linkUrl ?? ""}
-            onChange={e => onChange({ linkUrl: e.target.value })}
-            className="flex-1"
-          />
-          {value.linkUrl && (
-            <Button type="button" variant="outline" size="icon" asChild>
-              <a href={value.linkUrl} target="_blank" rel="noopener noreferrer" title="افتح الرابط">
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* مدة الظهور + الترتيب */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            مدة الظهور (ثانية)
-          </Label>
-          <Input
-            type="number"
-            min={2}
-            max={60}
-            step={1}
-            value={value.duration ?? 6}
-            onChange={e => onChange({ duration: Math.max(2, Number(e.target.value)) })}
-          />
-          <p className="text-[11px] text-muted-foreground">
-            {isFirst
-              ? "كم ثانية يظهر هذا الإعلان في اللوحة الرئيسية قبل الانتقال"
-              : "كم ثانية يبقى في اللوحة الرئيسية عند دوره"}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <Label>ترتيب الظهور</Label>
-          <Input
-            type="number"
-            min={1}
-            value={value.order}
-            onChange={e => onChange({ order: Number(e.target.value) })}
-          />
-          <p className="text-[11px] text-muted-foreground">
-            الترتيب 1 = الإعلان الذي يبدأ أولاً في اللوحة الكبيرة
-          </p>
-        </div>
-      </div>
-
-      {/* تاريخ البداية والنهاية */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <Label>تاريخ البداية <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
-          <Input
-            type="date"
-            value={value.startDate ?? ""}
-            onChange={e => onChange({ startDate: e.target.value })}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>تاريخ الانتهاء <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
-          <Input
-            type="date"
-            value={value.endDate ?? ""}
-            onChange={e => onChange({ endDate: e.target.value })}
-          />
-        </div>
-      </div>
-
-      {/* تفعيل / تعطيل */}
-      <div className="flex items-center gap-3 py-1">
-        <Switch
-          id="ad-active"
-          checked={value.active}
-          onCheckedChange={v => onChange({ active: v })}
-        />
-        <Label htmlFor="ad-active" className="cursor-pointer">
-          {value.active ? "مفعّل — يظهر للزوار" : "معطّل — مخفي عن الزوار"}
-        </Label>
       </div>
     </div>
   );
 }
 
+// ─── معاينة مباشرة (Desktop / Tablet / Mobile) ──────────────────────────────
+
+type DeviceTab = "desktop" | "tablet" | "mobile";
+
+function LivePreview({
+  adType,
+  desktopSrc,
+  mobileSrc,
+  title,
+}: {
+  adType: AdType;
+  desktopSrc: string;
+  mobileSrc: string;
+  title: string;
+}) {
+  const [device, setDevice] = useState<DeviceTab>("desktop");
+
+  const isPremium = adType === "premium";
+
+  // النسبة حسب الجهاز
+  const ratio = device === "desktop" && isPremium ? "21/9" : "16/9";
+  // الصورة حسب الجهاز
+  const src   = device === "desktop" ? (desktopSrc || mobileSrc) : (mobileSrc || desktopSrc);
+
+  const devices: { key: DeviceTab; label: string; icon: typeof Monitor }[] = [
+    { key: "desktop", label: "ديسكتوب", icon: Monitor },
+    { key: "tablet",  label: "تابلت",   icon: Tablet },
+    { key: "mobile",  label: "جوال",    icon: Smartphone },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-semibold">معاينة مباشرة</Label>
+        <div className="flex rounded-lg border border-border overflow-hidden">
+          {devices.map(d => (
+            <button
+              key={d.key}
+              type="button"
+              onClick={() => setDevice(d.key)}
+              className={cn(
+                "flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-colors",
+                device === d.key
+                  ? "bg-accent text-white"
+                  : "text-muted-foreground hover:bg-muted"
+              )}
+            >
+              <d.icon className="h-3.5 w-3.5" />
+              {d.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-xl border border-border bg-neutral-200 mx-auto transition-all",
+          device === "mobile"  && "max-w-[280px]",
+          device === "tablet"  && "max-w-[480px]",
+          device === "desktop" && "w-full"
+        )}
+        style={{ aspectRatio: ratio }}
+      >
+        {src ? (
+          <>
+            <img
+              src={src}
+              alt="معاينة"
+              className="absolute inset-0 w-full h-full object-cover object-center"
+            />
+            {/* Safe Area */}
+            <div className="absolute pointer-events-none" style={{ inset: "10% 15%" }}>
+              <div className="w-full h-full border-2 border-dashed border-white/60 rounded" />
+              <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[9px] px-1 py-0.5 rounded">
+                منطقة آمنة
+              </div>
+            </div>
+            {/* عنوان */}
+            {title && (
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8">
+                <p className="text-white text-xs font-semibold text-right line-clamp-1">{title}</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground/40">
+            <ImageIcon className="h-8 w-8" />
+            <span className="text-xs">ارفع صورة لرؤية المعاينة</span>
+          </div>
+        )}
+      </div>
+
+      <div className="text-xs text-muted-foreground text-center">
+        {isPremium
+          ? device === "desktop" ? "نسبة 21:9 على الديسكتوب" : "نسبة 16:9 على الجوال والتابلت"
+          : "نسبة 16:9 على جميع الشاشات"
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─── بيانات الإعلان الافتراضية ──────────────────────────────────────────────
+
+type AdForm = Omit<Ad, "id" | "views" | "clicks">;
+
+function emptyAd(type: AdType = "secondary"): AdForm {
+  return {
+    type,
+    desktopImageUrl: "",
+    mobileImageUrl: "",
+    linkUrl: "",
+    title: "",
+    order: 1,
+    duration: 6,
+    startDate: "",
+    endDate: "",
+    active: true,
+  };
+}
+
+// ─── نافذة الإضافة / التعديل ─────────────────────────────────────────────────
+
+function AdDialog({
+  open,
+  title,
+  initial,
+  onSave,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  initial: AdForm;
+  onSave: (f: AdForm) => void;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState<AdForm>(initial);
+  const patch = (p: Partial<AdForm>) => setForm(v => ({ ...v, ...p }));
+
+  // إعادة التهيئة عند فتح النافذة
+  const prevOpen = useRef(false);
+  if (open && !prevOpen.current) { setForm(initial); }
+  prevOpen.current = open;
+
+  const isPremium = form.type === "premium";
+  const desktopSpec = isPremium ? RATIO_SPECS.premium_desktop : RATIO_SPECS.secondary_desktop;
+  const mobileSpec  = isPremium ? RATIO_SPECS.premium_mobile  : RATIO_SPECS.secondary_mobile;
+
+  const [desktopErr, setDesktopErr] = useState<string>();
+
+  const handleSave = () => {
+    if (!form.desktopImageUrl.trim()) return;
+    if (desktopErr) return;
+    onSave(form);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent
+        className="max-w-2xl max-h-[92vh] overflow-y-auto"
+        dir="rtl"
+      >
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 py-2">
+
+          {/* نوع الإعلان */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">نوع الإعلان</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {(["premium", "secondary"] as AdType[]).map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => patch({ type: t })}
+                  className={cn(
+                    "rounded-xl border-2 p-3 text-right transition-all",
+                    form.type === t
+                      ? "border-accent bg-accent/5"
+                      : "border-border hover:border-muted-foreground/40"
+                  )}
+                >
+                  <div className="font-semibold text-sm mb-0.5">
+                    {t === "premium" ? "🏆 Premium" : "📌 Secondary"}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {t === "premium"
+                      ? "إعلان رئيسي — عرض كامل — نسبة 21:9"
+                      : "إعلان ثانوي — أسفل الرئيسي — نسبة 16:9"
+                    }
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-border" />
+
+          {/* رفع الصور */}
+          <ImageUploader
+            label={`صورة الديسكتوب ${isPremium ? "(21:9)" : "(16:9)"}`}
+            sublabel={isPremium
+              ? "الصورة الكبيرة تظهر على الحاسوب والشاشات الكبيرة"
+              : "تظهر على جميع الأجهزة ما لم تُرفع صورة جوال"
+            }
+            value={form.desktopImageUrl}
+            spec={desktopSpec}
+            required
+            onResult={(url, err) => {
+              patch({ desktopImageUrl: url || "" });
+              setDesktopErr(err);
+            }}
+          />
+
+          <ImageUploader
+            label={`صورة الجوال (16:9) — اختياري`}
+            sublabel="إذا لم تُرفع، ستُستخدم صورة الديسكتوب تلقائياً"
+            value={form.mobileImageUrl || ""}
+            spec={mobileSpec}
+            onResult={(url) => patch({ mobileImageUrl: url || "" })}
+          />
+
+          <div className="border-t border-border" />
+
+          {/* معاينة مباشرة */}
+          <LivePreview
+            adType={form.type}
+            desktopSrc={form.desktopImageUrl}
+            mobileSrc={form.mobileImageUrl || ""}
+            title={form.title || ""}
+          />
+
+          <div className="border-t border-border" />
+
+          {/* بيانات الإعلان */}
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>العنوان <span className="text-muted-foreground text-xs">(اختياري — يظهر فوق الصورة)</span></Label>
+              <Input
+                placeholder="مثال: مجمع سكني فاخر — الساحل الشمالي"
+                value={form.title ?? ""}
+                onChange={e => patch({ title: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://..."
+                  value={form.linkUrl ?? ""}
+                  onChange={e => patch({ linkUrl: e.target.value })}
+                  className="flex-1"
+                />
+                {form.linkUrl && (
+                  <Button type="button" variant="outline" size="icon" asChild>
+                    <a href={form.linkUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  مدة الظهور (ثانية)
+                </Label>
+                <Input
+                  type="number" min={2} max={60}
+                  value={form.duration ?? 6}
+                  onChange={e => patch({ duration: Math.max(2, Number(e.target.value)) })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>ترتيب الظهور</Label>
+                <Input
+                  type="number" min={1}
+                  value={form.order}
+                  onChange={e => patch({ order: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>تاريخ البداية <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+                <Input type="date" value={form.startDate ?? ""} onChange={e => patch({ startDate: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>تاريخ الانتهاء <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+                <Input type="date" value={form.endDate ?? ""} onChange={e => patch({ endDate: e.target.value })} />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <Switch id="dlg-active" checked={form.active} onCheckedChange={v => patch({ active: v })} />
+              <Label htmlFor="dlg-active" className="cursor-pointer">
+                {form.active ? "مفعّل — يظهر للزوار فوراً" : "معطّل — مخفي عن الزوار"}
+              </Label>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إلغاء</Button>
+          <Button
+            className="bg-accent text-white hover:bg-accent/90"
+            disabled={!form.desktopImageUrl.trim() || !!desktopErr}
+            onClick={handleSave}
+          >
+            حفظ
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── الصفحة الرئيسية ──────────────────────────────────────────────────────────
+
 export default function Ads() {
-  const { settings, updateSettings, addAd, updateAd, deleteAd } = useData();
-  const ads = [...(settings.ads ?? [])].sort((a, b) => a.order - b.order);
+  const { settings, addAd, updateAd, deleteAd } = useData();
   const { toast } = useToast();
 
-  // state محلي للمعاينة الفورية — يُحدَّث فوراً مع الـ slider قبل الحفظ
-  const [previewBlur, setPreviewBlur] = useState<number>(settings.adsBlurSize ?? 8);
+  const ads = [...(settings.ads ?? [])].sort((a, b) => a.order - b.order);
 
   const [showAdd,      setShowAdd]      = useState(false);
   const [editTarget,   setEditTarget]   = useState<Ad | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Ad | null>(null);
-  const [newAd,        setNewAd]        = useState<Omit<Ad, "id">>({ ...EMPTY_AD });
-  const [editAd,       setEditAd]       = useState<Omit<Ad, "id">>({ ...EMPTY_AD });
+  const [addType,      setAddType]      = useState<AdType>("secondary");
 
-  const addImgRef  = useRef<HTMLInputElement>(null);
-  const editImgRef = useRef<HTMLInputElement>(null);
+  // ─── Drag & Drop ──────────────────────────────────────────────────────────
+  const dragIdx = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
 
-  const toBase64 = (file: File, cb: (b64: string) => void) => {
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "الصورة كبيرة جداً (الحد 5MB)", variant: "destructive" });
-      return;
-    }
-    const r = new FileReader();
-    r.onload = e => cb(e.target?.result as string);
-    r.readAsDataURL(file);
+  const onDragStart = (i: number) => { dragIdx.current = i; };
+  const onDragOver  = (e: React.DragEvent, i: number) => { e.preventDefault(); setDragOver(i); };
+  const onDrop      = (e: React.DragEvent, dropIdx: number) => {
+    e.preventDefault();
+    if (dragIdx.current === null || dragIdx.current === dropIdx) { setDragOver(null); return; }
+    const reordered = [...ads];
+    const [moved]   = reordered.splice(dragIdx.current, 1);
+    reordered.splice(dropIdx, 0, moved);
+    // تحديث ترتيب الإعلانات
+    reordered.forEach((ad, i) => updateAd(ad.id, { order: i + 1 }));
+    dragIdx.current = null;
+    setDragOver(null);
   };
+  const onDragEnd = () => { dragIdx.current = null; setDragOver(null); };
 
-  const handleAdd = () => {
-    if (!newAd.imageUrl.trim()) {
-      toast({ title: "صورة الإعلان مطلوبة", variant: "destructive" });
-      return;
-    }
-    addAd(newAd);
-    setNewAd({ ...EMPTY_AD, order: ads.length + 2 });
+  // ─── حفظ جديد ──────────────────────────────────────────────────────────
+  const handleAdd = useCallback((form: Omit<Ad, "id" | "views" | "clicks">) => {
+    addAd({ ...form, views: 0, clicks: 0, order: ads.length + 1 });
     setShowAdd(false);
     toast({ title: "تم إضافة الإعلان ✓" });
-  };
+  }, [addAd, ads.length, toast]);
 
-  const openEdit = (ad: Ad) => {
-    setEditTarget(ad);
-    setEditAd({
-      imageUrl:  ad.imageUrl,
-      linkUrl:   ad.linkUrl   ?? "",
-      title:     ad.title     ?? "",
-      order:     ad.order,
-      duration:  ad.duration  ?? 6,
-      startDate: ad.startDate ?? "",
-      endDate:   ad.endDate   ?? "",
-      active:    ad.active,
-    });
-  };
-
-  const handleEdit = () => {
+  // ─── تعديل ────────────────────────────────────────────────────────────────
+  const handleEdit = useCallback((form: Omit<Ad, "id" | "views" | "clicks">) => {
     if (!editTarget) return;
-    if (!editAd.imageUrl.trim()) {
-      toast({ title: "صورة الإعلان مطلوبة", variant: "destructive" });
-      return;
-    }
-    updateAd(editTarget.id, editAd);
+    updateAd(editTarget.id, form);
     setEditTarget(null);
     toast({ title: "تم تحديث الإعلان ✓" });
-  };
+  }, [editTarget, updateAd, toast]);
 
+  // ─── حذف ──────────────────────────────────────────────────────────────────
   const handleDelete = () => {
     if (!deleteTarget) return;
     deleteAd(deleteTarget.id);
@@ -281,272 +581,273 @@ export default function Ads() {
 
   const handleToggle = (ad: Ad) => updateAd(ad.id, { active: !ad.active });
 
-  const atMax = ads.length >= 3;
+  // ─── إحصائيات إجمالية ────────────────────────────────────────────────────
+  const totalViews  = ads.reduce((s, a) => s + (a.views ?? 0), 0);
+  const totalClicks = ads.reduce((s, a) => s + (a.clicks ?? 0), 0);
+  const avgCTR      = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6" dir="rtl">
 
         {/* ─── رأس الصفحة ─── */}
-        <div className="flex justify-between items-start gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">إدارة الإعلانات</h1>
-            <p className="text-muted-foreground mt-1 flex items-center gap-2">
-              الإعلانات التي تظهر في الصفحة الرئيسية
-              <span className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
-                atMax ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-              )}>
-                {ads.length} / 3
-              </span>
+            <h1 className="text-2xl font-bold">إدارة الإعلانات</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {ads.length} إعلان — {ads.filter(a => getAdStatus(a) === "active").length} نشط
             </p>
           </div>
-          <Button
-            className="gap-2 bg-accent text-white hover:bg-accent/90 disabled:opacity-40 shrink-0"
-            disabled={atMax}
-            title={atMax ? "وصلت للحد الأقصى — احذف إعلاناً أولاً" : undefined}
-            onClick={() => {
-              setNewAd({ ...EMPTY_AD, order: ads.length + 1 });
-              setShowAdd(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> إضافة إعلان
-          </Button>
-        </div>
-
-        {/* ─── بطاقة الشرح ─── */}
-        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2 text-sm" dir="rtl">
-          <p className="font-semibold text-foreground">كيف تعمل الإعلانات؟</p>
-          <div className="space-y-1 text-muted-foreground text-[13px] leading-relaxed">
-            <p>
-              🖥️ <strong className="text-foreground">الديسكتوب مع 3 إعلانات:</strong>{" "}
-              الإعلان الأول يأخذ اللوحة الكبيرة (60% من العرض) ويبقى فيها بمدة تحددها أنت،
-              ثم يُبدَّل بالثاني ثم الثالث وهكذا. اللوحتان الجانبيتان تعرضان دائماً
-              الإعلانات التالية في الترتيب كمعاينة.
-            </p>
-            <p>
-              📱 <strong className="text-foreground">الجوال والتابلت:</strong>{" "}
-              إعلان واحد يظهر في كل مرة ويتبدل تلقائياً بحسب مدة كل إعلان.
-            </p>
-            <p>
-              ⏱️ <strong className="text-foreground">مدة الظهور:</strong>{" "}
-              تحدد لكل إعلان كم ثانية يبقى ظاهراً في اللوحة الرئيسية قبل الانتقال للتالي.
-              الضغط على أحد الإعلانات يوقف التبديل التلقائي مؤقتاً.
-            </p>
-            <p>
-              🗓️ <strong className="text-foreground">مدة العرض بالتواريخ:</strong>{" "}
-              يمكنك تحديد تاريخ بداية وانتهاء لكل إعلان — الإعلان لن يظهر خارج هذه المدة.
-            </p>
-            <p>
-              🎨 <strong className="text-foreground">المقاس المثالي للصورة:</strong>{" "}
-              <strong>1200 × 350 بكسل</strong> — ضع كل المحتوى المهم في وسط الصورة.
-            </p>
-          </div>
-        </div>
-
-        {/* ─── إعداد حجم Blur على الحواف ─── */}
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3" dir="rtl">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Blend className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-sm font-semibold">تأثير Blur على حواف الإعلانات</Label>
-            </div>
-            <span className="text-xs font-mono text-accent bg-accent/10 rounded px-2 py-0.5 min-w-[2.5rem] text-center">
-              {previewBlur}
-            </span>
-          </div>
-          <Slider
-            min={0}
-            max={20}
-            step={1}
-            value={[previewBlur]}
-            onValueChange={([v]) => {
-              setPreviewBlur(v);
-              updateSettings({ adsBlurSize: v });
-            }}
-            className="w-full"
-          />
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            القيمة <strong>0</strong> بدون إطار — القيمة <strong>20</strong> إطار عريض. المعاينة تظهر فوراً على الإعلانات أدناه.
-          </p>
-        </div>
-
-        {/* ─── شبكة الإعلانات ─── */}
-        {ads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-16 gap-3">
-            <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
-            <p className="text-muted-foreground font-medium">لا توجد إعلانات بعد</p>
+          <div className="flex gap-2 shrink-0">
             <Button
               variant="outline"
-              className="gap-2 mt-1"
-              onClick={() => { setNewAd({ ...EMPTY_AD }); setShowAdd(true); }}
+              className="gap-2"
+              onClick={() => { setAddType("secondary"); setShowAdd(true); }}
             >
-              <Plus className="h-4 w-4" /> أضف أول إعلان
+              <Plus className="h-4 w-4" /> Secondary
+            </Button>
+            <Button
+              className="gap-2 bg-accent text-white hover:bg-accent/90"
+              onClick={() => { setAddType("premium"); setShowAdd(true); }}
+            >
+              <Plus className="h-4 w-4" /> Premium
             </Button>
           </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {ads.map((ad, idx) => (
-              <div
-                key={ad.id}
-                className={cn(
-                  "relative rounded-2xl border bg-card overflow-hidden shadow-sm transition-all",
-                  !ad.active && "opacity-60"
-                )}
-              >
-                {/* صورة الإعلان — معاينة فورية لتأثير الـ blur */}
-                <div className="relative bg-muted overflow-hidden rounded-t-2xl" style={{ height: "120px" }}>
-                  {ad.imageUrl ? (
-                    <AdImage
-                      src={ad.imageUrl}
-                      alt={ad.title || "إعلان"}
-                      blurSize={previewBlur}
-                      opacity={1}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                      <ImageIcon className="h-8 w-8" />
-                    </div>
-                  )}
+        </div>
 
-                  {/* شارة الترتيب */}
-                  <div className="absolute top-2 left-2 flex items-center gap-1">
-                    <span className="bg-black/60 backdrop-blur-sm text-white text-[11px] font-bold rounded-full px-2 py-0.5">
-                      {idx === 0 ? "① رئيسي" : idx === 1 ? "② جانبي" : "③ جانبي"}
-                    </span>
-                  </div>
-
-                  {/* شارة الحالة */}
-                  <div className={cn(
-                    "absolute top-2 right-2 text-[11px] font-medium px-2 py-0.5 rounded-full",
-                    ad.active ? "bg-green-500/90 text-white" : "bg-muted-foreground/60 text-white"
-                  )}>
-                    {ad.active ? "مفعّل" : "معطّل"}
-                  </div>
-                </div>
-
-                {/* معلومات */}
-                <div className="p-3 space-y-2">
-                  <div className="space-y-1">
-                    {ad.title ? (
-                      <p className="text-sm font-semibold text-foreground leading-snug">{ad.title}</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">بدون عنوان</p>
-                    )}
-
-                    {ad.linkUrl && (
-                      <a
-                        href={ad.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-accent hover:underline flex items-center gap-1 truncate"
-                      >
-                        <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{ad.linkUrl}</span>
-                      </a>
-                    )}
-
-                    {/* التفاصيل */}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {ad.duration ?? 6} ثانية
-                      </span>
-                      <span>ترتيب: {ad.order}</span>
-                      {ad.startDate && <span>من {ad.startDate}</span>}
-                      {ad.endDate   && <span>حتى {ad.endDate}</span>}
-                    </div>
-                  </div>
-
-                  {/* أزرار الإجراءات */}
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-border">
-                    <Button
-                      variant="ghost" size="sm"
-                      className="h-8 px-2 text-muted-foreground hover:text-foreground gap-1 flex-1 text-xs"
-                      onClick={() => handleToggle(ad)}
-                    >
-                      {ad.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      {ad.active ? "تعطيل" : "تفعيل"}
-                    </Button>
-                    <Button
-                      variant="ghost" size="sm"
-                      className="h-8 px-2 text-muted-foreground hover:text-foreground gap-1 flex-1 text-xs"
-                      onClick={() => openEdit(ad)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" /> تعديل
-                    </Button>
-                    <Button
-                      variant="ghost" size="sm"
-                      className="h-8 px-2 text-muted-foreground hover:text-destructive gap-1 flex-1 text-xs"
-                      onClick={() => setDeleteTarget(ad)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" /> حذف
-                    </Button>
-                  </div>
-                </div>
+        {/* ─── بطاقات الإحصائيات ─── */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "المشاهدات", value: totalViews.toLocaleString(), icon: Eye,              color: "text-blue-600" },
+            { label: "النقرات",   value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-green-600" },
+            { label: "معدّل النقر",value: `${avgCTR}%`,               icon: TrendingUp,        color: "text-accent" },
+          ].map(s => (
+            <div key={s.label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
+              <s.icon className={cn("h-5 w-5 shrink-0", s.color)} />
+              <div>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <p className="text-lg font-bold leading-tight">{s.value}</p>
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+
+        {/* ─── شرح الأنواع ─── */}
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2 text-sm">
+          <p className="font-semibold">كيف تعمل الإعلانات؟</p>
+          <div className="space-y-1.5 text-muted-foreground text-[13px] leading-relaxed">
+            <p>🏆 <strong className="text-foreground">Premium (21:9):</strong> إعلان رئيسي بعرض كامل — يدور تلقائياً إذا وُجد أكثر من إعلان Premium نشط.</p>
+            <p>📌 <strong className="text-foreground">Secondary (16:9):</strong> إعلانان أسفل الرئيسي جنباً إلى جنب — على الجوال تظهر فوق بعض.</p>
+            <p>📐 <strong className="text-foreground">الصور:</strong> يجب أن تطابق النسبة المطلوبة (±3%) وإلا لن يُقبل الرفع.</p>
+            <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — إذا لم تُرفع، ستُستخدم صورة الديسكتوب تلقائياً مع قص جانبي طفيف.</p>
+            <p>🔀 <strong className="text-foreground">الترتيب:</strong> اسحب الإعلانات لتغيير ترتيبها.</p>
+          </div>
+        </div>
+
+        {/* ─── جدول الإعلانات ─── */}
+        {ads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/20 py-20 gap-3">
+            <ImageIcon className="h-12 w-12 text-muted-foreground/20" />
+            <p className="text-muted-foreground font-medium">لا توجد إعلانات بعد</p>
+            <div className="flex gap-2 mt-1">
+              <Button variant="outline" className="gap-2" onClick={() => { setAddType("secondary"); setShowAdd(true); }}>
+                <Plus className="h-4 w-4" /> أضف Secondary
+              </Button>
+              <Button className="gap-2 bg-accent text-white hover:bg-accent/90" onClick={() => { setAddType("premium"); setShowAdd(true); }}>
+                <Plus className="h-4 w-4" /> أضف Premium
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border overflow-hidden">
+            {/* رأس الجدول */}
+            <div className="hidden md:grid bg-muted/50 px-4 py-2.5 text-xs font-semibold text-muted-foreground border-b border-border"
+              style={{ gridTemplateColumns: "2rem 5rem 1fr 6rem 7rem 5rem 5rem 5rem 7rem" }}>
+              <span />
+              <span>صورة</span>
+              <span>الإعلان</span>
+              <span className="text-center">النوع</span>
+              <span className="text-center">الحالة</span>
+              <span className="text-center">مشاهدات</span>
+              <span className="text-center">نقرات</span>
+              <span className="text-center">CTR</span>
+              <span className="text-center">إجراءات</span>
+            </div>
+
+            {/* صفوف الجدول */}
+            <div>
+              {ads.map((ad, idx) => {
+                const status    = getAdStatus(ad);
+                const cfg       = STATUS_CONFIG[status];
+                const StatusIcon = cfg.icon;
+                const ctr       = (ad.views ?? 0) > 0
+                  ? (((ad.clicks ?? 0) / (ad.views ?? 1)) * 100).toFixed(1) + "%"
+                  : "—";
+                const thumb = ad.desktopImageUrl || ad.imageUrl || "";
+
+                return (
+                  <div
+                    key={ad.id}
+                    draggable
+                    onDragStart={() => onDragStart(idx)}
+                    onDragOver={e  => onDragOver(e, idx)}
+                    onDrop={e      => onDrop(e, idx)}
+                    onDragEnd={onDragEnd}
+                    className={cn(
+                      "grid items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 transition-colors",
+                      "grid-cols-[2rem_1fr] md:grid-cols-[2rem_5rem_1fr_6rem_7rem_5rem_5rem_5rem_7rem]",
+                      dragOver === idx && "bg-accent/5 border-accent/30",
+                      !ad.active && "opacity-60"
+                    )}
+                  >
+                    {/* مقبض السحب */}
+                    <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                      <GripVertical className="h-5 w-5" />
+                    </div>
+
+                    {/* الصورة المصغرة */}
+                    <div className="hidden md:block rounded-lg overflow-hidden bg-muted aspect-video">
+                      {thumb
+                        ? <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
+                        : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-4 w-4 text-muted-foreground/30" /></div>
+                      }
+                    </div>
+
+                    {/* معلومات */}
+                    <div className="min-w-0">
+                      <div className="flex items-start gap-2">
+                        {/* الصورة على الجوال */}
+                        <div className="md:hidden flex-shrink-0 rounded-lg overflow-hidden bg-muted w-14 h-10">
+                          {thumb
+                            ? <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
+                            : <div className="w-full h-full flex items-center justify-center"><ImageIcon className="h-3 w-3 text-muted-foreground/30" /></div>
+                          }
+                        </div>
+                        <div className="min-w-0">
+                          {ad.title
+                            ? <p className="font-semibold text-sm truncate">{ad.title}</p>
+                            : <p className="text-sm text-muted-foreground italic">بدون عنوان</p>
+                          }
+                          {ad.linkUrl && (
+                            <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-accent hover:underline flex items-center gap-1 truncate mt-0.5">
+                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{ad.linkUrl}</span>
+                            </a>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-1 text-[11px] text-muted-foreground">
+                            {ad.startDate && <span>من {ad.startDate}</span>}
+                            {ad.endDate   && <span>حتى {ad.endDate}</span>}
+                            <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{ad.duration}ث</span>
+                          </div>
+                        </div>
+                      </div>
+                      {/* على الجوال: النوع والحالة */}
+                      <div className="md:hidden flex gap-2 mt-2">
+                        <Badge variant="outline" className={cn("text-[10px]", ad.type === "premium" ? "border-yellow-300 text-yellow-700 bg-yellow-50" : "border-blue-300 text-blue-700 bg-blue-50")}>
+                          {ad.type === "premium" ? "🏆 Premium" : "📌 Secondary"}
+                        </Badge>
+                        <span className={cn("inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border", cfg.color)}>
+                          <StatusIcon className="h-3 w-3" />{cfg.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* النوع */}
+                    <div className="hidden md:flex justify-center">
+                      <Badge variant="outline" className={cn("text-xs", ad.type === "premium" ? "border-yellow-300 text-yellow-700 bg-yellow-50" : "border-blue-300 text-blue-700 bg-blue-50")}>
+                        {ad.type === "premium" ? "🏆 Premium" : "📌 Secondary"}
+                      </Badge>
+                    </div>
+
+                    {/* الحالة */}
+                    <div className="hidden md:flex justify-center">
+                      <span className={cn("inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border", cfg.color)}>
+                        <StatusIcon className="h-3 w-3" />{cfg.label}
+                      </span>
+                    </div>
+
+                    {/* مشاهدات */}
+                    <div className="hidden md:flex justify-center text-sm font-medium">
+                      {(ad.views ?? 0).toLocaleString()}
+                    </div>
+
+                    {/* نقرات */}
+                    <div className="hidden md:flex justify-center text-sm font-medium">
+                      {(ad.clicks ?? 0).toLocaleString()}
+                    </div>
+
+                    {/* CTR */}
+                    <div className="hidden md:flex justify-center text-sm font-medium">
+                      {ctr}
+                    </div>
+
+                    {/* إجراءات */}
+                    <div className="flex items-center gap-1 md:justify-center flex-wrap">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title={ad.active ? "تعطيل" : "تفعيل"} onClick={() => handleToggle(ad)}>
+                        {ad.active ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" title="تعديل" onClick={() => setEditTarget(ad)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="حذف" onClick={() => setDeleteTarget(ad)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
 
       {/* ─── نافذة الإضافة ─── */}
-      <Dialog open={showAdd} onOpenChange={setShowAdd}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>إضافة إعلان جديد</DialogTitle>
-          </DialogHeader>
-          <AdForm
-            value={newAd}
-            onChange={patch => setNewAd(p => ({ ...p, ...patch }))}
-            onImageFile={f => toBase64(f, b64 => setNewAd(p => ({ ...p, imageUrl: b64 })))}
-            imageRef={addImgRef}
-            isFirst={ads.length === 0}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAdd(false)}>إلغاء</Button>
-            <Button className="bg-accent text-white hover:bg-accent/90" onClick={handleAdd}>
-              إضافة
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AdDialog
+        open={showAdd}
+        title="إضافة إعلان جديد"
+        initial={emptyAd(addType)}
+        onSave={form => handleAdd(form as Omit<Ad, "id" | "views" | "clicks">)}
+        onClose={() => setShowAdd(false)}
+      />
 
       {/* ─── نافذة التعديل ─── */}
-      <Dialog open={!!editTarget} onOpenChange={open => { if (!open) setEditTarget(null); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>تعديل الإعلان</DialogTitle>
-          </DialogHeader>
-          <AdForm
-            value={editAd}
-            onChange={patch => setEditAd(p => ({ ...p, ...patch }))}
-            onImageFile={f => toBase64(f, b64 => setEditAd(p => ({ ...p, imageUrl: b64 })))}
-            imageRef={editImgRef}
-            isFirst={editTarget ? ads.indexOf(editTarget) === 0 : false}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>
-            <Button className="bg-accent text-white hover:bg-accent/90" onClick={handleEdit}>
-              حفظ التعديلات
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {editTarget && (
+        <AdDialog
+          open={!!editTarget}
+          title="تعديل الإعلان"
+          initial={{
+            type:            editTarget.type ?? "secondary",
+            desktopImageUrl: editTarget.desktopImageUrl || editTarget.imageUrl || "",
+            mobileImageUrl:  editTarget.mobileImageUrl ?? "",
+            linkUrl:         editTarget.linkUrl   ?? "",
+            title:           editTarget.title     ?? "",
+            order:           editTarget.order,
+            duration:        editTarget.duration  ?? 6,
+            startDate:       editTarget.startDate ?? "",
+            endDate:         editTarget.endDate   ?? "",
+            active:          editTarget.active,
+          }}
+          onSave={form => handleEdit(form as Omit<Ad, "id" | "views" | "clicks">)}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
 
       {/* ─── تأكيد الحذف ─── */}
       <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent>
+        <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>حذف الإعلان</AlertDialogTitle>
             <AlertDialogDescription>
-              هل أنت متأكد من حذف هذا الإعلان؟ لا يمكن التراجع عن هذا الإجراء.
+              هل أنت متأكد من حذف{" "}
+              <strong>{deleteTarget?.title || "هذا الإعلان"}</strong>؟
+              لا يمكن التراجع عن هذا الإجراء.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDelete}
             >
               حذف

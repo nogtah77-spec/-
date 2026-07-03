@@ -124,16 +124,25 @@ export interface TiktokVideo {
   videoUrl: string;
 }
 
+export type AdType = "premium" | "secondary";
+export type AdStatus = "active" | "scheduled" | "expired" | "disabled";
+
 export interface Ad {
   id: string;
-  imageUrl: string;
+  type: AdType;                  // premium = إعلان رئيسي (21:9) | secondary = إعلان صغير (16:9)
+  desktopImageUrl: string;       // صورة الديسكتوب (مطلوبة)
+  mobileImageUrl?: string;       // صورة الجوال (اختياري — fallback للـ desktop)
   linkUrl?: string;
   title?: string;
   order: number;
-  duration: number;   // مدة ظهور الإعلان في اللوحة الرئيسية بالثانية
+  duration: number;
   startDate?: string;
   endDate?: string;
   active: boolean;
+  views: number;
+  clicks: number;
+  // للتوافق مع البيانات القديمة
+  imageUrl?: string;
 }
 
 export interface SiteSettings {
@@ -155,7 +164,6 @@ export interface SiteSettings {
   heroOverlayOpacity: number;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
-  adsBlurSize: number;   // حجم blur على حواف الإعلانات (0–20)
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -177,7 +185,6 @@ const DEFAULT_SETTINGS: SiteSettings = {
   heroOverlayOpacity: 85,
   tiktokVideos: [],
   ads: [],
-  adsBlurSize: 8,
 };
 
 export interface VisitorStats {
@@ -239,6 +246,8 @@ interface DataContextType {
   addAd: (a: Omit<Ad, "id">) => void;
   updateAd: (id: string, a: Partial<Omit<Ad, "id">>) => void;
   deleteAd: (id: string) => void;
+  trackAdView: (id: string) => void;
+  trackAdClick: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -619,6 +628,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateSettings({ ads: (settings.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x) });
   const deleteAd = (id: string) =>
     updateSettings({ ads: (settings.ads ?? []).filter(x => x.id !== id) });
+  // تتبّع المشاهدات والنقرات — تحديث محلي فقط بدون API لأن الزوار غير مسجّلين
+  const trackAdView = (id: string) =>
+    setSettings(prev => ({
+      ...prev,
+      ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, views: (x.views ?? 0) + 1 } : x),
+    }));
+  const trackAdClick = (id: string) =>
+    setSettings(prev => ({
+      ...prev,
+      ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, clicks: (x.clicks ?? 0) + 1 } : x),
+    }));
 
   return (
     <DataContext.Provider value={{
@@ -636,7 +656,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
-      addAd, updateAd, deleteAd,
+      addAd, updateAd, deleteAd, trackAdView, trackAdClick,
     }}>
       {children}
     </DataContext.Provider>
