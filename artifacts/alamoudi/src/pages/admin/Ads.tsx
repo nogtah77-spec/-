@@ -784,13 +784,13 @@ export default function Ads() {
               className="gap-2"
               onClick={() => { setAddType("secondary"); setShowAdd(true); }}
             >
-              <Plus className="h-4 w-4" /> Secondary
+              <Plus className="h-4 w-4" /> إضافة إعلان ثانوي
             </Button>
             <Button
               className="gap-2 bg-accent text-white hover:bg-accent/90"
               onClick={() => { setAddType("premium"); setShowAdd(true); }}
             >
-              <Plus className="h-4 w-4" /> Premium
+              <Plus className="h-4 w-4" /> إضافة إعلان مميز
             </Button>
           </div>
         </div>
@@ -861,10 +861,10 @@ export default function Ads() {
             <p className="text-muted-foreground font-medium">لا توجد إعلانات بعد</p>
             <div className="flex gap-2 mt-1">
               <Button variant="outline" className="gap-2" onClick={() => { setAddType("secondary"); setShowAdd(true); }}>
-                <Plus className="h-4 w-4" /> أضف Secondary
+                <Plus className="h-4 w-4" /> إضافة إعلان ثانوي
               </Button>
               <Button className="gap-2 bg-accent text-white hover:bg-accent/90" onClick={() => { setAddType("premium"); setShowAdd(true); }}>
-                <Plus className="h-4 w-4" /> أضف Premium
+                <Plus className="h-4 w-4" /> إضافة إعلان مميز
               </Button>
             </div>
           </div>
