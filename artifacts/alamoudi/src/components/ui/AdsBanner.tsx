@@ -33,11 +33,37 @@ function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl  || ad.desktopImageUrl
 
 // ─── AdPicture ────────────────────────────────────────────────────────────────
 // Serves desktop image (≥1024px) or mobile image (<1024px).
-// Uses width:100%; height:auto — proportional scaling, zero modification.
+// mode="proportional" → width:100%; height:auto (Premium).
+// mode="cover"        → fills a fixed aspect-ratio box via object-cover (Secondary).
 
-function AdPicture({ ad, priority }: { ad: Ad; priority?: boolean }) {
+function AdPicture({
+  ad,
+  priority,
+  mode = "proportional",
+}: {
+  ad: Ad;
+  priority?: boolean;
+  mode?: "proportional" | "cover";
+}) {
   const desktop = getDesktopSrc(ad);
   const mobile  = getMobileSrc(ad);
+
+  if (mode === "cover") {
+    return (
+      <picture className="block w-full" style={{ aspectRatio: "960/300" }}>
+        <source media="(min-width: 1024px)" srcSet={desktop} />
+        <img
+          src={mobile}
+          alt={ad.title || "إعلان"}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          draggable={false}
+          className="w-full h-full object-cover block"
+        />
+      </picture>
+    );
+  }
+
   return (
     <picture className="block">
       <source media="(min-width: 1024px)" srcSet={desktop} />
@@ -60,12 +86,14 @@ function AdSlot({
   ad,
   className,
   priority,
+  pictureMode = "proportional",
   onView,
   onClick,
 }: {
   ad: Ad;
   className?: string;
   priority?: boolean;
+  pictureMode?: "proportional" | "cover";
   onView?: (viewDuration: number) => void;
   onClick?: (clickX: number, clickY: number) => void;
 }) {
@@ -110,7 +138,7 @@ function AdSlot({
       )}
       onClick={handleClick}
     >
-      <AdPicture ad={ad} priority={priority} />
+      <AdPicture ad={ad} priority={priority} mode={pictureMode} />
 
       {/* Title overlay — positioned over bottom of fluid-height container */}
       {ad.title && (
@@ -274,6 +302,7 @@ function SecondaryCarousel({
             key={ad.id}
             ad={ad}
             className="w-full rounded-2xl shadow-sm ring-1 ring-black/5"
+            pictureMode="cover"
             priority={i === 0}
             onView={(d) => onView(ad.id, d)}
             onClick={(x, y) => onClick(ad, x, y)}
@@ -298,6 +327,7 @@ function SecondaryCarousel({
               <AdSlot
                 ad={ad}
                 className="w-full rounded-2xl shadow-sm ring-1 ring-black/5"
+                pictureMode="cover"
                 priority={i === 0}
                 onView={(d) => onView(ad.id, d)}
                 onClick={(x, y) => onClick(ad, x, y)}
