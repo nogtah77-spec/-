@@ -42,47 +42,125 @@ const STATUS_CONFIG = {
   disabled: { label: "معطّل", color: "bg-neutral-100 text-neutral-600 border-neutral-200", icon: MinusCircle },
 };
 
-// ─── التحقق من الأبعاد + تحويل WebP ─────────────────────────────────────────
-// يرفض أي صورة لا تطابق الأبعاد بالضبط.
-// لا يُعيد التحجيم أبداً — فقط يحوّل لـ WebP بجودة 0.92 بعد التحقق.
+// ─── معالجة الصورة تلقائياً + تحويل WebP ────────────────────────────────────
+// يقبل أي صورة بأي أبعاد ويعالجها إلى المقاس المستهدف تلقائياً.
+// الخوارزمية:
+//   • نسبة العرض قريبة (< 15% فرق) → Smart Cover Crop من المركز
+//   • نسبة العرض مختلفة (≥ 15% فرق) → Fit داخل الإطار + خلفية blurred تملأ الباقي
+// الإدخال: حتى 20 MB — الإخراج: WebP < 3 MB بضغط تلقائي.
+
+const MAX_INPUT_BYTES  = 20 * 1024 * 1024;   // 20 MB مدخل
+const MAX_OUTPUT_B64   = 3 * 1024 * 1024 * 1.38; // ≈ 3 MB binary → base64 overhead
+
+type ProcessMode = "resize" | "crop" | "fit+blur";
 
 interface ImageResult {
-  dataUrl: string;
-  width:   number;
-  height:  number;
-  error?:  string;
+  dataUrl:     string;
+  width:       number;
+  height:      number;
+  origW?:      number;
+  origH?:      number;
+  processMode?: ProcessMode;
+  finalQuality?: number;
+  error?:      string;
 }
 
-async function validateAndUpload(
+async function processImage(
   file: File,
   template: AdTemplate,
 ): Promise<ImageResult> {
-  if (file.size > 3 * 1024 * 1024)
-    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير — الحد الأقصى 3 ميجابايت" };
+  if (file.size > MAX_INPUT_BYTES)
+    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير — الحد الأقصى للإدخال 20 ميجابايت" };
 
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
     const img = new Image();
+
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const { naturalWidth: w, naturalHeight: h } = img;
+      const sw = img.naturalWidth;
+      const sh = img.naturalHeight;
+      const tw = template.width;
+      const th = template.height;
 
-      // ─ فحص الأبعاد بالضبط — صفر تسامح ─
-      if (w !== template.width || h !== template.height) {
-        resolve({
-          dataUrl: "", width: 0, height: 0,
-          error: `الأبعاد غير صحيحة — صورتك: ${w}×${h}px — المطلوب بالضبط: ${template.width}×${template.height}px`,
-        });
+      const srcRatio  = sw / sh;
+      const dstRatio  = tw / th;
+      const ratioDiff = Math.abs(srcRatio - dstRatio) / dstRatio;
+
+      // ─ تحديد وضع المعالجة ─
+      const mode: ProcessMode =
+        sw === tw && sh === th  ? "resize"    :  // بالفعل الأبعاد الصحيحة → ضغط فقط
+        ratioDiff < 0.15        ? "crop"      :  // نسبة قريبة → crop من المركز
+                                  "fit+blur";    // نسبة مختلفة → fit + خلفية blurred
+
+      const canvas = document.createElement("canvas");
+      canvas.width  = tw;
+      canvas.height = th;
+      const ctx = canvas.getContext("2d")!;
+
+      if (mode === "fit+blur") {
+        // ── الخطوة 1: خلفية blurred (scale to cover) ──
+        const bgScale = Math.max(tw / sw, th / sh);
+        const bgW = sw * bgScale;
+        const bgH = sh * bgScale;
+        const bgX = (tw - bgW) / 2;
+        const bgY = (th - bgH) / 2;
+
+        ctx.save();
+        ctx.filter = "blur(28px) brightness(0.55) saturate(1.4)";
+        ctx.drawImage(img, bgX, bgY, bgW, bgH);
+        ctx.restore();
+
+        // طبقة تعتيم خفيفة فوق الخلفية
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, tw, th);
+        ctx.restore();
+
+        // ── الخطوة 2: الصورة الأصلية scaled to fit ──
+        const fgScale = Math.min(tw / sw, th / sh);
+        const fgW = sw * fgScale;
+        const fgH = sh * fgScale;
+        const fgX = (tw - fgW) / 2;
+        const fgY = (th - fgH) / 2;
+        ctx.drawImage(img, fgX, fgY, fgW, fgH);
+
+      } else {
+        // ── crop من المركز (يغطي الإطار بالكامل) ──
+        const scale  = Math.max(tw / sw, th / sh);
+        const scaledW = sw * scale;
+        const scaledH = sh * scale;
+        const offX    = (tw - scaledW) / 2;
+        const offY    = (th - scaledH) / 2;
+        ctx.drawImage(img, offX, offY, scaledW, scaledH);
+      }
+
+      // ── ضغط تلقائي إلى WebP < 3 MB ──
+      const qualities = [0.92, 0.82, 0.72, 0.60, 0.48, 0.36];
+      let dataUrl = "";
+      let usedQuality = 0.92;
+
+      for (const q of qualities) {
+        dataUrl = canvas.toDataURL("image/webp", q);
+        usedQuality = q;
+        if (dataUrl.length <= MAX_OUTPUT_B64) break;
+      }
+
+      if (dataUrl.length > MAX_OUTPUT_B64) {
+        resolve({ dataUrl: "", width: 0, height: 0, error: "لا يمكن ضغط الصورة إلى أقل من 3 ميجابايت — جرّب صورة أبسط أو أصغر" });
         return;
       }
 
-      // ─ تحويل لـ WebP بدون أي تعديل للأبعاد (0.92 جودة عالية) ─
-      const canvas = document.createElement("canvas");
-      canvas.width  = w;
-      canvas.height = h;
-      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
-      resolve({ dataUrl: canvas.toDataURL("image/webp", 0.92), width: w, height: h });
+      resolve({
+        dataUrl,
+        width: tw, height: th,
+        origW: sw, origH: sh,
+        processMode: mode,
+        finalQuality: Math.round(usedQuality * 100),
+      });
     };
+
     img.onerror = () => {
       URL.revokeObjectURL(url);
       resolve({ dataUrl: "", width: 0, height: 0, error: "تعذّر قراءة الصورة" });
@@ -109,23 +187,23 @@ function ImageUploader({
   required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState<string>();
-  const [dragging, setDragging] = useState(false);
-  const [imgDims,  setImgDims]  = useState<{ w: number; h: number } | null>(null);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState<string>();
+  const [dragging,    setDragging]    = useState(false);
+  const [processInfo, setProcessInfo] = useState<Pick<ImageResult, "origW"|"origH"|"processMode"|"finalQuality"> | null>(null);
 
   const handleFile = async (file: File) => {
     setLoading(true);
     setError(undefined);
-    setImgDims(null);
-    const result = await validateAndUpload(file, template);
+    setProcessInfo(null);
+    const result = await processImage(file, template);
     setLoading(false);
     if (result.error) {
       setError(result.error);
       onResult("", result.error);
     } else {
       setError(undefined);
-      setImgDims({ w: result.width, h: result.height });
+      setProcessInfo({ origW: result.origW, origH: result.origH, processMode: result.processMode, finalQuality: result.finalQuality });
       onResult(result.dataUrl);
     }
   };
@@ -158,7 +236,12 @@ function ImageUploader({
         {/* ─ الصف الأول: اسم القالب + الأبعاد + الرسم التوضيحي ─ */}
         <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 border-b border-border">
           <div className="min-w-0">
-            <p className="font-bold text-sm text-foreground leading-none mb-1">{template.name}</p>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="font-bold text-sm text-foreground leading-none">{template.name}</p>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                ✦ يُعالج تلقائياً
+              </span>
+            </div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-mono text-xs font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded">
                 {template.width} × {template.height} px
@@ -207,10 +290,16 @@ function ImageUploader({
           </div>
         </div>
 
-        {/* ─ الصف الثالث: الحجم الأقصى ─ */}
-        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">الحجم الأقصى</p>
-          <span className="text-sm font-bold text-foreground">3 MB</span>
+        {/* ─ الصف الثالث: الإدخال / الإخراج ─ */}
+        <div className="px-4 py-2.5 border-b border-border grid grid-cols-2 divide-x divide-x-reverse divide-border">
+          <div className="pl-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5 font-medium">الإدخال</p>
+            <p className="text-xs font-bold text-foreground">أي حجم حتى 20 MB</p>
+          </div>
+          <div className="pr-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5 font-medium">الإخراج</p>
+            <p className="text-xs font-bold text-foreground">WebP &lt; 3 MB</p>
+          </div>
         </div>
 
         {/* ─ الصف الرابع: المنطقة الآمنة + زر التحميل ─ */}
@@ -259,7 +348,7 @@ function ImageUploader({
           <Input
             placeholder="https://... أو ارفع ملفاً"
             value={value}
-            onChange={e => { setImgDims(null); onResult(e.target.value); }}
+            onChange={e => { setProcessInfo(null); onResult(e.target.value); }}
             className="flex-1 text-sm h-9"
           />
           <Button
@@ -271,7 +360,7 @@ function ImageUploader({
             onClick={() => inputRef.current?.click()}
           >
             <UploadCloud className="h-3.5 w-3.5" />
-            {loading ? "جارٍ الفحص…" : "رفع"}
+            {loading ? "جارٍ المعالجة…" : "رفع"}
           </Button>
           <input
             ref={inputRef}
@@ -288,7 +377,7 @@ function ImageUploader({
 
         {!dragging && !value && (
           <p className="text-[11px] text-muted-foreground text-center">
-            اسحب وأسقط الصورة أو انقر «رفع» · الأبعاد المطلوبة بالضبط: {template.width}×{template.height}px
+            اسحب وأسقط الصورة أو انقر «رفع» · أي حجم أو أبعاد — تُعالج تلقائياً إلى {template.width}×{template.height}px
           </p>
         )}
       </div>
@@ -298,7 +387,7 @@ function ImageUploader({
         <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-xs text-destructive">
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold mb-0.5">الأبعاد غير مطابقة</p>
+            <p className="font-semibold mb-0.5">تعذّرت المعالجة</p>
             <p>{error}</p>
           </div>
         </div>
@@ -313,20 +402,26 @@ function ImageUploader({
           <img
             src={value}
             alt="معاينة"
-            className="absolute inset-0 w-full h-full object-contain"
+            className="absolute inset-0 w-full h-full object-cover"
           />
 
-          {/* أبعاد الصورة */}
-          {imgDims && (
+          {/* مصدر الأبعاد الأصلية */}
+          {processInfo?.origW && (
             <div className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm">
-              {imgDims.w}×{imgDims.h}px ✓
+              {processInfo.origW}×{processInfo.origH}px → {template.width}×{template.height}px
             </div>
           )}
 
-          {/* شارة الموافقة */}
-          <div className="absolute top-1.5 left-1.5 bg-green-500/90 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm">
-            ✓ الأبعاد مطابقة · WebP محسّن
-          </div>
+          {/* شارة نتيجة المعالجة */}
+          {processInfo && (
+            <div className="absolute top-1.5 left-1.5 bg-green-500/90 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 backdrop-blur-sm">
+              ✓{" "}
+              {processInfo.processMode === "resize"   && "WebP محسّن"}
+              {processInfo.processMode === "crop"     && "Crop ذكي · WebP"}
+              {processInfo.processMode === "fit+blur" && "Fit + خلفية · WebP"}
+              {processInfo.finalQuality !== undefined && processInfo.finalQuality < 92 && ` · جودة ${processInfo.finalQuality}%`}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -869,9 +964,8 @@ export default function Ads() {
           <div className="space-y-1.5 text-muted-foreground text-[13px] leading-relaxed border-t border-border pt-3">
             <p>🏆 <strong className="text-foreground">Premium:</strong> بانر رئيسي بعرض كامل — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.premium.desktop.width}×{SLOT_TEMPLATES.premium.desktop.height}px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.premium.mobile.width}×{SLOT_TEMPLATES.premium.mobile.height}px</code></p>
             <p>📌 <strong className="text-foreground">Secondary:</strong> إعلانان جنباً إلى جنب — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.desktop.width}×{SLOT_TEMPLATES.secondary.desktop.height}px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.mobile.width}×{SLOT_TEMPLATES.secondary.mobile.height}px</code></p>
-            <p>📐 <strong className="text-foreground">الأبعاد:</strong> يُرفض أي ملف لا يطابق الأبعاد بالضبط — صفر تسامح.</p>
-            <p>🖼 <strong className="text-foreground">الجودة:</strong> الصور لا تُعاد تحجيمها أو تُقص — تحويل WebP فقط (جودة 92%) بعد التحقق.</p>
-            <p>📦 <strong className="text-foreground">الحجم الأقصى:</strong> <code className="text-[11px] bg-muted px-1 rounded">3 MB</code> · صيغ مقبولة: PNG · JPG · WEBP</p>
+            <p>🤖 <strong className="text-foreground">معالجة تلقائية:</strong> أي صورة بأي أبعاد تُقبل — تُحوَّل تلقائياً إلى المقاس المستهدف (Crop ذكي أو Fit + خلفية blurred).</p>
+            <p>📦 <strong className="text-foreground">الحجم:</strong> إدخال حتى <code className="text-[11px] bg-muted px-1 rounded">20 MB</code> · إخراج WebP مضغوط تلقائياً &lt; <code className="text-[11px] bg-muted px-1 rounded">3 MB</code></p>
             <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — تظهر على الشاشات &lt;1024px · إذا لم تُرفع تُستخدم الديسكتوب تلقائياً.</p>
             <p>🔀 <strong className="text-foreground">الترتيب:</strong> اسحب الإعلانات لتغيير ترتيبها.</p>
           </div>
