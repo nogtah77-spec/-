@@ -467,7 +467,12 @@ function AdDialog({
                 <button
                   key={t}
                   type="button"
-                  onClick={() => patch({ type: t })}
+                  onClick={() => {
+                    if (form.type !== t) {
+                      patch({ type: t, desktopImageUrl: "", mobileImageUrl: "" });
+                      setDesktopErr(undefined);
+                    }
+                  }}
                   className={cn(
                     "rounded-xl border-2 p-3 text-right transition-all",
                     form.type === t
@@ -493,6 +498,7 @@ function AdDialog({
 
           {/* رفع الصور */}
           <ImageUploader
+            key={`desktop-${form.type}`}
             label={`صورة الديسكتوب ${isPremium ? "(9:2)" : "(16:5)"} — ≥1024px`}
             sublabel={isPremium
               ? "الصورة الكبيرة تظهر على الحاسوب والشاشات الكبيرة"
@@ -508,6 +514,7 @@ function AdDialog({
           />
 
           <ImageUploader
+            key={`mobile-${form.type}`}
             label={`صورة الجوال والتابلت ${isPremium ? "(3:1)" : "(2:1)"} — <1024px — اختياري`}
             sublabel="إذا لم تُرفع، ستُستخدم صورة الديسكتوب تلقائياً"
             value={form.mobileImageUrl || ""}
