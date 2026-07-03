@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { AdImage } from "@/components/ui/AdsBanner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink, Eye, EyeOff, Clock, Info, Blend } from "lucide-react";
@@ -213,6 +214,9 @@ export default function Ads() {
   const ads = [...(settings.ads ?? [])].sort((a, b) => a.order - b.order);
   const { toast } = useToast();
 
+  // state محلي للمعاينة الفورية — يُحدَّث فوراً مع الـ slider قبل الحفظ
+  const [previewBlur, setPreviewBlur] = useState<number>(settings.adsBlurSize ?? 8);
+
   const [showAdd,      setShowAdd]      = useState(false);
   const [editTarget,   setEditTarget]   = useState<Ad | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Ad | null>(null);
@@ -348,19 +352,22 @@ export default function Ads() {
               <Label className="text-sm font-semibold">تأثير Blur على حواف الإعلانات</Label>
             </div>
             <span className="text-xs font-mono text-accent bg-accent/10 rounded px-2 py-0.5 min-w-[2.5rem] text-center">
-              {settings.adsBlurSize ?? 8}
+              {previewBlur}
             </span>
           </div>
           <Slider
             min={0}
             max={20}
             step={1}
-            value={[settings.adsBlurSize ?? 8]}
-            onValueChange={([v]) => updateSettings({ adsBlurSize: v })}
+            value={[previewBlur]}
+            onValueChange={([v]) => {
+              setPreviewBlur(v);
+              updateSettings({ adsBlurSize: v });
+            }}
             className="w-full"
           />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            القيمة <strong>0</strong> تعطيل Blur تماماً — القيمة <strong>20</strong> أقصى تأثير على الحواف. الوسط الواضح من الصورة لا يتأثر.
+            القيمة <strong>0</strong> بدون إطار — القيمة <strong>20</strong> إطار عريض. المعاينة تظهر فوراً على الإعلانات أدناه.
           </p>
         </div>
 
@@ -387,13 +394,14 @@ export default function Ads() {
                   !ad.active && "opacity-60"
                 )}
               >
-                {/* صورة الإعلان */}
-                <div className="relative bg-muted overflow-hidden" style={{ height: "120px" }}>
+                {/* صورة الإعلان — معاينة فورية لتأثير الـ blur */}
+                <div className="relative bg-muted overflow-hidden rounded-t-2xl" style={{ height: "120px" }}>
                   {ad.imageUrl ? (
-                    <img
+                    <AdImage
                       src={ad.imageUrl}
                       alt={ad.title || "إعلان"}
-                      className="w-full h-full object-cover object-center"
+                      blurSize={previewBlur}
+                      opacity={1}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">

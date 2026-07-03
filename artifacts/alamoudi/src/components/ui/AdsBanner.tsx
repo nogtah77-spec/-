@@ -17,7 +17,7 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .slice(0, 3);
 }
 
-// ─── AdImage: صندوق داخل صندوق ──────────────────────────────────────────────
+// ─── AdImage: صندوق داخل صندوق (مُصدَّر للاستخدام في الأدمن) ─────────────────
 //
 //  الفكرة:
 //  ┌──────────────────────────────┐  ← container (rounded)
@@ -31,7 +31,7 @@ function getActiveAds(ads: Ad[]): Ad[] {
 //
 //  blurSize → يتحكم في عرض الإطار الـ blur + قوة التضبيب
 
-function AdImage({
+export function AdImage({
   src,
   alt,
   blurSize,
@@ -44,7 +44,9 @@ function AdImage({
 }) {
   const inset  = blurSize === 0 ? 0 : Math.max(4, blurSize * 2);   // عرض إطار الـ blur
   const blurPx = blurSize === 0 ? 0 : Math.max(6, blurSize * 2.5); // قوة التضبيب
-  const radius = Math.max(6, inset - 2);                            // تقوس حواف الصورة الداخلية
+  // rounded-2xl = 16px → الصورة الداخلية تحتاج نفس الـ radius ناقص المسافة من الحافة
+  const outerRadius = 16; // يطابق rounded-2xl بالضبط
+  const radius = blurSize === 0 ? 0 : Math.max(2, outerRadius - inset);
 
   return (
     <div
