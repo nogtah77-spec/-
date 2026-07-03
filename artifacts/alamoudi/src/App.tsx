@@ -208,12 +208,36 @@ function AppReadyGate({ children }: { children: React.ReactNode }) {
   const { ready } = useData();
   if (!ready) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-3">
-        <div className="w-9 h-9 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-background">
+        <div className="flex flex-col items-center gap-3 animate-in fade-in duration-500">
+          <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center">
+            <svg viewBox="0 0 100 100" className="w-8 h-8 fill-accent" xmlns="http://www.w3.org/2000/svg">
+              <path d="M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z" fillOpacity="0.3"/>
+              <path d="M50 20 L72 33 L72 67 L50 80 L28 67 L28 33 Z"/>
+            </svg>
+          </div>
+          <p className="text-sm text-muted-foreground font-medium" dir="rtl">العمودي للتسويق العقاري</p>
+          <div className="flex gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce [animation-delay:0ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce [animation-delay:150ms]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce [animation-delay:300ms]" />
+          </div>
+        </div>
       </div>
     );
   }
   return <>{children}</>;
+}
+
+// بينج الـ API كل 4 دقايق علشان الـ server ميدخلش في نوم
+function KeepAlive() {
+  useEffect(() => {
+    const ping = () => { void fetch("/api/healthz", { method: "GET" }).catch(() => {}); };
+    ping(); // أول بينج فوري لما الـ app يفتح
+    const id = setInterval(ping, 4 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+  return null;
 }
 
 function App() {
@@ -225,6 +249,7 @@ function App() {
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
                 <AIChatProvider>
+                  <KeepAlive />
                   <VisitorTracker />
                   <SwipeMenuHandler />
                   <AppReadyGate>

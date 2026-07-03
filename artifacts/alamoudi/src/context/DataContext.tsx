@@ -227,8 +227,10 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v3";
-const CACHE_TTL = 30 * 60 * 1000;
+const CACHE_KEY = "alm_cache_v4";
+// الـ cache بيُعرض فوراً حتى لو قديم، والـ API دايماً بيرفّش في الخلفية
+// TTL طويل جداً (7 أيام) كـ safety net بس للـ cache القديم جداً
+const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
 
 interface CachePayload {
   ts: number;
@@ -240,10 +242,21 @@ interface CachePayload {
 
 function readCache(): CachePayload | null {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    // حاول تقرأ الـ v4 أول
+    let raw = localStorage.getItem(CACHE_KEY);
+    // لو مش موجود، حاول تهجّر الـ v3 القديم
+    if (!raw) {
+      const oldRaw = localStorage.getItem("alm_cache_v3");
+      if (oldRaw) {
+        localStorage.setItem(CACHE_KEY, oldRaw);
+        localStorage.removeItem("alm_cache_v3");
+        raw = oldRaw;
+      }
+    }
     if (!raw) return null;
     const parsed: CachePayload = JSON.parse(raw);
-    if (Date.now() - parsed.ts > CACHE_TTL) return null;
+    // نرفض بس الـ cache اللي عمره أكتر من 7 أيام
+    if (Date.now() - parsed.ts > CACHE_HARD_TTL) return null;
     return parsed;
   } catch { return null; }
 }
