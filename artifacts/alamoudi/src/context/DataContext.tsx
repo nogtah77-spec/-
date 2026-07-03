@@ -130,6 +130,7 @@ export interface Ad {
   linkUrl?: string;
   title?: string;
   order: number;
+  duration: number;   // مدة ظهور الإعلان في اللوحة الرئيسية بالثانية
   startDate?: string;
   endDate?: string;
   active: boolean;
