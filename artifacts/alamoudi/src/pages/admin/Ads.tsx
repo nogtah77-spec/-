@@ -12,25 +12,18 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useLocation } from "wouter";
 import {
   Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink,
-  Eye, EyeOff, Clock, Info, GripVertical, Monitor, Tablet, Smartphone,
+  Eye, EyeOff, Clock, GripVertical, Monitor, Tablet, Smartphone,
   CheckCircle2, CalendarClock, XCircle, MinusCircle, MousePointerClick, TrendingUp,
-  AlertTriangle, UploadCloud, BarChart2,
+  AlertTriangle, UploadCloud, BarChart2, Download, LayoutTemplate,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-// ─── النسب المبنية على الأبعاد الفعلية للصناديق ────────────────────────────
-// Premium Desktop  (≥1024px) : ~976-1400px × 240-280px  ≈ 9:2
-// Premium Mobile   (<1024px) : ~340-975px  × 200-220px  ≈ 3:1  (جوال + تابلت)
-// Secondary Desktop(≥1024px) : ~480-610px  × 190px      ≈ 16:5
-// Secondary Mobile (<1024px) : ~300-480px  × 180-190px  ≈ 2:1
-
-const RATIO_SPECS = {
-  premium_desktop:  { w: 9,  h: 2, label: "9:2",  example: "1800×400 أو 1440×320" },
-  premium_mobile:   { w: 3,  h: 1, label: "3:1",  example: "1200×400 أو 900×300"  },
-  secondary_desktop:{ w: 16, h: 5, label: "16:5", example: "960×300 أو 1200×375"  },
-  secondary_mobile: { w: 2,  h: 1, label: "2:1",  example: "800×400 أو 600×300"   },
-} as const;
+import {
+  type AdTemplate,
+  type AdSlotType,
+  SLOT_TEMPLATES,
+  downloadTemplateGuide,
+} from "@/lib/adTemplates";
 
 // ─── حساب حالة الإعلان ──────────────────────────────────────────────────────
 
@@ -43,28 +36,29 @@ function getAdStatus(ad: Ad): "active" | "scheduled" | "expired" | "disabled" {
 }
 
 const STATUS_CONFIG = {
-  active:   { label: "نشط",     color: "bg-green-100 text-green-800 border-green-200",   icon: CheckCircle2 },
-  scheduled:{ label: "مجدول",   color: "bg-blue-100 text-blue-800 border-blue-200",      icon: CalendarClock },
-  expired:  { label: "منتهي",   color: "bg-red-100 text-red-800 border-red-200",         icon: XCircle },
-  disabled: { label: "معطّل",   color: "bg-neutral-100 text-neutral-600 border-neutral-200", icon: MinusCircle },
+  active:   { label: "نشط",   color: "bg-green-100 text-green-800 border-green-200",      icon: CheckCircle2 },
+  scheduled:{ label: "مجدول", color: "bg-blue-100 text-blue-800 border-blue-200",         icon: CalendarClock },
+  expired:  { label: "منتهي", color: "bg-red-100 text-red-800 border-red-200",            icon: XCircle },
+  disabled: { label: "معطّل", color: "bg-neutral-100 text-neutral-600 border-neutral-200", icon: MinusCircle },
 };
 
-// ─── ضغط الصورة وتحويلها لـ WebP مع التحقق من النسبة ──────────────────────
+// ─── التحقق من الأبعاد + تحويل WebP ─────────────────────────────────────────
+// يرفض أي صورة لا تطابق الأبعاد بالضبط.
+// لا يُعيد التحجيم أبداً — فقط يحوّل لـ WebP بجودة 0.92 بعد التحقق.
 
 interface ImageResult {
   dataUrl: string;
-  width: number;
-  height: number;
-  error?: string;
+  width:   number;
+  height:  number;
+  error?:  string;
 }
 
-async function validateAndCompress(
+async function validateAndUpload(
   file: File,
-  spec: { w: number; h: number },
-  tolerance = 0.03
+  template: AdTemplate,
 ): Promise<ImageResult> {
-  if (file.size > 10 * 1024 * 1024)
-    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير جداً — الحد الأقصى 10 ميجابايت" };
+  if (file.size > 15 * 1024 * 1024)
+    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير — الحد الأقصى 15 ميجابايت" };
 
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
@@ -72,22 +66,22 @@ async function validateAndCompress(
     img.onload = () => {
       URL.revokeObjectURL(url);
       const { naturalWidth: w, naturalHeight: h } = img;
-      const actual   = w / h;
-      const expected = spec.w / spec.h;
-      if (Math.abs(actual - expected) / expected > tolerance) {
+
+      // ─ فحص الأبعاد بالضبط — صفر تسامح ─
+      if (w !== template.width || h !== template.height) {
         resolve({
           dataUrl: "", width: 0, height: 0,
-          error: `النسبة غير صحيحة — صورتك: ${w}×${h} (${(actual).toFixed(2)}:1) — المطلوب: ${spec.w}:${spec.h} (${(expected).toFixed(2)}:1)`,
+          error: `الأبعاد غير صحيحة — صورتك: ${w}×${h}px — المطلوب بالضبط: ${template.width}×${template.height}px`,
         });
         return;
       }
+
+      // ─ تحويل لـ WebP بدون أي تعديل للأبعاد (0.92 جودة عالية) ─
       const canvas = document.createElement("canvas");
-      const MAX    = 1920;
-      const scale  = w > MAX ? MAX / w : 1;
-      canvas.width  = Math.round(w * scale);
-      canvas.height = Math.round(h * scale);
-      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve({ dataUrl: canvas.toDataURL("image/webp", 0.85), width: canvas.width, height: canvas.height });
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      resolve({ dataUrl: canvas.toDataURL("image/webp", 0.92), width: w, height: h });
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
@@ -97,20 +91,20 @@ async function validateAndCompress(
   });
 }
 
-// ─── مكوّن رفع الصورة مع التحقق ─────────────────────────────────────────────
+// ─── مكوّن رفع الصورة ─────────────────────────────────────────────────────────
 
 function ImageUploader({
   label,
   sublabel,
   value,
-  spec,
+  template,
   onResult,
   required,
 }: {
-  label: string;
+  label:    string;
   sublabel: string;
-  value: string;
-  spec: { w: number; h: number; label: string; example: string };
+  value:    string;
+  template: AdTemplate;
   onResult: (dataUrl: string, error?: string) => void;
   required?: boolean;
 }) {
@@ -124,7 +118,7 @@ function ImageUploader({
     setLoading(true);
     setError(undefined);
     setImgDims(null);
-    const result = await validateAndCompress(file, spec);
+    const result = await validateAndUpload(file, template);
     setLoading(false);
     if (result.error) {
       setError(result.error);
@@ -145,13 +139,14 @@ function ImageUploader({
     if (file && file.type.startsWith("image/")) handleFile(file);
   };
 
-  // مستطيل توضيحي بعرض ثابت 80px مع ارتفاع محسوب من النسبة الفعلية
-  const diagW = 80;
-  const diagH = Math.round(diagW * spec.h / spec.w);
+  // مستطيل توضيحي بعرض 100px وارتفاع محسوب من النسبة الفعلية (حد أدنى 20px)
+  const diagW = 100;
+  const diagH = Math.max(20, Math.round(diagW * template.height / template.width));
 
   return (
     <div className="space-y-2.5">
-      {/* ── رأس: العنوان + الشارة ── */}
+
+      {/* ── رأس: العنوان + شارة النسبة ── */}
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold">
           {label}
@@ -161,28 +156,63 @@ function ImageUploader({
           "text-xs font-bold px-2 py-0.5 rounded-full",
           required ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"
         )}>
-          {spec.label}
+          {template.ratio}
         </span>
       </div>
 
-      {/* ── بطاقة المواصفات المرئية ── */}
+      {/* ── بطاقة المواصفات ── */}
       <div className="rounded-lg bg-muted/60 border border-border px-3 py-2.5 flex items-start gap-3">
-        {/* مستطيل يوضّح النسبة الفعلية */}
-        <div className="shrink-0 flex items-center justify-center mt-0.5">
+        {/* مستطيل توضيحي مع مناطق اللون */}
+        <div className="shrink-0 mt-0.5">
           <div
-            className="border-2 border-accent/50 rounded-sm bg-accent/10 flex items-center justify-center"
+            className="relative border-2 border-accent/40 rounded-sm overflow-hidden bg-white"
             style={{ width: `${diagW}px`, height: `${diagH}px` }}
           >
-            <span className="text-[9px] text-accent font-bold leading-none">{spec.label}</span>
+            {template.zones.map(zone => (
+              <div
+                key={zone.label}
+                className="absolute"
+                style={{
+                  left:       `${(zone.x / template.width)  * 100}%`,
+                  top:        `${(zone.y / template.height) * 100}%`,
+                  width:      `${(zone.w / template.width)  * 100}%`,
+                  height:     `${(zone.h / template.height) * 100}%`,
+                  background: zone.color,
+                }}
+              />
+            ))}
+            <span className="absolute inset-0 flex items-center justify-center text-[8px] text-accent/60 font-bold pointer-events-none z-10 mix-blend-multiply">
+              {template.ratio}
+            </span>
           </div>
         </div>
-        <div className="text-xs space-y-0.5 min-w-0">
+
+        <div className="text-xs space-y-1 min-w-0 flex-1">
           <p className="font-semibold text-foreground">{sublabel}</p>
           <p className="text-muted-foreground">
-            <span className="text-accent font-medium">أبعاد موصى بها:</span> {spec.example}
+            <span className="text-accent font-semibold">أبعاد مطلوبة بالضبط:</span>{" "}
+            <span className="font-mono">{template.width}×{template.height}px</span>
           </p>
-          <p className="text-muted-foreground">الحجم الأقصى: 10 ميجابايت · JPG أو PNG أو WebP</p>
+          <p className="text-muted-foreground">الحجم الأقصى: 15 ميجابايت · JPG أو PNG أو WebP</p>
+          <div className="flex gap-1 flex-wrap pt-0.5">
+            {template.zones.map(zone => (
+              <span key={zone.label} className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-muted border border-border">
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: zone.strokeColor }} />
+                {zone.label}
+              </span>
+            ))}
+          </div>
         </div>
+
+        {/* زر تحميل دليل القالب */}
+        <button
+          type="button"
+          title="تحميل دليل القالب PNG"
+          onClick={() => downloadTemplateGuide(template)}
+          className="shrink-0 mt-0.5 p-1.5 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       {/* ── منطقة الرفع (drag & drop) ── */}
@@ -205,7 +235,7 @@ function ImageUploader({
 
         <div className="flex gap-2">
           <Input
-            placeholder="https://... أو ارفع الصورة"
+            placeholder="https://... أو ارفع ملفاً"
             value={value}
             onChange={e => { setImgDims(null); onResult(e.target.value); }}
             className="flex-1 text-sm h-9"
@@ -236,48 +266,44 @@ function ImageUploader({
 
         {!dragging && !value && (
           <p className="text-[11px] text-muted-foreground text-center">
-            اسحب وأسقط الصورة هنا أو انقر «رفع»
+            اسحب وأسقط الصورة أو انقر «رفع» · الأبعاد المطلوبة بالضبط: {template.width}×{template.height}px
           </p>
         )}
       </div>
 
-      {/* ── خطأ ── */}
+      {/* ── رسالة الخطأ ── */}
       {error && (
         <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-xs text-destructive">
           <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold mb-0.5">النسبة غير مطابقة</p>
+            <p className="font-semibold mb-0.5">الأبعاد غير مطابقة</p>
             <p>{error}</p>
           </div>
         </div>
       )}
 
-      {/* ── معاينة + المنطقة الآمنة ── */}
+      {/* ── معاينة الصورة المرفوعة ── */}
       {value && !error && (
         <div
           className="relative rounded-lg overflow-hidden border border-border bg-muted shadow-sm"
-          style={{ aspectRatio: `${spec.w}/${spec.h}` }}
+          style={{ aspectRatio: `${template.width}/${template.height}` }}
         >
-          <img src={value} alt="معاينة" className="absolute inset-0 w-full h-full object-cover object-center" />
+          <img
+            src={value}
+            alt="معاينة"
+            className="absolute inset-0 w-full h-full object-contain"
+          />
 
-          {/* أبعاد الصورة المرفوعة */}
+          {/* أبعاد الصورة */}
           {imgDims && (
             <div className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm">
-              {imgDims.w}×{imgDims.h}
+              {imgDims.w}×{imgDims.h}px ✓
             </div>
           )}
 
-          {/* ✅ شارة */}
+          {/* شارة الموافقة */}
           <div className="absolute top-1.5 left-1.5 bg-green-500/90 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm">
-            ✓ مطابقة
-          </div>
-
-          {/* المنطقة الآمنة */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute border-2 border-dashed border-white/60 rounded" style={{ inset: "10% 15%" }} />
-            <div className="absolute bottom-[10%] right-[15%] bg-black/50 text-white text-[9px] px-1 py-0.5 rounded">
-              منطقة آمنة
-            </div>
+            ✓ الأبعاد مطابقة · WebP محسّن
           </div>
         </div>
       )}
@@ -295,21 +321,24 @@ function LivePreview({
   mobileSrc,
   title,
 }: {
-  adType: AdType;
+  adType:     AdType;
   desktopSrc: string;
-  mobileSrc: string;
-  title: string;
+  mobileSrc:  string;
+  title:      string;
 }) {
-  const [device, setDevice] = useState<DeviceTab>("desktop");
+  const [device,     setDevice]     = useState<DeviceTab>("desktop");
+  const [showGuides, setShowGuides] = useState(true);
 
-  const isPremium = adType === "premium";
+  const isPremium  = adType === "premium";
+  const slotConfig = SLOT_TEMPLATES[adType as AdSlotType];
 
-  // النسبة حسب النوع والجهاز — مبنية على الأبعاد الفعلية
-  const ratio = isPremium
-    ? (device === "desktop" ? "9/2"  : "3/1")
-    : (device === "desktop" ? "16/5" : "2/1");
-  // الصورة حسب الجهاز
-  const src   = device === "desktop" ? (desktopSrc || mobileSrc) : (mobileSrc || desktopSrc);
+  // الـ template المناسب للجهاز
+  const template = device === "desktop" ? slotConfig.desktop : slotConfig.mobile;
+
+  // الصورة المناسبة للجهاز (desktop preview uses desktop image, tablet/mobile use mobile image)
+  const src = device === "desktop"
+    ? (desktopSrc || mobileSrc)
+    : (mobileSrc  || desktopSrc);
 
   const devices: { key: DeviceTab; label: string; icon: typeof Monitor }[] = [
     { key: "desktop", label: "ديسكتوب", icon: Monitor },
@@ -317,30 +346,59 @@ function LivePreview({
     { key: "mobile",  label: "جوال",    icon: Smartphone },
   ];
 
+  // حدود المنطقة الآمنة بالنسبة المئوية
+  const safeEdge = (template.bleed + template.safeInset);
+  const safePct  = {
+    top:    `${(safeEdge / template.height) * 100}%`,
+    right:  `${(safeEdge / template.width)  * 100}%`,
+    bottom: `${(safeEdge / template.height) * 100}%`,
+    left:   `${(safeEdge / template.width)  * 100}%`,
+  };
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      {/* ── رأس: عنوان + تبويب الأجهزة + زر الأدلة ── */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <Label className="text-sm font-semibold">معاينة مباشرة</Label>
-        <div className="flex rounded-lg border border-border overflow-hidden">
-          {devices.map(d => (
-            <button
-              key={d.key}
-              type="button"
-              onClick={() => setDevice(d.key)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-colors",
-                device === d.key
-                  ? "bg-accent text-white"
-                  : "text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <d.icon className="h-3.5 w-3.5" />
-              {d.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          {/* زر toggle الأدلة */}
+          <button
+            type="button"
+            onClick={() => setShowGuides(g => !g)}
+            className={cn(
+              "flex items-center gap-1 text-[11px] px-2 py-1 rounded-md border transition-colors",
+              showGuides
+                ? "bg-accent/10 border-accent/30 text-accent"
+                : "bg-muted border-border text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <LayoutTemplate className="h-3 w-3" />
+            {showGuides ? "إخفاء الأدلة" : "إظهار الأدلة"}
+          </button>
+
+          {/* تبويب الأجهزة */}
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            {devices.map(d => (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => setDevice(d.key)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-colors",
+                  device === d.key
+                    ? "bg-accent text-white"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <d.icon className="h-3.5 w-3.5" />
+                {d.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
+      {/* ── صندوق المعاينة ── */}
       <div
         className={cn(
           "relative overflow-hidden rounded-xl border border-border bg-neutral-200 mx-auto transition-all",
@@ -348,47 +406,72 @@ function LivePreview({
           device === "tablet"  && "max-w-[480px]",
           device === "desktop" && "w-full"
         )}
-        style={{ aspectRatio: ratio }}
+        style={{ aspectRatio: `${template.width}/${template.height}` }}
       >
         {src ? (
-          <>
-            <img
-              src={src}
-              alt="معاينة"
-              className="absolute inset-0 w-full h-full object-cover object-center"
-            />
-            {/* Safe Area */}
-            <div className="absolute pointer-events-none" style={{ inset: "10% 15%" }}>
-              <div className="w-full h-full border-2 border-dashed border-white/60 rounded" />
-              <div className="absolute bottom-1 right-1 bg-black/50 text-white text-[9px] px-1 py-0.5 rounded">
-                منطقة آمنة
-              </div>
-            </div>
-            {/* عنوان */}
-            {title && (
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8">
-                <p className="text-white text-xs font-semibold text-right line-clamp-1">{title}</p>
-              </div>
-            )}
-          </>
+          <img
+            src={src}
+            alt="معاينة"
+            className="absolute inset-0 w-full h-full object-contain"
+          />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground/40">
             <ImageIcon className="h-8 w-8" />
             <span className="text-xs">ارفع صورة لرؤية المعاينة</span>
           </div>
         )}
+
+        {/* ── أدلة التصميم (admin only) ── */}
+        {showGuides && (
+          <div className="absolute inset-0 pointer-events-none">
+            {/* المنطقة الآمنة — حد متقطع أحمر */}
+            <div
+              className="absolute border border-dashed border-red-400/70 rounded-sm"
+              style={safePct}
+            >
+              <span className="absolute top-0 right-0 translate-y-[-100%] text-[7px] font-bold text-red-400/90 px-1 bg-black/20 rounded-t leading-tight">
+                Safe
+              </span>
+            </div>
+
+            {/* مناطق Logo / Title / CTA */}
+            {template.zones.map(zone => (
+              <div
+                key={zone.label}
+                className="absolute rounded-sm"
+                style={{
+                  left:       `${(zone.x / template.width)  * 100}%`,
+                  top:        `${(zone.y / template.height) * 100}%`,
+                  width:      `${(zone.w / template.width)  * 100}%`,
+                  height:     `${(zone.h / template.height) * 100}%`,
+                  background: zone.color,
+                  border:     `1px solid ${zone.strokeColor}60`,
+                }}
+              >
+                <span
+                  className="absolute top-0 left-0 text-[6px] font-bold text-white px-0.5 leading-tight rounded-br"
+                  style={{ background: zone.strokeColor }}
+                >
+                  {zone.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* عنوان الإعلان */}
+        {title && src && (
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8 pointer-events-none">
+            <p className="text-white text-xs font-semibold text-right line-clamp-1">{title}</p>
+          </div>
+        )}
       </div>
 
-      <div className="text-xs text-muted-foreground text-center">
-        {isPremium
-          ? device === "desktop"
-            ? "صورة الديسكتوب (≥1024px) — النسبة الفعلية 9:2"
-            : "صورة الجوال والتابلت (<1024px) — النسبة الفعلية 3:1"
-          : device === "desktop"
-            ? "صورة الديسكتوب (≥1024px) — النسبة الفعلية 16:5"
-            : "صورة الجوال والتابلت (<1024px) — النسبة الفعلية 2:1"
-        }
-      </div>
+      {/* معلومات القالب */}
+      <p className="text-xs text-muted-foreground text-center">
+        {template.name} · {template.width}×{template.height}px ({template.ratio})
+        {device !== "desktop" && <span className="text-muted-foreground/60"> · صورة الجوال/التابلت</span>}
+      </p>
     </div>
   );
 }
@@ -401,18 +484,19 @@ function emptyAd(type: AdType = "secondary"): AdForm {
   return {
     type,
     desktopImageUrl: "",
-    mobileImageUrl: "",
-    linkUrl: "",
-    title: "",
-    order: 1,
-    duration: 6,
-    startDate: "",
-    endDate: "",
-    active: true,
+    mobileImageUrl:  "",
+    imageUrl:        "",
+    linkUrl:         "",
+    title:           "",
+    order:           1,
+    duration:        6,
+    startDate:       "",
+    endDate:         "",
+    active:          true,
   };
 }
 
-// ─── نافذة الإضافة / التعديل ─────────────────────────────────────────────────
+// ─── نافذة الإضافة / التعديل ──────────────────────────────────────────────────
 
 function AdDialog({
   open,
@@ -421,23 +505,23 @@ function AdDialog({
   onSave,
   onClose,
 }: {
-  open: boolean;
-  title: string;
+  open:    boolean;
+  title:   string;
   initial: AdForm;
-  onSave: (f: AdForm) => void;
+  onSave:  (form: AdForm) => void;
   onClose: () => void;
 }) {
   const [form, setForm] = useState<AdForm>(initial);
   const patch = (p: Partial<AdForm>) => setForm(v => ({ ...v, ...p }));
 
-  // إعادة التهيئة عند فتح النافذة
   const prevOpen = useRef(false);
   if (open && !prevOpen.current) { setForm(initial); }
   prevOpen.current = open;
 
-  const isPremium = form.type === "premium";
-  const desktopSpec = isPremium ? RATIO_SPECS.premium_desktop : RATIO_SPECS.secondary_desktop;
-  const mobileSpec  = isPremium ? RATIO_SPECS.premium_mobile  : RATIO_SPECS.secondary_mobile;
+  const isPremium       = form.type === "premium";
+  const slotConfig      = SLOT_TEMPLATES[form.type as AdSlotType];
+  const desktopTemplate = slotConfig.desktop;
+  const mobileTemplate  = slotConfig.mobile;
 
   const [desktopErr, setDesktopErr] = useState<string>();
 
@@ -449,10 +533,7 @@ function AdDialog({
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent
-        className="max-w-2xl max-h-[92vh] overflow-y-auto"
-        dir="rtl"
-      >
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto" dir="rtl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -463,34 +544,35 @@ function AdDialog({
           <div className="space-y-2">
             <Label className="text-sm font-semibold">نوع الإعلان</Label>
             <div className="grid grid-cols-2 gap-3">
-              {(["premium", "secondary"] as AdType[]).map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => {
-                    if (form.type !== t) {
-                      patch({ type: t, desktopImageUrl: "", mobileImageUrl: "" });
-                      setDesktopErr(undefined);
-                    }
-                  }}
-                  className={cn(
-                    "rounded-xl border-2 p-3 text-right transition-all",
-                    form.type === t
-                      ? "border-accent bg-accent/5"
-                      : "border-border hover:border-muted-foreground/40"
-                  )}
-                >
-                  <div className="font-semibold text-sm mb-0.5">
-                    {t === "premium" ? "🏆 Premium" : "📌 Secondary"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {t === "premium"
-                      ? "إعلان رئيسي — عرض كامل — ديسكتوب 9:2 / جوال 3:1"
-                      : "إعلان ثانوي — أسفل الرئيسي — ديسكتوب 16:5 / جوال 2:1"
-                    }
-                  </div>
-                </button>
-              ))}
+              {(["premium", "secondary"] as AdType[]).map(t => {
+                const cfg = SLOT_TEMPLATES[t as AdSlotType];
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => {
+                      if (form.type !== t) {
+                        patch({ type: t, desktopImageUrl: "", mobileImageUrl: "" });
+                        setDesktopErr(undefined);
+                      }
+                    }}
+                    className={cn(
+                      "rounded-xl border-2 p-3 text-right transition-all",
+                      form.type === t
+                        ? "border-accent bg-accent/5"
+                        : "border-border hover:border-muted-foreground/40"
+                    )}
+                  >
+                    <div className="font-semibold text-sm mb-0.5">
+                      {t === "premium" ? "🏆 Premium" : "📌 Secondary"}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground space-y-0.5">
+                      <div>ديسكتوب: {cfg.desktop.width}×{cfg.desktop.height}px ({cfg.desktop.ratio})</div>
+                      <div>جوال: {cfg.mobile.width}×{cfg.mobile.height}px ({cfg.mobile.ratio})</div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -499,13 +581,13 @@ function AdDialog({
           {/* رفع الصور */}
           <ImageUploader
             key={`desktop-${form.type}`}
-            label={`صورة الديسكتوب ${isPremium ? "(9:2)" : "(16:5)"} — ≥1024px`}
+            label={`صورة الديسكتوب — ${desktopTemplate.width}×${desktopTemplate.height}px`}
             sublabel={isPremium
-              ? "الصورة الكبيرة تظهر على الحاسوب والشاشات الكبيرة"
-              : "تظهر على جميع الأجهزة ما لم تُرفع صورة جوال"
+              ? "تظهر على الشاشات ≥1024px"
+              : "تظهر على الشاشات ≥1024px — إذا لم تُرفع صورة جوال"
             }
             value={form.desktopImageUrl}
-            spec={desktopSpec}
+            template={desktopTemplate}
             required
             onResult={(url, err) => {
               patch({ desktopImageUrl: url || "" });
@@ -515,10 +597,10 @@ function AdDialog({
 
           <ImageUploader
             key={`mobile-${form.type}`}
-            label={`صورة الجوال والتابلت ${isPremium ? "(3:1)" : "(2:1)"} — <1024px — اختياري`}
-            sublabel="إذا لم تُرفع، ستُستخدم صورة الديسكتوب تلقائياً"
+            label={`صورة الجوال والتابلت — ${mobileTemplate.width}×${mobileTemplate.height}px — اختياري`}
+            sublabel="تظهر على الشاشات <1024px · إذا لم تُرفع تُستخدم صورة الديسكتوب تلقائياً"
             value={form.mobileImageUrl || ""}
-            spec={mobileSpec}
+            template={mobileTemplate}
             onResult={(url) => patch({ mobileImageUrl: url || "" })}
           />
 
@@ -556,7 +638,9 @@ function AdDialog({
                 />
                 {form.linkUrl && (
                   <Button type="button" variant="outline" size="icon" asChild>
-                    <a href={form.linkUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a>
+                    <a href={form.linkUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
                   </Button>
                 )}
               </div>
@@ -597,7 +681,11 @@ function AdDialog({
             </div>
 
             <div className="flex items-center gap-3 pt-1">
-              <Switch id="dlg-active" checked={form.active} onCheckedChange={v => patch({ active: v })} />
+              <Switch
+                id="dlg-active"
+                checked={form.active}
+                onCheckedChange={v => patch({ active: v })}
+              />
               <Label htmlFor="dlg-active" className="cursor-pointer">
                 {form.active ? "مفعّل — يظهر للزوار فوراً" : "معطّل — مخفي عن الزوار"}
               </Label>
@@ -646,21 +734,18 @@ export default function Ads() {
     const reordered = [...ads];
     const [moved]   = reordered.splice(dragIdx.current, 1);
     reordered.splice(dropIdx, 0, moved);
-    // تحديث الترتيب دفعةً واحدة في استدعاء settings واحد
     reorderAds(reordered);
     dragIdx.current = null;
     setDragOver(null);
   };
   const onDragEnd = () => { dragIdx.current = null; setDragOver(null); };
 
-  // ─── حفظ جديد ──────────────────────────────────────────────────────────
   const handleAdd = useCallback((form: Omit<Ad, "id" | "views" | "clicks">) => {
     addAd({ ...form, views: 0, clicks: 0, order: ads.length + 1 });
     setShowAdd(false);
     toast({ title: "تم إضافة الإعلان ✓" });
   }, [addAd, ads.length, toast]);
 
-  // ─── تعديل ────────────────────────────────────────────────────────────────
   const handleEdit = useCallback((form: Omit<Ad, "id" | "views" | "clicks">) => {
     if (!editTarget) return;
     updateAd(editTarget.id, form);
@@ -668,7 +753,6 @@ export default function Ads() {
     toast({ title: "تم تحديث الإعلان ✓" });
   }, [editTarget, updateAd, toast]);
 
-  // ─── حذف ──────────────────────────────────────────────────────────────────
   const handleDelete = () => {
     if (!deleteTarget) return;
     deleteAd(deleteTarget.id);
@@ -678,8 +762,7 @@ export default function Ads() {
 
   const handleToggle = (ad: Ad) => updateAd(ad.id, { active: !ad.active });
 
-  // ─── إحصائيات إجمالية ────────────────────────────────────────────────────
-  const totalViews  = ads.reduce((s, a) => s + (a.views ?? 0), 0);
+  const totalViews  = ads.reduce((s, a) => s + (a.views  ?? 0), 0);
   const totalClicks = ads.reduce((s, a) => s + (a.clicks ?? 0), 0);
   const avgCTR      = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
 
@@ -715,9 +798,9 @@ export default function Ads() {
         {/* ─── بطاقات الإحصائيات ─── */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "المشاهدات", value: totalViews.toLocaleString(), icon: Eye,              color: "text-blue-600" },
-            { label: "النقرات",   value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-green-600" },
-            { label: "معدّل النقر",value: `${avgCTR}%`,               icon: TrendingUp,        color: "text-accent" },
+            { label: "المشاهدات",  value: totalViews.toLocaleString(),  icon: Eye,              color: "text-blue-600" },
+            { label: "النقرات",    value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-green-600" },
+            { label: "معدّل النقر", value: `${avgCTR}%`,               icon: TrendingUp,        color: "text-accent" },
           ].map(s => (
             <div key={s.label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
               <s.icon className={cn("h-5 w-5 shrink-0", s.color)} />
@@ -729,14 +812,44 @@ export default function Ads() {
           ))}
         </div>
 
-        {/* ─── شرح الأنواع ─── */}
-        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2 text-sm">
-          <p className="font-semibold">كيف تعمل الإعلانات؟</p>
-          <div className="space-y-1.5 text-muted-foreground text-[13px] leading-relaxed">
-            <p>🏆 <strong className="text-foreground">Premium — ديسكتوب 9:2 / جوال 3:1:</strong> إعلان رئيسي بعرض كامل — يدور تلقائياً إذا وُجد أكثر من إعلان نشط.</p>
-            <p>📌 <strong className="text-foreground">Secondary — ديسكتوب 16:5 / جوال 2:1:</strong> إعلانان أسفل الرئيسي جنباً إلى جنب — على الجوال تظهر بتمرير أفقي.</p>
-            <p>📐 <strong className="text-foreground">الصور:</strong> يجب أن تطابق النسبة المحددة (±3%) وإلا لن يُقبل الرفع.</p>
-            <p>📱 <strong className="text-foreground">صورة الجوال/التابلت:</strong> اختياري (تظهر على الشاشات أقل من 1024px) — إذا لم تُرفع، تُستخدم صورة الديسكتوب تلقائياً.</p>
+        {/* ─── قوالب الأدلة + شرح الأنواع ─── */}
+        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-4">
+          <p className="font-semibold">كيف يعمل نظام الإعلانات؟</p>
+
+          {/* قوالب التحميل */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {(Object.values(SLOT_TEMPLATES) as { desktop: AdTemplate; mobile: AdTemplate }[]).flatMap(
+              (s): AdTemplate[] => [s.desktop, s.mobile]
+            ).map(tpl => (
+              <button
+                key={tpl.key}
+                type="button"
+                onClick={() => downloadTemplateGuide(tpl)}
+                className="flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-2.5 hover:border-accent/40 hover:bg-accent/5 transition-colors text-right"
+              >
+                <div className="flex items-center gap-1.5 w-full">
+                  <Download className="h-3 w-3 text-accent shrink-0" />
+                  <span className="text-[11px] font-semibold truncate">{tpl.name}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground font-mono">{tpl.width}×{tpl.height}px · {tpl.ratio}</span>
+                <div className="flex gap-1 flex-wrap">
+                  {tpl.zones.map(z => (
+                    <span key={z.label} className="inline-flex items-center gap-0.5 text-[9px] px-1 py-0 rounded-full border"
+                      style={{ borderColor: `${z.strokeColor}40`, color: z.strokeColor, background: z.color }}>
+                      {z.label}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-1.5 text-muted-foreground text-[13px] leading-relaxed border-t border-border pt-3">
+            <p>🏆 <strong className="text-foreground">Premium:</strong> بانر رئيسي بعرض كامل — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">1800×400px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">1200×400px</code></p>
+            <p>📌 <strong className="text-foreground">Secondary:</strong> إعلانان جنباً إلى جنب — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">960×300px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">800×400px</code></p>
+            <p>📐 <strong className="text-foreground">الأبعاد:</strong> يُرفض أي ملف لا يطابق الأبعاد بالضبط — صفر تسامح.</p>
+            <p>🖼 <strong className="text-foreground">الجودة:</strong> الصور لا تُعاد تحجيمها أو تُقص — تحويل WebP فقط (جودة 92%) بعد التحقق.</p>
+            <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — تظهر على الشاشات &lt;1024px · إذا لم تُرفع تُستخدم الديسكتوب تلقائياً.</p>
             <p>🔀 <strong className="text-foreground">الترتيب:</strong> اسحب الإعلانات لتغيير ترتيبها.</p>
           </div>
         </div>
@@ -757,7 +870,6 @@ export default function Ads() {
           </div>
         ) : (
           <div className="rounded-xl border border-border overflow-hidden">
-
             {/* ── رأس الجدول (md+) ── */}
             <div
               className="hidden md:grid bg-muted/60 border-b border-border px-4 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wide"
@@ -782,18 +894,18 @@ export default function Ads() {
               const ctr        = (ad.views ?? 0) > 0
                 ? (((ad.clicks ?? 0) / (ad.views ?? 1)) * 100).toFixed(1) + "%"
                 : "—";
-              const thumb = ad.desktopImageUrl || ad.imageUrl || "";
+              const thumb     = ad.desktopImageUrl || ad.imageUrl || "";
               const typeLabel = ad.type === "premium" ? "🏆 Premium" : "📌 Secondary";
               const typeCls   = ad.type === "premium"
                 ? "border-yellow-300 text-yellow-700 bg-yellow-50"
                 : "border-blue-300 text-blue-700 bg-blue-50";
 
               const dragProps = {
-                draggable: true,
+                draggable:   true,
                 onDragStart: () => onDragStart(idx),
                 onDragOver:  (e: React.DragEvent) => onDragOver(e, idx),
                 onDrop:      (e: React.DragEvent) => onDrop(e, idx),
-                onDragEnd:   onDragEnd,
+                onDragEnd,
               };
 
               const actions = (
@@ -826,18 +938,16 @@ export default function Ads() {
                     !ad.active && "opacity-60"
                   )}
                 >
-                  {/* ── Desktop / Tablet (md+): صف جدول ── */}
+                  {/* ── Desktop (md+): صف جدول ── */}
                   <div
                     {...dragProps}
                     className="hidden md:grid items-center gap-x-3 px-4 py-3 cursor-default"
                     style={{ gridTemplateColumns: "2rem 5rem 1fr 6rem 7rem 5rem 5rem 4.5rem 9rem" }}
                   >
-                    {/* مقبض السحب */}
                     <div className="cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground transition-colors">
                       <GripVertical className="h-5 w-5" />
                     </div>
 
-                    {/* صورة */}
                     <div className="rounded-md overflow-hidden bg-muted" style={{ aspectRatio: "16/9" }}>
                       {thumb
                         ? <img src={thumb} alt="" className="w-full h-full object-cover" loading="lazy" />
@@ -845,7 +955,6 @@ export default function Ads() {
                       }
                     </div>
 
-                    {/* الإعلان */}
                     <div className="min-w-0">
                       {ad.title
                         ? <p className="font-semibold text-sm truncate">{ad.title}</p>
@@ -865,45 +974,30 @@ export default function Ads() {
                       </div>
                     </div>
 
-                    {/* النوع */}
                     <div className="flex justify-center">
                       <Badge variant="outline" className={cn("text-[11px] whitespace-nowrap", typeCls)}>
                         {typeLabel}
                       </Badge>
                     </div>
 
-                    {/* الحالة */}
                     <div className="flex justify-center">
                       <span className={cn("inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border whitespace-nowrap", cfg.color)}>
                         <StatusIcon className="h-3 w-3" />{cfg.label}
                       </span>
                     </div>
 
-                    {/* مشاهدات */}
                     <div className="flex justify-center text-sm font-semibold tabular-nums">
                       {(ad.views ?? 0).toLocaleString()}
                     </div>
-
-                    {/* نقرات */}
                     <div className="flex justify-center text-sm font-semibold tabular-nums">
                       {(ad.clicks ?? 0).toLocaleString()}
                     </div>
-
-                    {/* CTR */}
-                    <div className="flex justify-center text-sm font-semibold tabular-nums">
-                      {ctr}
-                    </div>
-
-                    {/* إجراءات */}
-                    <div className="flex items-center justify-center gap-0.5">
-                      {actions}
-                    </div>
+                    <div className="flex justify-center text-sm font-semibold tabular-nums">{ctr}</div>
+                    <div className="flex items-center justify-center gap-0.5">{actions}</div>
                   </div>
 
                   {/* ── Mobile (< md): بطاقة ── */}
                   <div {...dragProps} className="md:hidden p-3 space-y-2.5">
-
-                    {/* ─ صف 1: مقبض + صورة + معلومات ─ */}
                     <div className="flex items-start gap-2">
                       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/30 mt-0.5 shrink-0">
                         <GripVertical className="h-4 w-4" />
@@ -934,7 +1028,6 @@ export default function Ads() {
                       </div>
                     </div>
 
-                    {/* ─ صف 2: النوع + الحالة ─ */}
                     <div className="flex items-center gap-2 pr-6">
                       <Badge variant="outline" className={cn("text-[10px] h-5", typeCls)}>
                         {typeLabel}
@@ -944,10 +1037,9 @@ export default function Ads() {
                       </span>
                     </div>
 
-                    {/* ─ صف 3: الإحصائيات ─ */}
                     <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden bg-border pr-6">
                       {[
-                        { label: "مشاهدات", value: (ad.views ?? 0).toLocaleString() },
+                        { label: "مشاهدات", value: (ad.views  ?? 0).toLocaleString() },
                         { label: "نقرات",   value: (ad.clicks ?? 0).toLocaleString() },
                         { label: "CTR",     value: ctr },
                       ].map(stat => (
@@ -958,11 +1050,9 @@ export default function Ads() {
                       ))}
                     </div>
 
-                    {/* ─ صف 4: الإجراءات ─ */}
                     <div className="flex items-center gap-0.5 pt-1.5 border-t border-border pr-6">
                       {actions}
                     </div>
-
                   </div>
                 </div>
               );
@@ -989,10 +1079,11 @@ export default function Ads() {
             type:            editTarget.type ?? "secondary",
             desktopImageUrl: editTarget.desktopImageUrl || editTarget.imageUrl || "",
             mobileImageUrl:  editTarget.mobileImageUrl ?? "",
-            linkUrl:         editTarget.linkUrl   ?? "",
-            title:           editTarget.title     ?? "",
+            imageUrl:        editTarget.imageUrl ?? "",
+            linkUrl:         editTarget.linkUrl  ?? "",
+            title:           editTarget.title    ?? "",
             order:           editTarget.order,
-            duration:        editTarget.duration  ?? 6,
+            duration:        editTarget.duration ?? 6,
             startDate:       editTarget.startDate ?? "",
             endDate:         editTarget.endDate   ?? "",
             active:          editTarget.active,
@@ -1003,7 +1094,7 @@ export default function Ads() {
       )}
 
       {/* ─── تأكيد الحذف ─── */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open: boolean) => { if (!open) setDeleteTarget(null); }}>
         <AlertDialogContent dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>حذف الإعلان</AlertDialogTitle>
