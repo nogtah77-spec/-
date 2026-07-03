@@ -477,7 +477,8 @@ function AdDialog({
                 <Input
                   type="number" min={2} max={60}
                   value={form.duration ?? 6}
-                  onChange={e => patch({ duration: Math.max(2, Number(e.target.value)) })}
+                  onChange={e => patch({ duration: Number(e.target.value) || 0 })}
+                  onBlur={e => patch({ duration: Math.max(2, Math.min(60, Number(e.target.value) || 2)) })}
                 />
               </div>
               <div className="space-y-1.5">
