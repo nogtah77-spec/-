@@ -346,13 +346,9 @@ export function AdsBanner({ ads }: Props) {
   const active = getActiveAds(ads);
   if (active.length === 0) return null;
 
+  // كل نوع يظهر في مكانه فقط — لا يوجد fallback بين النوعين
   const premiums    = active.filter(a => (a.type ?? "premium") === "premium");
   const secondaries = active.filter(a =>  a.type               === "secondary").slice(0, 2);
-
-  const finalPremiums    = premiums.length > 0 ? premiums : [active[0]];
-  const finalSecondaries = secondaries.length > 0
-    ? secondaries
-    : active.filter(a => !finalPremiums.includes(a)).slice(0, 2);
 
   const onView = useCallback((id: string, viewDuration: number) => {
     if (isStaff) return;
@@ -373,10 +369,12 @@ export function AdsBanner({ ads }: Props) {
       className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-6 space-y-3"
       aria-label="إعلانات"
     >
-      <PremiumSlot premiums={finalPremiums} onView={onView} onClick={onClick} />
+      {premiums.length > 0 && (
+        <PremiumSlot premiums={premiums} onView={onView} onClick={onClick} />
+      )}
 
-      {finalSecondaries.length > 0 && (
-        <SecondaryCarousel ads={finalSecondaries} onView={onView} onClick={onClick} />
+      {secondaries.length > 0 && (
+        <SecondaryCarousel ads={secondaries} onView={onView} onClick={onClick} />
       )}
     </section>
   );
