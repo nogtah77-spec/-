@@ -57,8 +57,8 @@ async function validateAndUpload(
   file: File,
   template: AdTemplate,
 ): Promise<ImageResult> {
-  if (file.size > 15 * 1024 * 1024)
-    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير — الحد الأقصى 15 ميجابايت" };
+  if (file.size > 3 * 1024 * 1024)
+    return { dataUrl: "", width: 0, height: 0, error: "حجم الملف كبير — الحد الأقصى 3 ميجابايت" };
 
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
@@ -139,80 +139,102 @@ function ImageUploader({
     if (file && file.type.startsWith("image/")) handleFile(file);
   };
 
-  // مستطيل توضيحي بعرض 100px وارتفاع محسوب من النسبة الفعلية (حد أدنى 20px)
-  const diagW = 100;
-  const diagH = Math.max(20, Math.round(diagW * template.height / template.width));
+  // مستطيل توضيحي بعرض 80px وارتفاع محسوب من النسبة الفعلية (حد أدنى 18px)
+  const diagW = 80;
+  const diagH = Math.max(18, Math.round(diagW * template.height / template.width));
 
   return (
     <div className="space-y-2.5">
 
-      {/* ── رأس: العنوان + شارة النسبة ── */}
-      <div className="flex items-center justify-between">
-        <Label className="text-sm font-semibold">
-          {label}
-          {required && <span className="text-destructive mr-1">*</span>}
-        </Label>
-        <span className={cn(
-          "text-xs font-bold px-2 py-0.5 rounded-full",
-          required ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"
-        )}>
-          {template.ratio}
-        </span>
-      </div>
+      {/* ── رأس: العنوان الوصفي ── */}
+      <Label className="text-sm font-semibold">
+        {label}
+        {required && <span className="text-destructive mr-1">*</span>}
+      </Label>
 
-      {/* ── بطاقة المواصفات ── */}
-      <div className="rounded-lg bg-muted/60 border border-border px-3 py-2.5 flex items-start gap-3">
-        {/* مستطيل توضيحي مع مناطق اللون */}
-        <div className="shrink-0 mt-0.5">
-          <div
-            className="relative border-2 border-accent/40 rounded-sm overflow-hidden bg-white"
-            style={{ width: `${diagW}px`, height: `${diagH}px` }}
-          >
-            {template.zones.map(zone => (
-              <div
-                key={zone.label}
-                className="absolute"
-                style={{
-                  left:       `${(zone.x / template.width)  * 100}%`,
-                  top:        `${(zone.y / template.height) * 100}%`,
-                  width:      `${(zone.w / template.width)  * 100}%`,
-                  height:     `${(zone.h / template.height) * 100}%`,
-                  background: zone.color,
-                }}
-              />
-            ))}
-            <span className="absolute inset-0 flex items-center justify-center text-[8px] text-accent/60 font-bold pointer-events-none z-10 mix-blend-multiply">
-              {template.ratio}
-            </span>
+      {/* ══ بطاقة المواصفات الاحترافية ══ */}
+      <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+
+        {/* ─ الصف الأول: اسم القالب + الأبعاد + الرسم التوضيحي ─ */}
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40 border-b border-border">
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-foreground leading-none mb-1">{template.name}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-xs font-semibold text-accent bg-accent/10 px-2 py-0.5 rounded">
+                {template.width} × {template.height} px
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Ratio: <strong className="text-foreground">{template.ratio}</strong>
+              </span>
+            </div>
+          </div>
+          {/* مستطيل توضيحي */}
+          <div className="shrink-0">
+            <div
+              className="relative border border-accent/40 rounded-sm overflow-hidden bg-white/80"
+              style={{ width: `${diagW}px`, height: `${diagH}px` }}
+            >
+              {template.zones.map(zone => (
+                <div
+                  key={zone.label}
+                  className="absolute"
+                  style={{
+                    left:       `${(zone.x / template.width)  * 100}%`,
+                    top:        `${(zone.y / template.height) * 100}%`,
+                    width:      `${(zone.w / template.width)  * 100}%`,
+                    height:     `${(zone.h / template.height) * 100}%`,
+                    background: zone.color,
+                    border:     `1px solid ${zone.strokeColor}50`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="text-xs space-y-1 min-w-0 flex-1">
-          <p className="font-semibold text-foreground">{sublabel}</p>
-          <p className="text-muted-foreground">
-            <span className="text-accent font-semibold">أبعاد مطلوبة بالضبط:</span>{" "}
-            <span className="font-mono">{template.width}×{template.height}px</span>
-          </p>
-          <p className="text-muted-foreground">الحجم الأقصى: 15 ميجابايت · JPG أو PNG أو WebP</p>
-          <div className="flex gap-1 flex-wrap pt-0.5">
-            {template.zones.map(zone => (
-              <span key={zone.label} className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-muted border border-border">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: zone.strokeColor }} />
-                {zone.label}
+        {/* ─ الصف الثاني: صيغ الملفات ─ */}
+        <div className="px-4 py-2.5 border-b border-border">
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-2 font-medium">صيغ مقبولة</p>
+          <div className="flex gap-2">
+            {["PNG", "JPG", "WEBP"].map(fmt => (
+              <span
+                key={fmt}
+                className="flex-1 text-center text-xs font-bold py-1.5 rounded-lg border border-border bg-muted text-foreground tracking-widest"
+              >
+                {fmt}
               </span>
             ))}
           </div>
         </div>
 
-        {/* زر تحميل دليل القالب */}
-        <button
-          type="button"
-          title="تحميل دليل القالب PNG"
-          onClick={() => downloadTemplateGuide(template)}
-          className="shrink-0 mt-0.5 p-1.5 rounded-md text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
-        >
-          <Download className="h-3.5 w-3.5" />
-        </button>
+        {/* ─ الصف الثالث: الحجم الأقصى ─ */}
+        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">الحجم الأقصى</p>
+          <span className="text-sm font-bold text-foreground">3 MB</span>
+        </div>
+
+        {/* ─ الصف الرابع: المنطقة الآمنة + زر التحميل ─ */}
+        <div className="px-4 py-2.5 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1.5 font-medium">Safe Area</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              {template.zones.map(zone => (
+                <span key={zone.label} className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: zone.strokeColor }}>
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  {zone.label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => downloadTemplateGuide(template)}
+            className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-accent hover:text-accent/80 bg-accent/10 hover:bg-accent/15 px-3 py-2 rounded-lg transition-colors border border-accent/20"
+          >
+            <Download className="h-3.5 w-3.5" />
+            تحميل القالب
+          </button>
+        </div>
       </div>
 
       {/* ── منطقة الرفع (drag & drop) ── */}
@@ -849,6 +871,7 @@ export default function Ads() {
             <p>📌 <strong className="text-foreground">Secondary:</strong> إعلانان جنباً إلى جنب — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.desktop.width}×{SLOT_TEMPLATES.secondary.desktop.height}px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.mobile.width}×{SLOT_TEMPLATES.secondary.mobile.height}px</code></p>
             <p>📐 <strong className="text-foreground">الأبعاد:</strong> يُرفض أي ملف لا يطابق الأبعاد بالضبط — صفر تسامح.</p>
             <p>🖼 <strong className="text-foreground">الجودة:</strong> الصور لا تُعاد تحجيمها أو تُقص — تحويل WebP فقط (جودة 92%) بعد التحقق.</p>
+            <p>📦 <strong className="text-foreground">الحجم الأقصى:</strong> <code className="text-[11px] bg-muted px-1 rounded">3 MB</code> · صيغ مقبولة: PNG · JPG · WEBP</p>
             <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — تظهر على الشاشات &lt;1024px · إذا لم تُرفع تُستخدم الديسكتوب تلقائياً.</p>
             <p>🔀 <strong className="text-foreground">الترتيب:</strong> اسحب الإعلانات لتغيير ترتيبها.</p>
           </div>
