@@ -17,63 +17,16 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .slice(0, 3);
 }
 
-// ─── AdImage: يعرض الصورة كاملة بدون قطع + خلفية blur ──────────────────────
+// ─── Vignette overlay: ظل داخلي ناعم على الحواف فقط ────────────────────────
 //
-//  الفكرة: طبقتان فوق بعض:
-//   1) خلفية blur  — نفس الصورة بـ object-cover + blur لملء المساحات
-//   2) الصورة الفعلية — بـ object-contain لعرض التفاصيل كاملة
-//
-//  هكذا لا يُقطع أي جزء من الإعلان بغض النظر عن حجم الشاشة.
+//  box-shadow inset يتبع border-radius تلقائياً →
+//  الحواف تبدو مقوّسة وناعمة، ووسط الصورة واضح تماماً.
 
-// حجم الإطار البلر من كل الجهات (بكسل)
-const BLUR_INSET = 10;
+const VIGNETTE_STYLE: React.CSSProperties = {
+  boxShadow: "inset 0 0 35px 8px rgba(0,0,0,0.38)",
+};
 
-function AdImage({
-  src,
-  alt,
-  opacity = 1,
-}: {
-  src: string;
-  alt: string;
-  opacity?: number;
-}) {
-  return (
-    <>
-      {/* ① خلفية blur من كل الجهات — تُكبَّر قليلاً لتغطية الحواف */}
-      <img
-        src={src}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-        style={{
-          opacity: opacity * 0.9,
-          filter: "blur(14px) brightness(0.45) saturate(1.25)",
-          transform: "scale(1.08)",
-          transition: "opacity 0.7s ease",
-        }}
-      />
-
-      {/* ② الصورة الفعلية — كاملة بلا قطع، مع إطار موحّد من كل الجهات */}
-      <img
-        src={src}
-        alt={alt}
-        draggable={false}
-        loading="lazy"
-        className="absolute object-contain pointer-events-none"
-        style={{
-          inset: BLUR_INSET,
-          width:  `calc(100% - ${BLUR_INSET * 2}px)`,
-          height: `calc(100% - ${BLUR_INSET * 2}px)`,
-          opacity,
-          transition: "opacity 0.7s ease",
-        }}
-      />
-    </>
-  );
-}
-
-// ─── AdSlot: حاوية الإعلان الواحد ──────────────────────────────────────────
+// ─── AdSlot ─────────────────────────────────────────────────────────────────
 
 function AdSlot({
   ad,
@@ -93,31 +46,49 @@ function AdSlot({
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-black",
+        "relative overflow-hidden bg-neutral-900",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
         className
       )}
       onClick={() => onClick(ad)}
     >
+      {/* ── الصورة الكاملة ── */}
       {crossfade ? (
-        // الـ slot الرئيسي: جميع الصور مكدّسة — تتلاشى بالـ opacity
         allAds.map((a, i) => (
-          <AdImage
+          <img
             key={a.id}
             src={a.imageUrl}
             alt={a.title || `إعلان ${i + 1}`}
-            opacity={i === currentIdx ? 1 : 0}
+            draggable={false}
+            loading="lazy"
+            className={cn(
+              "absolute inset-0 w-full h-full object-cover object-center pointer-events-none",
+              "transition-opacity duration-700"
+            )}
+            style={{ opacity: i === currentIdx ? 1 : 0 }}
           />
         ))
       ) : (
-        <AdImage src={ad.imageUrl} alt={ad.title || "إعلان"} />
+        <img
+          src={ad.imageUrl}
+          alt={ad.title || "إعلان"}
+          draggable={false}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+        />
       )}
 
-      {/* عنوان الإعلان — شريط سفلي شفّاف */}
+      {/* ── Vignette: ظل داخلي ناعم على الحواف + يتبع rounded-* ── */}
+      <div
+        className="absolute inset-0 pointer-events-none rounded-[inherit]"
+        style={VIGNETTE_STYLE}
+      />
+
+      {/* ── عنوان الإعلان ── */}
       {ad.title && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none px-4 py-3">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none px-4 py-3">
           <p className={cn(
-            "text-white font-semibold leading-snug line-clamp-1 drop-shadow",
+            "text-white font-semibold leading-snug line-clamp-1 drop-shadow-sm",
             crossfade ? "text-sm" : "text-xs"
           )}>
             {ad.title}
@@ -125,9 +96,9 @@ function AdSlot({
         </div>
       )}
 
-      {/* حلقة hover للروابط */}
+      {/* ── hover ring للروابط ── */}
       {ad.linkUrl && (
-        <div className="absolute inset-0 ring-inset ring-2 ring-transparent hover:ring-white/25 transition-all rounded-[inherit] pointer-events-none" />
+        <div className="absolute inset-0 ring-inset ring-2 ring-transparent hover:ring-white/20 transition-all rounded-[inherit] pointer-events-none" />
       )}
     </div>
   );
@@ -151,7 +122,6 @@ export function AdsBanner({ ads }: Props) {
 
   useEffect(() => { setCurrent(0); }, [count]);
 
-  // مدة ظهور مستقلة لكل إعلان (duration بالثانية)
   useEffect(() => {
     if (count <= 1 || paused) return;
     const ms = (active[current]?.duration ?? 6) * 1000;
@@ -197,7 +167,7 @@ export function AdsBanner({ ads }: Props) {
     <section className="container px-4 sm:px-6 pt-4 sm:pt-5">
       <div className="select-none" {...wrapperEvents}>
 
-        {/* ══ جوال + تابلت (< lg) ══════════════════════════════════════════ */}
+        {/* ══ جوال + تابلت ═══════════════════════════════════════════════ */}
         <div className="lg:hidden">
           <AdSlot
             ad={mainAd} allAds={active} currentIdx={current}
@@ -206,7 +176,7 @@ export function AdsBanner({ ads }: Props) {
           />
         </div>
 
-        {/* ══ ديسكتوب — إعلان واحد ═══════════════════════════════════════ */}
+        {/* ══ ديسكتوب — إعلان واحد ════════════════════════════════════════ */}
         {count === 1 && (
           <div className="hidden lg:block">
             <AdSlot
@@ -217,7 +187,7 @@ export function AdsBanner({ ads }: Props) {
           </div>
         )}
 
-        {/* ══ ديسكتوب — إعلانان ══════════════════════════════════════════ */}
+        {/* ══ ديسكتوب — إعلانان ═══════════════════════════════════════════ */}
         {count === 2 && (
           <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
@@ -233,9 +203,7 @@ export function AdsBanner({ ads }: Props) {
           </div>
         )}
 
-        {/* ══ ديسكتوب — ثلاثة إعلانات ════════════════════════════════════
-            الرئيسي (60%) يدور بمدة كل إعلان.
-            الجانبيان (40%) يعرضان الإعلانات التالية معاينةً.           */}
+        {/* ══ ديسكتوب — ثلاثة إعلانات ════════════════════════════════════ */}
         {count === 3 && (
           <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
