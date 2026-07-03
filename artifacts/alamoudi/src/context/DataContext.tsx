@@ -628,17 +628,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     updateSettings({ ads: (settings.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x) });
   const deleteAd = (id: string) =>
     updateSettings({ ads: (settings.ads ?? []).filter(x => x.id !== id) });
-  // تتبّع المشاهدات والنقرات — تحديث محلي فقط بدون API لأن الزوار غير مسجّلين
-  const trackAdView = (id: string) =>
+  // تتبّع المشاهدات والنقرات — يُرسَل للـ API وهي تتجاهل الأدمن والموظفين تلقائياً
+  // best-effort: لا نعرض خطأ أبداً، ونحدّث الـ state المحلي فوراً للتجاوب
+  const trackAdView = useCallback((id: string) => {
     setSettings(prev => ({
       ...prev,
       ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, views: (x.views ?? 0) + 1 } : x),
     }));
-  const trackAdClick = (id: string) =>
+    void api.post(`/ads/${id}/view`, {}).catch(() => { /* best-effort */ });
+  }, []);
+  const trackAdClick = useCallback((id: string) => {
     setSettings(prev => ({
       ...prev,
       ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, clicks: (x.clicks ?? 0) + 1 } : x),
     }));
+    void api.post(`/ads/${id}/click`, {}).catch(() => { /* best-effort */ });
+  }, []);
 
   return (
     <DataContext.Provider value={{

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Ad } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -187,6 +188,7 @@ interface Props { ads: Ad[]; }
 
 export function AdsBanner({ ads }: Props) {
   const { trackAdView, trackAdClick } = useData();
+  const { isStaff } = useAuth();
 
   const active = getActiveAds(ads);
   if (active.length === 0) return null;
@@ -200,18 +202,20 @@ export function AdsBanner({ ads }: Props) {
   const finalSecondaries = secondaries.length > 0 ? secondaries
     : active.filter(a => !finalPremiums.includes(a)).slice(0, 2);
 
-  const handleClick = useCallback((ad: Ad) => {
-    trackAdClick(ad.id);
+  // الأدمن والموظفون لا يُحتسبون في الإحصائيات
+  const onView  = useCallback((id: string) => { if (!isStaff) trackAdView(id);  }, [isStaff, trackAdView]);
+  const onClick = useCallback((ad: Ad) => {
+    if (!isStaff) trackAdClick(ad.id);
     if (ad.linkUrl) window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
-  }, [trackAdClick]);
+  }, [isStaff, trackAdClick]);
 
   return (
     <section className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-8 space-y-3" aria-label="إعلانات">
       {/* الإعلان الرئيسي */}
       <PremiumSlot
         premiums={finalPremiums}
-        onView={trackAdView}
-        onClick={handleClick}
+        onView={onView}
+        onClick={onClick}
       />
 
       {/* الإعلانات الثانوية (جنب بعض على الديسكتوب، فوق بعض على الجوال) */}
@@ -226,8 +230,8 @@ export function AdsBanner({ ads }: Props) {
               ad={ad}
               aspectRatio="16/9"
               priority={i === 0}
-              onView={() => trackAdView(ad.id)}
-              onClick={() => handleClick(ad)}
+              onView={() => onView(ad.id)}
+              onClick={() => onClick(ad)}
             />
           ))}
         </div>
