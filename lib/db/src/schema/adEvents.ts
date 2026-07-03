@@ -20,6 +20,10 @@ export const adEventsTable = pgTable(
     viewDuration: integer("view_duration"), // مللي ثانية — لحوادث المشاهدة فقط
     clickX:       real("click_x"),       // نسبة أفقية 0–1 — لحوادث النقر فقط
     clickY:       real("click_y"),       // نسبة رأسية 0–1 — لحوادث النقر فقط
+    country:      text("country"),       // اسم الدولة — مثل: Egypt
+    countryCode:  text("country_code"),  // كود الدولة — مثل: EG
+    city:         text("city"),          // المدينة — مثل: Cairo
+    region:       text("region"),        // المنطقة — مثل: Cairo Governorate
   },
   (t) => ({
     adIdIdx:      index("ad_events_ad_id_idx").on(t.adId),

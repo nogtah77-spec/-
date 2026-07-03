@@ -36,6 +36,9 @@ interface AnalyticsData {
   languages:  Record<string, number>;
   referrerTypes: Record<string, number>;
   referrerPages: Record<string, number>;
+  countries:  Array<{ name: string; code: string; count: number }>;
+  cities:     Array<{ city: string; country: string; countryCode: string; count: number }>;
+  regions:    Array<{ region: string; country: string; countryCode: string; count: number }>;
   screenSizes: Record<string, number>;
   timeline: Array<{ date: string; views: number; clicks: number; ctr: number }>;
   peakHours: number[];
@@ -69,6 +72,16 @@ const REFERRER_LABELS: Record<string, string> = {
 const WEEKDAY_LABELS = ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 
 const CHART_COLORS = ["#c9a96e", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+
+// تحويل كود الدولة (مثل EG) إلى إيموجي علم
+function countryFlag(code: string): string {
+  if (!code || code.length !== 2) return "🌍";
+  const offset = 127397;
+  return String.fromCodePoint(
+    code.toUpperCase().charCodeAt(0) + offset,
+    code.toUpperCase().charCodeAt(1) + offset,
+  );
+}
 
 function msToReadable(ms: number): string {
   if (ms < 1000) return `${ms} مللي ث`;
@@ -177,6 +190,60 @@ function BreakdownList({ data, total, labelMap }: {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── GeoBreakdownList ──────────────────────────────────────────────────────────
+
+function GeoBreakdownList({
+  items, total, labelKey, subKey, codeKey, limit = 10,
+}: {
+  items: Array<Record<string, string | number>>;
+  total: number;
+  labelKey: string;
+  subKey?: string;
+  codeKey?: string;
+  limit?: number;
+}) {
+  const top = items.slice(0, limit);
+  if (top.length === 0) return (
+    <p className="text-sm text-muted-foreground text-center py-4">
+      لا توجد بيانات جغرافية — ستظهر تلقائياً مع أول زيارة حقيقية
+    </p>
+  );
+  return (
+    <div className="space-y-2.5">
+      {top.map((item, idx) => {
+        const label = String(item[labelKey] ?? "");
+        const code  = codeKey ? String(item[codeKey] ?? "") : "";
+        const sub   = subKey  ? String(item[subKey]  ?? "") : "";
+        const val   = Number(item.count ?? 0);
+        const flag  = code.length === 2 ? countryFlag(code) : "";
+        return (
+          <div key={label} className="space-y-1">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium truncate max-w-[65%] flex items-center gap-1.5">
+                {flag && <span className="text-base leading-none">{flag}</span>}
+                <span>{label}</span>
+                {sub && <span className="text-xs text-muted-foreground">({sub})</span>}
+              </span>
+              <span className="text-muted-foreground tabular-nums shrink-0">
+                {val.toLocaleString()} ({percent(val, total)})
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: percent(val, total),
+                  backgroundColor: CHART_COLORS[idx % CHART_COLORS.length],
+                }}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -523,6 +590,78 @@ export default function AdAnalytics() {
               <p className="text-sm text-muted-foreground py-4 text-center">جارٍ التحميل…</p>
             ) : (
               <BreakdownList data={data?.referrerPages ?? {}} total={periodViews} />
+            )}
+          </div>
+        </div>
+
+        {/* ─── Countries ───────────────────────────────────────────────────── */}
+        <div className="rounded-2xl border bg-card p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Globe className="w-4 h-4 text-accent" />
+            <h3 className="font-semibold">الدول</h3>
+            {(data?.countries?.length ?? 0) > 0 && (
+              <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full mr-auto">
+                {data!.countries.length} دولة
+              </span>
+            )}
+          </div>
+          {loading ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">جارٍ التحميل…</p>
+          ) : (
+            <GeoBreakdownList
+              items={data?.countries as Array<Record<string, string | number>> ?? []}
+              total={periodViews}
+              labelKey="name"
+              codeKey="code"
+            />
+          )}
+        </div>
+
+        {/* ─── Cities + Regions ─────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-2xl border bg-card p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-4 h-4 text-blue-500" />
+              <h3 className="font-semibold">المدن</h3>
+              {(data?.cities?.length ?? 0) > 0 && (
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full mr-auto">
+                  {data!.cities.length} مدينة
+                </span>
+              )}
+            </div>
+            {loading ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">جارٍ التحميل…</p>
+            ) : (
+              <GeoBreakdownList
+                items={data?.cities as Array<Record<string, string | number>> ?? []}
+                total={periodViews}
+                labelKey="city"
+                subKey="country"
+                codeKey="countryCode"
+              />
+            )}
+          </div>
+
+          <div className="rounded-2xl border bg-card p-4 sm:p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-4 h-4 text-green-500" />
+              <h3 className="font-semibold">المناطق</h3>
+              {(data?.regions?.length ?? 0) > 0 && (
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full mr-auto">
+                  {data!.regions.length} منطقة
+                </span>
+              )}
+            </div>
+            {loading ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">جارٍ التحميل…</p>
+            ) : (
+              <GeoBreakdownList
+                items={data?.regions as Array<Record<string, string | number>> ?? []}
+                total={periodViews}
+                labelKey="region"
+                subKey="country"
+                codeKey="countryCode"
+              />
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, settingsTable, adEventsTable } from "@workspace/db";
-import { eq, and, gte, count, sql } from "drizzle-orm";
+import { eq, and, gte, count } from "drizzle-orm";
 import { requireStaff } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -10,6 +10,70 @@ const router: IRouter = Router();
 function isStaffReq(req: import("express").Request): boolean {
   const sess = req.session as { userId?: string; role?: string };
   return !!sess?.userId && (sess.role === "admin" || sess.role === "agent");
+}
+
+// ─── helper: استخراج IP الزائر الحقيقي ──────────────────────────────────────
+
+function getClientIp(req: import("express").Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    return (typeof forwarded === "string" ? forwarded : forwarded[0])
+      .split(",")[0]
+      .trim();
+  }
+  return req.ip ?? req.socket.remoteAddress ?? "";
+}
+
+// ─── helper: بحث جيولوكيشن من IP ────────────────────────────────────────────
+
+interface GeoData {
+  country: string;
+  countryCode: string;
+  city: string;
+  region: string;
+}
+
+async function getGeoData(ip: string): Promise<GeoData | null> {
+  if (
+    !ip ||
+    ip === "127.0.0.1" ||
+    ip === "::1" ||
+    ip.startsWith("::ffff:127.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("10.") ||
+    ip.startsWith("172.16.") ||
+    ip.startsWith("172.17.") ||
+    ip.startsWith("172.18.")
+  ) {
+    return null; // لا يمكن تحديد موقع الـ IPs المحلية
+  }
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    const res = await fetch(
+      `http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city&lang=ar`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeout);
+    const data = (await res.json()) as {
+      status: string;
+      country?: string;
+      countryCode?: string;
+      regionName?: string;
+      city?: string;
+    };
+    if (data.status === "success") {
+      return {
+        country:     data.country     ?? "",
+        countryCode: data.countryCode ?? "",
+        city:        data.city        ?? "",
+        region:      data.regionName  ?? "",
+      };
+    }
+  } catch {
+    /* best-effort — لا نوقف التتبع بسبب فشل الجيولوكيشن */
+  }
+  return null;
 }
 
 // ─── تتبّع مشاهدة إعلان ─────────────────────────────────────────────────────
@@ -25,24 +89,33 @@ router.post("/ads/:id/view", async (req, res): Promise<void> => {
   } = req.body ?? {};
 
   try {
-    // ١ — تخزين الحدث التفصيلي
+    // جلب الجيولوكيشن بالتوازي مع استعداد الـ DB
+    const [geoData] = await Promise.all([
+      getGeoData(getClientIp(req)),
+    ]);
+
+    // ١ — تخزين الحدث التفصيلي مع بيانات الجيولوكيشن
     await db.insert(adEventsTable).values({
       adId:         id,
       eventType:    "view",
-      sessionId:    sessionId ?? null,
-      deviceType:   deviceType ?? null,
-      browser:      browser ?? null,
-      os:           os ?? null,
-      screenWidth:  screenWidth ?? null,
+      sessionId:    sessionId    ?? null,
+      deviceType:   deviceType   ?? null,
+      browser:      browser      ?? null,
+      os:           os           ?? null,
+      screenWidth:  screenWidth  ?? null,
       screenHeight: screenHeight ?? null,
-      language:     language ?? null,
-      referrer:     referrer ?? null,
+      language:     language     ?? null,
+      referrer:     referrer     ?? null,
       referrerType: referrerType ?? null,
       referrerPage: referrerPage ?? null,
       viewDuration: viewDuration ?? null,
+      country:      geoData?.country     ?? null,
+      countryCode:  geoData?.countryCode ?? null,
+      city:         geoData?.city        ?? null,
+      region:       geoData?.region      ?? null,
     });
 
-    // ٢ — تحديث العداد السريع في settings (للعرض الفوري في لوحة الأدمن)
+    // ٢ — تحديث العداد السريع في settings
     const [row] = await db.select().from(settingsTable).limit(1);
     const data  = (row?.data ?? {}) as Record<string, unknown>;
     const ads   = (data.ads ?? []) as Array<Record<string, unknown>>;
@@ -72,21 +145,29 @@ router.post("/ads/:id/click", async (req, res): Promise<void> => {
   } = req.body ?? {};
 
   try {
+    const [geoData] = await Promise.all([
+      getGeoData(getClientIp(req)),
+    ]);
+
     await db.insert(adEventsTable).values({
       adId:         id,
       eventType:    "click",
-      sessionId:    sessionId ?? null,
-      deviceType:   deviceType ?? null,
-      browser:      browser ?? null,
-      os:           os ?? null,
-      screenWidth:  screenWidth ?? null,
+      sessionId:    sessionId    ?? null,
+      deviceType:   deviceType   ?? null,
+      browser:      browser      ?? null,
+      os:           os           ?? null,
+      screenWidth:  screenWidth  ?? null,
       screenHeight: screenHeight ?? null,
-      language:     language ?? null,
-      referrer:     referrer ?? null,
+      language:     language     ?? null,
+      referrer:     referrer     ?? null,
       referrerType: referrerType ?? null,
       referrerPage: referrerPage ?? null,
-      clickX:       clickX ?? null,
-      clickY:       clickY ?? null,
+      clickX:       clickX       ?? null,
+      clickY:       clickY       ?? null,
+      country:      geoData?.country     ?? null,
+      countryCode:  geoData?.countryCode ?? null,
+      city:         geoData?.city        ?? null,
+      region:       geoData?.region      ?? null,
     });
 
     const [row] = await db.select().from(settingsTable).limit(1);
@@ -127,7 +208,7 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
   const views  = allEvents.filter(e => e.eventType === "view");
   const clicks = allEvents.filter(e => e.eventType === "click");
 
-  // الزوار الفريدون (بـ sessionId)
+  // الزوار الفريدون
   const uniqueSessions = new Set(views.map(e => e.sessionId).filter(Boolean));
   const uniqueClickers = new Set(clicks.map(e => e.sessionId).filter(Boolean));
 
@@ -137,12 +218,12 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     ? Math.round(durationsMs.reduce((a, b) => a + b, 0) / durationsMs.length)
     : 0;
 
-  // إجمالي مشاهدات الفترة بالكامل (بدون date filter) للـ campaign summary
+  // إجمالي منذ الإنشاء
   const [totalRow] = await db
     .select({ total: count() })
     .from(adEventsTable)
     .where(and(eq(adEventsTable.adId, id), eq(adEventsTable.eventType, "view")));
-  const [totalClicks] = await db
+  const [totalClicksRow] = await db
     .select({ total: count() })
     .from(adEventsTable)
     .where(and(eq(adEventsTable.adId, id), eq(adEventsTable.eventType, "click")));
@@ -158,12 +239,48 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     return result;
   }
 
-  const deviceBreakdown    = groupBy(views, "deviceType");
-  const browserBreakdown   = groupBy(views, "browser");
-  const osBreakdown        = groupBy(views, "os");
-  const languageBreakdown  = groupBy(views, "language");
+  const deviceBreakdown       = groupBy(views, "deviceType");
+  const browserBreakdown      = groupBy(views, "browser");
+  const osBreakdown           = groupBy(views, "os");
+  const languageBreakdown     = groupBy(views, "language");
   const referrerTypeBreakdown = groupBy(views, "referrerType");
   const referrerPageBreakdown = groupBy(views, "referrerPage");
+  // تجميع الدول مع كود الدولة لعرض العلم
+  const countryMap: Record<string, { count: number; code: string }> = {};
+  for (const e of views) {
+    const name = e.country ?? "";
+    const code = e.countryCode ?? "";
+    if (!name) continue;
+    if (!countryMap[name]) countryMap[name] = { count: 0, code };
+    countryMap[name].count++;
+  }
+  const countryBreakdown = Object.entries(countryMap)
+    .map(([name, { count, code }]) => ({ name, code, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // تجميع المدن مع بلدها
+  const cityMapRaw: Record<string, { count: number; country: string; countryCode: string }> = {};
+  for (const e of views) {
+    const city = e.city ?? "";
+    if (!city) continue;
+    if (!cityMapRaw[city]) cityMapRaw[city] = { count: 0, country: e.country ?? "", countryCode: e.countryCode ?? "" };
+    cityMapRaw[city].count++;
+  }
+  const cityBreakdown = Object.entries(cityMapRaw)
+    .map(([city, { count, country, countryCode }]) => ({ city, country, countryCode, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // تجميع المناطق مع بلدها
+  const regionMapRaw: Record<string, { count: number; country: string; countryCode: string }> = {};
+  for (const e of views) {
+    const region = e.region ?? "";
+    if (!region) continue;
+    if (!regionMapRaw[region]) regionMapRaw[region] = { count: 0, country: e.country ?? "", countryCode: e.countryCode ?? "" };
+    regionMapRaw[region].count++;
+  }
+  const regionBreakdown = Object.entries(regionMapRaw)
+    .map(([region, { count, country, countryCode }]) => ({ region, country, countryCode, count }))
+    .sort((a, b) => b.count - a.count);
 
   // أحجام الشاشات
   const screenSizeMap: Record<string, number> = {};
@@ -174,7 +291,7 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     }
   }
 
-  // ─── المخطط الزمني (يومي) ───────────────────────────────────────────────
+  // ─── المخطط الزمني ───────────────────────────────────────────────────────
 
   const timelineMap: Record<string, { views: number; clicks: number }> = {};
   const toISO = (d: Date) => d.toISOString().slice(0, 10);
@@ -186,44 +303,38 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     if (e.eventType === "click") timelineMap[day].clicks++;
   }
 
-  // إملاء الأيام الفارغة بين fromDate و toDate
   const timeline: Array<{ date: string; views: number; clicks: number; ctr: number }> = [];
   const cursor = new Date(fromDate);
   cursor.setHours(0, 0, 0, 0);
   while (cursor <= toDate) {
-    const day  = toISO(cursor);
-    const v    = timelineMap[day]?.views  ?? 0;
-    const c    = timelineMap[day]?.clicks ?? 0;
+    const day = toISO(cursor);
+    const v   = timelineMap[day]?.views  ?? 0;
+    const c   = timelineMap[day]?.clicks ?? 0;
     timeline.push({ date: day, views: v, clicks: c, ctr: v > 0 ? +(c / v * 100).toFixed(1) : 0 });
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  // ─── المخطط الساعي (0–23) ───────────────────────────────────────────────
+  // ─── ساعات الذروة وأيام الأسبوع ──────────────────────────────────────────
 
   const hourlyMap: number[] = Array(24).fill(0);
-  for (const e of views) {
-    hourlyMap[e.createdAt.getHours()]++;
-  }
-
-  // ─── أيام الأسبوع (0=الأحد) ─────────────────────────────────────────────
-
   const weekdayMap: number[] = Array(7).fill(0);
   for (const e of views) {
+    hourlyMap[e.createdAt.getHours()]++;
     weekdayMap[e.createdAt.getDay()]++;
   }
 
-  // ─── heatmap النقرات ────────────────────────────────────────────────────
+  // ─── Heatmap النقرات ─────────────────────────────────────────────────────
 
   const clickHeatmap = clicks
     .filter(e => e.clickX != null && e.clickY != null)
     .map(e => ({ x: e.clickX!, y: e.clickY! }));
 
-  // ─── الزوار اليوم / 7 أيام / 30 يوماً ─────────────────────────────────
+  // ─── الزوار حسب الفترة ───────────────────────────────────────────────────
 
-  const now    = new Date();
-  const day1   = new Date(now); day1.setHours(0, 0, 0, 0);
-  const day7   = new Date(now); day7.setDate(now.getDate() - 7);
-  const day30  = new Date(now); day30.setDate(now.getDate() - 30);
+  const now   = new Date();
+  const day1  = new Date(now); day1.setHours(0, 0, 0, 0);
+  const day7  = new Date(now); day7.setDate(now.getDate() - 7);
+  const day30 = new Date(now); day30.setDate(now.getDate() - 30);
 
   const allViewsEver = await db
     .select()
@@ -235,33 +346,36 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
   const visitors30d   = new Set(allViewsEver.filter(e => e.createdAt >= day30).map(e => e.sessionId)).size;
   const visitorsAll   = new Set(allViewsEver.map(e => e.sessionId)).size;
 
-  // ─── الرد ──────────────────────────────────────────────────────────────
+  // ─── الرد ────────────────────────────────────────────────────────────────
 
-  const totalViews  = totalRow?.total   ?? 0;
-  const totalClk    = totalClicks?.total ?? 0;
+  const totalViews  = totalRow?.total       ?? 0;
+  const totalClk    = totalClicksRow?.total ?? 0;
 
   res.json({
     overview: {
-      totalViews:       Number(totalViews),
-      totalClicks:      Number(totalClk),
-      ctr:              Number(totalViews) > 0 ? +(Number(totalClk) / Number(totalViews) * 100).toFixed(2) : 0,
-      uniqueVisitors:   uniqueSessions.size,
-      uniqueClickers:   uniqueClickers.size,
-      avgViewDuration:  avgDuration,
-      periodViews:      views.length,
-      periodClicks:     clicks.length,
+      totalViews:      Number(totalViews),
+      totalClicks:     Number(totalClk),
+      ctr:             Number(totalViews) > 0 ? +(Number(totalClk) / Number(totalViews) * 100).toFixed(2) : 0,
+      uniqueVisitors:  uniqueSessions.size,
+      uniqueClickers:  uniqueClickers.size,
+      avgViewDuration: avgDuration,
+      periodViews:     views.length,
+      periodClicks:    clicks.length,
     },
     visitors: { today: visitorsToday, last7d: visitors7d, last30d: visitors30d, all: visitorsAll },
-    devices:    deviceBreakdown,
-    browsers:   browserBreakdown,
-    os:         osBreakdown,
-    languages:  languageBreakdown,
+    devices:       deviceBreakdown,
+    browsers:      browserBreakdown,
+    os:            osBreakdown,
+    languages:     languageBreakdown,
     referrerTypes: referrerTypeBreakdown,
     referrerPages: referrerPageBreakdown,
-    screenSizes: screenSizeMap,
+    countries:  countryBreakdown,
+    cities:     cityBreakdown,
+    regions:    regionBreakdown,
+    screenSizes:   screenSizeMap,
     timeline,
-    peakHours:  hourlyMap,
-    weekdays:   weekdayMap,
+    peakHours:     hourlyMap,
+    weekdays:      weekdayMap,
     clickHeatmap,
     period: { from: fromDate.toISOString(), to: toDate.toISOString() },
   });
