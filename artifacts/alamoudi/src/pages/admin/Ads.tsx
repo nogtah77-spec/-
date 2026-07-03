@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink, Eye, EyeOff, Clock, Info } from "lucide-react";
+import { Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink, Eye, EyeOff, Clock, Info, Blend } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -208,7 +209,7 @@ function AdForm({
 
 // ─── الصفحة الرئيسية ──────────────────────────────────────────────────────────
 export default function Ads() {
-  const { settings, addAd, updateAd, deleteAd } = useData();
+  const { settings, updateSettings, addAd, updateAd, deleteAd } = useData();
   const ads = [...(settings.ads ?? [])].sort((a, b) => a.order - b.order);
   const { toast } = useToast();
 
@@ -337,6 +338,30 @@ export default function Ads() {
               <strong>1200 × 350 بكسل</strong> — ضع كل المحتوى المهم في وسط الصورة.
             </p>
           </div>
+        </div>
+
+        {/* ─── إعداد حجم Blur على الحواف ─── */}
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3" dir="rtl">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Blend className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-sm font-semibold">تأثير Blur على حواف الإعلانات</Label>
+            </div>
+            <span className="text-xs font-mono text-accent bg-accent/10 rounded px-2 py-0.5 min-w-[2.5rem] text-center">
+              {settings.adsBlurSize ?? 8}
+            </span>
+          </div>
+          <Slider
+            min={0}
+            max={20}
+            step={1}
+            value={[settings.adsBlurSize ?? 8]}
+            onValueChange={([v]) => updateSettings({ adsBlurSize: v })}
+            className="w-full"
+          />
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            القيمة <strong>0</strong> تعطيل Blur تماماً — القيمة <strong>20</strong> أقصى تأثير على الحواف. الوسط الواضح من الصورة لا يتأثر.
+          </p>
         </div>
 
         {/* ─── شبكة الإعلانات ─── */}

@@ -155,6 +155,7 @@ export interface SiteSettings {
   heroOverlayOpacity: number;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
+  adsBlurSize: number;   // حجم blur على حواف الإعلانات (0–20)
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -176,6 +177,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   heroOverlayOpacity: 85,
   tiktokVideos: [],
   ads: [],
+  adsBlurSize: 8,
 };
 
 export interface VisitorStats {

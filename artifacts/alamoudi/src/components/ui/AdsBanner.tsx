@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { Ad } from "@/context/DataContext";
 
@@ -17,14 +17,31 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .slice(0, 3);
 }
 
-// ─── Vignette overlay: ظل داخلي ناعم على الحواف فقط ────────────────────────
+// ─── طبقة Blur على الحواف فقط ───────────────────────────────────────────────
 //
-//  box-shadow inset يتبع border-radius تلقائياً →
-//  الحواف تبدو مقوّسة وناعمة، ووسط الصورة واضح تماماً.
+//  backdrop-filter: blur()  →  تضبّب فعلي للبكسلات خلف الطبقة
+//  mask-image (radial-gradient)  →  المركز شفاف (الصورة واضحة)،
+//                                   الحواف معتمة (Blur يظهر هناك فقط)
+//
+//  overflow:hidden + border-radius على الـ container يقلّم كل شيء
+//  فتبدو حواف الصورة ناعمة ومقوّسة تلقائياً.
 
-const VIGNETTE_STYLE: React.CSSProperties = {
-  boxShadow: "inset 0 0 35px 8px rgba(0,0,0,0.38)",
-};
+function EdgeBlur({ size }: { size: number }) {
+  if (size === 0) return null;
+  // نسبة مساحة المركز الصافي: كلما زاد الـ blur كلما ضاق المركز الواضح
+  const clearPct = Math.max(20, 90 - size * 3.5);
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none rounded-[inherit] z-10"
+      style={{
+        backdropFilter: `blur(${size}px)`,
+        WebkitBackdropFilter: `blur(${size}px)`,
+        maskImage: `radial-gradient(ellipse 80% 80% at 50% 50%, transparent ${clearPct}%, black 100%)`,
+        WebkitMaskImage: `radial-gradient(ellipse 80% 80% at 50% 50%, transparent ${clearPct}%, black 100%)`,
+      }}
+    />
+  );
+}
 
 // ─── AdSlot ─────────────────────────────────────────────────────────────────
 
@@ -32,6 +49,7 @@ function AdSlot({
   ad,
   allAds,
   currentIdx,
+  blurSize,
   onClick,
   className,
   crossfade = false,
@@ -39,6 +57,7 @@ function AdSlot({
   ad: Ad;
   allAds: Ad[];
   currentIdx: number;
+  blurSize: number;
   onClick: (ad: Ad) => void;
   className?: string;
   crossfade?: boolean;
@@ -78,15 +97,12 @@ function AdSlot({
         />
       )}
 
-      {/* ── Vignette: ظل داخلي ناعم على الحواف + يتبع rounded-* ── */}
-      <div
-        className="absolute inset-0 pointer-events-none rounded-[inherit]"
-        style={VIGNETTE_STYLE}
-      />
+      {/* ── Blur حقيقي على الحواف فقط ── */}
+      <EdgeBlur size={blurSize} />
 
       {/* ── عنوان الإعلان ── */}
       {ad.title && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none px-4 py-3">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/55 to-transparent pointer-events-none px-4 py-3 z-20">
           <p className={cn(
             "text-white font-semibold leading-snug line-clamp-1 drop-shadow-sm",
             crossfade ? "text-sm" : "text-xs"
@@ -95,20 +111,18 @@ function AdSlot({
           </p>
         </div>
       )}
-
-      {/* ── hover ring للروابط ── */}
-      {ad.linkUrl && (
-        <div className="absolute inset-0 ring-inset ring-2 ring-transparent hover:ring-white/20 transition-all rounded-[inherit] pointer-events-none" />
-      )}
     </div>
   );
 }
 
 // ─── المكوّن الرئيسي ────────────────────────────────────────────────────────
 
-interface Props { ads: Ad[]; }
+interface Props {
+  ads: Ad[];
+  blurSize?: number;
+}
 
-export function AdsBanner({ ads }: Props) {
+export function AdsBanner({ ads, blurSize = 8 }: Props) {
   const active  = getActiveAds(ads);
   const count   = active.length;
   const [current, setCurrent] = useState(0);
@@ -171,6 +185,7 @@ export function AdsBanner({ ads }: Props) {
         <div className="lg:hidden">
           <AdSlot
             ad={mainAd} allAds={active} currentIdx={current}
+            blurSize={blurSize}
             onClick={handleClick} crossfade
             className="h-36 sm:h-44 w-full rounded-2xl shadow-md"
           />
@@ -181,6 +196,7 @@ export function AdsBanner({ ads }: Props) {
           <div className="hidden lg:block">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
+              blurSize={blurSize}
               onClick={handleClick} crossfade
               className="h-52 w-full rounded-2xl shadow-md"
             />
@@ -192,11 +208,13 @@ export function AdsBanner({ ads }: Props) {
           <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
+              blurSize={blurSize}
               onClick={handleClick} crossfade
               className="rounded-2xl shadow-md"
             />
             <AdSlot
               ad={sideAd1!} allAds={active} currentIdx={current}
+              blurSize={blurSize}
               onClick={handleClick}
               className="rounded-2xl shadow-sm"
             />
@@ -208,17 +226,20 @@ export function AdsBanner({ ads }: Props) {
           <div className="hidden lg:grid grid-cols-[3fr_2fr] gap-3 h-52">
             <AdSlot
               ad={mainAd} allAds={active} currentIdx={current}
+              blurSize={blurSize}
               onClick={handleClick} crossfade
               className="rounded-2xl shadow-md"
             />
             <div className="flex flex-col gap-2.5 h-full">
               <AdSlot
                 ad={sideAd1!} allAds={active} currentIdx={current}
+                blurSize={blurSize}
                 onClick={handleClick}
                 className="flex-1 rounded-xl shadow-sm"
               />
               <AdSlot
                 ad={sideAd2!} allAds={active} currentIdx={current}
+                blurSize={blurSize}
                 onClick={handleClick}
                 className="flex-1 rounded-xl shadow-sm"
               />
