@@ -124,6 +124,17 @@ export interface TiktokVideo {
   videoUrl: string;
 }
 
+export interface Ad {
+  id: string;
+  imageUrl: string;
+  linkUrl?: string;
+  title?: string;
+  order: number;
+  startDate?: string;
+  endDate?: string;
+  active: boolean;
+}
+
 export interface SiteSettings {
   companyName: string;
   companyDescription: string;
@@ -142,6 +153,7 @@ export interface SiteSettings {
   heroImageUrl: string;
   heroOverlayOpacity: number;
   tiktokVideos: TiktokVideo[];
+  ads: Ad[];
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
@@ -162,6 +174,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   heroImageUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
   heroOverlayOpacity: 85,
   tiktokVideos: [],
+  ads: [],
 };
 
 export interface VisitorStats {
@@ -220,6 +233,9 @@ interface DataContextType {
   addTiktokVideo: (v: Omit<TiktokVideo, "id">) => void;
   updateTiktokVideo: (id: string, v: Partial<Omit<TiktokVideo, "id">>) => void;
   deleteTiktokVideo: (id: string) => void;
+  addAd: (a: Omit<Ad, "id">) => void;
+  updateAd: (id: string, a: Partial<Omit<Ad, "id">>) => void;
+  deleteAd: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -362,7 +378,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setRegions(cached.regions);
       setPropertyTypes(cached.types);
       setProperties(cached.properties);
-      setSettings({ ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [] });
+      setSettings({ ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [], ads: cached.settings.ads ?? [] });
       setReady(true);
     }
 
@@ -385,7 +401,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (newRegions)  setRegions(newRegions);
       if (newTypes)    setPropertyTypes(newTypes);
       if (newProps)    setProperties(newProps);
-      if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
+      if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] });
 
       const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
       setFetching(false);
@@ -594,6 +610,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteTiktokVideo = (id: string) =>
     updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).filter(x => x.id !== id) });
 
+  const addAd = (a: Omit<Ad, "id">) =>
+    updateSettings({ ads: [...(settings.ads ?? []), { ...a, id: genId() }] });
+  const updateAd = (id: string, a: Partial<Omit<Ad, "id">>) =>
+    updateSettings({ ads: (settings.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x) });
+  const deleteAd = (id: string) =>
+    updateSettings({ ads: (settings.ads ?? []).filter(x => x.id !== id) });
+
   return (
     <DataContext.Provider value={{
       ready, fetching, reload,
@@ -610,6 +633,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
+      addAd, updateAd, deleteAd,
     }}>
       {children}
     </DataContext.Provider>

@@ -18,6 +18,7 @@ import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { AdsBanner } from "@/components/ui/AdsBanner";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -272,6 +273,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ── Ads Banner ── */}
+        {!isFiltering && <AdsBanner ads={settings.ads ?? []} />}
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">
