@@ -19,13 +19,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-// ─── النسب المطلوبة لكل نوع صورة ──────────────────────────────────────────
+// ─── النسب المبنية على الأبعاد الفعلية للصناديق ────────────────────────────
+// Premium Desktop  (≥1024px) : ~976-1400px × 240-280px  ≈ 9:2
+// Premium Mobile   (<1024px) : ~340-975px  × 200-220px  ≈ 3:1  (جوال + تابلت)
+// Secondary Desktop(≥1024px) : ~480-610px  × 190px      ≈ 16:5
+// Secondary Mobile (<1024px) : ~300-480px  × 180-190px  ≈ 2:1
 
 const RATIO_SPECS = {
-  premium_desktop:  { w: 21, h: 9,  label: "21:9",  example: "2520×1080 أو 1680×720 أو 840×360" },
-  premium_mobile:   { w: 16, h: 9,  label: "16:9",  example: "1280×720 أو 1920×1080" },
-  secondary_desktop:{ w: 16, h: 9,  label: "16:9",  example: "1280×720 أو 1920×1080" },
-  secondary_mobile: { w: 16, h: 9,  label: "16:9",  example: "1280×720 أو 1920×1080" },
+  premium_desktop:  { w: 9,  h: 2, label: "9:2",  example: "1800×400 أو 1440×320" },
+  premium_mobile:   { w: 3,  h: 1, label: "3:1",  example: "1200×400 أو 900×300"  },
+  secondary_desktop:{ w: 16, h: 5, label: "16:5", example: "960×300 أو 1200×375"  },
+  secondary_mobile: { w: 2,  h: 1, label: "2:1",  example: "800×400 أو 600×300"   },
 } as const;
 
 // ─── حساب حالة الإعلان ──────────────────────────────────────────────────────
@@ -141,8 +145,8 @@ function ImageUploader({
     if (file && file.type.startsWith("image/")) handleFile(file);
   };
 
-  // الأبعاد البصرية لمستطيل النسبة (عرض ثابت 56px)
-  const diagW = spec.w === 21 ? 84 : 64;
+  // مستطيل توضيحي بعرض ثابت 80px مع ارتفاع محسوب من النسبة الفعلية
+  const diagW = 80;
   const diagH = Math.round(diagW * spec.h / spec.w);
 
   return (
@@ -162,25 +166,22 @@ function ImageUploader({
       </div>
 
       {/* ── بطاقة المواصفات المرئية ── */}
-      <div className="rounded-lg bg-blue-50/60 border border-blue-200/70 px-3 py-2.5 flex items-start gap-3">
-        {/* مستطيل يوضّح النسبة */}
+      <div className="rounded-lg bg-muted/60 border border-border px-3 py-2.5 flex items-start gap-3">
+        {/* مستطيل يوضّح النسبة الفعلية */}
         <div className="shrink-0 flex items-center justify-center mt-0.5">
           <div
-            className="border-2 border-blue-400 rounded-sm bg-blue-100"
+            className="border-2 border-accent/50 rounded-sm bg-accent/10 flex items-center justify-center"
             style={{ width: `${diagW}px`, height: `${diagH}px` }}
           >
-            <div className="w-full h-full flex items-center justify-center text-[9px] text-blue-600 font-bold">
-              {spec.label}
-            </div>
+            <span className="text-[9px] text-accent font-bold leading-none">{spec.label}</span>
           </div>
         </div>
         <div className="text-xs space-y-0.5 min-w-0">
-          <p className="font-semibold text-blue-900">{sublabel}</p>
-          <p className="text-blue-700">
-            <span className="text-blue-500">أبعاد موصى بها:</span> {spec.example}
+          <p className="font-semibold text-foreground">{sublabel}</p>
+          <p className="text-muted-foreground">
+            <span className="text-accent font-medium">أبعاد موصى بها:</span> {spec.example}
           </p>
-          <p className="text-blue-500">الحجم الأقصى للملف: 10 ميجابايت</p>
-          <p className="text-blue-500">صيغ مقبولة: JPG · PNG · WebP</p>
+          <p className="text-muted-foreground">الحجم الأقصى: 10 ميجابايت · JPG أو PNG أو WebP</p>
         </div>
       </div>
 
@@ -303,8 +304,10 @@ function LivePreview({
 
   const isPremium = adType === "premium";
 
-  // النسبة حسب الجهاز
-  const ratio = device === "desktop" && isPremium ? "21/9" : "16/9";
+  // النسبة حسب النوع والجهاز — مبنية على الأبعاد الفعلية
+  const ratio = isPremium
+    ? (device === "desktop" ? "9/2"  : "3/1")
+    : (device === "desktop" ? "16/5" : "2/1");
   // الصورة حسب الجهاز
   const src   = device === "desktop" ? (desktopSrc || mobileSrc) : (mobileSrc || desktopSrc);
 
@@ -378,8 +381,12 @@ function LivePreview({
 
       <div className="text-xs text-muted-foreground text-center">
         {isPremium
-          ? device === "desktop" ? "نسبة 21:9 على الديسكتوب" : "نسبة 16:9 على الجوال والتابلت"
-          : "نسبة 16:9 على جميع الشاشات"
+          ? device === "desktop"
+            ? "صورة الديسكتوب (≥1024px) — النسبة الفعلية 9:2"
+            : "صورة الجوال والتابلت (<1024px) — النسبة الفعلية 3:1"
+          : device === "desktop"
+            ? "صورة الديسكتوب (≥1024px) — النسبة الفعلية 16:5"
+            : "صورة الجوال والتابلت (<1024px) — النسبة الفعلية 2:1"
         }
       </div>
     </div>
@@ -473,8 +480,8 @@ function AdDialog({
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {t === "premium"
-                      ? "إعلان رئيسي — عرض كامل — نسبة 21:9"
-                      : "إعلان ثانوي — أسفل الرئيسي — نسبة 16:9"
+                      ? "إعلان رئيسي — عرض كامل — ديسكتوب 9:2 / جوال 3:1"
+                      : "إعلان ثانوي — أسفل الرئيسي — ديسكتوب 16:5 / جوال 2:1"
                     }
                   </div>
                 </button>
@@ -486,7 +493,7 @@ function AdDialog({
 
           {/* رفع الصور */}
           <ImageUploader
-            label={`صورة الديسكتوب ${isPremium ? "(21:9)" : "(16:9)"}`}
+            label={`صورة الديسكتوب ${isPremium ? "(9:2)" : "(16:5)"} — ≥1024px`}
             sublabel={isPremium
               ? "الصورة الكبيرة تظهر على الحاسوب والشاشات الكبيرة"
               : "تظهر على جميع الأجهزة ما لم تُرفع صورة جوال"
@@ -501,7 +508,7 @@ function AdDialog({
           />
 
           <ImageUploader
-            label={`صورة الجوال (16:9) — اختياري`}
+            label={`صورة الجوال والتابلت ${isPremium ? "(3:1)" : "(2:1)"} — <1024px — اختياري`}
             sublabel="إذا لم تُرفع، ستُستخدم صورة الديسكتوب تلقائياً"
             value={form.mobileImageUrl || ""}
             spec={mobileSpec}
@@ -719,10 +726,10 @@ export default function Ads() {
         <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-2 text-sm">
           <p className="font-semibold">كيف تعمل الإعلانات؟</p>
           <div className="space-y-1.5 text-muted-foreground text-[13px] leading-relaxed">
-            <p>🏆 <strong className="text-foreground">Premium (21:9):</strong> إعلان رئيسي بعرض كامل — يدور تلقائياً إذا وُجد أكثر من إعلان Premium نشط.</p>
-            <p>📌 <strong className="text-foreground">Secondary (16:9):</strong> إعلانان أسفل الرئيسي جنباً إلى جنب — على الجوال تظهر فوق بعض.</p>
-            <p>📐 <strong className="text-foreground">الصور:</strong> يجب أن تطابق النسبة المطلوبة (±3%) وإلا لن يُقبل الرفع.</p>
-            <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — إذا لم تُرفع، ستُستخدم صورة الديسكتوب تلقائياً مع قص جانبي طفيف.</p>
+            <p>🏆 <strong className="text-foreground">Premium — ديسكتوب 9:2 / جوال 3:1:</strong> إعلان رئيسي بعرض كامل — يدور تلقائياً إذا وُجد أكثر من إعلان نشط.</p>
+            <p>📌 <strong className="text-foreground">Secondary — ديسكتوب 16:5 / جوال 2:1:</strong> إعلانان أسفل الرئيسي جنباً إلى جنب — على الجوال تظهر بتمرير أفقي.</p>
+            <p>📐 <strong className="text-foreground">الصور:</strong> يجب أن تطابق النسبة المحددة (±3%) وإلا لن يُقبل الرفع.</p>
+            <p>📱 <strong className="text-foreground">صورة الجوال/التابلت:</strong> اختياري (تظهر على الشاشات أقل من 1024px) — إذا لم تُرفع، تُستخدم صورة الديسكتوب تلقائياً.</p>
             <p>🔀 <strong className="text-foreground">الترتيب:</strong> اسحب الإعلانات لتغيير ترتيبها.</p>
           </div>
         </div>
