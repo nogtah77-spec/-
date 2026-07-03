@@ -17,36 +17,41 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .slice(0, 3);
 }
 
-// ─── تأثير الـ Blur على الحواف ───────────────────────────────────────────────
+// ─── AdImage: صندوق داخل صندوق ──────────────────────────────────────────────
 //
-//  الطريقة الصحيحة:
-//  - طبقة أولى (خلف): نفس الصورة ممتدة خارج الحدود + filter:blur → حواف مضببة
-//  - طبقة ثانية (أمام): نفس الصورة بـ mask دائري → المركز واضح، الحواف شفافة
-//  → النتيجة: مركز الصورة حاد، حواف الصورة تتحول تدريجياً للنسخة المضببة
+//  الفكرة:
+//  ┌──────────────────────────────┐  ← container (rounded)
+//  │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│  ← طبقة بلر (نفس ألوان الصورة)
+//  │░░┌──────────────────────┐░░░│
+//  │░░│                      │░░░│  ← الصورة الكاملة والواضحة (مقوّسة)
+//  │░░│  صورة واضحة بالكامل │░░░│
+//  │░░└──────────────────────┘░░░│
+//  │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+//  └──────────────────────────────┘
+//
+//  blurSize → يتحكم في عرض الإطار الـ blur + قوة التضبيب
 
 function AdImage({
   src,
   alt,
   blurSize,
   opacity = 1,
-  className,
 }: {
   src: string;
   alt: string;
   blurSize: number;
   opacity?: number;
-  className?: string;
 }) {
-  // نسبة وضوح المركز: كلما زاد blurSize كلما ضاق الجزء الواضح
-  const clearStart = Math.max(20, 72 - blurSize * 2.2);
-  const clearEnd   = Math.min(98, clearStart + 30);
+  const inset  = blurSize === 0 ? 0 : Math.max(4, blurSize * 2);   // عرض إطار الـ blur
+  const blurPx = blurSize === 0 ? 0 : Math.max(6, blurSize * 2.5); // قوة التضبيب
+  const radius = Math.max(6, inset - 2);                            // تقوس حواف الصورة الداخلية
 
   return (
     <div
-      className={cn("absolute inset-0 w-full h-full pointer-events-none", className)}
+      className="absolute inset-0 w-full h-full"
       style={{ opacity, transition: "opacity 0.7s ease" }}
     >
-      {/* طبقة الخلف: صورة مضببة ممتدة خارج الحدود (تظهر كحواف مضببة) */}
+      {/* ── طبقة الخلف: نسخة مضببة من الصورة تملأ الصندوق بالكامل ── */}
       {blurSize > 0 && (
         <img
           src={src}
@@ -55,25 +60,28 @@ function AdImage({
           draggable={false}
           className="absolute object-cover object-center"
           style={{
-            inset: `-${blurSize * 2}px`,
-            width:  `calc(100% + ${blurSize * 4}px)`,
-            height: `calc(100% + ${blurSize * 4}px)`,
-            filter: `blur(${blurSize}px)`,
+            inset:  `-${blurPx * 0.4}px`,
+            width:  `calc(100% + ${blurPx * 0.8}px)`,
+            height: `calc(100% + ${blurPx * 0.8}px)`,
+            filter: `blur(${blurPx}px) brightness(0.85)`,
           }}
         />
       )}
 
-      {/* طبقة الأمام: نفس الصورة واضحة بـ mask يعرض المركز فقط */}
+      {/* ── الصورة الكاملة والواضحة داخل الإطار ── */}
       <img
         src={src}
         alt={alt}
         draggable={false}
         loading="lazy"
-        className="absolute inset-0 w-full h-full object-cover object-center"
-        style={blurSize > 0 ? {
-          maskImage: `radial-gradient(ellipse 85% 85% at 50% 50%, black ${clearStart}%, transparent ${clearEnd}%)`,
-          WebkitMaskImage: `radial-gradient(ellipse 85% 85% at 50% 50%, black ${clearStart}%, transparent ${clearEnd}%)`,
-        } : undefined}
+        className="absolute object-cover object-center"
+        style={{
+          inset:        `${inset}px`,
+          width:        `calc(100% - ${inset * 2}px)`,
+          height:       `calc(100% - ${inset * 2}px)`,
+          borderRadius: `${radius}px`,
+          boxShadow:    blurSize > 0 ? "0 2px 12px rgba(0,0,0,0.18)" : undefined,
+        }}
       />
     </div>
   );
@@ -107,24 +115,23 @@ function AdSlot({
       )}
       onClick={() => onClick(ad)}
     >
-      {crossfade ? (
-        allAds.map((a, i) => (
-          <AdImage
-            key={a.id}
-            src={a.imageUrl}
-            alt={a.title || `إعلان ${i + 1}`}
+      {crossfade
+        ? allAds.map((a, i) => (
+            <AdImage
+              key={a.id}
+              src={a.imageUrl}
+              alt={a.title || `إعلان ${i + 1}`}
+              blurSize={blurSize}
+              opacity={i === currentIdx ? 1 : 0}
+            />
+          ))
+        : <AdImage
+            src={ad.imageUrl}
+            alt={ad.title || "إعلان"}
             blurSize={blurSize}
-            opacity={i === currentIdx ? 1 : 0}
+            opacity={1}
           />
-        ))
-      ) : (
-        <AdImage
-          src={ad.imageUrl}
-          alt={ad.title || "إعلان"}
-          blurSize={blurSize}
-          opacity={1}
-        />
-      )}
+      }
 
       {/* عنوان الإعلان */}
       {ad.title && (
@@ -148,7 +155,7 @@ interface Props {
   blurSize?: number;
 }
 
-export function AdsBanner({ ads, blurSize = 8 }: Props) {
+export function AdsBanner({ ads, blurSize = 6 }: Props) {
   const active  = getActiveAds(ads);
   const count   = active.length;
   const [current, setCurrent] = useState(0);
@@ -284,7 +291,6 @@ export function AdsBanner({ ads, blurSize = 8 }: Props) {
             ))}
           </div>
         )}
-
       </div>
     </section>
   );
