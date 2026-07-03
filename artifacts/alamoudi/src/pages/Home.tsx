@@ -384,7 +384,7 @@ export default function Home() {
                 <div className="relative flex flex-row items-center gap-3 sm:gap-4">
 
                   {/* ── عمود البروفايل (يمين في RTL) ── */}
-                  <div className="flex flex-col items-center gap-2 w-24 sm:w-28 shrink-0 border-l border-border pl-3 sm:pl-4">
+                  <div className="flex flex-col items-center gap-2 w-28 sm:w-32 shrink-0 border-l border-border pl-3 sm:pl-4">
                     {/* صورة الحساب */}
                     <div className="relative">
                       <a
@@ -407,15 +407,14 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* اسم الحساب — سطر واحد دائماً */}
+                    {/* اسم الحساب — يظهر كاملاً بالتفاف طبيعي */}
                     <a
                       href={settings.tiktok || "#"}
                       {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                       className="w-full text-center hover:text-accent transition-colors"
-                      title={settings.tiktokName || "العمودي للتسويق العقاري"}
                     >
-                      <p className="text-xs font-bold text-foreground truncate">
-                        {settings.tiktokName || "العمودي"}
+                      <p className="text-[11px] font-bold text-foreground leading-snug break-words text-center">
+                        {settings.tiktokName || "العمودي للتسويق العقاري"}
                       </p>
                     </a>
 
