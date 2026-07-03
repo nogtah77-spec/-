@@ -9,6 +9,15 @@
   margin-inline: auto;
 }
 
+/* ── شريط تقدم إعلانات البانر ── */
+@keyframes progress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* إخفاء سكرولبار كاروسيل الإعلانات */
+.ads-carousel::-webkit-scrollbar { display: none; }
+
 @keyframes ai-pulse {
   0%, 100% {
     transform: scale(1);

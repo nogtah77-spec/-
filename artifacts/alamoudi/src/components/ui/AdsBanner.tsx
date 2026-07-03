@@ -4,6 +4,7 @@ import type { Ad } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { buildEventPayload } from "@/lib/adTracking";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -19,14 +20,10 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .sort((a, b) => a.order - b.order);
 }
 
-function getDesktopSrc(ad: Ad): string {
-  return ad.desktopImageUrl || ad.imageUrl || "";
-}
-function getMobileSrc(ad: Ad): string {
-  return ad.mobileImageUrl || ad.desktopImageUrl || ad.imageUrl || "";
-}
+function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ad.imageUrl || ""; }
+function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl  || ad.desktopImageUrl || ad.imageUrl || ""; }
 
-// ─── AdPicture: صورة متجاوبة باستخدام <picture> ────────────────────────────
+// ─── AdPicture ────────────────────────────────────────────────────────────────
 
 function AdPicture({ ad, priority }: { ad: Ad; priority?: boolean }) {
   const desktop = getDesktopSrc(ad);
@@ -46,28 +43,27 @@ function AdPicture({ ad, priority }: { ad: Ad; priority?: boolean }) {
   );
 }
 
-// ─── AdSlot: صندوق إعلان واحد مع تتبع المشاهدة والنقرة ────────────────────
+// ─── AdSlot: صندوق إعلان واحد مع تتبع المشاهدة والنقرة ─────────────────────
 
 function AdSlot({
   ad,
-  aspectRatio,
   className,
+  style,
   priority,
   onView,
   onClick,
 }: {
   ad: Ad;
-  aspectRatio: string;
   className?: string;
+  style?: React.CSSProperties;
   priority?: boolean;
   onView?: (viewDuration: number) => void;
   onClick?: (clickX: number, clickY: number) => void;
 }) {
-  const ref        = useRef<HTMLDivElement>(null);
-  const viewed     = useRef(false);
-  const viewStart  = useRef<number | null>(null);
+  const ref       = useRef<HTMLDivElement>(null);
+  const viewed    = useRef(false);
+  const viewStart = useRef<number | null>(null);
 
-  // تتبع وقت الدخول والخروج من الـ viewport
   useEffect(() => {
     if (!onView) return;
     const io = new IntersectionObserver(
@@ -75,7 +71,6 @@ function AdSlot({
         if (e.isIntersecting && !viewed.current) {
           viewed.current = true;
           viewStart.current = Date.now();
-          // نُرسل حدث المشاهدة فوراً (مدة = 0 في البداية، ستُحدَّث عند المغادرة)
           onView(0);
           io.disconnect();
         }
@@ -91,10 +86,7 @@ function AdSlot({
     const rect = ref.current.getBoundingClientRect();
     const clickX = (e.clientX - rect.left)  / rect.width;
     const clickY = (e.clientY - rect.top)   / rect.height;
-    onClick(
-      Math.min(1, Math.max(0, clickX)),
-      Math.min(1, Math.max(0, clickY))
-    );
+    onClick(Math.min(1, Math.max(0, clickX)), Math.min(1, Math.max(0, clickY)));
   }, [onClick]);
 
   return (
@@ -102,26 +94,32 @@ function AdSlot({
       ref={ref}
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative overflow-hidden rounded-2xl bg-neutral-200 shadow-sm",
+        "relative overflow-hidden bg-neutral-100 transition-opacity duration-300",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
         className
       )}
-      style={{ aspectRatio }}
+      style={style}
       onClick={handleClick}
     >
       <AdPicture ad={ad} priority={priority} />
+      {/* تدرج سفلي + عنوان */}
       {ad.title && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent pointer-events-none px-4 pb-3 pt-10 z-10">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none px-4 pb-3 pt-10 z-10">
           <p className="text-white font-semibold text-sm leading-snug drop-shadow line-clamp-1 text-right">
             {ad.title}
           </p>
         </div>
       )}
+      {/* shimmer overlay on hover لإعطاء لمسة تفاعلية */}
+      {ad.linkUrl && (
+        <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-colors duration-200 pointer-events-none" />
+      )}
     </div>
   );
 }
 
-// ─── PremiumSlot: الإعلان الرئيسي (مع تدوير تلقائي إذا وُجد أكثر من premium) ─
+// ─── PremiumSlot ─────────────────────────────────────────────────────────────
+// ارتفاع ثابت + أوفر لطيف + مؤشرات + توقف عند hover
 
 function PremiumSlot({
   premiums,
@@ -129,8 +127,8 @@ function PremiumSlot({
   onClick,
 }: {
   premiums: Ad[];
-  onView: (id: string, viewDuration: number) => void;
-  onClick: (ad: Ad, clickX: number, clickY: number) => void;
+  onView: (id: string, d: number) => void;
+  onClick: (ad: Ad, x: number, y: number) => void;
 }) {
   const count             = premiums.length;
   const [current, setCur] = useState(0);
@@ -138,6 +136,7 @@ function PremiumSlot({
   const ad                = premiums[current];
 
   const next = useCallback(() => setCur(i => (i + 1) % count), [count]);
+  const prev = useCallback(() => setCur(i => (i - 1 + count) % count), [count]);
 
   useEffect(() => { setCur(0); }, [count]);
   useEffect(() => {
@@ -149,33 +148,58 @@ function PremiumSlot({
 
   if (!ad) return null;
 
+  // ارتفاعات: ضيقة واحترافية
+  const DESKTOP_H = "h-[240px] xl:h-[280px]";
+  const MOBILE_H  = "h-[200px] sm:h-[220px]";
+
   return (
     <div
-      className="relative"
+      className="relative rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 group"
       onMouseEnter={() => setPause(true)}
       onMouseLeave={() => setPause(false)}
     >
-      {/* جوال + تابلت: نسبة 16:9 */}
-      <div className="lg:hidden">
+      {/* جوال + تابلت */}
+      <div className={cn("lg:hidden", MOBILE_H)}>
         <AdSlot
           ad={ad}
-          aspectRatio="16/9"
+          className="h-full rounded-none"
           priority
           onView={(d) => onView(ad.id, d)}
           onClick={(x, y) => onClick(ad, x, y)}
         />
       </div>
-      {/* ديسكتوب: نسبة 21:9 */}
-      <div className="hidden lg:block">
+      {/* ديسكتوب */}
+      <div className={cn("hidden lg:block", DESKTOP_H)}>
         <AdSlot
           ad={ad}
-          aspectRatio="21/9"
+          className="h-full rounded-none"
           priority
           onView={(d) => onView(ad.id, d)}
           onClick={(x, y) => onClick(ad, x, y)}
         />
       </div>
 
+      {/* أزرار السهم — تظهر عند hover فقط */}
+      {count > 1 && (
+        <>
+          <button
+            onClick={e => { e.stopPropagation(); prev(); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
+            aria-label="السابق"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); next(); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
+            aria-label="التالي"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </>
+      )}
+
+      {/* مؤشرات النقاط */}
       {count > 1 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
           {premiums.map((_, i) => (
@@ -183,21 +207,135 @@ function PremiumSlot({
               key={i}
               onClick={e => { e.stopPropagation(); setCur(i); }}
               className={cn(
-                "rounded-full transition-all duration-300",
+                "rounded-full transition-all duration-300 shadow-sm",
                 i === current
-                  ? "w-5 h-1.5 bg-white shadow"
+                  ? "w-5 h-1.5 bg-white"
                   : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"
               )}
-              aria-label={`إعلان رئيسي ${i + 1}`}
+              aria-label={`إعلان ${i + 1}`}
             />
           ))}
+        </div>
+      )}
+
+      {/* شريط تقدم التدوير */}
+      {count > 1 && !paused && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 z-20 bg-white/20">
+          <div
+            key={current}
+            className="h-full bg-white/70 origin-left animate-[progress_linear_forwards]"
+            style={{
+              animation: `progress ${(ad?.duration ?? 6)}s linear forwards`,
+            }}
+          />
         </div>
       )}
     </div>
   );
 }
 
-// ─── المكوّن الرئيسي ────────────────────────────────────────────────────────
+// ─── SecondaryCarousel: كاروسيل على الجوال + جانبًا على الديسكتوب ───────────
+
+function SecondaryCarousel({
+  ads,
+  onView,
+  onClick,
+}: {
+  ads: Ad[];
+  onView: (id: string, d: number) => void;
+  onClick: (ad: Ad, x: number, y: number) => void;
+}) {
+  const scrollRef   = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+
+  // تتبع البطاقة النشطة عند التمرير
+  const onScroll = useCallback(() => {
+    if (!scrollRef.current) return;
+    const el    = scrollRef.current;
+    const idx   = Math.round(el.scrollLeft / (el.offsetWidth * 0.88));
+    setActive(Math.min(Math.max(idx, 0), ads.length - 1));
+  }, [ads.length]);
+
+  const scrollTo = (i: number) => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTo({ left: scrollRef.current.offsetWidth * 0.88 * i, behavior: "smooth" });
+  };
+
+  if (ads.length === 0) return null;
+
+  const SECONDARY_H = "h-[170px] sm:h-[190px]";
+
+  return (
+    <>
+      {/* ─ ديسكتوب: عمودان جنباً إلى جنب ─ */}
+      <div
+        className={cn(
+          "hidden sm:grid gap-3",
+          ads.length === 1 ? "grid-cols-1 max-w-xl" : "grid-cols-2",
+          SECONDARY_H
+        )}
+      >
+        {ads.map((ad, i) => (
+          <AdSlot
+            key={ad.id}
+            ad={ad}
+            className={cn("h-full rounded-2xl shadow-sm ring-1 ring-black/5")}
+            priority={i === 0}
+            onView={(d) => onView(ad.id, d)}
+            onClick={(x, y) => onClick(ad, x, y)}
+          />
+        ))}
+      </div>
+
+      {/* ─ جوال: كاروسيل أفقي بـ scroll-snap ─ */}
+      <div className="sm:hidden">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="ads-carousel flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1"
+          style={{ scrollbarWidth: "none" } as React.CSSProperties}
+        >
+          {ads.map((ad, i) => (
+            <div
+              key={ad.id}
+              className="snap-start shrink-0"
+              style={{ width: "calc(88% - 6px)", height: "180px" }}
+            >
+              <AdSlot
+                ad={ad}
+                className="h-full rounded-2xl shadow-sm ring-1 ring-black/5"
+                priority={i === 0}
+                onView={(d) => onView(ad.id, d)}
+                onClick={(x, y) => onClick(ad, x, y)}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* مؤشرات النقاط للكاروسيل على الجوال */}
+        {ads.length > 1 && (
+          <div className="flex justify-center gap-1.5 mt-2">
+            {ads.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollTo(i)}
+                className={cn(
+                  "rounded-full transition-all duration-300",
+                  i === active
+                    ? "w-5 h-1.5 bg-accent"
+                    : "w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                )}
+                aria-label={`إعلان ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ─── المكوّن الرئيسي ──────────────────────────────────────────────────────────
 
 interface Props { ads: Ad[]; }
 
@@ -211,11 +349,11 @@ export function AdsBanner({ ads }: Props) {
   const premiums    = active.filter(a => (a.type ?? "premium") === "premium");
   const secondaries = active.filter(a =>  a.type               === "secondary").slice(0, 2);
 
-  const finalPremiums    = premiums.length    > 0 ? premiums    : [active[0]];
-  const finalSecondaries = secondaries.length > 0 ? secondaries
+  const finalPremiums    = premiums.length > 0 ? premiums : [active[0]];
+  const finalSecondaries = secondaries.length > 0
+    ? secondaries
     : active.filter(a => !finalPremiums.includes(a)).slice(0, 2);
 
-  // لا نتتبع الأدمن والموظفين
   const onView = useCallback((id: string, viewDuration: number) => {
     if (isStaff) return;
     const payload = { ...buildEventPayload(), viewDuration };
@@ -231,28 +369,14 @@ export function AdsBanner({ ads }: Props) {
   }, [isStaff, trackAdClick]);
 
   return (
-    <section className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-8 space-y-3" aria-label="إعلانات">
-      <PremiumSlot
-        premiums={finalPremiums}
-        onView={onView}
-        onClick={onClick}
-      />
+    <section
+      className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-6 space-y-3"
+      aria-label="إعلانات"
+    >
+      <PremiumSlot premiums={finalPremiums} onView={onView} onClick={onClick} />
+
       {finalSecondaries.length > 0 && (
-        <div className={cn(
-          "grid gap-3",
-          finalSecondaries.length === 1 ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"
-        )}>
-          {finalSecondaries.map((ad, i) => (
-            <AdSlot
-              key={ad.id}
-              ad={ad}
-              aspectRatio="16/9"
-              priority={i === 0}
-              onView={(d) => onView(ad.id, d)}
-              onClick={(x, y) => onClick(ad, x, y)}
-            />
-          ))}
-        </div>
+        <SecondaryCarousel ads={finalSecondaries} onView={onView} onClick={onClick} />
       )}
     </section>
   );

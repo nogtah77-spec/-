@@ -111,12 +111,15 @@ function ImageUploader({
   required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string>();
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState<string>();
+  const [dragging, setDragging] = useState(false);
+  const [imgDims,  setImgDims]  = useState<{ w: number; h: number } | null>(null);
 
   const handleFile = async (file: File) => {
     setLoading(true);
     setError(undefined);
+    setImgDims(null);
     const result = await validateAndCompress(file, spec);
     setLoading(false);
     if (result.error) {
@@ -124,33 +127,86 @@ function ImageUploader({
       onResult("", result.error);
     } else {
       setError(undefined);
+      setImgDims({ w: result.width, h: result.height });
       onResult(result.dataUrl);
     }
   };
 
+  const onDragOver  = (e: React.DragEvent) => { e.preventDefault(); setDragging(true); };
+  const onDragLeave = (e: React.DragEvent) => { e.preventDefault(); setDragging(false); };
+  const onDrop      = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) handleFile(file);
+  };
+
+  // الأبعاد البصرية لمستطيل النسبة (عرض ثابت 56px)
+  const diagW = spec.w === 21 ? 84 : 64;
+  const diagH = Math.round(diagW * spec.h / spec.w);
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
+      {/* ── رأس: العنوان + الشارة ── */}
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold">
           {label}
           {required && <span className="text-destructive mr-1">*</span>}
         </Label>
-        <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
-          نسبة: <strong>{spec.label}</strong>
+        <span className={cn(
+          "text-xs font-bold px-2 py-0.5 rounded-full",
+          required ? "bg-accent/10 text-accent" : "bg-muted text-muted-foreground"
+        )}>
+          {spec.label}
         </span>
       </div>
 
-      <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 space-y-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Info className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
-          <span>{sublabel} — مثال: <strong>{spec.example}</strong></span>
+      {/* ── بطاقة المواصفات المرئية ── */}
+      <div className="rounded-lg bg-blue-50/60 border border-blue-200/70 px-3 py-2.5 flex items-start gap-3">
+        {/* مستطيل يوضّح النسبة */}
+        <div className="shrink-0 flex items-center justify-center mt-0.5">
+          <div
+            className="border-2 border-blue-400 rounded-sm bg-blue-100"
+            style={{ width: `${diagW}px`, height: `${diagH}px` }}
+          >
+            <div className="w-full h-full flex items-center justify-center text-[9px] text-blue-600 font-bold">
+              {spec.label}
+            </div>
+          </div>
         </div>
+        <div className="text-xs space-y-0.5 min-w-0">
+          <p className="font-semibold text-blue-900">{sublabel}</p>
+          <p className="text-blue-700">
+            <span className="text-blue-500">أبعاد موصى بها:</span> {spec.example}
+          </p>
+          <p className="text-blue-500">الحجم الأقصى للملف: 10 ميجابايت</p>
+          <p className="text-blue-500">صيغ مقبولة: JPG · PNG · WebP</p>
+        </div>
+      </div>
+
+      {/* ── منطقة الرفع (drag & drop) ── */}
+      <div
+        className={cn(
+          "rounded-lg border-2 border-dashed p-3 space-y-2 transition-all duration-200",
+          dragging
+            ? "border-accent bg-accent/5 scale-[1.01]"
+            : "border-border bg-muted/30 hover:border-muted-foreground/40"
+        )}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        {dragging && (
+          <div className="text-center py-1 text-xs text-accent font-semibold animate-pulse">
+            ↓ أسقط الصورة هنا
+          </div>
+        )}
 
         <div className="flex gap-2">
           <Input
-            placeholder="https://..."
+            placeholder="https://... أو ارفع الصورة"
             value={value}
-            onChange={e => onResult(e.target.value)}
+            onChange={e => { setImgDims(null); onResult(e.target.value); }}
             className="flex-1 text-sm h-9"
           />
           <Button
@@ -162,7 +218,7 @@ function ImageUploader({
             onClick={() => inputRef.current?.click()}
           >
             <UploadCloud className="h-3.5 w-3.5" />
-            {loading ? "جارٍ الفحص..." : "رفع"}
+            {loading ? "جارٍ الفحص…" : "رفع"}
           </Button>
           <input
             ref={inputRef}
@@ -177,29 +233,53 @@ function ImageUploader({
           />
         </div>
 
-        {error && (
-          <div className="flex items-start gap-2 rounded bg-destructive/10 border border-destructive/20 px-3 py-2 text-xs text-destructive">
-            <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
-            {error}
-          </div>
-        )}
-
-        {value && !error && (
-          <div className="relative rounded overflow-hidden border border-border bg-muted" style={{ aspectRatio: `${spec.w}/${spec.h}` }}>
-            <img src={value} alt="معاينة" className="absolute inset-0 w-full h-full object-cover object-center" />
-            {/* Safe Area Overlay */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div
-                className="absolute border-2 border-dashed border-white/70 rounded"
-                style={{ inset: "10% 15%" }}
-              />
-              <div className="absolute bottom-[10%] right-[15%] bg-black/50 text-white text-[9px] px-1 py-0.5 rounded">
-                منطقة آمنة
-              </div>
-            </div>
-          </div>
+        {!dragging && !value && (
+          <p className="text-[11px] text-muted-foreground text-center">
+            اسحب وأسقط الصورة هنا أو انقر «رفع»
+          </p>
         )}
       </div>
+
+      {/* ── خطأ ── */}
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-xs text-destructive">
+          <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold mb-0.5">النسبة غير مطابقة</p>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── معاينة + المنطقة الآمنة ── */}
+      {value && !error && (
+        <div
+          className="relative rounded-lg overflow-hidden border border-border bg-muted shadow-sm"
+          style={{ aspectRatio: `${spec.w}/${spec.h}` }}
+        >
+          <img src={value} alt="معاينة" className="absolute inset-0 w-full h-full object-cover object-center" />
+
+          {/* أبعاد الصورة المرفوعة */}
+          {imgDims && (
+            <div className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm">
+              {imgDims.w}×{imgDims.h}
+            </div>
+          )}
+
+          {/* ✅ شارة */}
+          <div className="absolute top-1.5 left-1.5 bg-green-500/90 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm">
+            ✓ مطابقة
+          </div>
+
+          {/* المنطقة الآمنة */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute border-2 border-dashed border-white/60 rounded" style={{ inset: "10% 15%" }} />
+            <div className="absolute bottom-[10%] right-[15%] bg-black/50 text-white text-[9px] px-1 py-0.5 rounded">
+              منطقة آمنة
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
