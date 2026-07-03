@@ -12,7 +12,14 @@ import type { Ad } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { buildEventPayload } from "@/lib/adTracking";
+import { SLOT_TEMPLATES } from "@/lib/adTemplates";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+// نسب عرض Secondary مشتقة مباشرةً من التمبلتات — تتحدث تلقائياً عند تغيير الأبعاد
+const SEC_DESKTOP_RATIO =
+  `${SLOT_TEMPLATES.secondary.desktop.width}/${SLOT_TEMPLATES.secondary.desktop.height}` as const;
+const SEC_MOBILE_RATIO  =
+  `${SLOT_TEMPLATES.secondary.mobile.width}/${SLOT_TEMPLATES.secondary.mobile.height}`  as const;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -40,17 +47,19 @@ function AdPicture({
   ad,
   priority,
   mode = "proportional",
+  coverRatio = SEC_DESKTOP_RATIO,
 }: {
   ad: Ad;
   priority?: boolean;
   mode?: "proportional" | "cover";
+  coverRatio?: string;
 }) {
   const desktop = getDesktopSrc(ad);
   const mobile  = getMobileSrc(ad);
 
   if (mode === "cover") {
     return (
-      <picture className="block w-full" style={{ aspectRatio: "960/300" }}>
+      <picture className="block w-full" style={{ aspectRatio: coverRatio }}>
         <source media="(min-width: 1024px)" srcSet={desktop} />
         <img
           src={mobile}
@@ -87,6 +96,7 @@ function AdSlot({
   className,
   priority,
   pictureMode = "proportional",
+  coverRatio,
   onView,
   onClick,
 }: {
@@ -94,6 +104,7 @@ function AdSlot({
   className?: string;
   priority?: boolean;
   pictureMode?: "proportional" | "cover";
+  coverRatio?: string;
   onView?: (viewDuration: number) => void;
   onClick?: (clickX: number, clickY: number) => void;
 }) {
@@ -138,7 +149,7 @@ function AdSlot({
       )}
       onClick={handleClick}
     >
-      <AdPicture ad={ad} priority={priority} mode={pictureMode} />
+      <AdPicture ad={ad} priority={priority} mode={pictureMode} coverRatio={coverRatio} />
 
       {/* Title overlay — positioned over bottom of fluid-height container */}
       {ad.title && (
@@ -303,6 +314,7 @@ function SecondaryCarousel({
             ad={ad}
             className="w-full rounded-2xl shadow-sm ring-1 ring-black/5"
             pictureMode="cover"
+            coverRatio={SEC_DESKTOP_RATIO}
             priority={i === 0}
             onView={(d) => onView(ad.id, d)}
             onClick={(x, y) => onClick(ad, x, y)}
@@ -328,6 +340,7 @@ function SecondaryCarousel({
                 ad={ad}
                 className="w-full rounded-2xl shadow-sm ring-1 ring-black/5"
                 pictureMode="cover"
+                coverRatio={SEC_MOBILE_RATIO}
                 priority={i === 0}
                 onView={(d) => onView(ad.id, d)}
                 onClick={(x, y) => onClick(ad, x, y)}

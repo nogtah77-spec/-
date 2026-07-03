@@ -845,8 +845,8 @@ export default function Ads() {
           </div>
 
           <div className="space-y-1.5 text-muted-foreground text-[13px] leading-relaxed border-t border-border pt-3">
-            <p>🏆 <strong className="text-foreground">Premium:</strong> بانر رئيسي بعرض كامل — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">1800×400px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">1200×400px</code></p>
-            <p>📌 <strong className="text-foreground">Secondary:</strong> إعلانان جنباً إلى جنب — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">960×300px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">800×400px</code></p>
+            <p>🏆 <strong className="text-foreground">Premium:</strong> بانر رئيسي بعرض كامل — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.premium.desktop.width}×{SLOT_TEMPLATES.premium.desktop.height}px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.premium.mobile.width}×{SLOT_TEMPLATES.premium.mobile.height}px</code></p>
+            <p>📌 <strong className="text-foreground">Secondary:</strong> إعلانان جنباً إلى جنب — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.desktop.width}×{SLOT_TEMPLATES.secondary.desktop.height}px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.mobile.width}×{SLOT_TEMPLATES.secondary.mobile.height}px</code></p>
             <p>📐 <strong className="text-foreground">الأبعاد:</strong> يُرفض أي ملف لا يطابق الأبعاد بالضبط — صفر تسامح.</p>
             <p>🖼 <strong className="text-foreground">الجودة:</strong> الصور لا تُعاد تحجيمها أو تُقص — تحويل WebP فقط (جودة 92%) بعد التحقق.</p>
             <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — تظهر على الشاشات &lt;1024px · إذا لم تُرفع تُستخدم الديسكتوب تلقائياً.</p>
