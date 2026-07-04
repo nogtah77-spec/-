@@ -310,10 +310,10 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-3">
+            <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-2 mb-3">
               {[{ value: "residential", label: "سكني" }, { value: "administrative", label: "إداري" }, { value: "medical", label: "طبي" }, { value: "commercial", label: "تجاري" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchSector(btn.value as typeof searchSector)}
-                  className={cn("px-4 py-1 rounded-full text-sm font-medium border transition-all",
+                  className={cn("px-3 sm:px-4 py-1 rounded-full text-sm font-medium border transition-all whitespace-nowrap",
                     searchSector === btn.value ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:border-accent/40")}>
                   {btn.label}
                 </button>
