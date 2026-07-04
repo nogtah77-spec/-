@@ -264,7 +264,7 @@ export default function Home() {
 
         {/* ── Carousel الإعلاني الموحّد (Premium + Secondary) ── */}
         {!isFiltering && (
-          <div className="pb-8 sm:pb-10">
+          <div className="pb-3 sm:pb-4">
             <UnifiedBanner ads={settings.ads ?? []} />
           </div>
         )}

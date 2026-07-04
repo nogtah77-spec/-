@@ -276,7 +276,7 @@ function PremiumSlot({
         ref={containerRef}
         className={cn(
           "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
-          "aspect-[800/185] lg:aspect-[960/138]",
+          "aspect-[800/204] lg:aspect-[960/138]",
           count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
         )}
         onTouchStart={count > 1 ? handleTouchStart : undefined}
@@ -355,7 +355,7 @@ function SecondarySlide({
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/185] lg:aspect-[960/138]",
+        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/204] lg:aspect-[960/138]",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}

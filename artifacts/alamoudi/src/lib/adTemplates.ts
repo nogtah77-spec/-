@@ -56,8 +56,8 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
   premium_mobile: {
     key: "premium_mobile",
     name: "Premium Mobile",
-    width: 1200, height: 185,
-    ratio: "240:37",
+    width: 1200, height: 204,
+    ratio: "100:17",
     breakpoint: "mobile",
     bleed: 12, safeInset: 13,
     zones: [
@@ -84,8 +84,8 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
   secondary_mobile: {
     key: "secondary_mobile",
     name: "Secondary Mobile",
-    width: 800, height: 185,
-    ratio: "160:37",
+    width: 800, height: 204,
+    ratio: "200:51",
     breakpoint: "mobile",
     bleed: 12, safeInset: 12,
     zones: [
