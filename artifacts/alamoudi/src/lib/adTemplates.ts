@@ -56,14 +56,14 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
   premium_mobile: {
     key: "premium_mobile",
     name: "Premium Mobile",
-    width: 1200, height: 138,
-    ratio: "200:23",
+    width: 1200, height: 152,
+    ratio: "150:19",
     breakpoint: "mobile",
-    bleed: 9, safeInset: 10,
+    bleed: 10, safeInset: 11,
     zones: [
-      { x: 870,  y: 7,   w: 315, h: 29,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
-      { x: 40,   y: 20,  w: 820, h: 88,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
-      { x: 870,  y: 102, w: 315, h: 29,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
+      { x: 870,  y: 8,   w: 315, h: 32,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
+      { x: 40,   y: 22,  w: 820, h: 97,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
+      { x: 870,  y: 112, w: 315, h: 32,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
     ],
   },
 
@@ -84,14 +84,14 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
   secondary_mobile: {
     key: "secondary_mobile",
     name: "Secondary Mobile",
-    width: 800, height: 138,
-    ratio: "400:69",
+    width: 800, height: 152,
+    ratio: "100:19",
     breakpoint: "mobile",
-    bleed: 9, safeInset: 9,
+    bleed: 10, safeInset: 10,
     zones: [
-      { x: 505, y: 5,   w: 280, h: 28,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
-      { x: 40,  y: 26,  w: 715, h: 80,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
-      { x: 505, y: 105, w: 280, h: 28,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
+      { x: 505, y: 6,   w: 280, h: 31,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
+      { x: 40,  y: 29,  w: 715, h: 88,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
+      { x: 505, y: 116, w: 280, h: 31,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
     ],
   },
 };

@@ -18,7 +18,7 @@ import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import { PremiumBanner, SecondaryBanner } from "@/components/ui/AdsBanner";
+import { UnifiedBanner } from "@/components/ui/AdsBanner";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -245,37 +245,8 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
 
-        {/* ── Hero (معطّل مؤقتاً — يمكن تفعيله مستقبلاً) ── */}
-        {false && (
-        <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-8 md:py-12 min-h-[220px] md:min-h-[270px]">
-          <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
-          <div className="absolute inset-0 z-10" style={{ background: `linear-gradient(135deg, rgba(44,54,57,${heroOverlay}) 0%, rgba(63,78,79,${heroOverlay * 0.92}) 50%, rgba(44,54,57,${heroOverlay * 1.04 > 1 ? 1 : heroOverlay * 1.04}) 100%)` }} />
-          <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
-          {(settings.heroLine1 || settings.heroLine2) && (
-            <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-              <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose">
-                {settings.heroLine1 && <span className="block">{settings.heroLine1}</span>}
-                {settings.heroLine2 && <span className="block">{settings.heroLine2}</span>}
-              </p>
-            </div>
-          )}
-        </section>
-        )}
-
-        {/* ── Premium Ad ── */}
-        {!isFiltering && (
-          <div className="container px-4 sm:px-6 pt-3 sm:pt-4">
-            <PremiumBanner ads={settings.ads ?? []} />
-          </div>
-        )}
-
-        {/* ── Divider ── */}
-        <div className="py-4">
-          <div className="h-px" style={{ background: "linear-gradient(to left, transparent 0%, rgba(162,123,91,0.22) 15%, rgba(162,123,91,0.42) 50%, rgba(162,123,91,0.22) 85%, transparent 100%)" }} />
-        </div>
-
         {/* ── 3 Action Buttons ── */}
-        <div className="container px-6 pb-5">
+        <div className="container px-6 pt-4 sm:pt-5 pb-5">
           <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3">
             <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-1 sm:gap-2 shrink-0"
               style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
@@ -291,10 +262,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Secondary Carousel ── */}
+        {/* ── Carousel الإعلاني الموحّد (Premium + Secondary) ── */}
         {!isFiltering && (
           <div className="pb-8 sm:pb-10">
-            <SecondaryBanner ads={settings.ads ?? []} />
+            <UnifiedBanner ads={settings.ads ?? []} />
           </div>
         )}
 
@@ -405,7 +376,7 @@ export default function Home() {
                 <div className="relative flex flex-row items-center gap-3 sm:gap-4">
 
                   {/* ── عمود البروفايل (يمين في RTL) ── */}
-                  <div className="flex flex-col items-center gap-2 w-28 sm:w-32 shrink-0 border-l border-border pl-3 sm:pl-4">
+                  <div className="flex flex-col items-center gap-2 shrink-0 border-l border-border pl-3 sm:pl-4">
                     {/* صورة الحساب */}
                     <div className="relative">
                       <a
@@ -428,13 +399,13 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* اسم الحساب — يظهر كاملاً بالتفاف طبيعي */}
+                    {/* اسم الحساب — سطر واحد دائماً */}
                     <a
                       href={settings.tiktok || "#"}
                       {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      className="w-full text-center hover:text-accent transition-colors"
+                      className="text-center hover:text-accent transition-colors"
                     >
-                      <p className="text-[11px] font-bold text-foreground leading-snug break-words text-center">
+                      <p className="text-[10px] sm:text-[11px] font-bold text-foreground leading-snug whitespace-nowrap text-center">
                         {settings.tiktokName || "العمودي للتسويق العقاري"}
                       </p>
                     </a>

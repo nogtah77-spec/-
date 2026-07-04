@@ -276,7 +276,7 @@ function PremiumSlot({
         ref={containerRef}
         className={cn(
           "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
-          "aspect-[800/138] lg:aspect-[960/138]",
+          "aspect-[800/152] lg:aspect-[960/138]",
           count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
         )}
         onTouchStart={count > 1 ? handleTouchStart : undefined}
@@ -312,18 +312,18 @@ function PremiumSlot({
         </div>
       </div>
 
-      {/* ── Dot indicators ── */}
+      {/* ── Dot indicators (خطوط رفيعة) ── */}
       {count > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-20">
           {premiums.map((_, i) => (
             <button
               key={i}
               onClick={e => { e.stopPropagation(); setCur(i); }}
               className={cn(
-                "rounded-full transition-all duration-300 shadow-sm",
+                "rounded-full transition-all duration-300",
                 i === current
-                  ? "w-5 h-1.5 bg-white"
-                  : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"
+                  ? "w-5 h-[2.5px] bg-white"
+                  : "w-4 h-[1.5px] bg-white/45 hover:bg-white/70"
               )}
               aria-label={`إعلان ${i + 1}`}
             />
@@ -355,7 +355,7 @@ function SecondarySlide({
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/138] lg:aspect-[960/138]",
+        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/152] lg:aspect-[960/138]",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}
@@ -414,12 +414,13 @@ function SecondaryCarousel({
 
   useEffect(() => { setCurrent(0); }, [count]);
 
-  // Auto-play
+  // Auto-play — مدة لكل إعلان مستقلة
   useEffect(() => {
     if (count <= 1 || paused) return;
-    const t = setInterval(next, 6000);
-    return () => clearInterval(t);
-  }, [count, paused, next]);
+    const ms = (ads[current]?.duration ?? 6) * 1000;
+    const t = setTimeout(next, ms);
+    return () => clearTimeout(t);
+  }, [count, paused, current, ads, next]);
 
   // View tracking for current slide
   useEffect(() => {
@@ -523,18 +524,18 @@ function SecondaryCarousel({
         </div>
       </div>
 
-      {/* ── Dot indicators ────────────────────────────────────────────── */}
+      {/* ── Dot indicators (خطوط رفيعة) ────────────────────────────── */}
       {count > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-20">
           {ads.map((_, i) => (
             <button
               key={i}
               onClick={e => { e.stopPropagation(); setCurrent(i); }}
               className={cn(
-                "rounded-full transition-all duration-300 shadow-sm",
+                "rounded-full transition-all duration-300",
                 i === current
-                  ? "w-5 h-1.5 bg-white"
-                  : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"
+                  ? "w-5 h-[2.5px] bg-white"
+                  : "w-4 h-[1.5px] bg-white/45 hover:bg-white/70"
               )}
               aria-label={`إعلان ${i + 1}`}
             />
@@ -568,18 +569,31 @@ function useAdTracking() {
   return { onView, onClick };
 }
 
-// ─── PremiumBanner ────────────────────────────────────────────────────────────
-// Renders only the premium ad carousel — exported for standalone placement.
+// ─── UnifiedBanner ────────────────────────────────────────────────────────────
+// كاروسيل موحّد يعرض كل الإعلانات (Premium + Secondary) مرتّبة حسب الـ order.
+// كل إعلان له مدة زمنية مستقلة (duration بالثواني).
 
 interface BannerProps { ads: Ad[]; }
 
-export function PremiumBanner({ ads }: BannerProps) {
+export function UnifiedBanner({ ads }: BannerProps) {
   const { onView, onClick } = useAdTracking();
 
+  const active = getActiveAds(ads).slice(0, 10);
+  if (active.length === 0) return null;
+
+  return (
+    <div className="container px-4 sm:px-6">
+      <SecondaryCarousel ads={active} onView={onView} onClick={onClick} />
+    </div>
+  );
+}
+
+// ─── PremiumBanner / SecondaryBanner — backward compat ────────────────────────
+export function PremiumBanner({ ads }: BannerProps) {
+  const { onView, onClick } = useAdTracking();
   const active   = getActiveAds(ads);
   const premiums = active.filter(a => (a.type ?? "premium") === "premium");
   if (premiums.length === 0) return null;
-
   return (
     <div className="w-full">
       <PremiumSlot premiums={premiums} onView={onView} onClick={onClick} />
@@ -587,16 +601,11 @@ export function PremiumBanner({ ads }: BannerProps) {
   );
 }
 
-// ─── SecondaryBanner ──────────────────────────────────────────────────────────
-// Renders only the secondary ad carousel — exported for standalone placement.
-
 export function SecondaryBanner({ ads }: BannerProps) {
   const { onView, onClick } = useAdTracking();
-
   const active      = getActiveAds(ads);
   const secondaries = active.filter(a => a.type === "secondary").slice(0, 6);
   if (secondaries.length === 0) return null;
-
   return (
     <div className="container px-4 sm:px-6">
       <SecondaryCarousel ads={secondaries} onView={onView} onClick={onClick} />
