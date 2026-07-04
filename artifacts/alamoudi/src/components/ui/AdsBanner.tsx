@@ -351,11 +351,11 @@ function SecondarySlide({
   const mobile  = getMobileSrc(ad);
 
   return (
-    // aspect-[800/400] on mobile (2:1) → aspect-[960/300] on desktop (16:5)
+    // يملأ الـ container الأب تماماً — الـ aspect-ratio على الأب
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/204] lg:aspect-[960/138]",
+        "relative w-full h-full overflow-hidden bg-black select-none",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}
@@ -368,12 +368,12 @@ function SecondarySlide({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           draggable={false}
-          className="w-full h-full object-cover block"
+          className="w-full h-full object-contain block"
         />
       </picture>
 
       {ad.title && (
-        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none px-4 pb-3 pt-10 z-10">
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none px-4 pb-3 pt-10 z-10">
           <p className="text-white font-semibold text-sm leading-snug drop-shadow line-clamp-1 text-right">
             {ad.title}
           </p>
@@ -387,9 +387,8 @@ function SecondarySlide({
 }
 
 // ─── SecondaryCarousel ────────────────────────────────────────────────────────
-// Full-featured carousel: auto-play, touch drag, mouse drag, arrows, dots.
-// Works identically on mobile and desktop.
-// If 1 ad: no auto-play, no controls.
+// Crossfade carousel: smooth opacity transition between slides.
+// Auto-play uses per-slide duration. Touch + mouse swipe supported.
 
 function SecondaryCarousel({
   ads,
@@ -400,29 +399,29 @@ function SecondaryCarousel({
   onView:  (id: string, d: number) => void;
   onClick: (ad: Ad, x: number, y: number) => void;
 }) {
-  const count                     = ads.length;
-  const [current, setCurrent]     = useState(0);
-  const [paused,  setPaused]      = useState(false);
-  const [isDragging, setDragging] = useState(false);
-  const [dragDelta,  setDelta]    = useState(0);
-  const dragStartX                = useRef<number | null>(null);
-  const containerRef              = useRef<HTMLDivElement>(null);
-  const viewed                    = useRef<Set<string>>(new Set());
+  const count                 = ads.length;
+  const [current, setCurrent] = useState(0);
+  const [paused,  setPaused]  = useState(false);
+  const containerRef          = useRef<HTMLDivElement>(null);
+  const touchStartX           = useRef<number | null>(null);
+  const mouseStartX           = useRef<number | null>(null);
+  const swipeDelta            = useRef(0);
+  const viewed                = useRef<Set<string>>(new Set());
 
   const next = useCallback(() => setCurrent(i => (i + 1) % count), [count]);
   const prev = useCallback(() => setCurrent(i => (i - 1 + count) % count), [count]);
 
   useEffect(() => { setCurrent(0); }, [count]);
 
-  // Auto-play — مدة لكل إعلان مستقلة
+  // Auto-play — مدة مستقلة لكل إعلان
   useEffect(() => {
     if (count <= 1 || paused) return;
     const ms = (ads[current]?.duration ?? 6) * 1000;
-    const t = setTimeout(next, ms);
+    const t  = setTimeout(next, ms);
     return () => clearTimeout(t);
   }, [count, paused, current, ads, next]);
 
-  // View tracking for current slide
+  // View tracking
   useEffect(() => {
     const ad = ads[current];
     if (!ad || viewed.current.has(ad.id)) return;
@@ -430,101 +429,85 @@ function SecondaryCarousel({
     onView(ad.id, 0);
   }, [current, ads, onView]);
 
-  // ── Touch ──────────────────────────────────────────────────────────────────
+  // ── Touch swipe ────────────────────────────────────────────────────────────
   const handleTouchStart = (e: React.TouchEvent) => {
-    dragStartX.current = e.touches[0].clientX;
-    setDelta(0);
+    touchStartX.current = e.touches[0].clientX;
     setPaused(true);
   };
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (dragStartX.current === null) return;
-    setDelta(e.touches[0].clientX - dragStartX.current);
-  };
-  const handleTouchEnd = () => {
-    if (dragStartX.current !== null) {
-      if (dragDelta > 50) prev();
-      else if (dragDelta < -50) next();
-    }
-    dragStartX.current = null;
-    setDelta(0);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = e.changedTouches[0].clientX - touchStartX.current;
+    if (diff >  50) prev();
+    else if (diff < -50) next();
+    touchStartX.current = null;
     setPaused(false);
   };
 
-  // ── Mouse ──────────────────────────────────────────────────────────────────
+  // ── Mouse swipe ────────────────────────────────────────────────────────────
   const handleMouseDown = (e: React.MouseEvent) => {
-    dragStartX.current = e.clientX;
-    setDelta(0);
-    setDragging(true);
+    mouseStartX.current = e.clientX;
+    swipeDelta.current  = 0;
     setPaused(true);
     e.preventDefault();
   };
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || dragStartX.current === null) return;
-    setDelta(e.clientX - dragStartX.current);
-  };
-  const finishMouseDrag = () => {
-    if (!isDragging) return;
-    if (dragDelta > 50) prev();
-    else if (dragDelta < -50) next();
-    dragStartX.current = null;
-    setDelta(0);
-    setDragging(false);
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (mouseStartX.current === null) return;
+    const diff = e.clientX - mouseStartX.current;
+    swipeDelta.current = diff;
+    if (diff >  50) prev();
+    else if (diff < -50) next();
+    mouseStartX.current = null;
     setPaused(false);
   };
 
-  // ── Click tracking ────────────────────────────────────────────────────────
+  // ── Click tracking ─────────────────────────────────────────────────────────
   const handleSlideClick = (ad: Ad) => (e: React.MouseEvent) => {
-    if (Math.abs(dragDelta) > 8) return; // was a drag, not a click
+    if (Math.abs(swipeDelta.current) > 8) return;
     const el = containerRef.current;
     if (!el) return;
     const rect   = el.getBoundingClientRect();
-    const clickX = Math.min(1, Math.max(0, (e.clientX - rect.left)  / rect.width));
-    const clickY = Math.min(1, Math.max(0, (e.clientY - rect.top)   / rect.height));
+    const clickX = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const clickY = Math.min(1, Math.max(0, (e.clientY - rect.top)  / rect.height));
     onClick(ad, clickX, clickY);
   };
 
   if (count === 0) return null;
 
-  const trackStyle: React.CSSProperties = {
-    transform: `translateX(calc(-${current * 100}% + ${dragDelta}px))`,
-    transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.4, 0, 0.2, 1)",
-  };
-
   return (
     <div
-      className="relative group"
+      ref={containerRef}
+      className={cn(
+        "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/8 select-none",
+        "aspect-[800/204] lg:aspect-[960/138]",
+        count > 1 ? "cursor-pointer" : "cursor-default",
+      )}
       onMouseEnter={() => count > 1 && setPaused(true)}
-      onMouseLeave={() => { setPaused(false); finishMouseDrag(); }}
+      onMouseLeave={() => { setPaused(false); mouseStartX.current = null; }}
+      onTouchStart={count > 1 ? handleTouchStart : undefined}
+      onTouchEnd={count > 1 ? handleTouchEnd   : undefined}
+      onMouseDown={count > 1 ? handleMouseDown  : undefined}
+      onMouseUp={count > 1 ? handleMouseUp    : undefined}
     >
-      {/* ── Track ─────────────────────────────────────────────────────── */}
-      <div
-        ref={containerRef}
-        className={cn(
-          "overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
-          count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
-        )}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={count > 1 ? handleMouseDown : undefined}
-        onMouseMove={count > 1 ? handleMouseMove : undefined}
-        onMouseUp={count > 1 ? finishMouseDrag : undefined}
-      >
-        {/* dir=ltr: ensures translateX works correctly regardless of page RTL direction */}
-        <div dir="ltr" className="flex" style={trackStyle}>
-          {ads.map((ad, i) => (
-            <div key={ad.id} className="flex-shrink-0 w-full">
-              <SecondarySlide
-                ad={ad}
-                priority={i === 0}
-                onClick={handleSlideClick(ad)}
-              />
-            </div>
-          ))}
+      {/* ── Crossfade slides ───────────────────────────────────────────── */}
+      {ads.map((ad, i) => (
+        <div
+          key={ad.id}
+          className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+          style={{
+            opacity:       i === current ? 1 : 0,
+            zIndex:        i === current ? 2 : 1,
+            pointerEvents: i === current ? "auto" : "none",
+          }}
+        >
+          <SecondarySlide
+            ad={ad}
+            priority={i === 0}
+            onClick={handleSlideClick(ad)}
+          />
         </div>
-      </div>
+      ))}
 
-      {/* ── Dot indicators (خطوط رفيعة — منطقة ضغط كبيرة) ─────── */}
+      {/* ── Dot indicators (خطوط — منطقة ضغط واسعة) ─────────────────── */}
       {count > 1 && (
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex z-20">
           {ads.map((_, i) => (
@@ -538,7 +521,7 @@ function SecondaryCarousel({
                 "block rounded-full transition-all duration-300",
                 i === current
                   ? "w-5 h-[2.5px] bg-white shadow-sm"
-                  : "w-4 h-[1.5px] bg-white/45 hover:bg-white/70"
+                  : "w-4 h-[1.5px] bg-white/45 hover:bg-white/70",
               )} />
             </button>
           ))}
