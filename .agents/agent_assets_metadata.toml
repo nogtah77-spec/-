@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "qM9B_oR2TIebrV97TEyNC"
+uri = "file://ad-specifications.pdf"
+type = "pdf"
+title = "مواصفات الإعلانات — العمودي للتسويق العقاري"
