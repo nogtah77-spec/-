@@ -18,7 +18,7 @@ import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import { AdsBanner } from "@/components/ui/AdsBanner";
+import { PremiumBanner, SecondaryBanner } from "@/components/ui/AdsBanner";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -246,36 +246,61 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── Hero ── */}
-        <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-10 md:py-14 min-h-[315px]">
+        <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-8 md:py-12 min-h-[220px] md:min-h-[270px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
           <div className="absolute inset-0 z-10" style={{ background: `linear-gradient(135deg, rgba(44,54,57,${heroOverlay}) 0%, rgba(63,78,79,${heroOverlay * 0.92}) 50%, rgba(44,54,57,${heroOverlay * 1.04 > 1 ? 1 : heroOverlay * 1.04}) 100%)` }} />
           <div className="absolute inset-0 z-10 opacity-[0.05] pointer-events-none" style={{ backgroundImage: "radial-gradient(#DCD7C9 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
-
-          <div className="container relative z-20 px-6 max-w-4xl mx-auto">
-            {(settings.heroLine1 || settings.heroLine2) && (
-              <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose mb-6">
+          {(settings.heroLine1 || settings.heroLine2) && (
+            <div className="container relative z-20 px-6 max-w-4xl mx-auto">
+              <p className="text-sm md:text-base font-bold text-white max-w-2xl mx-auto leading-loose">
                 {settings.heroLine1 && <span className="block">{settings.heroLine1}</span>}
                 {settings.heroLine2 && <span className="block">{settings.heroLine2}</span>}
               </p>
-            )}
-            <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3">
-              <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-1 sm:gap-2 shrink-0"
-                style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                <Link href="/add-property"><Plus className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />أضف عقارك</Link>
-              </Button>
-              <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 gap-1 sm:gap-2 shrink-0"
-                style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.3)" }}>
-                <Link href="/finishing-services"><Building2 className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />خدمات التشطيبات</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm border-white/40 text-white hover:bg-white/10 shrink-0">
-                <Link href="/consultation">اطرح استفسارك</Link>
-              </Button>
             </div>
-          </div>
+          )}
         </section>
 
-        {/* ── Ads Banner ── */}
-        {!isFiltering && <AdsBanner ads={settings.ads ?? []} />}
+        {/* ── Premium Ad ── */}
+        {!isFiltering && (
+          <div className="container px-4 sm:px-6 pt-4 sm:pt-5">
+            <PremiumBanner ads={settings.ads ?? []} />
+          </div>
+        )}
+
+        {/* ── Divider ── */}
+        <div className="container px-6 py-5">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, transparent, rgba(162,123,91,0.35))" }} />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(162,123,91,0.55)" }} />
+            <div className="w-1 h-1 rounded-full mx-0.5" style={{ background: "rgba(162,123,91,0.28)" }} />
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(162,123,91,0.55)" }} />
+            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(162,123,91,0.35))" }} />
+          </div>
+        </div>
+
+        {/* ── 3 Action Buttons ── */}
+        <div className="container px-6 pb-5">
+          <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3">
+            <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-1 sm:gap-2 shrink-0"
+              style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
+              <Link href="/add-property"><Plus className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />أضف عقارك</Link>
+            </Button>
+            <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 gap-1 sm:gap-2 shrink-0"
+              style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.3)" }}>
+              <Link href="/finishing-services"><Building2 className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />خدمات التشطيبات</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm border-accent/50 text-foreground hover:bg-accent/10 hover:border-accent shrink-0">
+              <Link href="/consultation">اطرح استفسارك</Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* ── Secondary Carousel ── */}
+        {!isFiltering && (
+          <div className="pb-3">
+            <SecondaryBanner ads={settings.ads ?? []} />
+          </div>
+        )}
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">

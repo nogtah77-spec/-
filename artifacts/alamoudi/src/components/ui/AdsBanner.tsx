@@ -266,9 +266,62 @@ function PremiumSlot({
   );
 }
 
+// ─── SecondarySlide ───────────────────────────────────────────────────────────
+// Single slide inside the SecondaryCarousel.
+// Responsive aspect-ratio: mobile 800/400 → desktop 960/300.
+
+function SecondarySlide({
+  ad,
+  priority,
+  onClick,
+}: {
+  ad: Ad;
+  priority?: boolean;
+  onClick?: (e: React.MouseEvent) => void;
+}) {
+  const desktop = getDesktopSrc(ad);
+  const mobile  = getMobileSrc(ad);
+
+  return (
+    // aspect-[800/400] on mobile (2:1) → aspect-[960/300] on desktop (16:5)
+    <div
+      role={ad.linkUrl ? "link" : undefined}
+      className={cn(
+        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/400] lg:aspect-[960/300]",
+        ad.linkUrl ? "cursor-pointer" : "cursor-default",
+      )}
+      onClick={onClick}
+    >
+      <picture className="absolute inset-0 block w-full h-full">
+        <source media="(min-width: 1024px)" srcSet={desktop} />
+        <img
+          src={mobile}
+          alt={ad.title || "إعلان"}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          draggable={false}
+          className="w-full h-full object-cover block"
+        />
+      </picture>
+
+      {ad.title && (
+        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none px-4 pb-3 pt-10 z-10">
+          <p className="text-white font-semibold text-sm leading-snug drop-shadow line-clamp-1 text-right">
+            {ad.title}
+          </p>
+        </div>
+      )}
+      {ad.linkUrl && (
+        <div className="absolute inset-0 bg-white/0 hover:bg-white/5 transition-colors duration-200 pointer-events-none" />
+      )}
+    </div>
+  );
+}
+
 // ─── SecondaryCarousel ────────────────────────────────────────────────────────
-// Desktop: two side-by-side cards.
-// Mobile: horizontal swipe carousel with snap.
+// Full-featured carousel: auto-play, touch drag, mouse drag, arrows, dots.
+// Works identically on mobile and desktop.
+// If 1 ad: no auto-play, no controls.
 
 function SecondaryCarousel({
   ads,
@@ -279,107 +332,188 @@ function SecondaryCarousel({
   onView:  (id: string, d: number) => void;
   onClick: (ad: Ad, x: number, y: number) => void;
 }) {
-  const scrollRef         = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(0);
+  const count                     = ads.length;
+  const [current, setCurrent]     = useState(0);
+  const [paused,  setPaused]      = useState(false);
+  const [isDragging, setDragging] = useState(false);
+  const [dragDelta,  setDelta]    = useState(0);
+  const dragStartX                = useRef<number | null>(null);
+  const containerRef              = useRef<HTMLDivElement>(null);
+  const viewed                    = useRef<Set<string>>(new Set());
 
-  const onScroll = useCallback(() => {
-    if (!scrollRef.current) return;
-    const el  = scrollRef.current;
-    const idx = Math.round(el.scrollLeft / (el.offsetWidth * 0.88));
-    setActive(Math.min(Math.max(idx, 0), ads.length - 1));
-  }, [ads.length]);
+  const next = useCallback(() => setCurrent(i => (i + 1) % count), [count]);
+  const prev = useCallback(() => setCurrent(i => (i - 1 + count) % count), [count]);
 
-  const scrollTo = (i: number) => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTo({
-      left: scrollRef.current.offsetWidth * 0.88 * i,
-      behavior: "smooth",
-    });
+  useEffect(() => { setCurrent(0); }, [count]);
+
+  // Auto-play
+  useEffect(() => {
+    if (count <= 1 || paused) return;
+    const t = setInterval(next, 6000);
+    return () => clearInterval(t);
+  }, [count, paused, next]);
+
+  // View tracking for current slide
+  useEffect(() => {
+    const ad = ads[current];
+    if (!ad || viewed.current.has(ad.id)) return;
+    viewed.current.add(ad.id);
+    onView(ad.id, 0);
+  }, [current, ads, onView]);
+
+  // ── Touch ──────────────────────────────────────────────────────────────────
+  const handleTouchStart = (e: React.TouchEvent) => {
+    dragStartX.current = e.touches[0].clientX;
+    setDelta(0);
+    setPaused(true);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (dragStartX.current === null) return;
+    setDelta(e.touches[0].clientX - dragStartX.current);
+  };
+  const handleTouchEnd = () => {
+    if (dragStartX.current !== null) {
+      if (dragDelta > 50) prev();
+      else if (dragDelta < -50) next();
+    }
+    dragStartX.current = null;
+    setDelta(0);
+    setPaused(false);
   };
 
-  if (ads.length === 0) return null;
+  // ── Mouse ──────────────────────────────────────────────────────────────────
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragStartX.current = e.clientX;
+    setDelta(0);
+    setDragging(true);
+    setPaused(true);
+    e.preventDefault();
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || dragStartX.current === null) return;
+    setDelta(e.clientX - dragStartX.current);
+  };
+  const finishMouseDrag = () => {
+    if (!isDragging) return;
+    if (dragDelta > 50) prev();
+    else if (dragDelta < -50) next();
+    dragStartX.current = null;
+    setDelta(0);
+    setDragging(false);
+    setPaused(false);
+  };
+
+  // ── Click tracking ────────────────────────────────────────────────────────
+  const handleSlideClick = (ad: Ad) => (e: React.MouseEvent) => {
+    if (Math.abs(dragDelta) > 8) return; // was a drag, not a click
+    const el = containerRef.current;
+    if (!el) return;
+    const rect   = el.getBoundingClientRect();
+    const clickX = Math.min(1, Math.max(0, (e.clientX - rect.left)  / rect.width));
+    const clickY = Math.min(1, Math.max(0, (e.clientY - rect.top)   / rect.height));
+    onClick(ad, clickX, clickY);
+  };
+
+  if (count === 0) return null;
+
+  const trackStyle: React.CSSProperties = {
+    transform: `translateX(calc(-${current * 100}% + ${dragDelta}px))`,
+    transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.4, 0, 0.2, 1)",
+  };
 
   return (
-    <>
-      {/* ─ Desktop / Tablet (sm+): two columns, proportional height ─ */}
+    <div
+      className="relative group"
+      onMouseEnter={() => count > 1 && setPaused(true)}
+      onMouseLeave={() => { setPaused(false); finishMouseDrag(); }}
+    >
+      {/* ── Track ─────────────────────────────────────────────────────── */}
       <div
+        ref={containerRef}
         className={cn(
-          "hidden sm:grid gap-3 items-start",
-          ads.length === 1 ? "grid-cols-1 max-w-xl" : "grid-cols-2",
+          "overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
+          count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
         )}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={count > 1 ? handleMouseDown : undefined}
+        onMouseMove={count > 1 ? handleMouseMove : undefined}
+        onMouseUp={count > 1 ? finishMouseDrag : undefined}
       >
-        {ads.map((ad, i) => (
-          <AdSlot
-            key={ad.id}
-            ad={ad}
-            className="w-full rounded-2xl shadow-sm ring-1 ring-black/5"
-            pictureMode="cover"
-            coverRatio={SEC_DESKTOP_RATIO}
-            priority={i === 0}
-            onView={(d) => onView(ad.id, d)}
-            onClick={(x, y) => onClick(ad, x, y)}
-          />
-        ))}
-      </div>
-
-      {/* ─ Mobile (< sm): horizontal swipe carousel ─ */}
-      <div className="sm:hidden">
-        <div
-          ref={scrollRef}
-          onScroll={onScroll}
-          className="ads-carousel flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-1"
-          style={{ scrollbarWidth: "none" } as React.CSSProperties}
-        >
+        {/* dir=ltr: ensures translateX works correctly regardless of page RTL direction */}
+        <div dir="ltr" className="flex" style={trackStyle}>
           {ads.map((ad, i) => (
-            <div
-              key={ad.id}
-              className="snap-start shrink-0"
-              style={{ width: "calc(88% - 6px)" }}
-            >
-              <AdSlot
+            <div key={ad.id} className="flex-shrink-0 w-full">
+              <SecondarySlide
                 ad={ad}
-                className="w-full rounded-2xl shadow-sm ring-1 ring-black/5"
-                pictureMode="cover"
-                coverRatio={SEC_MOBILE_RATIO}
                 priority={i === 0}
-                onView={(d) => onView(ad.id, d)}
-                onClick={(x, y) => onClick(ad, x, y)}
+                onClick={handleSlideClick(ad)}
               />
             </div>
           ))}
         </div>
-
-        {ads.length > 1 && (
-          <div className="flex justify-center gap-1.5 mt-2">
-            {ads.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => scrollTo(i)}
-                className={cn(
-                  "rounded-full transition-all duration-300",
-                  i === active
-                    ? "w-5 h-1.5 bg-accent"
-                    : "w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
-                )}
-                aria-label={`إعلان ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
-    </>
+
+      {/* ── Arrows — shown on hover (desktop) ─────────────────────────── */}
+      {count > 1 && (
+        <>
+          <button
+            onClick={e => { e.stopPropagation(); prev(); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/65 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
+            aria-label="السابق"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            onClick={e => { e.stopPropagation(); next(); }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/65 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
+            aria-label="التالي"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </>
+      )}
+
+      {/* ── Progress bar ──────────────────────────────────────────────── */}
+      {count > 1 && !paused && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 z-20 bg-white/20 rounded-b-2xl overflow-hidden">
+          <div
+            key={current}
+            className="h-full bg-white/70 origin-left"
+            style={{ animation: "progress 6s linear forwards" }}
+          />
+        </div>
+      )}
+
+      {/* ── Dot indicators ────────────────────────────────────────────── */}
+      {count > 1 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+          {ads.map((_, i) => (
+            <button
+              key={i}
+              onClick={e => { e.stopPropagation(); setCurrent(i); }}
+              className={cn(
+                "rounded-full transition-all duration-300 shadow-sm",
+                i === current
+                  ? "w-5 h-1.5 bg-white"
+                  : "w-1.5 h-1.5 bg-white/50 hover:bg-white/80"
+              )}
+              aria-label={`إعلان ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
-// ─── AdsBanner (Public Entry Point) ──────────────────────────────────────────
+// ─── Shared tracking factory ──────────────────────────────────────────────────
 
-interface Props { ads: Ad[]; }
-
-export function AdsBanner({ ads }: Props) {
+function useAdTracking() {
   const { trackAdView, trackAdClick } = useData();
   const { isStaff } = useAuth();
 
-  // Hooks MUST be before any conditional return
   const onView = useCallback((id: string, viewDuration: number) => {
     if (isStaff) return;
     const payload = { ...buildEventPayload(), viewDuration };
@@ -394,11 +528,57 @@ export function AdsBanner({ ads }: Props) {
     if (ad.linkUrl) window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
   }, [isStaff, trackAdClick]);
 
+  return { onView, onClick };
+}
+
+// ─── PremiumBanner ────────────────────────────────────────────────────────────
+// Renders only the premium ad carousel — exported for standalone placement.
+
+interface BannerProps { ads: Ad[]; }
+
+export function PremiumBanner({ ads }: BannerProps) {
+  const { onView, onClick } = useAdTracking();
+
+  const active   = getActiveAds(ads);
+  const premiums = active.filter(a => (a.type ?? "premium") === "premium");
+  if (premiums.length === 0) return null;
+
+  return (
+    <div className="w-full">
+      <PremiumSlot premiums={premiums} onView={onView} onClick={onClick} />
+    </div>
+  );
+}
+
+// ─── SecondaryBanner ──────────────────────────────────────────────────────────
+// Renders only the secondary ad carousel — exported for standalone placement.
+
+export function SecondaryBanner({ ads }: BannerProps) {
+  const { onView, onClick } = useAdTracking();
+
+  const active      = getActiveAds(ads);
+  const secondaries = active.filter(a => a.type === "secondary").slice(0, 6);
+  if (secondaries.length === 0) return null;
+
+  return (
+    <div className="container px-4 sm:px-6">
+      <SecondaryCarousel ads={secondaries} onView={onView} onClick={onClick} />
+    </div>
+  );
+}
+
+// ─── AdsBanner (Public Entry Point — backward compat) ─────────────────────────
+
+interface Props { ads: Ad[]; }
+
+export function AdsBanner({ ads }: Props) {
+  const { onView, onClick } = useAdTracking();
+
   const active      = getActiveAds(ads);
   if (active.length === 0) return null;
 
   const premiums    = active.filter(a => (a.type ?? "premium") === "premium");
-  const secondaries = active.filter(a =>  a.type               === "secondary").slice(0, 2);
+  const secondaries = active.filter(a =>  a.type               === "secondary").slice(0, 6);
 
   return (
     <section
