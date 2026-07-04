@@ -201,7 +201,7 @@ function PremiumSlot({
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/5 group"
+      className="relative overflow-hidden group"
       onMouseEnter={() => setPause(true)}
       onMouseLeave={() => setPause(false)}
     >
@@ -287,7 +287,7 @@ function SecondarySlide({
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/400] lg:aspect-[960/300]",
+        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/290] lg:aspect-[960/290]",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}

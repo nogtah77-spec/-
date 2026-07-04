@@ -245,7 +245,8 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
 
-        {/* ── Hero ── */}
+        {/* ── Hero (معطّل مؤقتاً — يمكن تفعيله مستقبلاً) ── */}
+        {false && (
         <section className="relative flex flex-col items-center justify-end text-center overflow-hidden py-8 md:py-12 min-h-[220px] md:min-h-[270px]">
           <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${heroImage})` }} />
           <div className="absolute inset-0 z-10" style={{ background: `linear-gradient(135deg, rgba(44,54,57,${heroOverlay}) 0%, rgba(63,78,79,${heroOverlay * 0.92}) 50%, rgba(44,54,57,${heroOverlay * 1.04 > 1 ? 1 : heroOverlay * 1.04}) 100%)` }} />
@@ -259,23 +260,18 @@ export default function Home() {
             </div>
           )}
         </section>
+        )}
 
-        {/* ── Premium Ad ── */}
+        {/* ── Premium Ad (يحل محل الغلاف — full-width) ── */}
         {!isFiltering && (
-          <div className="container px-4 sm:px-6 pt-4 sm:pt-5">
+          <div className="w-full">
             <PremiumBanner ads={settings.ads ?? []} />
           </div>
         )}
 
         {/* ── Divider ── */}
-        <div className="container px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to left, transparent, rgba(162,123,91,0.35))" }} />
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(162,123,91,0.55)" }} />
-            <div className="w-1 h-1 rounded-full mx-0.5" style={{ background: "rgba(162,123,91,0.28)" }} />
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(162,123,91,0.55)" }} />
-            <div className="flex-1 h-px" style={{ background: "linear-gradient(to right, transparent, rgba(162,123,91,0.35))" }} />
-          </div>
+        <div className="py-4">
+          <div className="h-px" style={{ background: "linear-gradient(to left, transparent 0%, rgba(162,123,91,0.22) 15%, rgba(162,123,91,0.42) 50%, rgba(162,123,91,0.22) 85%, transparent 100%)" }} />
         </div>
 
         {/* ── 3 Action Buttons ── */}
@@ -297,14 +293,14 @@ export default function Home() {
 
         {/* ── Secondary Carousel ── */}
         {!isFiltering && (
-          <div className="pb-3">
+          <div className="pb-8 sm:pb-10">
             <SecondaryBanner ads={settings.ads ?? []} />
           </div>
         )}
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">
-          <div className="-mt-6 relative z-20 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-5 max-w-3xl mx-auto">
+          <div className="relative z-20 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-5 max-w-3xl mx-auto">
             <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -415,7 +411,7 @@ export default function Home() {
                       <a
                         href={settings.tiktok || "#"}
                         {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className="block w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                        className="block w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
                         aria-label="حساب تيك توك"
                       >
                         {settings.tiktokAvatar ? (
