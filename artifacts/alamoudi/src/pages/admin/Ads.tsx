@@ -14,7 +14,7 @@ import {
   Pencil, Trash2, Plus, Image as ImageIcon, ExternalLink,
   Eye, EyeOff, Clock, GripVertical, Monitor, Tablet, Smartphone,
   CheckCircle2, CalendarClock, XCircle, MinusCircle, MousePointerClick, TrendingUp,
-  AlertTriangle, UploadCloud, BarChart2, Download, LayoutTemplate,
+  AlertTriangle, UploadCloud, BarChart2, Download, LayoutTemplate, X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -365,33 +365,50 @@ function ImageUploader({
 
       {/* ── معاينة الصورة المرفوعة ── */}
       {value && !error && (
-        <div
-          className="relative rounded-lg overflow-hidden border border-border bg-muted shadow-sm"
-          style={{ aspectRatio: `${template.width}/${template.height}` }}
-        >
-          <img
-            src={value}
-            alt="معاينة"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+        <div className="space-y-1.5">
+          {/* زر حذف الصورة */}
+          <button
+            type="button"
+            onClick={() => {
+              setProcessInfo(null);
+              setError(undefined);
+              onResult("");
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 hover:bg-destructive/10 text-destructive text-xs font-semibold py-2 transition-colors"
+          >
+            <X className="h-3.5 w-3.5" />
+            حذف الصورة
+          </button>
 
-          {/* مصدر الأبعاد الأصلية */}
-          {processInfo?.origW && (
-            <div className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm">
-              {processInfo.origW}×{processInfo.origH}px → {template.width}×{template.height}px
-            </div>
-          )}
+          {/* المعاينة */}
+          <div
+            className="relative rounded-lg overflow-hidden border border-border bg-muted shadow-sm"
+            style={{ aspectRatio: `${template.width}/${template.height}` }}
+          >
+            <img
+              src={value}
+              alt="معاينة"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
 
-          {/* شارة نتيجة المعالجة */}
-          {processInfo && (
-            <div className="absolute top-1.5 left-1.5 bg-green-500/90 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 backdrop-blur-sm">
-              ✓{" "}
-              {processInfo.processMode === "resize"   && "WebP محسّن"}
-              {processInfo.processMode === "crop"     && "Crop ذكي · WebP"}
-              {processInfo.processMode === "fit+blur" && "Fit + خلفية · WebP"}
-              {processInfo.finalQuality !== undefined && processInfo.finalQuality < 92 && ` · جودة ${processInfo.finalQuality}%`}
-            </div>
-          )}
+            {/* مصدر الأبعاد الأصلية */}
+            {processInfo?.origW && (
+              <div className="absolute top-1.5 right-1.5 bg-black/60 text-white text-[9px] font-mono px-1.5 py-0.5 rounded backdrop-blur-sm">
+                {processInfo.origW}×{processInfo.origH}px → {template.width}×{template.height}px
+              </div>
+            )}
+
+            {/* شارة نتيجة المعالجة */}
+            {processInfo && (
+              <div className="absolute top-1.5 left-1.5 bg-green-500/90 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 backdrop-blur-sm">
+                ✓{" "}
+                {processInfo.processMode === "resize"   && "WebP محسّن"}
+                {processInfo.processMode === "crop"     && "Crop ذكي · WebP"}
+                {processInfo.processMode === "fit+blur" && "Fit + خلفية · WebP"}
+                {processInfo.finalQuality !== undefined && processInfo.finalQuality < 92 && ` · جودة ${processInfo.finalQuality}%`}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
