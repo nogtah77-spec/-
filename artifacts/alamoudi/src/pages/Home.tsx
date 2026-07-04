@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Search, UserCheck, Plus, ChevronLeft, X,
   LayoutGrid, AlignJustify, List, ExternalLink, Play,
-  Building2,
+  Building2, MessageCircle,
 } from "lucide-react";
 import { TikTokIcon } from "@/components/icons/BrandIcons";
 import { Card, CardContent } from "@/components/ui/card";
@@ -245,20 +245,33 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
 
-        {/* ── 3 Action Buttons — ثلاثة جنب بعض دائماً في كل الشاشات ── */}
-        <div className="w-full pt-4 sm:pt-5 pb-5 overflow-x-auto">
-          <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3 px-4 sm:px-6 min-w-0">
-            <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-1 sm:gap-2 shrink-0"
-              style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-              <Link href="/add-property"><Plus className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />أضف عقارك</Link>
-            </Button>
-            <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 gap-1 sm:gap-2 shrink-0"
-              style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.3)" }}>
-              <Link href="/finishing-services"><Building2 className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />خدمات التشطيبات</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm border-accent/50 text-foreground hover:bg-accent/10 hover:border-accent shrink-0">
-              <Link href="/consultation">اطرح استفسارك</Link>
-            </Button>
+        {/* ── 3 Action Buttons — البلاط المتساوية ── */}
+        <div className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4">
+          <div className="flex gap-3 max-w-3xl mx-auto">
+            <Link
+              href="/add-property"
+              className="flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 text-white font-bold text-xs sm:text-sm select-none"
+              style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}
+            >
+              <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
+              أضف عقارك
+            </Link>
+            <Link
+              href="/finishing-services"
+              className="flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-xs sm:text-sm select-none"
+              style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.18)" }}
+            >
+              <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
+              خدمات التشطيبات
+            </Link>
+            <Link
+              href="/consultation"
+              className="flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-xs sm:text-sm text-foreground select-none"
+              style={{ border: "1.5px solid #A27B5B" }}
+            >
+              <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: "#A27B5B" }} />
+              اطرح استفسارك
+            </Link>
           </div>
         </div>
 
