@@ -83,58 +83,20 @@ async function processImage(
       const tw = template.width;
       const th = template.height;
 
-      const srcRatio  = sw / sh;
-      const dstRatio  = tw / th;
-      const ratioDiff = Math.abs(srcRatio - dstRatio) / dstRatio;
-
-      // ─ تحديد وضع المعالجة ─
-      const mode: ProcessMode =
-        sw === tw && sh === th  ? "resize"    :  // بالفعل الأبعاد الصحيحة → ضغط فقط
-        ratioDiff < 0.15        ? "crop"      :  // نسبة قريبة → crop من المركز
-                                  "fit+blur";    // نسبة مختلفة → fit + خلفية blurred
+      // ── تقليص بنسبة الأبعاد الأصلية — لا اقتطاع، لا blur ──
+      // الـ box الإعلاني يتكيف مع ارتفاع الصورة تلقائياً في العرض
+      const MAX_H = 800;                               // حد أقصى للارتفاع
+      const scale = Math.min(1, tw / sw, MAX_H / sh); // لا تكبير، لا تصغير إلا للحاجة
+      const outW  = Math.round(sw * scale);
+      const outH  = Math.round(sh * scale);
 
       const canvas = document.createElement("canvas");
-      canvas.width  = tw;
-      canvas.height = th;
+      canvas.width  = outW;
+      canvas.height = outH;
       const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, outW, outH);
 
-      if (mode === "fit+blur") {
-        // ── الخطوة 1: خلفية blurred (scale to cover) ──
-        const bgScale = Math.max(tw / sw, th / sh);
-        const bgW = sw * bgScale;
-        const bgH = sh * bgScale;
-        const bgX = (tw - bgW) / 2;
-        const bgY = (th - bgH) / 2;
-
-        ctx.save();
-        ctx.filter = "blur(28px) brightness(0.55) saturate(1.4)";
-        ctx.drawImage(img, bgX, bgY, bgW, bgH);
-        ctx.restore();
-
-        // طبقة تعتيم خفيفة فوق الخلفية
-        ctx.save();
-        ctx.globalAlpha = 0.18;
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, tw, th);
-        ctx.restore();
-
-        // ── الخطوة 2: الصورة الأصلية scaled to fit ──
-        const fgScale = Math.min(tw / sw, th / sh);
-        const fgW = sw * fgScale;
-        const fgH = sh * fgScale;
-        const fgX = (tw - fgW) / 2;
-        const fgY = (th - fgH) / 2;
-        ctx.drawImage(img, fgX, fgY, fgW, fgH);
-
-      } else {
-        // ── crop من المركز (يغطي الإطار بالكامل) ──
-        const scale  = Math.max(tw / sw, th / sh);
-        const scaledW = sw * scale;
-        const scaledH = sh * scale;
-        const offX    = (tw - scaledW) / 2;
-        const offY    = (th - scaledH) / 2;
-        ctx.drawImage(img, offX, offY, scaledW, scaledH);
-      }
+      const mode: ProcessMode = "resize";
 
       // ── ضغط تلقائي إلى WebP < 3 MB ──
       const qualities = [0.92, 0.82, 0.72, 0.60, 0.48, 0.36];
@@ -154,7 +116,7 @@ async function processImage(
 
       resolve({
         dataUrl,
-        width: tw, height: th,
+        width: outW, height: outH,
         origW: sw, origH: sh,
         processMode: mode,
         finalQuality: Math.round(usedQuality * 100),
@@ -515,7 +477,7 @@ function LivePreview({
         </div>
       </div>
 
-      {/* ── صندوق المعاينة ── */}
+      {/* ── صندوق المعاينة — الارتفاع يتكيف مع الصورة تلقائياً ── */}
       <div
         className={cn(
           "relative overflow-hidden rounded-xl border border-border bg-neutral-200 mx-auto transition-all",
@@ -523,16 +485,15 @@ function LivePreview({
           device === "tablet"  && "max-w-[480px]",
           device === "desktop" && "w-full"
         )}
-        style={{ aspectRatio: `${template.width}/${template.height}` }}
       >
         {src ? (
           <img
             src={src}
             alt="معاينة"
-            className="absolute inset-0 w-full h-full object-contain"
+            className="w-full h-auto block"
           />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground/40">
+          <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground/40 py-10">
             <ImageIcon className="h-8 w-8" />
             <span className="text-xs">ارفع صورة لرؤية المعاينة</span>
           </div>

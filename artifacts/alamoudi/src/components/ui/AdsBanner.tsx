@@ -27,6 +27,7 @@ function getActiveAds(ads: Ad[]): Ad[] {
   return [...ads]
     .filter(ad => {
       if (!ad.active) return false;
+      if (!(ad.desktopImageUrl || ad.imageUrl)) return false; // لا صورة = لا عرض
       if (ad.startDate && new Date(ad.startDate) > now) return false;
       if (ad.endDate   && new Date(ad.endDate)   < now) return false;
       return true;
@@ -355,16 +356,16 @@ function SecondarySlide({
   const mobile  = getMobileSrc(ad);
 
   return (
-    // يملأ الـ container الأب تماماً — الـ aspect-ratio على الأب
+    // الارتفاع يتحدد تلقائياً من أبعاد الصورة الطبيعية — لا letterboxing، لا قطع
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full h-full overflow-hidden bg-black select-none",
+        "relative w-full overflow-hidden select-none",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}
     >
-      <picture className="absolute inset-0 block w-full h-full">
+      <picture className="block w-full">
         <source media="(min-width: 1024px)" srcSet={desktop} />
         <img
           src={mobile}
@@ -372,7 +373,7 @@ function SecondarySlide({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           draggable={false}
-          className="w-full h-full object-contain block"
+          className="w-full h-auto block"
         />
       </picture>
 
@@ -485,8 +486,7 @@ function SecondaryCarousel({
     <div
       ref={containerRef}
       className={cn(
-        "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/8 select-none",
-        "aspect-[800/204] lg:aspect-[960/138]",
+        "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/8 select-none grid",
         count > 1 ? "cursor-pointer" : "cursor-default",
       )}
       onMouseEnter={() => count > 1 && setPaused(true)}
@@ -496,12 +496,13 @@ function SecondaryCarousel({
       onMouseDown={count > 1 ? handleMouseDown  : undefined}
       onMouseUp={count > 1 ? handleMouseUp    : undefined}
     >
-      {/* ── Crossfade slides ───────────────────────────────────────────── */}
+      {/* ── Crossfade slides — CSS Grid stacking (يحدد الارتفاع تلقائياً من الصورة) ── */}
       {ads.map((ad, i) => (
         <div
           key={ad.id}
-          className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+          className="transition-opacity duration-700 ease-in-out"
           style={{
+            gridArea:      "1/1",
             opacity:       i === current ? 1 : 0,
             zIndex:        i === current ? 2 : 1,
             pointerEvents: i === current ? "auto" : "none",
