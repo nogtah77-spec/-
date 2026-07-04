@@ -50,11 +50,27 @@ function AdPicture({
 }: {
   ad: Ad;
   priority?: boolean;
-  mode?: "proportional" | "cover";
+  mode?: "proportional" | "cover" | "fill";
   coverRatio?: string;
 }) {
   const desktop = getDesktopSrc(ad);
   const mobile  = getMobileSrc(ad);
+
+  if (mode === "fill") {
+    return (
+      <picture className="absolute inset-0 block w-full h-full">
+        <source media="(min-width: 1024px)" srcSet={desktop} />
+        <img
+          src={mobile}
+          alt={ad.title || "إعلان"}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          draggable={false}
+          className="w-full h-full object-cover block"
+        />
+      </picture>
+    );
+  }
 
   if (mode === "cover") {
     return (
@@ -102,7 +118,7 @@ function AdSlot({
   ad: Ad;
   className?: string;
   priority?: boolean;
-  pictureMode?: "proportional" | "cover";
+  pictureMode?: "proportional" | "cover" | "fill";
   coverRatio?: string;
   onView?: (viewDuration: number) => void;
   onClick?: (clickX: number, clickY: number) => void;
@@ -259,7 +275,8 @@ function PremiumSlot({
       <div
         ref={containerRef}
         className={cn(
-          "overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
+          "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
+          "aspect-[1200/138] lg:aspect-[1800/138]",
           count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
         )}
         onTouchStart={count > 1 ? handleTouchStart : undefined}
@@ -269,11 +286,11 @@ function PremiumSlot({
         onMouseMove={count > 1 ? handleMouseMove   : undefined}
         onMouseUp={count > 1 ? finishMouseDrag     : undefined}
       >
-        <div dir="ltr" className="flex" style={trackStyle}>
+        <div dir="ltr" className="flex h-full" style={trackStyle}>
           {premiums.map((p, i) => (
             <div
               key={p.id}
-              className="flex-shrink-0 w-full"
+              className="relative flex-shrink-0 w-full h-full overflow-hidden"
               onClick={(e) => {
                 if (Math.abs(dragDelta) > 8) return;
                 if (!containerRef.current) return;
@@ -285,7 +302,8 @@ function PremiumSlot({
             >
               <AdSlot
                 ad={p}
-                className="w-full"
+                className="absolute inset-0"
+                pictureMode="fill"
                 priority={i === 0}
                 onView={(d) => onView(p.id, d)}
               />
