@@ -22,12 +22,13 @@ const SEC_MOBILE_RATIO  =
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
+/** كل إعلان فعّال عنده صورة ديسكتوب أو صورة جوال على الأقل */
 function getActiveAds(ads: Ad[]): Ad[] {
   const now = new Date();
   return [...ads]
     .filter(ad => {
       if (!ad.active) return false;
-      if (!(ad.desktopImageUrl || ad.imageUrl)) return false; // لا صورة = لا عرض
+      if (!(ad.desktopImageUrl || ad.imageUrl)) return false;
       if (ad.startDate && new Date(ad.startDate) > now) return false;
       if (ad.endDate   && new Date(ad.endDate)   < now) return false;
       return true;
@@ -35,8 +36,29 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .sort((a, b) => a.order - b.order);
 }
 
-function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ad.imageUrl || ""; }
-function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl  || ad.desktopImageUrl || ad.imageUrl || ""; }
+/** صورة الديسكتوب فقط — بدون fallback للجوال */
+function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ""; }
+/** صورة الجوال فقط — بدون fallback للديسكتوب */
+function getMobileSrc(ad: Ad)  { return ad.imageUrl || ""; }
+
+/** هل عنده صورة تخص الديسكتوب؟ */
+function hasDesktopImage(ad: Ad) { return !!ad.desktopImageUrl; }
+/** هل عنده صورة تخص الجوال؟ */
+function hasMobileImage(ad: Ad)  { return !!ad.imageUrl; }
+
+/** يرصد تغير الـ breakpoint (lg = 1024px) */
+function useIsDesktop(): boolean {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+  );
+  useEffect(() => {
+    const mq      = window.matchMedia("(min-width: 1024px)");
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
 
 // ─── AdPicture ────────────────────────────────────────────────────────────────
 // Serves desktop image (≥1024px) or mobile image (<1024px).
@@ -60,9 +82,9 @@ function AdPicture({
   if (mode === "fill") {
     return (
       <picture className="absolute inset-0 block w-full h-full">
-        <source media="(min-width: 1024px)" srcSet={desktop} />
+        {desktop && <source media="(min-width: 1024px)" srcSet={desktop} />}
         <img
-          src={mobile}
+          src={mobile || undefined}
           alt={ad.title || "إعلان"}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
@@ -76,9 +98,9 @@ function AdPicture({
   if (mode === "cover") {
     return (
       <picture className="block w-full" style={{ aspectRatio: coverRatio }}>
-        <source media="(min-width: 1024px)" srcSet={desktop} />
+        {desktop && <source media="(min-width: 1024px)" srcSet={desktop} />}
         <img
-          src={mobile}
+          src={mobile || undefined}
           alt={ad.title || "إعلان"}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
@@ -91,9 +113,9 @@ function AdPicture({
 
   return (
     <picture className="block">
-      <source media="(min-width: 1024px)" srcSet={desktop} />
+      {desktop && <source media="(min-width: 1024px)" srcSet={desktop} />}
       <img
-        src={mobile}
+        src={mobile || undefined}
         alt={ad.title || "إعلان"}
         loading={priority ? "eager" : "lazy"}
         decoding="async"
@@ -366,9 +388,9 @@ function SecondarySlide({
       onClick={onClick}
     >
       <picture className="block w-full lg:absolute lg:inset-0">
-        <source media="(min-width: 1024px)" srcSet={desktop} />
+        {desktop && <source media="(min-width: 1024px)" srcSet={desktop} />}
         <img
-          src={mobile}
+          src={mobile || undefined}
           alt={ad.title || "إعلان"}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
@@ -404,7 +426,15 @@ function SecondaryCarousel({
   onView:  (id: string, d: number) => void;
   onClick: (ad: Ad, x: number, y: number) => void;
 }) {
-  const count                 = ads.length;
+  const isDesktop = useIsDesktop();
+
+  // فلتر حسب الجهاز: إعلان بدون صورة جوال لا يظهر على الجوال، وبالعكس
+  const visibleAds = useMemo(
+    () => ads.filter(ad => isDesktop ? hasDesktopImage(ad) : hasMobileImage(ad)),
+    [ads, isDesktop],
+  );
+
+  const count                 = visibleAds.length;
   const [current, setCurrent] = useState(0);
   const [paused,  setPaused]  = useState(false);
   const containerRef          = useRef<HTMLDivElement>(null);
@@ -417,8 +447,8 @@ function SecondaryCarousel({
   const prev = useCallback(() => setCurrent(i => (i - 1 + count) % count), [count]);
 
   // ref لتجنب reset التايمر عند تغيير reference الـ array بدون تغيير البيانات
-  const adsRef = useRef(ads);
-  useEffect(() => { adsRef.current = ads; });
+  const adsRef = useRef(visibleAds);
+  useEffect(() => { adsRef.current = visibleAds; });
 
   useEffect(() => { setCurrent(0); }, [count]);
 
@@ -432,11 +462,11 @@ function SecondaryCarousel({
 
   // View tracking
   useEffect(() => {
-    const ad = ads[current];
+    const ad = visibleAds[current];
     if (!ad || viewed.current.has(ad.id)) return;
     viewed.current.add(ad.id);
     onView(ad.id, 0);
-  }, [current, ads, onView]);
+  }, [current, visibleAds, onView]);
 
   // ── Touch swipe ────────────────────────────────────────────────────────────
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -498,7 +528,7 @@ function SecondaryCarousel({
       onMouseUp={count > 1 ? handleMouseUp    : undefined}
     >
       {/* ── Crossfade slides — CSS Grid stacking (يحدد الارتفاع تلقائياً من الصورة) ── */}
-      {ads.map((ad, i) => (
+      {visibleAds.map((ad, i) => (
         <div
           key={ad.id}
           className="transition-opacity duration-700 ease-in-out"
@@ -520,7 +550,7 @@ function SecondaryCarousel({
       {/* ── Dot indicators (خطوط — منطقة ضغط واسعة) ─────────────────── */}
       {count > 1 && (
         <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex z-20">
-          {ads.map((_, i) => (
+          {visibleAds.map((_, i) => (
             <button
               key={i}
               onClick={e => { e.stopPropagation(); setCurrent(i); }}
