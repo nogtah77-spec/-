@@ -258,16 +258,16 @@ export default function Home() {
                 {settings.heroLine2 && <span className="block">{settings.heroLine2}</span>}
               </p>
             )}
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-2"
+            <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3">
+              <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-1 sm:gap-2 shrink-0"
                 style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                <Link href="/add-property"><Plus className="h-4 w-4" />أضف عقارك لدينا</Link>
+                <Link href="/add-property"><Plus className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />أضف عقارك</Link>
               </Button>
-              <Button asChild size="lg" className="h-10 px-7 rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform duration-300 gap-2"
+              <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 gap-1 sm:gap-2 shrink-0"
                 style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.3)" }}>
-                <Link href="/finishing-services"><Building2 className="h-4 w-4" />خدمات التشطيبات</Link>
+                <Link href="/finishing-services"><Building2 className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />خدمات التشطيبات</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-10 px-7 rounded-full font-bold text-sm border-white/40 text-white hover:bg-white/10">
+              <Button asChild size="lg" variant="outline" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm border-white/40 text-white hover:bg-white/10 shrink-0">
                 <Link href="/consultation">اطرح استفسارك</Link>
               </Button>
             </div>
@@ -539,12 +539,12 @@ export default function Home() {
               <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-md mx-auto">
                 أضف عقارك لدينا واحصل على أفضل عرض سعر. نتواصل معك في أقرب وقت.
               </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Button asChild size="lg" className="h-11 px-8 rounded-full font-bold text-sm text-white gap-2"
+              <div className="flex flex-nowrap justify-center gap-2 sm:gap-3">
+                <Button asChild size="lg" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
                   style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                  <Link href="/add-property"><Plus className="h-4 w-4" />أضف عقارك الآن</Link>
+                  <Link href="/add-property"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />أضف عقارك الآن</Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="h-11 px-8 rounded-full text-sm border-accent/40 text-accent hover:bg-accent/10">
+                <Button asChild size="lg" variant="outline" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0">
                   <Link href="/consultation">اطرح استفسارك</Link>
                 </Button>
               </div>
