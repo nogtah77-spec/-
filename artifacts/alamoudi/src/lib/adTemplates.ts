@@ -46,10 +46,11 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
     ratio: "160:23",
     breakpoint: "desktop",
     bleed: 9, safeInset: 9,
+    // Safe area: x=18…942, y=18…120  (bleed 9 + safeInset 9 on each side)
     zones: [
-      { x: 660, y: 7,   w: 285, h: 32,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
-      { x: 40,  y: 23,  w: 600, h: 85,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
-      { x: 660, y: 99,  w: 285, h: 32,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
+      { x: 660, y: 18,  w: 282, h: 30,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
+      { x: 18,  y: 22,  w: 620, h: 76,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
+      { x: 660, y: 88,  w: 282, h: 32,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
     ],
   },
 
@@ -60,10 +61,11 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
     ratio: "200:51",
     breakpoint: "mobile",
     bleed: 12, safeInset: 12,
+    // Safe area: x=24…776, y=24…180  (bleed 12 + safeInset 12 on each side)
     zones: [
-      { x: 505, y: 8,   w: 280, h: 38,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
-      { x: 40,  y: 35,  w: 715, h: 107, label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
-      { x: 505, y: 139, w: 280, h: 38,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
+      { x: 505, y: 24,  w: 271, h: 38,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
+      { x: 24,  y: 35,  w: 460, h: 107, label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
+      { x: 505, y: 142, w: 271, h: 38,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
     ],
   },
 
@@ -74,10 +76,11 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
     ratio: "160:23",
     breakpoint: "desktop",
     bleed: 9, safeInset: 9,
+    // Safe area: x=18…942, y=18…120  (bleed 9 + safeInset 9 on each side)
     zones: [
-      { x: 660, y: 7,   w: 285, h: 32,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
-      { x: 40,  y: 23,  w: 600, h: 85,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
-      { x: 660, y: 99,  w: 285, h: 32,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
+      { x: 660, y: 18,  w: 282, h: 30,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
+      { x: 18,  y: 22,  w: 620, h: 76,  label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
+      { x: 660, y: 88,  w: 282, h: 32,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
     ],
   },
 
@@ -88,10 +91,11 @@ export const AD_TEMPLATES: Record<AdTemplateKey, AdTemplate> = {
     ratio: "200:51",
     breakpoint: "mobile",
     bleed: 12, safeInset: 12,
+    // Safe area: x=24…776, y=24…180  (bleed 12 + safeInset 12 on each side)
     zones: [
-      { x: 505, y: 8,   w: 280, h: 38,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
-      { x: 40,  y: 35,  w: 715, h: 107, label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
-      { x: 505, y: 139, w: 280, h: 38,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
+      { x: 505, y: 24,  w: 271, h: 38,  label: "Logo",  color: "rgba(147,51,234,0.18)", strokeColor: "#9333ea" },
+      { x: 24,  y: 35,  w: 460, h: 107, label: "Title", color: "rgba(59,130,246,0.12)", strokeColor: "#3b82f6" },
+      { x: 505, y: 142, w: 271, h: 38,  label: "CTA",   color: "rgba(34,197,94,0.18)",  strokeColor: "#22c55e" },
     ],
   },
 };
