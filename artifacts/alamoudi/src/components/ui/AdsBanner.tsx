@@ -46,13 +46,13 @@ function getActiveAds(ads: Ad[]): Ad[] {
 
 /** صورة الديسكتوب فقط — بدون fallback للجوال */
 function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ""; }
-/** صورة الجوال فقط — بدون fallback للديسكتوب */
-function getMobileSrc(ad: Ad)  { return ad.imageUrl || ""; }
+/** صورة الجوال — يدعم الحقل الجديد mobileImageUrl والقديم imageUrl */
+function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl || ad.imageUrl || ""; }
 
 /** هل عنده صورة تخص الديسكتوب؟ */
 function hasDesktopImage(ad: Ad) { return !!ad.desktopImageUrl; }
 /** هل عنده صورة تخص الجوال؟ */
-function hasMobileImage(ad: Ad)  { return !!ad.imageUrl; }
+function hasMobileImage(ad: Ad)  { return !!(ad.mobileImageUrl || ad.imageUrl); }
 
 /** يرصد تغير الـ breakpoint (lg = 1024px) */
 function useIsDesktop(): boolean {
