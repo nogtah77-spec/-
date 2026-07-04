@@ -262,9 +262,9 @@ export default function Home() {
         </section>
         )}
 
-        {/* ── Premium Ad (يحل محل الغلاف — full-width) ── */}
+        {/* ── Premium Ad ── */}
         {!isFiltering && (
-          <div className="w-full">
+          <div className="container px-4 sm:px-6 pt-3 sm:pt-4">
             <PremiumBanner ads={settings.ads ?? []} />
           </div>
         )}

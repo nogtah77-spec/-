@@ -13,7 +13,6 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { buildEventPayload } from "@/lib/adTracking";
 import { SLOT_TEMPLATES } from "@/lib/adTemplates";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // نسب عرض Secondary مشتقة مباشرةً من التمبلتات — تتحدث تلقائياً عند تغيير الأبعاد
 const SEC_DESKTOP_RATIO =
@@ -169,8 +168,8 @@ function AdSlot({
 }
 
 // ─── PremiumSlot ──────────────────────────────────────────────────────────────
-// Auto-rotating carousel. Arrows on hover. Progress bar. Dot indicators.
-// Single <AdSlot> — <picture> handles desktop/mobile image switching.
+// Auto-rotating carousel. Drag/swipe to navigate. Dot indicators only.
+// Rounded box, no arrows, no progress bar.
 
 function PremiumSlot({
   premiums,
@@ -181,10 +180,14 @@ function PremiumSlot({
   onView:  (id: string, d: number) => void;
   onClick: (ad: Ad, x: number, y: number) => void;
 }) {
-  const count              = premiums.length;
-  const [current, setCur]  = useState(0);
-  const [paused, setPause] = useState(false);
-  const ad                 = premiums[current];
+  const count                     = premiums.length;
+  const [current, setCur]         = useState(0);
+  const [paused,  setPause]       = useState(false);
+  const [isDragging, setDragging] = useState(false);
+  const [dragDelta,  setDelta]    = useState(0);
+  const dragStartX                = useRef<number | null>(null);
+  const containerRef              = useRef<HTMLDivElement>(null);
+  const ad                        = premiums[current];
 
   const next = useCallback(() => setCur(i => (i + 1) % count), [count]);
   const prev = useCallback(() => setCur(i => (i - 1 + count) % count), [count]);
@@ -197,43 +200,101 @@ function PremiumSlot({
     return () => clearTimeout(t);
   }, [count, paused, current, ad, next]);
 
+  // ── Touch ──────────────────────────────────────────────────────────────────
+  const handleTouchStart = (e: React.TouchEvent) => {
+    dragStartX.current = e.touches[0].clientX;
+    setDelta(0);
+    setPause(true);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (dragStartX.current === null) return;
+    setDelta(e.touches[0].clientX - dragStartX.current);
+  };
+  const handleTouchEnd = () => {
+    if (dragStartX.current !== null) {
+      if (dragDelta >  50) prev();
+      else if (dragDelta < -50) next();
+    }
+    dragStartX.current = null;
+    setDelta(0);
+    setPause(false);
+  };
+
+  // ── Mouse ──────────────────────────────────────────────────────────────────
+  const handleMouseDown = (e: React.MouseEvent) => {
+    dragStartX.current = e.clientX;
+    setDelta(0);
+    setDragging(true);
+    setPause(true);
+    e.preventDefault();
+  };
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || dragStartX.current === null) return;
+    setDelta(e.clientX - dragStartX.current);
+  };
+  const finishMouseDrag = () => {
+    if (!isDragging) return;
+    if (dragDelta >  50) prev();
+    else if (dragDelta < -50) next();
+    dragStartX.current = null;
+    setDelta(0);
+    setDragging(false);
+    setPause(false);
+  };
+
   if (!ad) return null;
+
+  const trackStyle: React.CSSProperties = {
+    transform:  `translateX(calc(-${current * 100}% + ${dragDelta}px))`,
+    transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.4, 0, 0.2, 1)",
+  };
 
   return (
     <div
-      className="relative overflow-hidden group"
-      onMouseEnter={() => setPause(true)}
-      onMouseLeave={() => setPause(false)}
+      className="relative"
+      onMouseEnter={() => count > 1 && setPause(true)}
+      onMouseLeave={() => { setPause(false); finishMouseDrag(); }}
     >
-      <AdSlot
-        ad={ad}
-        className="w-full"
-        priority
-        onView={(d) => onView(ad.id, d)}
-        onClick={(x, y) => onClick(ad, x, y)}
-      />
+      {/* ── Track ── */}
+      <div
+        ref={containerRef}
+        className={cn(
+          "overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
+          count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
+        )}
+        onTouchStart={count > 1 ? handleTouchStart : undefined}
+        onTouchMove={count > 1 ? handleTouchMove   : undefined}
+        onTouchEnd={count > 1 ? handleTouchEnd     : undefined}
+        onMouseDown={count > 1 ? handleMouseDown   : undefined}
+        onMouseMove={count > 1 ? handleMouseMove   : undefined}
+        onMouseUp={count > 1 ? finishMouseDrag     : undefined}
+      >
+        <div dir="ltr" className="flex" style={trackStyle}>
+          {premiums.map((p, i) => (
+            <div
+              key={p.id}
+              className="flex-shrink-0 w-full"
+              onClick={(e) => {
+                if (Math.abs(dragDelta) > 8) return;
+                if (!containerRef.current) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                const y = Math.min(1, Math.max(0, (e.clientY - rect.top)  / rect.height));
+                onClick(p, x, y);
+              }}
+            >
+              <AdSlot
+                ad={p}
+                className="w-full"
+                priority={i === 0}
+                onView={(d) => onView(p.id, d)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
 
-      {/* Navigation arrows — visible on hover */}
-      {count > 1 && (
-        <>
-          <button
-            onClick={e => { e.stopPropagation(); prev(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
-            aria-label="السابق"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); next(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
-            aria-label="التالي"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-        </>
-      )}
-
-      {/* Dot indicators */}
+      {/* ── Dot indicators ── */}
       {count > 1 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
           {premiums.map((_, i) => (
@@ -249,17 +310,6 @@ function PremiumSlot({
               aria-label={`إعلان ${i + 1}`}
             />
           ))}
-        </div>
-      )}
-
-      {/* Auto-rotation progress bar */}
-      {count > 1 && !paused && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 z-20 bg-white/20">
-          <div
-            key={current}
-            className="h-full bg-white/70 origin-left"
-            style={{ animation: `progress ${(ad?.duration ?? 6)}s linear forwards` }}
-          />
         </div>
       )}
     </div>
@@ -454,37 +504,6 @@ function SecondaryCarousel({
           ))}
         </div>
       </div>
-
-      {/* ── Arrows — shown on hover (desktop) ─────────────────────────── */}
-      {count > 1 && (
-        <>
-          <button
-            onClick={e => { e.stopPropagation(); prev(); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/65 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
-            aria-label="السابق"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); next(); }}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 bg-black/40 hover:bg-black/65 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-sm"
-            aria-label="التالي"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-        </>
-      )}
-
-      {/* ── Progress bar ──────────────────────────────────────────────── */}
-      {count > 1 && !paused && (
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 z-20 bg-white/20 rounded-b-2xl overflow-hidden">
-          <div
-            key={current}
-            className="h-full bg-white/70 origin-left"
-            style={{ animation: "progress 6s linear forwards" }}
-          />
-        </div>
-      )}
 
       {/* ── Dot indicators ────────────────────────────────────────────── */}
       {count > 1 && (
