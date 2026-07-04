@@ -245,7 +245,7 @@ export function Navbar() {
         </Sheet>
 
         <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-          <span className="text-lg font-bold text-accent">العمودي</span>
+          <span className="text-2xl font-bold text-accent">العمودي</span>
         </Link>
 
         <ThemeToggle />
