@@ -46,13 +46,13 @@ function hasDesktopImage(ad: Ad) { return !!ad.desktopImageUrl; }
 /** هل عنده صورة تخص الجوال؟ */
 function hasMobileImage(ad: Ad)  { return !!ad.imageUrl; }
 
-/** يرصد تغير الـ breakpoint (lg = 1024px) */
+/** يرصد تغير الـ breakpoint (md = 768px) */
 function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches,
   );
   useEffect(() => {
-    const mq      = window.matchMedia("(min-width: 1024px)");
+    const mq      = window.matchMedia("(min-width: 768px)");
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
@@ -61,7 +61,7 @@ function useIsDesktop(): boolean {
 }
 
 // ─── AdPicture ────────────────────────────────────────────────────────────────
-// Serves desktop image (≥1024px) or mobile image (<1024px).
+// Serves desktop image (≥768px) or mobile image (<768px).
 // mode="proportional" → width:100%; height:auto (Premium).
 // mode="cover"        → fills a fixed aspect-ratio box via object-cover (Secondary).
 
