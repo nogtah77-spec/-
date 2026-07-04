@@ -276,7 +276,7 @@ function PremiumSlot({
         ref={containerRef}
         className={cn(
           "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
-          "aspect-[1200/138] lg:aspect-[1800/138]",
+          "aspect-[800/138] lg:aspect-[960/138]",
           count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
         )}
         onTouchStart={count > 1 ? handleTouchStart : undefined}
