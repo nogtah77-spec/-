@@ -337,7 +337,7 @@ function SecondarySlide({
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/290] lg:aspect-[960/290]",
+        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/230] lg:aspect-[960/230]",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}
