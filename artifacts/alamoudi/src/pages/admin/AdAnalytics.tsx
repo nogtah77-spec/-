@@ -97,11 +97,19 @@ function percent(val: number, total: number): string {
   return `${((val / total) * 100).toFixed(1)}%`;
 }
 
+/** يفسّر تاريخ YYYY-MM-DD كتوقيت محلي لتجنب فروق المنطقة الزمنية */
+function localDate(dateStr: string, endOfDay = false): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return endOfDay
+    ? new Date(y, m - 1, d, 23, 59, 59, 999)
+    : new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
 function getAdStatus(ad: Ad): "active" | "scheduled" | "expired" | "disabled" {
   if (!ad.active) return "disabled";
   const now = new Date();
-  if (ad.startDate && new Date(ad.startDate) > now) return "scheduled";
-  if (ad.endDate   && new Date(ad.endDate)   < now) return "expired";
+  if (ad.startDate && localDate(ad.startDate)       > now) return "scheduled";
+  if (ad.endDate   && localDate(ad.endDate, true)   < now) return "expired";
   return "active";
 }
 

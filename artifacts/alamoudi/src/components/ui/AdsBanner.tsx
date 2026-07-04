@@ -23,14 +23,22 @@ const SEC_MOBILE_RATIO  =
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 /** كل إعلان فعّال عنده صورة ديسكتوب أو صورة جوال على الأقل */
+/** يفسّر تاريخ YYYY-MM-DD كتوقيت محلي (مش UTC) لتجنب فروق المنطقة الزمنية */
+function localDate(dateStr: string, endOfDay = false): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return endOfDay
+    ? new Date(y, m - 1, d, 23, 59, 59, 999)
+    : new Date(y, m - 1, d, 0, 0, 0, 0);
+}
+
 function getActiveAds(ads: Ad[]): Ad[] {
   const now = new Date();
   return [...ads]
     .filter(ad => {
       if (!ad.active) return false;
       if (!(ad.desktopImageUrl || ad.imageUrl)) return false;
-      if (ad.startDate && new Date(ad.startDate) > now) return false;
-      if (ad.endDate   && new Date(ad.endDate)   < now) return false;
+      if (ad.startDate && localDate(ad.startDate)          > now) return false;
+      if (ad.endDate   && localDate(ad.endDate, true)      < now) return false;
       return true;
     })
     .sort((a, b) => a.order - b.order);
