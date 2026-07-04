@@ -356,16 +356,16 @@ function SecondarySlide({
   const mobile  = getMobileSrc(ad);
 
   return (
-    // الارتفاع يتحدد تلقائياً من أبعاد الصورة الطبيعية — لا letterboxing، لا قطع
+    // جوال: ارتفاع طبيعي متكيف مع الصورة | ديسكتوب: ارتفاع ثابت 960×138 مع object-cover
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden select-none",
+        "relative w-full overflow-hidden select-none lg:h-full",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}
     >
-      <picture className="block w-full">
+      <picture className="block w-full lg:absolute lg:inset-0">
         <source media="(min-width: 1024px)" srcSet={desktop} />
         <img
           src={mobile}
@@ -373,7 +373,7 @@ function SecondarySlide({
           loading={priority ? "eager" : "lazy"}
           decoding="async"
           draggable={false}
-          className="w-full h-auto block"
+          className="w-full h-auto block lg:h-full lg:object-cover"
         />
       </picture>
 
@@ -487,6 +487,7 @@ function SecondaryCarousel({
       ref={containerRef}
       className={cn(
         "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/8 select-none grid",
+        "lg:aspect-[960/138]",
         count > 1 ? "cursor-pointer" : "cursor-default",
       )}
       onMouseEnter={() => count > 1 && setPaused(true)}
