@@ -300,10 +300,10 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 mb-2">
+            <div className="flex flex-nowrap justify-center gap-2 mb-2">
               {[{ value: "sale", label: "للبيع" }, { value: "rent", label: "للإيجار" }, { value: "furnished", label: "مفروش" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchCategory(btn.value as typeof searchCategory)}
-                  className={cn("px-5 py-1.5 rounded-full text-sm font-medium transition-all",
+                  className={cn("px-4 sm:px-5 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap",
                     searchCategory === btn.value ? "bg-accent text-white shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/70")}>
                   {btn.label}
                 </button>
