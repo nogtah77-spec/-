@@ -6,7 +6,7 @@
 //   • Images scale proportionally (width: 100%; height: auto).
 //   • Guide overlays are NEVER shown on the public site.
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import type { Ad } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
@@ -208,13 +208,17 @@ function PremiumSlot({
   const next = useCallback(() => setCur(i => (i + 1) % count), [count]);
   const prev = useCallback(() => setCur(i => (i - 1 + count) % count), [count]);
 
+  // ref لتجنب إعادة تشغيل تايمر التوقيت عند تغيير reference الـ array
+  const premiumsRef = useRef(premiums);
+  useEffect(() => { premiumsRef.current = premiums; });
+
   useEffect(() => { setCur(0); }, [count]);
   useEffect(() => {
     if (count <= 1 || paused) return;
-    const ms = (ad?.duration ?? 6) * 1000;
+    const ms = (premiumsRef.current[current]?.duration ?? 6) * 1000;
     const t  = setTimeout(next, ms);
     return () => clearTimeout(t);
-  }, [count, paused, current, ad, next]);
+  }, [count, paused, current, next]);
 
   // ── Touch ──────────────────────────────────────────────────────────────────
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -411,15 +415,19 @@ function SecondaryCarousel({
   const next = useCallback(() => setCurrent(i => (i + 1) % count), [count]);
   const prev = useCallback(() => setCurrent(i => (i - 1 + count) % count), [count]);
 
+  // ref لتجنب reset التايمر عند تغيير reference الـ array بدون تغيير البيانات
+  const adsRef = useRef(ads);
+  useEffect(() => { adsRef.current = ads; });
+
   useEffect(() => { setCurrent(0); }, [count]);
 
   // Auto-play — مدة مستقلة لكل إعلان
   useEffect(() => {
     if (count <= 1 || paused) return;
-    const ms = (ads[current]?.duration ?? 6) * 1000;
+    const ms = (adsRef.current[current]?.duration ?? 6) * 1000;
     const t  = setTimeout(next, ms);
     return () => clearTimeout(t);
-  }, [count, paused, current, ads, next]);
+  }, [count, paused, current, next]);
 
   // View tracking
   useEffect(() => {
@@ -563,7 +571,7 @@ interface BannerProps { ads: Ad[]; }
 export function UnifiedBanner({ ads }: BannerProps) {
   const { onView, onClick } = useAdTracking();
 
-  const active = getActiveAds(ads).slice(0, 10);
+  const active = useMemo(() => getActiveAds(ads).slice(0, 10), [ads]);
   if (active.length === 0) return null;
 
   return (
