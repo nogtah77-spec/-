@@ -276,7 +276,7 @@ function PremiumSlot({
         ref={containerRef}
         className={cn(
           "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 select-none",
-          "aspect-[800/152] lg:aspect-[960/138]",
+          "aspect-[800/185] lg:aspect-[960/138]",
           count > 1 ? (isDragging ? "cursor-grabbing" : "cursor-grab") : "cursor-default",
         )}
         onTouchStart={count > 1 ? handleTouchStart : undefined}
@@ -355,7 +355,7 @@ function SecondarySlide({
     <div
       role={ad.linkUrl ? "link" : undefined}
       className={cn(
-        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/152] lg:aspect-[960/138]",
+        "relative w-full overflow-hidden bg-neutral-100 select-none aspect-[800/185] lg:aspect-[960/138]",
         ad.linkUrl ? "cursor-pointer" : "cursor-default",
       )}
       onClick={onClick}
@@ -524,21 +524,23 @@ function SecondaryCarousel({
         </div>
       </div>
 
-      {/* ── Dot indicators (خطوط رفيعة) ────────────────────────────── */}
+      {/* ── Dot indicators (خطوط رفيعة — منطقة ضغط كبيرة) ─────── */}
       {count > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-20">
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex z-20">
           {ads.map((_, i) => (
             <button
               key={i}
               onClick={e => { e.stopPropagation(); setCurrent(i); }}
-              className={cn(
-                "rounded-full transition-all duration-300",
-                i === current
-                  ? "w-5 h-[2.5px] bg-white"
-                  : "w-4 h-[1.5px] bg-white/45 hover:bg-white/70"
-              )}
+              className="p-2.5 flex items-center justify-center"
               aria-label={`إعلان ${i + 1}`}
-            />
+            >
+              <span className={cn(
+                "block rounded-full transition-all duration-300",
+                i === current
+                  ? "w-5 h-[2.5px] bg-white shadow-sm"
+                  : "w-4 h-[1.5px] bg-white/45 hover:bg-white/70"
+              )} />
+            </button>
           ))}
         </div>
       )}

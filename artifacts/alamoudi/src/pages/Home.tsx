@@ -245,9 +245,9 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
 
-        {/* ── 3 Action Buttons ── */}
-        <div className="container px-6 pt-4 sm:pt-5 pb-5">
-          <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3">
+        {/* ── 3 Action Buttons — ثلاثة جنب بعض دائماً في كل الشاشات ── */}
+        <div className="w-full pt-4 sm:pt-5 pb-5 overflow-x-auto">
+          <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-3 px-4 sm:px-6 min-w-0">
             <Button asChild size="lg" className="h-8 sm:h-10 px-3 sm:px-7 rounded-full font-bold text-[10.5px] sm:text-sm shadow-lg hover:scale-105 transition-transform duration-300 text-white gap-1 sm:gap-2 shrink-0"
               style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
               <Link href="/add-property"><Plus className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />أضف عقارك</Link>

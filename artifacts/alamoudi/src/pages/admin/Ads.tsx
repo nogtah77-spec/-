@@ -771,17 +771,32 @@ function AdDialog({
                 </Label>
                 <Input
                   type="number" min={2} max={60}
-                  value={form.duration ?? 6}
-                  onChange={e => patch({ duration: Number(e.target.value) || 0 })}
-                  onBlur={e => patch({ duration: Math.max(2, Math.min(60, Number(e.target.value) || 2)) })}
+                  value={form.duration === 0 ? "" : (form.duration ?? "")}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    patch({ duration: raw === "" ? 0 : Number(raw) });
+                  }}
+                  onBlur={e => {
+                    const v = Math.max(2, Math.min(60, Number(e.target.value) || 2));
+                    patch({ duration: v });
+                  }}
+                  placeholder="6"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label>ترتيب الظهور</Label>
                 <Input
                   type="number" min={1}
-                  value={form.order}
-                  onChange={e => patch({ order: Number(e.target.value) })}
+                  value={form.order === 0 ? "" : (form.order ?? "")}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    patch({ order: raw === "" ? 0 : Number(raw) });
+                  }}
+                  onBlur={e => {
+                    const v = Math.max(1, Number(e.target.value) || 1);
+                    patch({ order: v });
+                  }}
+                  placeholder="1"
                 />
               </div>
             </div>
