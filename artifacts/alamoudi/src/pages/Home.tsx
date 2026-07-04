@@ -246,30 +246,30 @@ export default function Home() {
       <main className="flex-1">
 
         {/* ── 3 Action Buttons — البلاط المتساوية ── */}
-        <div className="container px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4">
-          <div className="flex gap-3 max-w-3xl mx-auto">
+        <div className="container px-3 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4">
+          <div className="flex gap-2 sm:gap-3 max-w-3xl mx-auto">
             <Link
               href="/add-property"
-              className="flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 text-white font-bold text-xs sm:text-sm select-none"
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 text-white font-bold text-[10px] sm:text-sm select-none"
               style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}
             >
-              <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
               أضف عقارك
             </Link>
             <Link
               href="/finishing-services"
-              className="flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-xs sm:text-sm select-none"
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
               style={{ background: "linear-gradient(135deg, #3F4E4F, #2C3639)", color: "#DCD7C9", border: "1px solid rgba(220,215,201,0.18)" }}
             >
-              <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Building2 className="h-4 w-4 sm:h-6 sm:w-6" />
               خدمات التشطيبات
             </Link>
             <Link
               href="/consultation"
-              className="flex-1 flex flex-col items-center justify-center gap-1.5 sm:gap-2 rounded-2xl py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-xs sm:text-sm text-foreground select-none"
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-2xl py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
               style={{ border: "1.5px solid #A27B5B" }}
             >
-              <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" style={{ color: "#A27B5B" }} />
+              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: "#A27B5B" }} />
               اطرح استفسارك
             </Link>
           </div>
