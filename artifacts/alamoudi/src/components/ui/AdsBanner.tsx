@@ -47,10 +47,10 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .sort((a, b) => a.order - b.order);
 }
 
-/** صورة الديسكتوب — fallback لصورة الجوال لو مافيش */
-function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ad.mobileImageUrl || ad.imageUrl || ""; }
-/** صورة الجوال — fallback لصورة الديسكتوب لو مافيش صورة جوال */
-function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl || ad.imageUrl || ad.desktopImageUrl || ""; }
+/** صورة الديسكتوب فقط — بدون fallback للجوال */
+function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ""; }
+/** صورة الجوال — يدعم mobileImageUrl والقديم imageUrl — بدون fallback للديسكتوب */
+function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl || ad.imageUrl || ""; }
 
 /** هل عنده صورة تخص الديسكتوب؟ */
 function hasDesktopImage(ad: Ad) { return !!ad.desktopImageUrl; }
@@ -791,6 +791,7 @@ function MixedCarousel({
 export function PublicBannerSlot({ slot, ads }: { slot: "top" | "bottom"; ads: Ad[] }) {
   const smartBanners        = useActiveSmartBanners(slot);
   const { onView, onClick } = useAdTracking();
+  const isDesktop           = useIsDesktop();
 
   // الصندوق العلوي: ارتفاع ثابت صغير على كل الأجهزة.
   // الصندوق السفلي: ارتفاع ثابت على الجوال/تابليت، ونسبة العرض الأصلية على الكمبيوتر.
@@ -809,12 +810,15 @@ export function PublicBannerSlot({ slot, ads }: { slot: "top" | "bottom"; ads: A
       .map(b => ({ kind: "smart" as const, data: b, id: b.id, order: b.order, duration: b.duration }));
 
     if (slot === "bottom") {
-      getActiveAds(ads).slice(0, 10).forEach(ad => {
-        items.push({ kind: "ad" as const, data: ad, id: ad.id, order: ad.order, duration: 6 });
-      });
+      getActiveAds(ads)
+        .filter(ad => isDesktop ? hasDesktopImage(ad) : hasMobileImage(ad))
+        .slice(0, 10)
+        .forEach(ad => {
+          items.push({ kind: "ad" as const, data: ad, id: ad.id, order: ad.order, duration: 6 });
+        });
     }
     return items.sort((a, b) => a.order - b.order);
-  }, [smartBanners, ads, slot]);
+  }, [smartBanners, ads, slot, isDesktop]);
 
   if (pinnedBanners.length === 0 && rotatingItems.length === 0) return null;
 
