@@ -131,8 +131,9 @@ export interface Ad {
   id: string;
   type: AdType;                  // premium = إعلان رئيسي (21:9) | secondary = إعلان صغير (16:9)
   desktopImageUrl: string;       // صورة الديسكتوب (مطلوبة)
-  mobileImageUrl?: string;       // صورة الجوال (اختياري — fallback للـ desktop)
+  mobileImageUrl?: string;       // صورة الجوال (اختياري)
   linkUrl?: string;
+  whatsappNumber?: string;       // رقم واتساب للتواصل المباشر عند النقر
   title?: string;
   order: number;
   duration: number;
@@ -141,6 +142,7 @@ export interface Ad {
   active: boolean;
   views: number;
   clicks: number;
+  linkClicks?: number;           // نقرات أدت لفتح لينك أو واتساب
   // للتوافق مع البيانات القديمة
   imageUrl?: string;
 }

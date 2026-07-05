@@ -590,6 +590,7 @@ function emptyAd(type: AdType = "secondary"): AdForm {
     mobileImageUrl:  "",
     imageUrl:        "",
     linkUrl:         "",
+    whatsappNumber:  "",
     title:           "",
     order:           1,
     duration:        6,
@@ -730,7 +731,28 @@ function AdDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label>رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+              <Label>رقم واتساب <span className="text-muted-foreground text-xs">(اختياري — عند النقر يفتح محادثة مباشرة)</span></Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="مثال: 201234567890 (بدون +)"
+                  value={form.whatsappNumber ?? ""}
+                  onChange={e => patch({ whatsappNumber: e.target.value })}
+                  className="flex-1 text-left"
+                  dir="ltr"
+                />
+                {form.whatsappNumber && (
+                  <Button type="button" variant="outline" size="icon" asChild>
+                    <a href={`https://wa.me/${form.whatsappNumber.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">أولوية على رابط الإعلان — لو الاثنان موجودان يُفتح الواتساب</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري — يُفتح عند النقر إذا لا يوجد واتساب)</span></Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="https://..."
@@ -1130,6 +1152,13 @@ export default function Ads() {
                           ? <p className="font-semibold text-sm leading-snug truncate">{ad.title}</p>
                           : <p className="text-sm text-muted-foreground italic">بدون عنوان</p>
                         }
+                        {ad.whatsappNumber && (
+                          <a href={`https://wa.me/${ad.whatsappNumber.replace(/\D/g,"")}`} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-green-600 hover:underline inline-flex items-center gap-1 max-w-full truncate mt-0.5">
+                            <span className="shrink-0">💬</span>
+                            <span className="truncate">{ad.whatsappNumber}</span>
+                          </a>
+                        )}
                         {ad.linkUrl && (
                           <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer"
                             className="text-xs text-accent hover:underline inline-flex items-center gap-1 max-w-full truncate mt-0.5">
@@ -1197,7 +1226,8 @@ export default function Ads() {
             desktopImageUrl: editTarget.desktopImageUrl || editTarget.imageUrl || "",
             mobileImageUrl:  editTarget.mobileImageUrl ?? "",
             imageUrl:        editTarget.imageUrl ?? "",
-            linkUrl:         editTarget.linkUrl  ?? "",
+            linkUrl:         editTarget.linkUrl        ?? "",
+            whatsappNumber:  editTarget.whatsappNumber ?? "",
             title:           editTarget.title    ?? "",
             order:           editTarget.order,
             duration:        editTarget.duration ?? 6,

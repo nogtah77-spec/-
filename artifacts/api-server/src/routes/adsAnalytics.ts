@@ -142,7 +142,11 @@ router.post("/ads/:id/click", async (req, res): Promise<void> => {
     screenWidth, screenHeight, language,
     referrer, referrerType, referrerPage,
     clickX, clickY,
+    actionType, // 'url' | 'whatsapp' | 'phone' | undefined — موجود فقط لنقرات اللينك
   } = req.body ?? {};
+
+  // نوع الحدث: link_click عند فتح رابط/واتساب/اتصال، click لأي نقرة عادية
+  const eventType = actionType ? "link_click" : "click";
 
   try {
     const [geoData] = await Promise.all([
@@ -151,7 +155,7 @@ router.post("/ads/:id/click", async (req, res): Promise<void> => {
 
     await db.insert(adEventsTable).values({
       adId:         id,
-      eventType:    "click",
+      eventType,
       sessionId:    sessionId    ?? null,
       deviceType:   deviceType   ?? null,
       browser:      browser      ?? null,
@@ -164,6 +168,7 @@ router.post("/ads/:id/click", async (req, res): Promise<void> => {
       referrerPage: referrerPage ?? null,
       clickX:       clickX       ?? null,
       clickY:       clickY       ?? null,
+      actionType:   actionType   ?? null,
       country:      geoData?.country     ?? null,
       countryCode:  geoData?.countryCode ?? null,
       city:         geoData?.city        ?? null,
@@ -173,9 +178,14 @@ router.post("/ads/:id/click", async (req, res): Promise<void> => {
     const [row] = await db.select().from(settingsTable).limit(1);
     const data  = (row?.data ?? {}) as Record<string, unknown>;
     const ads   = (data.ads ?? []) as Array<Record<string, unknown>>;
-    const newAds = ads.map(a =>
-      a.id === id ? { ...a, clicks: ((a.clicks as number) ?? 0) + 1 } : a
-    );
+    const newAds = ads.map(a => {
+      if (a.id !== id) return a;
+      return {
+        ...a,
+        clicks: ((a.clicks as number) ?? 0) + 1,
+        ...(actionType ? { linkClicks: ((a.linkClicks as number) ?? 0) + 1 } : {}),
+      };
+    });
     const newData = { ...data, ads: newAds };
     await db.insert(settingsTable).values({ id: "main", data: newData })
       .onConflictDoUpdate({ target: settingsTable.id, set: { data: newData } });
@@ -205,8 +215,9 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     .from(adEventsTable)
     .where(and(...conditions));
 
-  const views  = allEvents.filter(e => e.eventType === "view");
-  const clicks = allEvents.filter(e => e.eventType === "click");
+  const views      = allEvents.filter(e => e.eventType === "view");
+  const clicks     = allEvents.filter(e => e.eventType === "click" || e.eventType === "link_click");
+  const linkClicks = allEvents.filter(e => e.eventType === "link_click");
 
   // الزوار الفريدون
   const uniqueSessions = new Set(views.map(e => e.sessionId).filter(Boolean));
@@ -223,10 +234,13 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     .select({ total: count() })
     .from(adEventsTable)
     .where(and(eq(adEventsTable.adId, id), eq(adEventsTable.eventType, "view")));
-  const [totalClicksRow] = await db
-    .select({ total: count() })
+  // إجمالي النقرات = click + link_click
+  const allClicksEver = await db
+    .select({ eventType: adEventsTable.eventType })
     .from(adEventsTable)
-    .where(and(eq(adEventsTable.adId, id), eq(adEventsTable.eventType, "click")));
+    .where(and(eq(adEventsTable.adId, id)));
+  const totalClicksAll  = allClicksEver.filter(e => e.eventType === "click" || e.eventType === "link_click").length;
+  const totalLinkClicks = allClicksEver.filter(e => e.eventType === "link_click").length;
 
   // ─── تجميع حسب فئات ────────────────────────────────────────────────────
 
@@ -348,19 +362,27 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
 
   // ─── الرد ────────────────────────────────────────────────────────────────
 
-  const totalViews  = totalRow?.total       ?? 0;
-  const totalClk    = totalClicksRow?.total ?? 0;
+  const totalViews = totalRow?.total ?? 0;
+
+  // تجميع أنواع اللينك (واتساب / رابط / اتصال)
+  const actionTypeBreakdown: Record<string, number> = {};
+  for (const e of linkClicks) {
+    const k = e.actionType ?? "unknown";
+    actionTypeBreakdown[k] = (actionTypeBreakdown[k] ?? 0) + 1;
+  }
 
   res.json({
     overview: {
       totalViews:      Number(totalViews),
-      totalClicks:     Number(totalClk),
-      ctr:             Number(totalViews) > 0 ? +(Number(totalClk) / Number(totalViews) * 100).toFixed(2) : 0,
+      totalClicks:     totalClicksAll,
+      totalLinkClicks: totalLinkClicks,
+      ctr:             Number(totalViews) > 0 ? +(totalClicksAll / Number(totalViews) * 100).toFixed(2) : 0,
       uniqueVisitors:  uniqueSessions.size,
       uniqueClickers:  uniqueClickers.size,
       avgViewDuration: avgDuration,
       periodViews:     views.length,
       periodClicks:    clicks.length,
+      periodLinkClicks: linkClicks.length,
     },
     visitors: { today: visitorsToday, last7d: visitors7d, last30d: visitors30d, all: visitorsAll },
     devices:       deviceBreakdown,
@@ -373,6 +395,7 @@ router.get("/ads/:id/analytics", requireStaff, async (req, res): Promise<void> =
     cities:     cityBreakdown,
     regions:    regionBreakdown,
     screenSizes:   screenSizeMap,
+    actionTypes:   actionTypeBreakdown,
     timeline,
     peakHours:     hourlyMap,
     weekdays:      weekdayMap,

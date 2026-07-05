@@ -190,10 +190,9 @@ function AdSlot({
   return (
     <div
       ref={ref}
-      role={ad.linkUrl ? "link" : undefined}
+      role="button"
       className={cn(
-        "relative overflow-hidden bg-neutral-100 transition-opacity duration-300",
-        ad.linkUrl ? "cursor-pointer" : "cursor-default",
+        "relative overflow-hidden bg-neutral-100 transition-opacity duration-300 cursor-pointer",
         className,
       )}
       onClick={handleClick}
@@ -391,11 +390,8 @@ function SecondarySlide({
   return (
     // جوال: ارتفاع طبيعي متكيف مع الصورة | ديسكتوب: ارتفاع ثابت 960×138 مع object-cover
     <div
-      role={ad.linkUrl ? "link" : undefined}
-      className={cn(
-        "relative w-full overflow-hidden select-none lg:h-full",
-        ad.linkUrl ? "cursor-pointer" : "cursor-default",
-      )}
+      role="button"
+      className="relative w-full overflow-hidden select-none lg:h-full cursor-pointer"
       onClick={onClick}
     >
       <picture className="block w-full lg:absolute lg:inset-0">
@@ -595,11 +591,24 @@ function useAdTracking() {
   }, [isStaff, trackAdView]);
 
   const onClick = useCallback((ad: Ad, clickX: number, clickY: number) => {
+    // حدد الـ action قبل التتبع
+    let actionType: string | undefined;
+    let openUrl: string | undefined;
+
+    if (ad.whatsappNumber) {
+      const phone = ad.whatsappNumber.replace(/\D/g, "");
+      actionType = "whatsapp";
+      openUrl    = `https://wa.me/${phone}`;
+    } else if (ad.linkUrl) {
+      actionType = "url";
+      openUrl    = ad.linkUrl;
+    }
+
     if (!isStaff) {
-      const payload = { ...buildEventPayload(), clickX, clickY };
+      const payload = { ...buildEventPayload(), clickX, clickY, ...(actionType ? { actionType } : {}) };
       trackAdClick(ad.id, payload as Record<string, unknown>);
     }
-    if (ad.linkUrl) window.open(ad.linkUrl, "_blank", "noopener,noreferrer");
+    if (openUrl) window.open(openUrl, "_blank", "noopener,noreferrer");
   }, [isStaff, trackAdClick]);
 
   return { onView, onClick };
