@@ -591,6 +591,7 @@ function emptyAd(type: AdType = "secondary"): AdForm {
     imageUrl:        "",
     linkUrl:         "",
     whatsappNumber:  "",
+    linkPriority:    "whatsapp",
     title:           "",
     order:           1,
     duration:        6,
@@ -748,11 +749,10 @@ function AdDialog({
                   </Button>
                 )}
               </div>
-              <p className="text-[11px] text-muted-foreground">أولوية على رابط الإعلان — لو الاثنان موجودان يُفتح الواتساب</p>
-            </div>
+              </div>
 
             <div className="space-y-1.5">
-              <Label>رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري — يُفتح عند النقر إذا لا يوجد واتساب)</span></Label>
+              <Label>رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="https://..."
@@ -769,6 +769,30 @@ function AdDialog({
                 )}
               </div>
             </div>
+
+            {/* أولوية النقر — يظهر فقط لو الاثنان موجودان */}
+            {!!(form.whatsappNumber?.trim() && form.linkUrl?.trim()) && (
+              <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
+                <Label className="text-sm font-medium">عند النقر على الإعلان افتح:</Label>
+                <div className="flex gap-2">
+                  {(["whatsapp", "url"] as const).map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => patch({ linkPriority: opt })}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
+                        (form.linkPriority ?? "whatsapp") === opt
+                          ? "border-accent bg-accent text-white font-medium"
+                          : "border-border bg-background hover:bg-muted text-foreground"
+                      )}
+                    >
+                      {opt === "whatsapp" ? <><span>💬</span> واتساب</> : <><ExternalLink className="h-3.5 w-3.5" /> الرابط</>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -1228,6 +1252,7 @@ export default function Ads() {
             imageUrl:        editTarget.imageUrl ?? "",
             linkUrl:         editTarget.linkUrl        ?? "",
             whatsappNumber:  editTarget.whatsappNumber ?? "",
+            linkPriority:    editTarget.linkPriority   ?? "whatsapp",
             title:           editTarget.title    ?? "",
             order:           editTarget.order,
             duration:        editTarget.duration ?? 6,

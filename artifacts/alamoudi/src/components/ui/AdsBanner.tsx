@@ -595,11 +595,23 @@ function useAdTracking() {
     let actionType: string | undefined;
     let openUrl: string | undefined;
 
-    if (ad.whatsappNumber) {
-      const phone = ad.whatsappNumber.replace(/\D/g, "");
+    const priority = ad.linkPriority ?? "whatsapp";
+    const hasWa    = !!ad.whatsappNumber;
+    const hasUrl   = !!ad.linkUrl;
+
+    if (hasWa && hasUrl) {
+      // كلاهما موجود — نحترم الأولوية
+      if (priority === "whatsapp") {
+        actionType = "whatsapp";
+        openUrl    = `https://wa.me/${ad.whatsappNumber!.replace(/\D/g, "")}`;
+      } else {
+        actionType = "url";
+        openUrl    = ad.linkUrl;
+      }
+    } else if (hasWa) {
       actionType = "whatsapp";
-      openUrl    = `https://wa.me/${phone}`;
-    } else if (ad.linkUrl) {
+      openUrl    = `https://wa.me/${ad.whatsappNumber!.replace(/\D/g, "")}`;
+    } else if (hasUrl) {
       actionType = "url";
       openUrl    = ad.linkUrl;
     }

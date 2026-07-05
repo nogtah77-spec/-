@@ -134,6 +134,7 @@ export interface Ad {
   mobileImageUrl?: string;       // صورة الجوال (اختياري)
   linkUrl?: string;
   whatsappNumber?: string;       // رقم واتساب للتواصل المباشر عند النقر
+  linkPriority?: "whatsapp" | "url"; // الأولوية لو الاثنان موجودان (افتراضي: whatsapp)
   title?: string;
   order: number;
   duration: number;
