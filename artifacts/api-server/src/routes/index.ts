@@ -12,6 +12,7 @@ import propertyRequestsRouter from "./propertyRequests";
 import aiConsultantRouter from "./aiConsultant";
 import settingsRouter from "./settings";
 import adsAnalyticsRouter from "./adsAnalytics";
+import adsManagementRouter from "./adsManagement";
 import activityLogsRouter from "./activityLogs";
 import visitorsRouter from "./visitors";
 
@@ -30,6 +31,7 @@ router.use(propertyRequestsRouter);
 router.use(aiConsultantRouter);
 router.use(settingsRouter);
 router.use(adsAnalyticsRouter);
+router.use(adsManagementRouter);
 router.use(activityLogsRouter);
 router.use(visitorsRouter);
 

@@ -623,15 +623,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteTiktokVideo = (id: string) =>
     updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).filter(x => x.id !== id) });
 
-  const addAd = (a: Omit<Ad, "id">) =>
-    updateSettings({ ads: [...(settings.ads ?? []), { ...a, id: genId() }] });
-  const updateAd = (id: string, a: Partial<Omit<Ad, "id">>) =>
-    updateSettings({ ads: (settings.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x) });
-  const deleteAd = (id: string) =>
-    updateSettings({ ads: (settings.ads ?? []).filter(x => x.id !== id) });
-  // إعادة ترتيب الإعلانات دفعةً واحدة — يُحدَّث الترتيب في استدعاء settings واحد
-  const reorderAds = (ordered: Ad[]) =>
-    updateSettings({ ads: ordered.map((a, i) => ({ ...a, order: i + 1 })) });
+  // ── إدارة الإعلانات — routes مخصصة مع activity logging ─────────────────────
+  const addAd = (a: Omit<Ad, "id">) => {
+    const newAd: Ad = { ...a, id: genId(), views: 0, clicks: 0 };
+    setSettings(prev => ({ ...prev, ads: [...(prev.ads ?? []), newAd] }));
+    persist(api.post("/ads/manage", newAd));
+  };
+  const updateAd = (id: string, a: Partial<Omit<Ad, "id">>) => {
+    setSettings(prev => ({
+      ...prev,
+      ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x),
+    }));
+    persist(api.patch(`/ads/manage/${id}`, a));
+  };
+  const deleteAd = (id: string) => {
+    setSettings(prev => ({ ...prev, ads: (prev.ads ?? []).filter(x => x.id !== id) }));
+    persist(api.del(`/ads/manage/${id}`));
+  };
+  // إعادة ترتيب الإعلانات دفعةً واحدة
+  const reorderAds = (ordered: Ad[]) => {
+    const reordered = ordered.map((a, i) => ({ ...a, order: i + 1 }));
+    setSettings(prev => {
+      const orderedIds = new Set(reordered.map(a => a.id));
+      const unchanged  = (prev.ads ?? []).filter(a => !orderedIds.has(a.id));
+      return { ...prev, ads: [...reordered, ...unchanged] };
+    });
+    persist(api.patch("/ads/manage/reorder", { ordered: reordered }));
+  };
   // تتبّع المشاهدات والنقرات — يُرسَل للـ API مع بيانات تفصيلية
   // best-effort: لا نعرض خطأ أبداً، ونحدّث الـ state المحلي فوراً للتجاوب
   const trackAdView = useCallback((id: string, payload?: Record<string, unknown>) => {
