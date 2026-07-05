@@ -79,6 +79,7 @@ export interface SmartBannerShape {
   config:    Record<string, unknown>;
   active:    boolean;
   order:     number;
+  duration?: number;
   createdAt: string;
 }
 

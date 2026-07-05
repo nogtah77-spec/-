@@ -13,6 +13,9 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { buildEventPayload } from "@/lib/adTracking";
 import { SLOT_TEMPLATES } from "@/lib/adTemplates";
+import { api } from "@/lib/api";
+import { SmartBannerDisplay } from "@/components/ui/SmartBannerDisplay";
+import type { SmartBannerShape } from "@/components/ui/SmartBannerDisplay";
 
 // نسب عرض Secondary مشتقة مباشرةً من التمبلتات — تتحدث تلقائياً عند تغيير الأبعاد
 const SEC_DESKTOP_RATIO =
