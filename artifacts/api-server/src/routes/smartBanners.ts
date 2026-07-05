@@ -21,7 +21,7 @@ function setCached(key: string, data: unknown, ttlMs = 5 * 60_000): void {
 // ─── Read stored service settings ────────────────────────────────────────────
 
 async function getBannerServices(): Promise<Record<string, Record<string, string>>> {
-  const [row] = await db.select().from(settingsTable).limit(1);
+  const [row] = await db.select().from(settingsTable).where(eq(settingsTable.id, "main")).limit(1);
   const data = (row?.data ?? {}) as Record<string, unknown>;
   return (data.bannerServices ?? {}) as Record<string, Record<string, string>>;
 }
@@ -33,7 +33,7 @@ router.get("/smart-banners/services", requireStaff, async (_req, res): Promise<v
 });
 
 router.put("/smart-banners/services", requireStaff, async (req, res): Promise<void> => {
-  const [row] = await db.select().from(settingsTable).limit(1);
+  const [row] = await db.select().from(settingsTable).where(eq(settingsTable.id, "main")).limit(1);
   const data = (row?.data ?? {}) as Record<string, unknown>;
   const newData = { ...data, bannerServices: req.body };
   await db.insert(settingsTable).values({ id: "main", data: newData })
@@ -112,9 +112,16 @@ router.get("/smart-banners/proxy/football", async (req, res): Promise<void> => {
       url = `https://api.football-data.org/v4/competitions/${competition}/standings`;
     } else {
       const today = new Date().toISOString().slice(0, 10);
-      const statusMap: Record<string, string> = { live: "LIVE", today: "SCHEDULED", results: "FINISHED" };
-      url = `https://api.football-data.org/v4/competitions/${competition}/matches?status=${statusMap[type] ?? "LIVE"}`;
-      if (type === "today") url += `&dateFrom=${today}&dateTo=${today}`;
+      if (type === "live") {
+        // IN_PLAY + PAUSED = مباشر الآن
+        url = `https://api.football-data.org/v4/competitions/${competition}/matches?status=IN_PLAY,PAUSED`;
+      } else if (type === "today") {
+        // كل مباريات اليوم بغض النظر عن الحالة (قادمة + مباشرة + منتهية)
+        url = `https://api.football-data.org/v4/competitions/${competition}/matches?dateFrom=${today}&dateTo=${today}`;
+      } else {
+        // results = المنتهية
+        url = `https://api.football-data.org/v4/competitions/${competition}/matches?status=FINISHED`;
+      }
     }
     const r = await fetch(url, { headers: { "X-Auth-Token": key }, signal: AbortSignal.timeout(8000) });
     if (!r.ok) { res.status(r.status).json({ error: `Football API: ${r.status}` }); return; }

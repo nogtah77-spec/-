@@ -36,12 +36,15 @@ import { CountdownDesigner } from "@/components/admin/CountdownDesigner";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FOOTBALL_COMPETITIONS = [
-  { code: "PL",  name: "الدوري الإنجليزي الممتاز" },
-  { code: "PD",  name: "الدوري الإسباني"           },
-  { code: "BL1", name: "الدوري الألماني"            },
-  { code: "SA",  name: "الدوري الإيطالي"            },
-  { code: "FL1", name: "الدوري الفرنسي"            },
-  { code: "CL",  name: "دوري أبطال أوروبا"          },
+  { code: "WC",  name: "🏆 كأس العالم 2026",          free: true  },
+  { code: "PL",  name: "الدوري الإنجليزي الممتاز",    free: true  },
+  { code: "PD",  name: "الدوري الإسباني",              free: true  },
+  { code: "BL1", name: "الدوري الألماني",               free: true  },
+  { code: "SA",  name: "الدوري الإيطالي",               free: true  },
+  { code: "FL1", name: "الدوري الفرنسي",               free: true  },
+  { code: "CL",  name: "دوري أبطال أوروبا",             free: true  },
+  { code: "SPL", name: "الدوري السعودي للمحترفين",    free: false },
+  { code: "EGY", name: "الدوري المصري الممتاز",       free: false },
 ];
 
 const FOOTBALL_TYPES = [
@@ -266,17 +269,41 @@ function TypeSelector({ onSelect }: { onSelect: (t: BannerType) => void }) {
 // ─── Type-specific config forms ───────────────────────────────────────────────
 
 function FootballForm({ config, onChange }: { config: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const selected = (config.competition as string) || "WC";
+  const selectedComp = FOOTBALL_COMPETITIONS.find(c => c.code === selected);
   return (
     <div className="space-y-4" dir="rtl">
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">الدوري</Label>
-        <select
-          value={(config.competition as string) || "PL"}
-          onChange={e => onChange({ ...config, competition: e.target.value })}
-          className="w-full border rounded-md px-3 h-9 text-sm bg-background"
-        >
-          {FOOTBALL_COMPETITIONS.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-        </select>
+        <Label className="text-xs text-muted-foreground">الدوري / البطولة</Label>
+        <div className="grid grid-cols-1 gap-1.5 max-h-56 overflow-y-auto pr-1">
+          {FOOTBALL_COMPETITIONS.map(c => (
+            <button
+              key={c.code}
+              onClick={() => onChange({ ...config, competition: c.code })}
+              className={cn(
+                "flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-colors text-right",
+                selected === c.code
+                  ? "bg-accent text-accent-foreground border-accent"
+                  : "hover:bg-muted border-border"
+              )}
+            >
+              <span>{c.name}</span>
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 mr-2",
+                c.free
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                  : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              )}>
+                {c.free ? "مجاني" : "مدفوع"}
+              </span>
+            </button>
+          ))}
+        </div>
+        {selectedComp && !selectedComp.free && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+            ⚠️ هذا الدوري يحتاج باقة مدفوعة من football-data.org
+          </p>
+        )}
       </div>
       <div className="space-y-1.5">
         <Label className="text-xs text-muted-foreground">نوع البيانات</Label>
