@@ -687,10 +687,7 @@ function AdDialog({
           <ImageUploader
             key={`desktop-${form.type}`}
             label={`صورة الديسكتوب — ${desktopTemplate.width}×${desktopTemplate.height}px`}
-            sublabel={isPremium
-              ? "تظهر على الشاشات ≥1024px"
-              : "تظهر على الشاشات ≥1024px — إذا لم تُرفع صورة جوال"
-            }
+            sublabel="تظهر على الشاشات ≥1024px"
             value={form.desktopImageUrl}
             template={desktopTemplate}
             required
@@ -703,7 +700,7 @@ function AdDialog({
           <ImageUploader
             key={`mobile-${form.type}`}
             label={`صورة الجوال والتابلت — ${mobileTemplate.width}×${mobileTemplate.height}px — اختياري`}
-            sublabel="تظهر على الشاشات <1024px · إذا لم تُرفع تُستخدم صورة الديسكتوب تلقائياً"
+            sublabel="تظهر على الشاشات <1024px · اختياري — بدونها لن يظهر الإعلان على الجوال"
             value={form.mobileImageUrl || ""}
             template={mobileTemplate}
             onResult={(url) => patch({ mobileImageUrl: url || "" })}
@@ -969,7 +966,7 @@ export default function Ads() {
             <p>📌 <strong className="text-foreground">Secondary:</strong> إعلانان جنباً إلى جنب — ديسكتوب <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.desktop.width}×{SLOT_TEMPLATES.secondary.desktop.height}px</code> · جوال <code className="text-[11px] bg-muted px-1 rounded">{SLOT_TEMPLATES.secondary.mobile.width}×{SLOT_TEMPLATES.secondary.mobile.height}px</code></p>
             <p>🤖 <strong className="text-foreground">معالجة تلقائية:</strong> أي صورة بأي أبعاد تُقبل — تُحوَّل تلقائياً إلى المقاس المستهدف (Crop ذكي أو Fit + خلفية blurred).</p>
             <p>📦 <strong className="text-foreground">الحجم:</strong> إدخال حتى <code className="text-[11px] bg-muted px-1 rounded">20 MB</code> · إخراج WebP مضغوط تلقائياً &lt; <code className="text-[11px] bg-muted px-1 rounded">3 MB</code></p>
-            <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — تظهر على الشاشات &lt;1024px · إذا لم تُرفع تُستخدم الديسكتوب تلقائياً.</p>
+            <p>📱 <strong className="text-foreground">صورة الجوال:</strong> اختياري — تظهر على الشاشات &lt;1024px · بدونها لن يظهر الإعلان على الجوال.</p>
             <p>🔀 <strong className="text-foreground">الترتيب:</strong> اسحب الإعلانات لتغيير ترتيبها.</p>
           </div>
         </div>
