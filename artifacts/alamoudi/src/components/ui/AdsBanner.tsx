@@ -599,13 +599,17 @@ function useAdTracking() {
     const hasWa    = !!ad.whatsappNumber;
     const hasUrl   = !!ad.linkUrl;
 
+    // تحويل كل سطر في الرسالة إلى بولد (واتساب: *نص*)
+    const boldify = (text: string) =>
+      text.split("\n").map(line => line.trim() ? `*${line.trim()}*` : "").join("\n");
+
     if (hasWa && hasUrl) {
       // كلاهما موجود — نحترم الأولوية
       if (priority === "whatsapp") {
         actionType = "whatsapp";
         const phone = ad.whatsappNumber!.replace(/\D/g, "");
         const msg   = ad.whatsappMessage?.trim();
-        openUrl     = `https://wa.me/${phone}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
+        openUrl     = `https://wa.me/${phone}${msg ? `?text=${encodeURIComponent(boldify(msg))}` : ""}`;
       } else {
         actionType = "url";
         openUrl    = ad.linkUrl;
@@ -614,7 +618,7 @@ function useAdTracking() {
       actionType = "whatsapp";
       const phone = ad.whatsappNumber!.replace(/\D/g, "");
       const msg   = ad.whatsappMessage?.trim();
-      openUrl     = `https://wa.me/${phone}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
+      openUrl     = `https://wa.me/${phone}${msg ? `?text=${encodeURIComponent(boldify(msg))}` : ""}`;
     } else if (hasUrl) {
       actionType = "url";
       openUrl    = ad.linkUrl;
