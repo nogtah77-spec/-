@@ -628,9 +628,11 @@ function AdDialog({
 
   const [desktopErr, setDesktopErr] = useState<string>();
 
+  const hasAnyImage = !!(form.desktopImageUrl?.trim() || form.mobileImageUrl?.trim());
+
   const handleSave = () => {
-    if (!form.desktopImageUrl.trim()) return;
-    if (desktopErr) return;
+    if (!hasAnyImage) return;
+    if (form.desktopImageUrl?.trim() && desktopErr) return;
     onSave(form);
   };
 
@@ -815,7 +817,7 @@ function AdDialog({
           <Button variant="outline" onClick={onClose}>إلغاء</Button>
           <Button
             className="bg-accent text-white hover:bg-accent/90"
-            disabled={!form.desktopImageUrl.trim() || !!desktopErr}
+            disabled={!hasAnyImage || (!!form.desktopImageUrl?.trim() && !!desktopErr)}
             onClick={handleSave}
           >
             حفظ
