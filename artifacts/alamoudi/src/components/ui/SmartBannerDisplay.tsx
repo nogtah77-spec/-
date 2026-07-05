@@ -612,11 +612,12 @@ function FootballDisplay({ config, hasBg = false }: { config: Record<string, unk
   }
 
   const matches = (data.matches as Record<string, unknown>[]) || [];
-  const typeLabel: Record<string, string> = {
-    "live":    isFallback ? "قادمة اليوم 🕒" : "مباشر 🔴",
-    "today":   "مباريات اليوم",
-    "results": "النتائج",
-  };
+
+  // العنوان: مباريات اليوم للـ today/fallback، مباشر للـ live الحقيقي، النتائج للـ results
+  const headerLabel =
+    type === "results" ? "النتائج" :
+    (type === "live" && !isFallback) ? "مباشر 🔴" :
+    "مباريات اليوم";
 
   if (matches.length === 0) return emptyState(
     type === "live" ? "لا توجد مباريات مجدولة اليوم"
@@ -624,85 +625,96 @@ function FootballDisplay({ config, hasBg = false }: { config: Record<string, unk
     : "لا توجد نتائج متاحة"
   );
 
-  const matchWrap = hasBg
-    ? "w-full overflow-hidden text-white"
-    : "w-full rounded-2xl border overflow-hidden bg-card";
-  const matchHeaderBg = hasBg
-    ? "flex items-center justify-between px-3 py-1.5 bg-black/30 backdrop-blur-sm border-b border-white/20"
-    : "flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b";
-  const matchRow = hasBg
-    ? "flex items-center gap-2 px-3 py-2.5 hover:bg-white/10 border-b border-white/10 last:border-0"
-    : "flex items-center gap-2 px-3 py-2.5 hover:bg-muted/30 border-b last:border-0";
+  // ألوان موحّدة حسب hasBg
+  const wrapCls   = hasBg
+    ? "w-full h-full flex flex-col overflow-hidden text-white"
+    : "w-full h-full flex flex-col rounded-2xl border overflow-hidden bg-card";
+  const headerCls = hasBg
+    ? "flex items-center justify-between px-3 shrink-0 bg-black/30 backdrop-blur-sm border-b border-white/20"
+    : "flex items-center justify-between px-3 shrink-0 bg-muted/40 border-b";
+  const cardBorder = hasBg
+    ? "border-r border-white/15 last:border-0"
+    : "border-r last:border-0";
+  const mutedTxt  = hasBg ? "text-white/55" : "text-muted-foreground";
+  const teamTxt   = hasBg ? "text-white/90"  : "text-foreground";
 
   return (
-    <div className={matchWrap} dir="rtl">
-      {/* Header: competition + type label */}
-      <div className={matchHeaderBg}>
-        <span className={cn("text-[11px] font-bold", hasBg ? "text-white/90" : "")}>
-          {typeLabel[type] ?? type}
+    <div className={wrapCls} dir="rtl">
+      {/* ── Header ── */}
+      <div className={headerCls} style={{ height: 26 }}>
+        <span className={cn("text-[11px] font-bold leading-none", teamTxt)}>
+          {headerLabel}
         </span>
-        <span className={cn("text-[10px] font-mono", hasBg ? "text-white/50" : "text-muted-foreground")}>
+        <span className={cn("text-[10px] font-mono leading-none", mutedTxt)}>
           {competition}
         </span>
       </div>
-      <div>
-        {matches.slice(0, 6).map((m, i) => {
-          const home  = m.homeTeam as Record<string, unknown>;
-          const away  = m.awayTeam as Record<string, unknown>;
-          const score = m.score   as Record<string, unknown>;
-          const ft    = score?.fullTime as Record<string, number | null> | null;
-          const hasScore = ft && (ft.home !== null || ft.away !== null);
-          const matchStatus = m.status as string;
-          const utcDate     = m.utcDate as string;
 
-          /* وقت المباراة بالتوقيت المحلي */
+      {/* ── Horizontal match cards — overflow-x scroll, no scrollbar ── */}
+      <div
+        className="flex-1 flex flex-row-reverse overflow-x-auto overflow-y-hidden"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+      >
+        {matches.slice(0, 10).map((m, i) => {
+          const home        = m.homeTeam as Record<string, unknown>;
+          const away        = m.awayTeam as Record<string, unknown>;
+          const score       = m.score    as Record<string, unknown>;
+          const ft          = score?.fullTime as Record<string, number | null> | null;
+          const hasScore    = ft && (ft.home !== null || ft.away !== null);
+          const matchStatus = m.status  as string;
+          const utcDate     = m.utcDate as string;
+          const isLive      = matchStatus === "IN_PLAY" || matchStatus === "PAUSED" || matchStatus === "HALFTIME";
+
           let timeLabel = "";
           if (matchStatus === "TIMED" || matchStatus === "SCHEDULED") {
-            try {
-              timeLabel = new Date(utcDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
-            } catch { timeLabel = ""; }
-          } else if (matchStatus === "IN_PLAY" || matchStatus === "PAUSED") {
-            timeLabel = "🔴 مباشر";
-          } else if (matchStatus === "FINISHED" || matchStatus === "AWARDED") {
-            timeLabel = "انتهت";
-          } else if (matchStatus === "HALFTIME") {
-            timeLabel = "استراحة";
-          }
+            try { timeLabel = new Date(utcDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }); }
+            catch { timeLabel = ""; }
+          } else if (isLive)                                          { timeLabel = "🔴"; }
+          else if (matchStatus === "FINISHED" || matchStatus === "AWARDED") { timeLabel = "انتهت"; }
+          else if (matchStatus === "HALFTIME")                        { timeLabel = "استراحة"; }
+
+          const homeName = (home.shortName as string) || (home.name as string) || "";
+          const awayName = (away.shortName as string) || (away.name as string) || "";
 
           return (
-            <div key={i} className={matchRow}>
+            <div
+              key={i}
+              className={cn(
+                "flex-shrink-0 flex flex-col items-center justify-center gap-1 px-3",
+                cardBorder,
+              )}
+              style={{ minWidth: 110 }}
+            >
               {/* فريق المضيف */}
-              <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
-                <span className={cn("text-xs font-medium truncate", hasBg && "text-white/90")}>
-                  {home.shortName as string || home.name as string}
-                </span>
-                {!!home.crest && <img src={home.crest as string} className="w-5 h-5 object-contain flex-shrink-0" alt="" />}
+              <div className="flex items-center gap-1 max-w-[96px]">
+                {!!home.crest && (
+                  <img src={home.crest as string} className="w-4 h-4 object-contain flex-shrink-0" alt="" />
+                )}
+                <span className={cn("text-[11px] font-semibold truncate", teamTxt)}>{homeName}</span>
               </div>
 
-              {/* النتيجة / الوقت */}
-              <div className="text-center flex-shrink-0 min-w-[56px]">
-                {hasScore ? (
-                  <span className={cn(
-                    "text-sm font-bold rounded px-2 py-0.5",
-                    (matchStatus === "IN_PLAY" || matchStatus === "PAUSED" || matchStatus === "HALFTIME")
-                      ? "bg-green-600 text-white"
-                      : hasBg ? "bg-white/15 text-white" : "bg-muted",
-                  )}>
-                    {ft!.home} : {ft!.away}
-                  </span>
-                ) : (
-                  <span className={cn("text-[11px] font-medium", hasBg ? "text-white/60" : "text-muted-foreground")}>
-                    {timeLabel || "vs"}
-                  </span>
-                )}
-              </div>
+              {/* نتيجة / وقت */}
+              {hasScore ? (
+                <span className={cn(
+                  "text-[11px] font-bold rounded px-1.5 py-px leading-none",
+                  isLive
+                    ? "bg-green-600 text-white"
+                    : hasBg ? "bg-white/15 text-white" : "bg-muted text-foreground",
+                )}>
+                  {ft!.home} : {ft!.away}
+                </span>
+              ) : (
+                <span className={cn("text-[11px] font-medium leading-none", mutedTxt)}>
+                  {timeLabel || "vs"}
+                </span>
+              )}
 
               {/* فريق الضيف */}
-              <div className="flex-1 flex items-center gap-1.5 min-w-0">
-                {!!away.crest && <img src={away.crest as string} className="w-5 h-5 object-contain flex-shrink-0" alt="" />}
-                <span className={cn("text-xs font-medium truncate", hasBg && "text-white/90")}>
-                  {away.shortName as string || away.name as string}
-                </span>
+              <div className="flex items-center gap-1 max-w-[96px]">
+                {!!away.crest && (
+                  <img src={away.crest as string} className="w-4 h-4 object-contain flex-shrink-0" alt="" />
+                )}
+                <span className={cn("text-[11px] font-semibold truncate", teamTxt)}>{awayName}</span>
               </div>
             </div>
           );
