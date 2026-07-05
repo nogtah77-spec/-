@@ -513,25 +513,55 @@ function NewsDisplay({ config, hasBg = false }: { config: Record<string, unknown
 function FootballDisplay({ config, hasBg = false }: { config: Record<string, unknown>; hasBg?: boolean }) {
   const competition = (config.competition as string) || "WC";
   const type        = (config.type        as string) || "live";
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [err,  setErr]  = useState("");
-  const load = useCallback(() => {
-    setErr(""); setData(null);
-    api.get<Record<string, unknown>>(
-      `/smart-banners/proxy/football?competition=${competition}&type=${type}`
-    ).then(setData).catch(e => setErr(e?.message || "تعذر جلب البيانات"));
+  const [data,     setData]     = useState<Record<string, unknown> | null>(null);
+  const [err,      setErr]      = useState("");
+  const [isFallback, setIsFallback] = useState(false); // true when live→today fallback used
+
+  const load = useCallback(async () => {
+    setErr(""); setData(null); setIsFallback(false);
+    try {
+      const d = await api.get<Record<string, unknown>>(
+        `/smart-banners/proxy/football?competition=${competition}&type=${type}`
+      );
+      // لو النوع "مباشر" وما فيه مباريات حالياً، نرجع مباريات اليوم كـ fallback
+      if (type === "live") {
+        const liveMatches = (d.matches as Record<string, unknown>[]) || [];
+        if (liveMatches.length === 0) {
+          setIsFallback(true);
+          const today = await api.get<Record<string, unknown>>(
+            `/smart-banners/proxy/football?competition=${competition}&type=today`
+          );
+          setData(today);
+          return;
+        }
+      }
+      setData(d);
+    } catch(e: unknown) {
+      setErr((e as Error)?.message || "تعذر جلب البيانات");
+    }
   }, [competition, type]);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   if (err.includes("مفتاح")) return <NeedsKeyCard label="Football-Data.org" />;
   if (err) return <ErrorCard msg={err} onRetry={load} />;
   if (!data) return <LoadingCard />;
 
+  // ─── Empty state (يظهر دائماً بدل الاختفاء) ───────────────────────────────
+  const emptyState = (label: string) => (
+    <div className={cn(
+      "w-full flex flex-col items-center justify-center py-5 gap-2 rounded-2xl",
+      hasBg ? "text-white/70" : "border bg-card text-muted-foreground"
+    )} dir="rtl">
+      <span className="text-2xl">⚽</span>
+      <p className="text-xs font-medium">{competition} · {label}</p>
+    </div>
+  );
+
   if (type === "standings") {
     const allGroups = (data.standings as Record<string, unknown>[]) || [];
-    if (allGroups.length === 0) return null;
+    if (allGroups.length === 0) return emptyState("لا يوجد جدول متاح");
     const standings = (allGroups[0]?.table as Record<string, unknown>[]) || [];
-    if (standings.length === 0) return null;
+    if (standings.length === 0) return emptyState("لا يوجد جدول متاح");
     const groupName = (allGroups[0]?.group as string) || "";
     const tw = hasBg
       ? { wrap: "text-white overflow-hidden", head: "border-b border-white/20 px-3 py-1.5", tHead: "bg-white/10", row: "hover:bg-white/10 border-b border-white/10", text: "text-white/70" }
@@ -583,12 +613,16 @@ function FootballDisplay({ config, hasBg = false }: { config: Record<string, unk
 
   const matches = (data.matches as Record<string, unknown>[]) || [];
   const typeLabel: Record<string, string> = {
-    "live":    "مباشر 🔴",
+    "live":    isFallback ? "قادمة اليوم 🕒" : "مباشر 🔴",
     "today":   "مباريات اليوم",
     "results": "النتائج",
   };
 
-  if (matches.length === 0) return null;
+  if (matches.length === 0) return emptyState(
+    type === "live" ? "لا توجد مباريات مجدولة اليوم"
+    : type === "today" ? "لا توجد مباريات اليوم"
+    : "لا توجد نتائج متاحة"
+  );
 
   const matchWrap = hasBg
     ? "w-full overflow-hidden text-white"
