@@ -39,7 +39,7 @@ function getActiveAds(ads: Ad[]): Ad[] {
   return [...ads]
     .filter(ad => {
       if (!ad.active) return false;
-      if (!(ad.desktopImageUrl || ad.imageUrl)) return false;
+      if (!(ad.desktopImageUrl || ad.mobileImageUrl || ad.imageUrl)) return false;
       if (ad.startDate && localDate(ad.startDate)          > now) return false;
       if (ad.endDate   && localDate(ad.endDate, true)      < now) return false;
       return true;
@@ -47,10 +47,10 @@ function getActiveAds(ads: Ad[]): Ad[] {
     .sort((a, b) => a.order - b.order);
 }
 
-/** صورة الديسكتوب فقط — بدون fallback للجوال */
-function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ""; }
-/** صورة الجوال — يدعم الحقل الجديد mobileImageUrl والقديم imageUrl */
-function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl || ad.imageUrl || ""; }
+/** صورة الديسكتوب — fallback لصورة الجوال لو مافيش */
+function getDesktopSrc(ad: Ad) { return ad.desktopImageUrl || ad.mobileImageUrl || ad.imageUrl || ""; }
+/** صورة الجوال — fallback لصورة الديسكتوب لو مافيش صورة جوال */
+function getMobileSrc(ad: Ad)  { return ad.mobileImageUrl || ad.imageUrl || ad.desktopImageUrl || ""; }
 
 /** هل عنده صورة تخص الديسكتوب؟ */
 function hasDesktopImage(ad: Ad) { return !!ad.desktopImageUrl; }
