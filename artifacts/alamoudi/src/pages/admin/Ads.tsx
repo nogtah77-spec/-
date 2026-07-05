@@ -633,9 +633,21 @@ function AdDialog({
 
   const hasAnyImage = !!(form.desktopImageUrl?.trim() || form.mobileImageUrl?.trim());
 
+  // ─── التحقق من التواريخ ──────────────────────────────────────────────────
+  const today      = new Date(); today.setHours(0, 0, 0, 0);
+  const parsedEnd  = form.endDate   ? new Date(form.endDate   + "T00:00:00") : null;
+  const parsedStart= form.startDate ? new Date(form.startDate + "T00:00:00") : null;
+  const dateErr: string | null =
+    parsedEnd && parsedEnd < today
+      ? "تاريخ الانتهاء في الماضي — سيظهر الإعلان كـ «منتهي» فوراً"
+      : parsedStart && parsedEnd && parsedEnd <= parsedStart
+        ? "تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية"
+        : null;
+
   const handleSave = () => {
     if (!hasAnyImage) return;
     if (form.desktopImageUrl?.trim() && desktopErr) return;
+    if (dateErr) return;
     onSave(form);
   };
 
@@ -847,15 +859,27 @@ function AdDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>تاريخ البداية <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
-                <Input type="date" value={form.startDate ?? ""} onChange={e => patch({ startDate: e.target.value })} />
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>تاريخ البداية <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+                  <Input type="date" value={form.startDate ?? ""} onChange={e => patch({ startDate: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>تاريخ الانتهاء <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
+                  <Input
+                    type="date"
+                    value={form.endDate ?? ""}
+                    onChange={e => patch({ endDate: e.target.value })}
+                    className={dateErr ? "border-red-400 focus-visible:ring-red-400" : ""}
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>تاريخ الانتهاء <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
-                <Input type="date" value={form.endDate ?? ""} onChange={e => patch({ endDate: e.target.value })} />
-              </div>
+              {dateErr && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <span>⚠️</span> {dateErr}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-3 pt-1">
@@ -875,7 +899,7 @@ function AdDialog({
           <Button variant="outline" onClick={onClose}>إلغاء</Button>
           <Button
             className="bg-accent text-white hover:bg-accent/90"
-            disabled={!hasAnyImage || (!!form.desktopImageUrl?.trim() && !!desktopErr)}
+            disabled={!hasAnyImage || (!!form.desktopImageUrl?.trim() && !!desktopErr) || !!dateErr}
             onClick={handleSave}
           >
             حفظ
