@@ -720,7 +720,7 @@ function MixedCarousel({
         >
           {item.kind === "ad" ? (
             <div
-              className="relative w-full h-full"
+              className="relative w-full"
               onClick={(e) => {
                 if (Math.abs(swipeDelta.current) > 8) return;
                 const el = containerRef.current;
@@ -731,7 +731,7 @@ function MixedCarousel({
                 onClick(item.data, x, y);
               }}
             >
-              <picture className="absolute inset-0 block w-full h-full">
+              <picture className="block w-full lg:absolute lg:inset-0">
                 {item.data.desktopImageUrl && <source media="(min-width: 1024px)" srcSet={item.data.desktopImageUrl} />}
                 <img
                   src={getMobileSrc(item.data) || undefined}
@@ -739,7 +739,7 @@ function MixedCarousel({
                   loading={i === 0 ? "eager" : "lazy"}
                   decoding="async"
                   draggable={false}
-                  className="w-full h-full object-cover block"
+                  className="w-full h-auto block lg:h-full lg:object-cover"
                 />
               </picture>
               {item.data.title && (
@@ -796,7 +796,7 @@ export function PublicBannerSlot({ slot, ads }: { slot: "top" | "bottom"; ads: A
   // الصندوق السفلي: ارتفاع ثابت على الجوال/تابليت، ونسبة العرض الأصلية على الكمبيوتر.
   const slotHeightClass = slot === "top"
     ? "h-[100px] lg:h-[96px]"
-    : "h-[100px] lg:aspect-[960/138] lg:h-auto";
+    : "lg:aspect-[960/138] lg:h-auto";
 
   const pinnedBanners = useMemo(
     () => smartBanners.filter(b => b.pinned).sort((a, b) => a.order - b.order),
