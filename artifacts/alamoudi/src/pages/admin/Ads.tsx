@@ -1011,7 +1011,7 @@ export default function Ads() {
               const ctr        = (ad.views ?? 0) > 0
                 ? (((ad.clicks ?? 0) / (ad.views ?? 1)) * 100).toFixed(1) + "%"
                 : "—";
-              const thumb     = ad.desktopImageUrl || ad.imageUrl || "";
+              const thumb     = ad.desktopImageUrl || ad.mobileImageUrl || ad.imageUrl || "";
               const typeLabel = ad.type === "premium" ? "🏆 Premium" : "📌 Secondary";
               const typeCls   = ad.type === "premium"
                 ? "border-yellow-300 text-yellow-700 bg-yellow-50"
