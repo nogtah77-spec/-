@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -441,6 +441,79 @@ function NewsForm({ config, onChange }: { config: Record<string, unknown>; onCha
   );
 }
 
+// ─── Background Image Form (shared for all non-countdown types) ───────────────
+
+function BannerBgForm({ config, onChange }: { config: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
+  const bgImage = (config.backgroundImage as string) || "";
+  const opacity = typeof config.bgOverlayOpacity === "number" ? config.bgOverlayOpacity : 55;
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => onChange({ ...config, backgroundImage: reader.result as string });
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="space-y-3 border rounded-xl p-3 bg-muted/20" dir="rtl">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-semibold">🖼️ صورة الخلفية</Label>
+        {bgImage && (
+          <button
+            onClick={() => onChange({ ...config, backgroundImage: "" })}
+            className="text-xs text-red-500 hover:text-red-700"
+          >
+            حذف الصورة
+          </button>
+        )}
+      </div>
+
+      {bgImage ? (
+        <div className="relative rounded-lg overflow-hidden h-20 cursor-pointer" onClick={() => fileRef.current?.click()}>
+          <img src={bgImage} className="w-full h-full object-cover" alt="خلفية" />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            <p className="text-white text-xs font-medium">تغيير الصورة</p>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="w-full border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-accent hover:bg-accent/5 transition-colors"
+        >
+          <p className="text-xl mb-1">🖼️</p>
+          <p className="text-xs text-muted-foreground">انقر لرفع صورة خلفية</p>
+          <p className="text-[10px] text-muted-foreground/60 mt-0.5">JPG · PNG · WebP — يُفضّل 1200×300px</p>
+        </button>
+      )}
+
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+
+      {bgImage && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">شدة الطبقة الداكنة</Label>
+            <span className="text-xs text-muted-foreground font-mono">{opacity}%</span>
+          </div>
+          <input
+            type="range" min={0} max={90} step={5} value={opacity}
+            onChange={e => onChange({ ...config, bgOverlayOpacity: Number(e.target.value) })}
+            className="w-full accent-accent h-1.5"
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>شفاف</span><span>داكن</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function HtmlForm({ config, onChange }: { config: Record<string, unknown>; onChange: (c: Record<string, unknown>) => void }) {
   return (
     <div className="space-y-4" dir="rtl">
@@ -506,7 +579,7 @@ function BannerDialog({
     setType(t);
     if (t === "countdown") setConfig(defaultCountdownConfig() as unknown as Record<string, unknown>);
     else if (t === "live-matches" || t === "today-matches" || t === "results" || t === "standings")
-      setConfig({ competition: "PL", type: t.replace("-matches","").replace("today-","today").replace("live-","live") });
+      setConfig({ competition: "WC", type: t.replace("-matches","").replace("today-","today").replace("live-","live") });
     else if (t === "weather")  setConfig({ city: "Cairo", unit: "metric" });
     else if (t === "currency") setConfig({ from: "USD", to: "EGP,EUR,GBP,SAR,AED,KWD" });
     else if (t === "gold")     setConfig({ currency: "USD" });
@@ -660,6 +733,11 @@ function BannerDialog({
                   {type === "gold"     && <GoldForm     config={config} onChange={setConfig} />}
                   {type === "news"     && <NewsForm     config={config} onChange={setConfig} />}
                   {type === "html"     && <HtmlForm     config={config} onChange={setConfig} />}
+
+                  {/* Background Image (all non-countdown types) */}
+                  {type !== "html" && (
+                    <BannerBgForm config={config} onChange={setConfig} />
+                  )}
 
                   {/* Preview */}
                   <div className="border rounded-xl overflow-hidden">

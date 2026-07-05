@@ -308,7 +308,7 @@ function CountdownDisplay({ config }: { config: CountdownConfig }) {
 
 // ─── Weather Display ──────────────────────────────────────────────────────────
 
-function WeatherDisplay({ config }: { config: Record<string, unknown> }) {
+function WeatherDisplay({ config, hasBg = false }: { config: Record<string, unknown>; hasBg?: boolean }) {
   const city = (config.city as string) || "Cairo";
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [err,  setErr]  = useState("");
@@ -329,20 +329,27 @@ function WeatherDisplay({ config }: { config: Record<string, unknown> }) {
   const wind  = Math.round(((data.wind as Record<string, number>)?.speed ?? 0) * 3.6);
   const humid = (data.main as Record<string, number>)?.humidity ?? 0;
 
+  const base = hasBg
+    ? "text-white"
+    : "bg-gradient-to-br from-sky-500 to-blue-700 text-white rounded-2xl";
+
   return (
-    <div className="w-full rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 text-white p-5 flex items-center gap-5" dir="rtl">
-      <div className="flex flex-col flex-1">
-        <p className="text-3xl font-bold">{temp}°م</p>
-        <p className="text-base opacity-90 capitalize">{desc}</p>
-        <p className="text-sm opacity-75 mt-1">{data.name as string}، مصر</p>
-        <div className="flex gap-4 mt-3 text-xs opacity-80">
-          <span>💨 {wind} كم/س</span>
-          <span>💧 {humid}%</span>
+    <div className={cn("w-full p-4 sm:p-5 flex items-center gap-4", base)} dir="rtl">
+      {icon && (
+        <img src={`https://openweathermap.org/img/wn/${icon}@2x.png`} alt={desc}
+          className="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-lg flex-shrink-0" />
+      )}
+      <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex items-baseline gap-2">
+          <p className="text-4xl sm:text-5xl font-extrabold tracking-tight">{temp}°</p>
+          <p className="text-sm opacity-80 capitalize truncate">{desc}</p>
+        </div>
+        <p className="text-sm opacity-70 mt-0.5 truncate">{data.name as string}</p>
+        <div className="flex gap-3 mt-2 text-xs opacity-75 flex-wrap">
+          <span className="flex items-center gap-1">💨 {wind} كم/س</span>
+          <span className="flex items-center gap-1">💧 {humid}%</span>
         </div>
       </div>
-      {icon && (
-        <img src={`https://openweathermap.org/img/wn/${icon}@2x.png`} alt={desc} className="w-20 h-20 drop-shadow-lg" />
-      )}
     </div>
   );
 }
@@ -358,7 +365,7 @@ const CURRENCY_FLAGS: Record<string, string> = {
   AED: "🇦🇪", KWD: "🇰🇼", USD: "🇺🇸",
 };
 
-function CurrencyDisplay({ config }: { config: Record<string, unknown> }) {
+function CurrencyDisplay({ config, hasBg = false }: { config: Record<string, unknown>; hasBg?: boolean }) {
   const from = (config.from as string) || "USD";
   const to   = (config.to   as string) || "EGP,EUR,GBP,SAR,AED,KWD";
   const [data, setData] = useState<Record<string, unknown> | null>(null);
@@ -375,20 +382,20 @@ function CurrencyDisplay({ config }: { config: Record<string, unknown> }) {
 
   const rates = (data.rates as Record<string, number>) || {};
 
+  const wrap = hasBg ? "text-white p-4" : "rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-4";
+  const pill = hasBg ? "bg-white/15 backdrop-blur-sm border border-white/20" : "bg-white/10";
+
   return (
-    <div className="w-full rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-4" dir="rtl">
-      <div className="flex items-center gap-2 mb-3">
-        <Coins className="w-5 h-5 opacity-80" />
-        <p className="text-sm font-semibold opacity-90">أسعار الصرف مقابل {from} 1</p>
+    <div className={cn("w-full", wrap)} dir="rtl">
+      <div className="flex items-center gap-2 mb-3 opacity-80">
+        <Coins className="w-4 h-4" />
+        <p className="text-xs font-semibold">أسعار الصرف · 1 {from}</p>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="flex flex-wrap gap-2">
         {Object.entries(rates).map(([code, rate]) => (
-          <div key={code} className="bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between">
-            <div>
-              <p className="text-xs opacity-70">{CURRENCY_FLAGS[code]} {CURRENCY_NAMES[code] || code}</p>
-              <p className="font-bold text-base">{rate.toFixed(2)}</p>
-            </div>
-            <span className="text-xs font-mono opacity-70">{code}</span>
+          <div key={code} className={cn("rounded-xl px-3 py-2 flex flex-col", pill)}>
+            <span className="text-[10px] opacity-70">{CURRENCY_FLAGS[code]} {code}</span>
+            <span className="font-bold text-sm tabular-nums">{rate.toFixed(2)}</span>
           </div>
         ))}
       </div>
@@ -398,7 +405,7 @@ function CurrencyDisplay({ config }: { config: Record<string, unknown> }) {
 
 // ─── Gold Display ─────────────────────────────────────────────────────────────
 
-function GoldDisplay({ config }: { config: Record<string, unknown> }) {
+function GoldDisplay({ config, hasBg = false }: { config: Record<string, unknown>; hasBg?: boolean }) {
   const currency = (config.currency as string) || "USD";
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [err,  setErr]  = useState("");
@@ -418,23 +425,30 @@ function GoldDisplay({ config }: { config: Record<string, unknown> }) {
   const change   = price - prevClose;
   const up       = change >= 0;
 
+  const base = hasBg
+    ? "text-white p-4 sm:p-5 flex items-center gap-5"
+    : "rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 text-white p-4 sm:p-5 flex items-center gap-5";
+
   return (
-    <div className="w-full rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 text-white p-5" dir="rtl">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-2xl">🥇</span>
-        <p className="text-sm font-semibold opacity-90">سعر الذهب (أونصة) × {currency}</p>
+    <div className={cn("w-full", base)} dir="rtl">
+      <span className="text-4xl sm:text-5xl flex-shrink-0 drop-shadow">🥇</span>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs opacity-70 mb-1">سعر الذهب · أونصة × {currency}</p>
+        <p className="text-3xl sm:text-4xl font-extrabold tabular-nums tracking-tight">
+          {price?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </p>
+        <p className={cn("text-sm mt-1 font-semibold", up ? "text-green-300" : "text-red-300")}>
+          {up ? "▲" : "▼"} {Math.abs(change).toFixed(2)}{" "}
+          <span className="opacity-70 font-normal">({((change / prevClose) * 100).toFixed(2)}%)</span>
+        </p>
       </div>
-      <p className="text-4xl font-bold">{price?.toFixed(2)}</p>
-      <p className={cn("text-sm mt-1 font-medium", up ? "text-green-200" : "text-red-200")}>
-        {up ? "▲" : "▼"} {Math.abs(change).toFixed(2)} ({((change / prevClose) * 100).toFixed(2)}%)
-      </p>
     </div>
   );
 }
 
 // ─── News Display ─────────────────────────────────────────────────────────────
 
-function NewsDisplay({ config }: { config: Record<string, unknown> }) {
+function NewsDisplay({ config, hasBg = false }: { config: Record<string, unknown>; hasBg?: boolean }) {
   const q   = (config.q   as string) || "أخبار";
   const max = (config.max as number) || 6;
   const [data, setData] = useState<{ articles?: Record<string, unknown>[] } | null>(null);
@@ -453,27 +467,42 @@ function NewsDisplay({ config }: { config: Record<string, unknown> }) {
 
   const articles = data.articles || [];
 
+  if (articles.length === 0) {
+    return (
+      <div className={cn("w-full rounded-2xl border bg-card p-8 text-center text-sm text-muted-foreground", hasBg && "bg-black/30 border-white/20 text-white/70")} dir="rtl">
+        لا توجد أخبار
+      </div>
+    );
+  }
+
+  const wrap = hasBg
+    ? "w-full overflow-hidden text-white"
+    : "w-full rounded-2xl border bg-card overflow-hidden";
+  const header = hasBg
+    ? "flex items-center gap-2 px-4 py-3 bg-black/30 backdrop-blur-sm border-b border-white/20"
+    : "flex items-center gap-2 px-4 py-3 bg-rose-600 text-white";
+  const row = hasBg
+    ? "flex gap-3 p-3 hover:bg-white/10 transition-colors border-b border-white/10 last:border-0"
+    : "flex gap-3 p-3 hover:bg-muted/40 transition-colors";
+
   return (
-    <div className="w-full rounded-2xl border bg-card overflow-hidden" dir="rtl">
-      <div className="flex items-center gap-2 px-4 py-3 bg-rose-600 text-white">
+    <div className={wrap} dir="rtl">
+      <div className={header}>
         <Newspaper className="w-4 h-4" />
         <p className="text-sm font-bold">آخر الأخبار</p>
       </div>
-      <div className="divide-y">
+      <div>
         {articles.slice(0, 5).map((a, i) => (
-          <div key={i} className="flex gap-3 p-3 hover:bg-muted/40 transition-colors">
+          <div key={i} className={row}>
             {!!a.image && (
               <img src={a.image as string} alt="" className="w-16 h-12 object-cover rounded-md flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold line-clamp-2 leading-snug">{a.title as string}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">{a.source as string}</p>
+              <p className={cn("text-xs font-semibold line-clamp-2 leading-snug", hasBg && "text-white/90")}>{a.title as string}</p>
+              <p className={cn("text-[10px] mt-1", hasBg ? "text-white/50" : "text-muted-foreground")}>{a.source as string}</p>
             </div>
           </div>
         ))}
-        {articles.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">لا توجد أخبار</p>
-        )}
       </div>
     </div>
   );
@@ -481,8 +510,8 @@ function NewsDisplay({ config }: { config: Record<string, unknown> }) {
 
 // ─── Football Displays ────────────────────────────────────────────────────────
 
-function FootballDisplay({ config }: { config: Record<string, unknown> }) {
-  const competition = (config.competition as string) || "PL";
+function FootballDisplay({ config, hasBg = false }: { config: Record<string, unknown>; hasBg?: boolean }) {
+  const competition = (config.competition as string) || "WC";
   const type        = (config.type        as string) || "live";
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [err,  setErr]  = useState("");
@@ -499,15 +528,24 @@ function FootballDisplay({ config }: { config: Record<string, unknown> }) {
   if (!data) return <LoadingCard />;
 
   if (type === "standings") {
-    const standings = ((data.standings as Record<string, unknown>[])?.[0]?.table as Record<string, unknown>[]) || [];
+    const allGroups = (data.standings as Record<string, unknown>[]) || [];
+    if (allGroups.length === 0) return null;
+    const standings = (allGroups[0]?.table as Record<string, unknown>[]) || [];
+    if (standings.length === 0) return null;
+    const groupName = (allGroups[0]?.group as string) || "";
+    const tw = hasBg
+      ? { wrap: "text-white overflow-hidden", head: "border-b border-white/20 px-3 py-1.5", tHead: "bg-white/10", row: "hover:bg-white/10 border-b border-white/10", text: "text-white/70" }
+      : { wrap: "rounded-2xl border bg-card overflow-hidden", head: "border-b bg-muted/50 px-3 py-1.5", tHead: "bg-muted/30", row: "hover:bg-muted/30", text: "text-muted-foreground" };
     return (
-      <div className="w-full rounded-2xl border overflow-hidden" dir="rtl">
-        <div className="px-4 py-3 bg-emerald-700 text-white flex items-center gap-2">
-          <Trophy className="w-4 h-4" /><p className="text-sm font-bold">ترتيب الدوري · {competition}</p>
-        </div>
+      <div className={cn("w-full", tw.wrap)} dir="rtl">
+        {groupName && (
+          <div className={tw.head}>
+            <p className={cn("text-[11px] font-semibold", tw.text)}>{competition} · {groupName}</p>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-muted/50">
+            <thead className={tw.tHead}>
               <tr>
                 <th className="px-2 py-1.5 text-right">#</th>
                 <th className="px-2 py-1.5 text-right">الفريق</th>
@@ -517,11 +555,11 @@ function FootballDisplay({ config }: { config: Record<string, unknown> }) {
                 <th className="px-2 py-1.5 text-center font-bold">نق</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-white/5">
               {standings.slice(0, 8).map((s) => {
                 const team = s.team as Record<string, unknown>;
                 return (
-                  <tr key={s.position as number} className="hover:bg-muted/30">
+                  <tr key={s.position as number} className={tw.row}>
                     <td className="px-2 py-1.5 font-bold">{s.position as number}</td>
                     <td className="px-2 py-1.5">
                       <div className="flex items-center gap-1.5">
@@ -530,8 +568,8 @@ function FootballDisplay({ config }: { config: Record<string, unknown> }) {
                       </div>
                     </td>
                     <td className="px-2 py-1.5 text-center">{s.playedGames as number}</td>
-                    <td className="px-2 py-1.5 text-center text-emerald-600">{s.won as number}</td>
-                    <td className="px-2 py-1.5 text-center text-red-500">{s.lost as number}</td>
+                    <td className={cn("px-2 py-1.5 text-center", hasBg ? "text-green-400" : "text-emerald-600")}>{s.won as number}</td>
+                    <td className={cn("px-2 py-1.5 text-center", hasBg ? "text-red-400" : "text-red-500")}>{s.lost as number}</td>
                     <td className="px-2 py-1.5 text-center font-bold">{s.points as number}</td>
                   </tr>
                 );
@@ -550,41 +588,75 @@ function FootballDisplay({ config }: { config: Record<string, unknown> }) {
     "results": "النتائج",
   };
 
+  if (matches.length === 0) return null;
+
+  const matchWrap = hasBg
+    ? "w-full overflow-hidden text-white"
+    : "w-full rounded-2xl border overflow-hidden bg-card";
+  const matchRow = hasBg
+    ? "flex items-center gap-2 px-3 py-2.5 hover:bg-white/10 border-b border-white/10 last:border-0"
+    : "flex items-center gap-2 px-3 py-2.5 hover:bg-muted/30 border-b last:border-0";
+
   return (
-    <div className="w-full rounded-2xl border overflow-hidden" dir="rtl">
-      <div className="px-4 py-3 bg-green-700 text-white flex items-center gap-2">
-        {type === "live" && <Wifi className="w-4 h-4 animate-pulse" />}
-        {type === "today" && <Calendar className="w-4 h-4" />}
-        {type === "results" && <Trophy className="w-4 h-4" />}
-        <p className="text-sm font-bold">{typeLabel[type] || type} · {competition}</p>
-      </div>
-      <div className="divide-y">
-        {matches.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-8">لا توجد مباريات</p>
-        )}
+    <div className={matchWrap} dir="rtl">
+      <div>
         {matches.slice(0, 6).map((m, i) => {
           const home  = m.homeTeam as Record<string, unknown>;
           const away  = m.awayTeam as Record<string, unknown>;
           const score = m.score   as Record<string, unknown>;
-          const ft    = score?.fullTime as Record<string, number> | null;
+          const ft    = score?.fullTime as Record<string, number | null> | null;
+          const hasScore = ft && (ft.home !== null || ft.away !== null);
+          const matchStatus = m.status as string;
+          const utcDate     = m.utcDate as string;
+
+          /* وقت المباراة بالتوقيت المحلي */
+          let timeLabel = "";
+          if (matchStatus === "TIMED" || matchStatus === "SCHEDULED") {
+            try {
+              timeLabel = new Date(utcDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+            } catch { timeLabel = ""; }
+          } else if (matchStatus === "IN_PLAY" || matchStatus === "PAUSED") {
+            timeLabel = "🔴 مباشر";
+          } else if (matchStatus === "FINISHED" || matchStatus === "AWARDED") {
+            timeLabel = "انتهت";
+          } else if (matchStatus === "HALFTIME") {
+            timeLabel = "استراحة";
+          }
+
           return (
-            <div key={i} className="flex items-center gap-2 px-3 py-2.5 hover:bg-muted/30">
+            <div key={i} className={matchRow}>
+              {/* فريق المضيف */}
               <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
-                <span className="text-xs font-medium truncate">{home.shortName as string || home.name as string}</span>
+                <span className={cn("text-xs font-medium truncate", hasBg && "text-white/90")}>
+                  {home.shortName as string || home.name as string}
+                </span>
                 {!!home.crest && <img src={home.crest as string} className="w-5 h-5 object-contain flex-shrink-0" alt="" />}
               </div>
-              <div className="text-center flex-shrink-0 min-w-[52px]">
-                {ft ? (
-                  <span className="text-sm font-bold bg-muted rounded px-2 py-0.5">
-                    {ft.home ?? "–"} : {ft.away ?? "–"}
+
+              {/* النتيجة / الوقت */}
+              <div className="text-center flex-shrink-0 min-w-[56px]">
+                {hasScore ? (
+                  <span className={cn(
+                    "text-sm font-bold rounded px-2 py-0.5",
+                    (matchStatus === "IN_PLAY" || matchStatus === "PAUSED" || matchStatus === "HALFTIME")
+                      ? "bg-green-600 text-white"
+                      : hasBg ? "bg-white/15 text-white" : "bg-muted",
+                  )}>
+                    {ft!.home} : {ft!.away}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground">vs</span>
+                  <span className={cn("text-[11px] font-medium", hasBg ? "text-white/60" : "text-muted-foreground")}>
+                    {timeLabel || "vs"}
+                  </span>
                 )}
               </div>
+
+              {/* فريق الضيف */}
               <div className="flex-1 flex items-center gap-1.5 min-w-0">
                 {!!away.crest && <img src={away.crest as string} className="w-5 h-5 object-contain flex-shrink-0" alt="" />}
-                <span className="text-xs font-medium truncate">{away.shortName as string || away.name as string}</span>
+                <span className={cn("text-xs font-medium truncate", hasBg && "text-white/90")}>
+                  {away.shortName as string || away.name as string}
+                </span>
               </div>
             </div>
           );
@@ -616,6 +688,41 @@ function HtmlDisplay({ config }: { config: Record<string, unknown> }) {
   );
 }
 
+// ─── Background Image Wrapper ─────────────────────────────────────────────────
+
+function BannerBgWrapper({
+  config,
+  children,
+  className,
+}: {
+  config:    Record<string, unknown>;
+  children:  React.ReactNode;
+  className?: string;
+}) {
+  const bgImage = (config.backgroundImage as string) || "";
+  const opacity = typeof config.bgOverlayOpacity === "number" ? config.bgOverlayOpacity : 55;
+
+  if (!bgImage) return <>{children}</>;
+
+  return (
+    <div className={cn("relative w-full h-full overflow-hidden", className)}>
+      <img
+        src={bgImage}
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        alt=""
+        draggable={false}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: `rgba(0,0,0,${opacity / 100})` }}
+      />
+      <div className="relative z-10 w-full h-full overflow-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface Props {
@@ -623,27 +730,51 @@ interface Props {
   className?: string;
 }
 
+const FOOTBALL_TYPE_MAP: Record<string, string> = {
+  "live-matches":  "live",
+  "today-matches": "today",
+  "results":       "results",
+  "standings":     "standings",
+};
+
 export function SmartBannerDisplay({ banner, className }: Props) {
-  const cfg = banner.config;
+  const cfg    = banner.config;
+  const hasBg  = !!(cfg.backgroundImage as string);
+
+  const inner = (() => {
+    if (banner.type === "countdown") {
+      return <CountdownDisplay config={{ ...defaultCountdownConfig(), ...cfg } as CountdownConfig} />;
+    }
+    if (FOOTBALL_TYPE_MAP[banner.type]) {
+      return (
+        <FootballDisplay
+          hasBg={hasBg}
+          config={{
+            competition: "WC",
+            ...cfg,
+            type: FOOTBALL_TYPE_MAP[banner.type] ?? "live",
+          }}
+        />
+      );
+    }
+    if (banner.type === "weather")  return <WeatherDisplay  hasBg={hasBg} config={cfg} />;
+    if (banner.type === "currency") return <CurrencyDisplay hasBg={hasBg} config={cfg} />;
+    if (banner.type === "gold")     return <GoldDisplay     hasBg={hasBg} config={cfg} />;
+    if (banner.type === "news")     return <NewsDisplay     hasBg={hasBg} config={cfg} />;
+    if (banner.type === "html")     return <HtmlDisplay     config={cfg} />;
+    return null;
+  })();
+
+  if (banner.type === "countdown") {
+    // Countdown has its own bg system
+    return <div className={cn("w-full", className)}>{inner}</div>;
+  }
 
   return (
-    <div className={cn("w-full", className)}>
-      {banner.type === "countdown" && (
-        <CountdownDisplay config={{ ...defaultCountdownConfig(), ...cfg } as CountdownConfig} />
-      )}
-      {(banner.type === "live-matches" || banner.type === "today-matches" ||
-        banner.type === "results"       || banner.type === "standings") && (
-        <FootballDisplay config={{
-            competition: "PL",
-            ...cfg,
-            type: ({"live-matches":"live","today-matches":"today","results":"results","standings":"standings"} as Record<string,string>)[banner.type] ?? "live",
-          }} />
-      )}
-      {banner.type === "weather"  && <WeatherDisplay  config={cfg} />}
-      {banner.type === "currency" && <CurrencyDisplay config={cfg} />}
-      {banner.type === "gold"     && <GoldDisplay     config={cfg} />}
-      {banner.type === "news"     && <NewsDisplay     config={cfg} />}
-      {banner.type === "html"     && <HtmlDisplay     config={cfg} />}
+    <div className={cn("w-full", hasBg ? "h-full" : "", className)}>
+      <BannerBgWrapper config={cfg} className="min-h-full">
+        {inner}
+      </BannerBgWrapper>
     </div>
   );
 }

@@ -637,10 +637,12 @@ function MixedCarousel({
   items,
   onView,
   onClick,
+  heightClass = "h-[100px] lg:h-[96px]",
 }: {
-  items:   MixedItem[];
-  onView:  (id: string, d: number) => void;
-  onClick: (ad: Ad, x: number, y: number) => void;
+  items:       MixedItem[];
+  onView:      (id: string, d: number) => void;
+  onClick:     (ad: Ad, x: number, y: number) => void;
+  heightClass?: string;
 }) {
   const count                = items.length;
   const [current, setCur]    = useState(0);
@@ -695,7 +697,7 @@ function MixedCarousel({
       ref={containerRef}
       className={cn(
         "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/8 select-none grid",
-        "h-[100px] lg:h-[96px]",
+        heightClass,
         count > 1 ? "cursor-pointer" : "cursor-default",
       )}
       onMouseEnter={() => count > 1 && setPaused(true)}
@@ -790,6 +792,12 @@ export function PublicBannerSlot({ slot, ads }: { slot: "top" | "bottom"; ads: A
   const smartBanners        = useActiveSmartBanners(slot);
   const { onView, onClick } = useAdTracking();
 
+  // الصندوق العلوي: ارتفاع ثابت صغير على كل الأجهزة.
+  // الصندوق السفلي: ارتفاع ثابت على الجوال/تابليت، ونسبة العرض الأصلية على الكمبيوتر.
+  const slotHeightClass = slot === "top"
+    ? "h-[100px] lg:h-[96px]"
+    : "h-[100px] lg:aspect-[960/138] lg:h-auto";
+
   const pinnedBanners = useMemo(
     () => smartBanners.filter(b => b.pinned).sort((a, b) => a.order - b.order),
     [smartBanners],
@@ -816,12 +824,12 @@ export function PublicBannerSlot({ slot, ads }: { slot: "top" | "bottom"; ads: A
       slot === "top" ? "pb-2" : "pb-3 sm:pb-4",
     )}>
       {pinnedBanners.map(b => (
-        <div key={b.id} className="rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/8 h-[100px] lg:h-[96px]">
+        <div key={b.id} className={cn("rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/8", slotHeightClass)}>
           <SmartBannerDisplay banner={b} className="h-full overflow-hidden" />
         </div>
       ))}
       {rotatingItems.length > 0 && (
-        <MixedCarousel items={rotatingItems} onView={onView} onClick={onClick} />
+        <MixedCarousel items={rotatingItems} onView={onView} onClick={onClick} heightClass={slotHeightClass} />
       )}
     </div>
   );
