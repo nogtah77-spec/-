@@ -10,3 +10,4 @@ export * from "./settings";
 export * from "./activityLogs";
 export * from "./visitorPings";
 export * from "./adEvents";
+export * from "./smartBanners";

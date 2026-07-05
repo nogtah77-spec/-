@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -22,7 +22,8 @@ const sidebarItems = [
     ? [{ href: "/admin/ai-leads", label: "عملاء المستشار الذكي", icon: Sparkles, badge: "aiLeads" }]
     : []),
   { separator: true },
-  { href: "/admin/ads", label: "الإعلانات", icon: Megaphone },
+  { href: "/admin/ads",            label: "الإعلانات",    icon: Megaphone      },
+  { href: "/admin/smart-banners", label: "البانر الذكي",  icon: LayoutTemplate },
   { href: "/admin/settings", label: "الإعدادات", icon: Settings },
   { href: "/admin/analytics", label: "التحليلات", icon: BarChart3 },
   { href: "/admin/activity-logs", label: "سجلات النشاط", icon: Activity },

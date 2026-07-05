@@ -1,0 +1,661 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import {
+  CloudSun, Coins, Newspaper, Code2, Trophy, Calendar, Wifi, Clock,
+  AlertCircle, Loader2, RefreshCw,
+} from "lucide-react";
+
+// ─── Shared types ─────────────────────────────────────────────────────────────
+
+export type BannerType =
+  | "live-matches" | "today-matches" | "results" | "standings"
+  | "news" | "weather" | "gold" | "currency" | "countdown" | "html";
+
+export interface OverlayConfig {
+  type: "none" | "dark" | "light" | "blur" | "gradient";
+  opacity: number;
+  color: string;
+}
+
+export interface CountdownConfig {
+  targetDate:      string;
+  targetTime:      string;
+  backgroundImage: string;
+  bgPosition:      "cover" | "contain" | "fill";
+  headline:        string;
+  description:     string;
+  headlineSize:    number;
+  descriptionSize: number;
+  textColor:       string;
+  textOpacity:     number;
+  textAlign:       "right" | "center" | "left";
+  logo:            string;
+  logoSize:        number;
+  logoX:           number;
+  logoY:           number;
+  overlay:         OverlayConfig;
+  aspectRatio:     "16/9" | "21/9" | "4/3" | "1/1" | "3/1" | "9/16";
+  showSeconds:     boolean;
+  digitStyle:      "boxed" | "plain";
+  digitColor:      string;
+  digitBg:         string;
+  fonts:           unknown[];
+  stickers:        unknown[];
+  emojis:          unknown[];
+}
+
+export const defaultCountdownConfig = (): CountdownConfig => ({
+  targetDate:      "",
+  targetTime:      "00:00:00",
+  backgroundImage: "",
+  bgPosition:      "cover",
+  headline:        "",
+  description:     "",
+  headlineSize:    36,
+  descriptionSize: 16,
+  textColor:       "#ffffff",
+  textOpacity:     100,
+  textAlign:       "center",
+  logo:            "",
+  logoSize:        20,
+  logoX:           50,
+  logoY:           12,
+  overlay:         { type: "dark", opacity: 45, color: "#000000" },
+  aspectRatio:     "16/9",
+  showSeconds:     true,
+  digitStyle:      "boxed",
+  digitColor:      "#ffffff",
+  digitBg:         "rgba(0,0,0,0.55)",
+  fonts:           [],
+  stickers:        [],
+  emojis:          [],
+});
+
+export interface SmartBannerShape {
+  id:        string;
+  type:      BannerType;
+  title:     string;
+  config:    Record<string, unknown>;
+  active:    boolean;
+  order:     number;
+  createdAt: string;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function useContainerWidth(ref: React.RefObject<HTMLDivElement | null>) {
+  const [width, setWidth] = useState(800);
+  useEffect(() => {
+    if (!ref.current) return;
+    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
+    ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, [ref]);
+  return width;
+}
+
+function calcTimeLeft(targetDate: string, targetTime: string) {
+  const target = new Date(`${targetDate}T${targetTime}`);
+  const diff   = Math.max(0, target.getTime() - Date.now());
+  return {
+    days:    Math.floor(diff / 86_400_000),
+    hours:   Math.floor((diff % 86_400_000) / 3_600_000),
+    minutes: Math.floor((diff % 3_600_000)  / 60_000),
+    seconds: Math.floor((diff % 60_000)     / 1_000),
+    ended:   diff === 0,
+  };
+}
+
+function overlayStyle(cfg: OverlayConfig): React.CSSProperties {
+  const a = cfg.opacity / 100;
+  switch (cfg.type) {
+    case "dark":     return { background: `rgba(0,0,0,${a})` };
+    case "light":    return { background: `rgba(255,255,255,${a})` };
+    case "gradient": return { background: `linear-gradient(180deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,${a}) 100%)` };
+    case "blur":     return { backdropFilter: `blur(${a * 20}px)` };
+    default:         return {};
+  }
+}
+
+// ─── NeedsKey / Error / Loading placeholders ──────────────────────────────────
+
+function NeedsKeyCard({ label }: { label: string }) {
+  return (
+    <div className="w-full rounded-xl border-2 border-dashed border-amber-300/50 bg-amber-50/30 dark:bg-amber-900/10 flex flex-col items-center justify-center gap-3 p-8 text-center" dir="rtl">
+      <AlertCircle className="w-10 h-10 text-amber-500" />
+      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+        يحتاج مفتاح API لخدمة <strong>{label}</strong>
+      </p>
+      <p className="text-xs text-muted-foreground">أضف المفتاح من إعدادات الخدمات</p>
+    </div>
+  );
+}
+
+function ErrorCard({ msg, onRetry }: { msg: string; onRetry: () => void }) {
+  return (
+    <div className="w-full rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-200 flex flex-col items-center gap-2 p-6 text-center" dir="rtl">
+      <AlertCircle className="w-8 h-8 text-red-500" />
+      <p className="text-sm text-red-700 dark:text-red-400">{msg}</p>
+      <button onClick={onRetry} className="flex items-center gap-1 text-xs text-red-500 hover:underline mt-1">
+        <RefreshCw className="w-3 h-3" /> إعادة المحاولة
+      </button>
+    </div>
+  );
+}
+
+function LoadingCard() {
+  return (
+    <div className="w-full rounded-xl bg-muted/30 flex items-center justify-center p-10">
+      <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
+// ─── Countdown Display ────────────────────────────────────────────────────────
+
+function CountdownUnit({ value, label, scale, cfg }: {
+  value: number; label: string; scale: number; cfg: CountdownConfig;
+}) {
+  const num = String(value).padStart(2, "0");
+  const boxed = cfg.digitStyle === "boxed";
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <div
+        className={cn("font-bold tabular-nums leading-none transition-all",
+          boxed && "rounded-lg border border-white/20 flex items-center justify-center")}
+        style={{
+          fontSize:   `${cfg.headlineSize * scale * 1.15}px`,
+          color:      cfg.digitColor || "#fff",
+          background: boxed ? cfg.digitBg || "rgba(0,0,0,0.5)" : "transparent",
+          padding:    boxed ? `${Math.max(4, 8 * scale)}px ${Math.max(6, 14 * scale)}px` : "0",
+          minWidth:   boxed ? `${Math.max(36, cfg.headlineSize * scale * 1.6)}px` : undefined,
+          textShadow: !boxed ? "0 2px 8px rgba(0,0,0,0.7)" : undefined,
+        }}
+      >
+        {num}
+      </div>
+      <span style={{
+        fontSize: `${Math.max(9, cfg.descriptionSize * scale * 0.8)}px`,
+        color:    cfg.textColor || "#fff",
+        opacity:  0.8,
+      }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function CountdownDisplay({ config }: { config: CountdownConfig }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scale        = useContainerWidth(containerRef) / 800;
+  const [tl, setTl]  = useState(() => calcTimeLeft(config.targetDate, config.targetTime));
+
+  useEffect(() => {
+    if (!config.targetDate) return;
+    const id = setInterval(() => setTl(calcTimeLeft(config.targetDate, config.targetTime)), 1000);
+    return () => clearInterval(id);
+  }, [config.targetDate, config.targetTime]);
+
+  const units = [
+    { value: tl.days,    label: "يوم"    },
+    { value: tl.hours,   label: "ساعة"   },
+    { value: tl.minutes, label: "دقيقة"  },
+    ...(config.showSeconds ? [{ value: tl.seconds, label: "ثانية" }] : []),
+  ];
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden select-none"
+      style={{ aspectRatio: config.aspectRatio?.replace("/", " / ") || "16 / 9" }}
+    >
+      {/* Background */}
+      {config.backgroundImage ? (
+        <img
+          src={config.backgroundImage}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ objectFit: config.bgPosition || "cover" }}
+          alt=""
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950" />
+      )}
+
+      {/* Overlay */}
+      <div className="absolute inset-0" style={overlayStyle(config.overlay)} />
+
+      {/* Logo */}
+      {config.logo && (
+        <img
+          src={config.logo}
+          className="absolute object-contain pointer-events-none"
+          style={{
+            left:      `${config.logoX ?? 50}%`,
+            top:       `${config.logoY ?? 12}%`,
+            width:     `${config.logoSize ?? 20}%`,
+            transform: "translate(-50%, -50%)",
+          }}
+          alt="logo"
+        />
+      )}
+
+      {/* Content */}
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3"
+        style={{ textAlign: config.textAlign || "center" }}
+        dir="rtl"
+      >
+        {config.headline && (
+          <h2
+            className="font-bold leading-tight"
+            style={{
+              fontSize:   `${config.headlineSize * scale}px`,
+              color:      config.textColor  || "#fff",
+              opacity:    (config.textOpacity ?? 100) / 100,
+              textShadow: "0 2px 12px rgba(0,0,0,0.6)",
+            }}
+          >
+            {config.headline}
+          </h2>
+        )}
+
+        {/* Countdown digits */}
+        {config.targetDate ? (
+          tl.ended ? (
+            <p style={{ fontSize: `${config.headlineSize * scale * 0.8}px`, color: config.textColor || "#fff" }}>
+              انتهى العداد
+            </p>
+          ) : (
+            <div
+              className="flex flex-wrap justify-center"
+              style={{ gap: `${Math.max(6, 12 * scale)}px` }}
+            >
+              {units.map(u => (
+                <CountdownUnit key={u.label} {...u} scale={scale} cfg={config} />
+              ))}
+            </div>
+          )
+        ) : (
+          <div className="flex gap-3">
+            {["يوم","ساعة","دقيقة","ثانية"].map(l => (
+              <CountdownUnit key={l} value={0} label={l} scale={scale} cfg={config} />
+            ))}
+          </div>
+        )}
+
+        {config.description && (
+          <p
+            className="max-w-[80%] leading-snug"
+            style={{
+              fontSize:   `${config.descriptionSize * scale}px`,
+              color:      config.textColor  || "#fff",
+              opacity:    (config.textOpacity ?? 100) / 100,
+              textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+              marginTop:  `${4 * scale}px`,
+            }}
+          >
+            {config.description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Weather Display ──────────────────────────────────────────────────────────
+
+function WeatherDisplay({ config }: { config: Record<string, unknown> }) {
+  const city = (config.city as string) || "Cairo";
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [err,  setErr]  = useState("");
+  const load = useCallback(() => {
+    setErr(""); setData(null);
+    api.get<Record<string, unknown>>(`/smart-banners/proxy/weather?city=${encodeURIComponent(city)}&unit=metric`)
+      .then(setData).catch(e => setErr(e?.message || "تعذر جلب بيانات الطقس"));
+  }, [city]);
+  useEffect(() => { load(); }, [load]);
+
+  if (err.includes("مفتاح")) return <NeedsKeyCard label="OpenWeatherMap" />;
+  if (err) return <ErrorCard msg={err} onRetry={load} />;
+  if (!data) return <LoadingCard />;
+
+  const temp  = Math.round((data.main as Record<string, number>)?.temp ?? 0);
+  const desc  = ((data.weather as Record<string, string>[])?.[0]?.description) || "";
+  const icon  = ((data.weather as Record<string, string>[])?.[0]?.icon) || "";
+  const wind  = Math.round(((data.wind as Record<string, number>)?.speed ?? 0) * 3.6);
+  const humid = (data.main as Record<string, number>)?.humidity ?? 0;
+
+  return (
+    <div className="w-full rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 text-white p-5 flex items-center gap-5" dir="rtl">
+      <div className="flex flex-col flex-1">
+        <p className="text-3xl font-bold">{temp}°م</p>
+        <p className="text-base opacity-90 capitalize">{desc}</p>
+        <p className="text-sm opacity-75 mt-1">{data.name as string}، مصر</p>
+        <div className="flex gap-4 mt-3 text-xs opacity-80">
+          <span>💨 {wind} كم/س</span>
+          <span>💧 {humid}%</span>
+        </div>
+      </div>
+      {icon && (
+        <img src={`https://openweathermap.org/img/wn/${icon}@2x.png`} alt={desc} className="w-20 h-20 drop-shadow-lg" />
+      )}
+    </div>
+  );
+}
+
+// ─── Currency Display ─────────────────────────────────────────────────────────
+
+const CURRENCY_NAMES: Record<string, string> = {
+  EGP: "جنيه مصري", EUR: "يورو", GBP: "إسترليني", SAR: "ريال سعودي",
+  AED: "درهم إماراتي", KWD: "دينار كويتي", USD: "دولار أمريكي",
+};
+const CURRENCY_FLAGS: Record<string, string> = {
+  EGP: "🇪🇬", EUR: "🇪🇺", GBP: "🇬🇧", SAR: "🇸🇦",
+  AED: "🇦🇪", KWD: "🇰🇼", USD: "🇺🇸",
+};
+
+function CurrencyDisplay({ config }: { config: Record<string, unknown> }) {
+  const from = (config.from as string) || "USD";
+  const to   = (config.to   as string) || "EGP,EUR,GBP,SAR,AED,KWD";
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [err,  setErr]  = useState("");
+  const load = useCallback(() => {
+    setErr(""); setData(null);
+    api.get<Record<string, unknown>>(`/smart-banners/proxy/currency?from=${from}&to=${to}`)
+      .then(setData).catch(e => setErr(e?.message || "تعذر جلب العملات"));
+  }, [from, to]);
+  useEffect(() => { load(); }, [load]);
+
+  if (err) return <ErrorCard msg={err} onRetry={load} />;
+  if (!data) return <LoadingCard />;
+
+  const rates = (data.rates as Record<string, number>) || {};
+
+  return (
+    <div className="w-full rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-4" dir="rtl">
+      <div className="flex items-center gap-2 mb-3">
+        <Coins className="w-5 h-5 opacity-80" />
+        <p className="text-sm font-semibold opacity-90">أسعار الصرف مقابل {from} 1</p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {Object.entries(rates).map(([code, rate]) => (
+          <div key={code} className="bg-white/10 rounded-xl px-3 py-2 flex items-center justify-between">
+            <div>
+              <p className="text-xs opacity-70">{CURRENCY_FLAGS[code]} {CURRENCY_NAMES[code] || code}</p>
+              <p className="font-bold text-base">{rate.toFixed(2)}</p>
+            </div>
+            <span className="text-xs font-mono opacity-70">{code}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Gold Display ─────────────────────────────────────────────────────────────
+
+function GoldDisplay({ config }: { config: Record<string, unknown> }) {
+  const currency = (config.currency as string) || "USD";
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [err,  setErr]  = useState("");
+  const load = useCallback(() => {
+    setErr(""); setData(null);
+    api.get<Record<string, unknown>>(`/smart-banners/proxy/gold?currency=${currency}`)
+      .then(setData).catch(e => setErr(e?.message || "تعذر جلب أسعار الذهب"));
+  }, [currency]);
+  useEffect(() => { load(); }, [load]);
+
+  if (err.includes("مفتاح")) return <NeedsKeyCard label="GoldAPI.io" />;
+  if (err) return <ErrorCard msg={err} onRetry={load} />;
+  if (!data) return <LoadingCard />;
+
+  const price    = data.price as number;
+  const prevClose = data.prev_close_price as number;
+  const change   = price - prevClose;
+  const up       = change >= 0;
+
+  return (
+    <div className="w-full rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 text-white p-5" dir="rtl">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-2xl">🥇</span>
+        <p className="text-sm font-semibold opacity-90">سعر الذهب (أونصة) × {currency}</p>
+      </div>
+      <p className="text-4xl font-bold">{price?.toFixed(2)}</p>
+      <p className={cn("text-sm mt-1 font-medium", up ? "text-green-200" : "text-red-200")}>
+        {up ? "▲" : "▼"} {Math.abs(change).toFixed(2)} ({((change / prevClose) * 100).toFixed(2)}%)
+      </p>
+    </div>
+  );
+}
+
+// ─── News Display ─────────────────────────────────────────────────────────────
+
+function NewsDisplay({ config }: { config: Record<string, unknown> }) {
+  const q   = (config.q   as string) || "أخبار";
+  const max = (config.max as number) || 6;
+  const [data, setData] = useState<{ articles?: Record<string, unknown>[] } | null>(null);
+  const [err,  setErr]  = useState("");
+  const load = useCallback(() => {
+    setErr(""); setData(null);
+    api.get<{ articles?: Record<string, unknown>[] }>(
+      `/smart-banners/proxy/news?q=${encodeURIComponent(q)}&max=${max}`
+    ).then(setData).catch(e => setErr(e?.message || "تعذر جلب الأخبار"));
+  }, [q, max]);
+  useEffect(() => { load(); }, [load]);
+
+  if (err.includes("مفتاح")) return <NeedsKeyCard label="GNews API" />;
+  if (err) return <ErrorCard msg={err} onRetry={load} />;
+  if (!data) return <LoadingCard />;
+
+  const articles = data.articles || [];
+
+  return (
+    <div className="w-full rounded-2xl border bg-card overflow-hidden" dir="rtl">
+      <div className="flex items-center gap-2 px-4 py-3 bg-rose-600 text-white">
+        <Newspaper className="w-4 h-4" />
+        <p className="text-sm font-bold">آخر الأخبار</p>
+      </div>
+      <div className="divide-y">
+        {articles.slice(0, 5).map((a, i) => (
+          <div key={i} className="flex gap-3 p-3 hover:bg-muted/40 transition-colors">
+            {!!a.image && (
+              <img src={a.image as string} alt="" className="w-16 h-12 object-cover rounded-md flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold line-clamp-2 leading-snug">{a.title as string}</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{a.source as string}</p>
+            </div>
+          </div>
+        ))}
+        {articles.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">لا توجد أخبار</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Football Displays ────────────────────────────────────────────────────────
+
+function FootballDisplay({ config }: { config: Record<string, unknown> }) {
+  const competition = (config.competition as string) || "PL";
+  const type        = (config.type        as string) || "live";
+  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [err,  setErr]  = useState("");
+  const load = useCallback(() => {
+    setErr(""); setData(null);
+    api.get<Record<string, unknown>>(
+      `/smart-banners/proxy/football?competition=${competition}&type=${type}`
+    ).then(setData).catch(e => setErr(e?.message || "تعذر جلب البيانات"));
+  }, [competition, type]);
+  useEffect(() => { load(); }, [load]);
+
+  if (err.includes("مفتاح")) return <NeedsKeyCard label="Football-Data.org" />;
+  if (err) return <ErrorCard msg={err} onRetry={load} />;
+  if (!data) return <LoadingCard />;
+
+  if (type === "standings") {
+    const standings = ((data.standings as Record<string, unknown>[])?.[0]?.table as Record<string, unknown>[]) || [];
+    return (
+      <div className="w-full rounded-2xl border overflow-hidden" dir="rtl">
+        <div className="px-4 py-3 bg-emerald-700 text-white flex items-center gap-2">
+          <Trophy className="w-4 h-4" /><p className="text-sm font-bold">ترتيب الدوري · {competition}</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="px-2 py-1.5 text-right">#</th>
+                <th className="px-2 py-1.5 text-right">الفريق</th>
+                <th className="px-2 py-1.5 text-center">لع</th>
+                <th className="px-2 py-1.5 text-center">فز</th>
+                <th className="px-2 py-1.5 text-center">خس</th>
+                <th className="px-2 py-1.5 text-center font-bold">نق</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {standings.slice(0, 8).map((s) => {
+                const team = s.team as Record<string, unknown>;
+                return (
+                  <tr key={s.position as number} className="hover:bg-muted/30">
+                    <td className="px-2 py-1.5 font-bold">{s.position as number}</td>
+                    <td className="px-2 py-1.5">
+                      <div className="flex items-center gap-1.5">
+                        {!!team.crest && <img src={team.crest as string} className="w-4 h-4 object-contain" alt="" />}
+                        <span className="truncate max-w-[120px]">{team.shortName as string || team.name as string}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1.5 text-center">{s.playedGames as number}</td>
+                    <td className="px-2 py-1.5 text-center text-emerald-600">{s.won as number}</td>
+                    <td className="px-2 py-1.5 text-center text-red-500">{s.lost as number}</td>
+                    <td className="px-2 py-1.5 text-center font-bold">{s.points as number}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  const matches = (data.matches as Record<string, unknown>[]) || [];
+  const typeLabel: Record<string, string> = {
+    "live":    "مباشر 🔴",
+    "today":   "مباريات اليوم",
+    "results": "النتائج",
+  };
+
+  return (
+    <div className="w-full rounded-2xl border overflow-hidden" dir="rtl">
+      <div className="px-4 py-3 bg-green-700 text-white flex items-center gap-2">
+        {type === "live" && <Wifi className="w-4 h-4 animate-pulse" />}
+        {type === "today" && <Calendar className="w-4 h-4" />}
+        {type === "results" && <Trophy className="w-4 h-4" />}
+        <p className="text-sm font-bold">{typeLabel[type] || type} · {competition}</p>
+      </div>
+      <div className="divide-y">
+        {matches.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8">لا توجد مباريات</p>
+        )}
+        {matches.slice(0, 6).map((m, i) => {
+          const home  = m.homeTeam as Record<string, unknown>;
+          const away  = m.awayTeam as Record<string, unknown>;
+          const score = m.score   as Record<string, unknown>;
+          const ft    = score?.fullTime as Record<string, number> | null;
+          return (
+            <div key={i} className="flex items-center gap-2 px-3 py-2.5 hover:bg-muted/30">
+              <div className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
+                <span className="text-xs font-medium truncate">{home.shortName as string || home.name as string}</span>
+                {!!home.crest && <img src={home.crest as string} className="w-5 h-5 object-contain flex-shrink-0" alt="" />}
+              </div>
+              <div className="text-center flex-shrink-0 min-w-[52px]">
+                {ft ? (
+                  <span className="text-sm font-bold bg-muted rounded px-2 py-0.5">
+                    {ft.home ?? "–"} : {ft.away ?? "–"}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">vs</span>
+                )}
+              </div>
+              <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                {!!away.crest && <img src={away.crest as string} className="w-5 h-5 object-contain flex-shrink-0" alt="" />}
+                <span className="text-xs font-medium truncate">{away.shortName as string || away.name as string}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── HTML Display ─────────────────────────────────────────────────────────────
+
+function HtmlDisplay({ config }: { config: Record<string, unknown> }) {
+  const html   = (config.html   as string) || "";
+  const height = (config.height as number) || 200;
+  if (!html) {
+    return (
+      <div className="w-full rounded-xl border-2 border-dashed flex items-center justify-center gap-3 p-8 text-muted-foreground" style={{ height }}>
+        <Code2 className="w-6 h-6" />
+        <p className="text-sm">لم يتم إضافة HTML بعد</p>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="w-full overflow-hidden rounded-xl"
+      style={{ height }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+interface Props {
+  banner:    SmartBannerShape;
+  className?: string;
+}
+
+export function SmartBannerDisplay({ banner, className }: Props) {
+  const cfg = banner.config;
+
+  return (
+    <div className={cn("w-full", className)}>
+      {banner.type === "countdown" && (
+        <CountdownDisplay config={{ ...defaultCountdownConfig(), ...cfg } as CountdownConfig} />
+      )}
+      {(banner.type === "live-matches" || banner.type === "today-matches" ||
+        banner.type === "results"       || banner.type === "standings") && (
+        <FootballDisplay config={{
+            competition: "PL",
+            ...cfg,
+            type: ({"live-matches":"live","today-matches":"today","results":"results","standings":"standings"} as Record<string,string>)[banner.type] ?? "live",
+          }} />
+      )}
+      {banner.type === "weather"  && <WeatherDisplay  config={cfg} />}
+      {banner.type === "currency" && <CurrencyDisplay config={cfg} />}
+      {banner.type === "gold"     && <GoldDisplay     config={cfg} />}
+      {banner.type === "news"     && <NewsDisplay     config={cfg} />}
+      {banner.type === "html"     && <HtmlDisplay     config={cfg} />}
+    </div>
+  );
+}
+
+// ─── Type label/icon helpers (exported for the admin page) ────────────────────
+
+export const BANNER_TYPE_META: Record<BannerType, { label: string; icon: React.ComponentType<{ className?: string }>; color: string }> = {
+  "live-matches":  { label: "مباشر 🔴",         icon: Wifi,     color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+  "today-matches": { label: "مباريات اليوم",    icon: Calendar, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  "results":       { label: "نتائج المباريات",  icon: Trophy,   color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  "standings":     { label: "ترتيب الدوريات",  icon: Trophy,   color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
+  "news":          { label: "الأخبار",          icon: Newspaper, color: "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400" },
+  "weather":       { label: "الطقس",            icon: CloudSun, color: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400" },
+  "gold":          { label: "أسعار الذهب",      icon: Coins,    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
+  "currency":      { label: "أسعار العملات",    icon: Coins,    color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  "countdown":     { label: "عداد تنازلي",      icon: Clock,    color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  "html":          { label: "HTML مخصص",        icon: Code2,    color: "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400" },
+};

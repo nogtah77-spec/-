@@ -13,6 +13,7 @@ import aiConsultantRouter from "./aiConsultant";
 import settingsRouter from "./settings";
 import adsAnalyticsRouter from "./adsAnalytics";
 import adsManagementRouter from "./adsManagement";
+import smartBannersRouter from "./smartBanners";
 import activityLogsRouter from "./activityLogs";
 import visitorsRouter from "./visitors";
 
@@ -32,6 +33,7 @@ router.use(aiConsultantRouter);
 router.use(settingsRouter);
 router.use(adsAnalyticsRouter);
 router.use(adsManagementRouter);
+router.use(smartBannersRouter);
 router.use(activityLogsRouter);
 router.use(visitorsRouter);
 
