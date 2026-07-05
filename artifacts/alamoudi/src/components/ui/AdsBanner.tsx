@@ -720,7 +720,7 @@ function MixedCarousel({
         >
           {item.kind === "ad" ? (
             <div
-              className="relative w-full"
+              className="relative w-full lg:h-full"
               onClick={(e) => {
                 if (Math.abs(swipeDelta.current) > 8) return;
                 const el = containerRef.current;
