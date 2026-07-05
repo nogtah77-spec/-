@@ -593,12 +593,24 @@ function FootballDisplay({ config, hasBg = false }: { config: Record<string, unk
   const matchWrap = hasBg
     ? "w-full overflow-hidden text-white"
     : "w-full rounded-2xl border overflow-hidden bg-card";
+  const matchHeaderBg = hasBg
+    ? "flex items-center justify-between px-3 py-1.5 bg-black/30 backdrop-blur-sm border-b border-white/20"
+    : "flex items-center justify-between px-3 py-1.5 bg-muted/40 border-b";
   const matchRow = hasBg
     ? "flex items-center gap-2 px-3 py-2.5 hover:bg-white/10 border-b border-white/10 last:border-0"
     : "flex items-center gap-2 px-3 py-2.5 hover:bg-muted/30 border-b last:border-0";
 
   return (
     <div className={matchWrap} dir="rtl">
+      {/* Header: competition + type label */}
+      <div className={matchHeaderBg}>
+        <span className={cn("text-[11px] font-bold", hasBg ? "text-white/90" : "")}>
+          {typeLabel[type] ?? type}
+        </span>
+        <span className={cn("text-[10px] font-mono", hasBg ? "text-white/50" : "text-muted-foreground")}>
+          {competition}
+        </span>
+      </div>
       <div>
         {matches.slice(0, 6).map((m, i) => {
           const home  = m.homeTeam as Record<string, unknown>;
