@@ -429,7 +429,7 @@ export function CountdownDesigner({ config, onChange }: Props) {
 
   const previewBanner: SmartBannerShape = {
     id: "_preview", type: "countdown", title: "", config: cfg as unknown as Record<string, unknown>,
-    active: true, order: 0, createdAt: "",
+    active: true, order: 0, createdAt: "", slot: "top", pinned: false, duration: 10,
   };
 
   return (

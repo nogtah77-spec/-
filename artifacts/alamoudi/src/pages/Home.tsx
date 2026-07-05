@@ -18,7 +18,7 @@ import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import { UnifiedBanner } from "@/components/ui/AdsBanner";
+import { PublicBannerSlot } from "@/components/ui/AdsBanner";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -275,12 +275,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Carousel الإعلاني الموحّد (Premium + Secondary) ── */}
-        {!isFiltering && (
-          <div className="pb-3 sm:pb-4">
-            <UnifiedBanner ads={settings.ads ?? []} />
-          </div>
-        )}
+        {/* ── الصندوق العلوي: بانرات ذكية (top slot) — يختفي تلقائيًا لو فاضي ── */}
+        {!isFiltering && <PublicBannerSlot slot="top" ads={[]} />}
+
+        {/* ── الصندوق السفلي: إعلانات عادية + بانرات ذكية (bottom slot) — يختفي تلقائيًا لو فاضي ── */}
+        {!isFiltering && <PublicBannerSlot slot="bottom" ads={settings.ads ?? []} />}
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">

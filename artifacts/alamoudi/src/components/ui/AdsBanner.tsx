@@ -605,23 +605,234 @@ function useAdTracking() {
   return { onView, onClick };
 }
 
-// ─── UnifiedBanner ────────────────────────────────────────────────────────────
-// كاروسيل موحّد يعرض كل الإعلانات (Premium + Secondary) مرتّبة حسب الـ order.
-// كل إعلان له مدة زمنية مستقلة (duration بالثواني).
+// ─── useActiveSmartBanners ────────────────────────────────────────────────────
+
+function useActiveSmartBanners(slot: "top" | "bottom"): SmartBannerShape[] {
+  const [banners, setBanners] = useState<SmartBannerShape[]>([]);
+  useEffect(() => {
+    const load = () =>
+      api.get<SmartBannerShape[]>("/smart-banners")
+        .then(list =>
+          setBanners((list ?? []).filter(b => b.active && (b.slot ?? "top") === slot))
+        )
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 5 * 60_000);
+    return () => clearInterval(t);
+  }, [slot]);
+  return banners;
+}
+
+// ─── MixedItem ────────────────────────────────────────────────────────────────
+
+type MixedItem =
+  | { kind: "ad";    data: Ad;               id: string; order: number; duration: number }
+  | { kind: "smart"; data: SmartBannerShape; id: string; order: number; duration: number };
+
+// ─── MixedCarousel ────────────────────────────────────────────────────────────
+// كاروسيل موحّد: إعلانات بالصور + بانرات ذكية.
+// الارتفاع: h-[100px] جوال/تابليت — lg:h-[96px] كمبيوتر (30% أقل من الحالي).
+
+function MixedCarousel({
+  items,
+  onView,
+  onClick,
+}: {
+  items:   MixedItem[];
+  onView:  (id: string, d: number) => void;
+  onClick: (ad: Ad, x: number, y: number) => void;
+}) {
+  const count                = items.length;
+  const [current, setCur]    = useState(0);
+  const [paused,  setPaused] = useState(false);
+  const containerRef         = useRef<HTMLDivElement>(null);
+  const touchStartX          = useRef<number | null>(null);
+  const mouseStartX          = useRef<number | null>(null);
+  const swipeDelta           = useRef(0);
+  const viewed               = useRef<Set<string>>(new Set());
+  const itemsRef             = useRef(items);
+  useEffect(() => { itemsRef.current = items; });
+
+  const next = useCallback(() => setCur(i => (i + 1) % count), [count]);
+  const prev = useCallback(() => setCur(i => (i - 1 + count) % count), [count]);
+
+  useEffect(() => { setCur(0); }, [count]);
+
+  useEffect(() => {
+    if (count <= 1 || paused) return;
+    const ms = (itemsRef.current[current]?.duration ?? 8) * 1000;
+    const t  = setTimeout(next, ms);
+    return () => clearTimeout(t);
+  }, [count, paused, current, next]);
+
+  useEffect(() => {
+    const item = items[current];
+    if (!item || item.kind !== "ad" || viewed.current.has(item.id)) return;
+    viewed.current.add(item.id);
+    onView(item.id, 0);
+  }, [current, items, onView]);
+
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; setPaused(true); };
+  const handleTouchEnd   = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const d = e.changedTouches[0].clientX - touchStartX.current;
+    if (d > 50) prev(); else if (d < -50) next();
+    touchStartX.current = null; setPaused(false);
+  };
+  const handleMouseDown  = (e: React.MouseEvent) => { mouseStartX.current = e.clientX; swipeDelta.current = 0; setPaused(true); e.preventDefault(); };
+  const handleMouseUp    = (e: React.MouseEvent) => {
+    if (mouseStartX.current === null) return;
+    const d = e.clientX - mouseStartX.current;
+    swipeDelta.current = d;
+    if (d > 50) prev(); else if (d < -50) next();
+    mouseStartX.current = null; setPaused(false);
+  };
+
+  if (count === 0) return null;
+
+  return (
+    <div
+      ref={containerRef}
+      className={cn(
+        "relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/8 select-none grid",
+        "h-[100px] lg:h-[96px]",
+        count > 1 ? "cursor-pointer" : "cursor-default",
+      )}
+      onMouseEnter={() => count > 1 && setPaused(true)}
+      onMouseLeave={() => { setPaused(false); mouseStartX.current = null; }}
+      onTouchStart={count > 1 ? handleTouchStart : undefined}
+      onTouchEnd={count > 1 ? handleTouchEnd   : undefined}
+      onMouseDown={count > 1 ? handleMouseDown  : undefined}
+      onMouseUp={count > 1 ? handleMouseUp    : undefined}
+    >
+      {items.map((item, i) => (
+        <div
+          key={item.id}
+          className="overflow-hidden transition-opacity duration-700 ease-in-out"
+          style={{
+            gridArea:      "1/1",
+            opacity:       i === current ? 1 : 0,
+            zIndex:        i === current ? 2 : 1,
+            pointerEvents: i === current ? "auto" : "none",
+          }}
+        >
+          {item.kind === "ad" ? (
+            <div
+              className="relative w-full h-full"
+              onClick={(e) => {
+                if (Math.abs(swipeDelta.current) > 8) return;
+                const el = containerRef.current;
+                if (!el) return;
+                const rect = el.getBoundingClientRect();
+                const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                const y = Math.min(1, Math.max(0, (e.clientY - rect.top)  / rect.height));
+                onClick(item.data, x, y);
+              }}
+            >
+              <picture className="absolute inset-0 block w-full h-full">
+                {item.data.desktopImageUrl && <source media="(min-width: 1024px)" srcSet={item.data.desktopImageUrl} />}
+                <img
+                  src={getMobileSrc(item.data) || undefined}
+                  alt={item.data.title || "إعلان"}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
+                  draggable={false}
+                  className="w-full h-full object-cover block"
+                />
+              </picture>
+              {item.data.title && (
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none px-3 pb-2 pt-6 z-10">
+                  <p className="text-white font-semibold text-xs leading-snug drop-shadow line-clamp-1 text-right">
+                    {item.data.title}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="w-full h-full overflow-hidden">
+              <SmartBannerDisplay banner={item.data} />
+            </div>
+          )}
+        </div>
+      ))}
+
+      {count > 1 && (
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex z-20">
+          {items.map((_, i) => (
+            <button
+              key={i}
+              onClick={e => { e.stopPropagation(); setCur(i); }}
+              className="p-2 flex items-center justify-center"
+              aria-label={`شريحة ${i + 1}`}
+            >
+              <span className={cn(
+                "block rounded-full transition-all duration-300",
+                i === current
+                  ? "w-5 h-[2.5px] bg-white shadow-sm"
+                  : "w-3.5 h-[1.5px] bg-white/45 hover:bg-white/70",
+              )} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PublicBannerSlot ─────────────────────────────────────────────────────────
+// صندوق إعلاني واحد — يقبل بانرات ذكية + إعلانات عادية.
+// slot="top"    → بانرات ذكية فقط (مخصصة لهذا الصندوق).
+// slot="bottom" → إعلانات عادية + بانرات ذكية (مخصصة له).
+// pinned=true   → ثابت دائماً (فوق الـ carousel).
+// pinned=false  → يدور في الـ carousel بمدته المحددة.
+
+export function PublicBannerSlot({ slot, ads }: { slot: "top" | "bottom"; ads: Ad[] }) {
+  const smartBanners        = useActiveSmartBanners(slot);
+  const { onView, onClick } = useAdTracking();
+
+  const pinnedBanners = useMemo(
+    () => smartBanners.filter(b => b.pinned).sort((a, b) => a.order - b.order),
+    [smartBanners],
+  );
+
+  const rotatingItems = useMemo((): MixedItem[] => {
+    const items: MixedItem[] = smartBanners
+      .filter(b => !b.pinned)
+      .map(b => ({ kind: "smart" as const, data: b, id: b.id, order: b.order, duration: b.duration }));
+
+    if (slot === "bottom") {
+      getActiveAds(ads).slice(0, 10).forEach(ad => {
+        items.push({ kind: "ad" as const, data: ad, id: ad.id, order: ad.order, duration: 6 });
+      });
+    }
+    return items.sort((a, b) => a.order - b.order);
+  }, [smartBanners, ads, slot]);
+
+  if (pinnedBanners.length === 0 && rotatingItems.length === 0) return null;
+
+  return (
+    <div className={cn(
+      "container px-4 sm:px-6 space-y-2",
+      slot === "top" ? "pb-2" : "pb-3 sm:pb-4",
+    )}>
+      {pinnedBanners.map(b => (
+        <div key={b.id} className="rounded-2xl overflow-hidden shadow-sm ring-1 ring-black/8 h-[100px] lg:h-[96px]">
+          <SmartBannerDisplay banner={b} className="h-full overflow-hidden" />
+        </div>
+      ))}
+      {rotatingItems.length > 0 && (
+        <MixedCarousel items={rotatingItems} onView={onView} onClick={onClick} />
+      )}
+    </div>
+  );
+}
+
+// ─── UnifiedBanner (backward-compat wrapper) ──────────────────────────────────
 
 interface BannerProps { ads: Ad[]; }
 
 export function UnifiedBanner({ ads }: BannerProps) {
-  const { onView, onClick } = useAdTracking();
-
-  const active = useMemo(() => getActiveAds(ads).slice(0, 10), [ads]);
-  if (active.length === 0) return null;
-
-  return (
-    <div className="container px-4 sm:px-6">
-      <SecondaryCarousel ads={active} onView={onView} onClick={onClick} />
-    </div>
-  );
+  return <PublicBannerSlot slot="bottom" ads={ads} />;
 }
 
 // ─── PremiumBanner / SecondaryBanner — backward compat ────────────────────────

@@ -479,12 +479,15 @@ function BannerDialog({
   initial: SmartBannerShape | null;
   onSave:  (data: Omit<SmartBannerShape, "id" | "createdAt" | "order">) => Promise<void>;
 }) {
-  const [step,   setStep]   = useState<"type" | "config">(initial ? "config" : "type");
-  const [type,   setType]   = useState<BannerType>(initial?.type as BannerType ?? "countdown");
-  const [title,  setTitle]  = useState(initial?.title ?? "");
-  const [config, setConfig] = useState<Record<string, unknown>>(initial?.config ?? {});
-  const [active, setActive] = useState(initial?.active ?? true);
-  const [saving, setSaving] = useState(false);
+  const [step,     setStep]    = useState<"type" | "config">(initial ? "config" : "type");
+  const [type,     setType]    = useState<BannerType>(initial?.type as BannerType ?? "countdown");
+  const [title,    setTitle]   = useState(initial?.title ?? "");
+  const [config,   setConfig]  = useState<Record<string, unknown>>(initial?.config ?? {});
+  const [active,   setActive]  = useState(initial?.active ?? true);
+  const [slot,     setSlot]    = useState<"top" | "bottom">((initial?.slot as "top" | "bottom") ?? "top");
+  const [pinned,   setPinned]  = useState(initial?.pinned ?? false);
+  const [duration, setDuration]= useState(initial?.duration ?? 10);
+  const [saving,   setSaving]  = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -493,6 +496,9 @@ function BannerDialog({
       setTitle(initial?.title ?? "");
       setConfig(initial?.config ?? {});
       setActive(initial?.active ?? true);
+      setSlot((initial?.slot as "top" | "bottom") ?? "top");
+      setPinned(initial?.pinned ?? false);
+      setDuration(initial?.duration ?? 10);
     }
   }, [open, initial]);
 
@@ -515,7 +521,7 @@ function BannerDialog({
   const save = async () => {
     setSaving(true);
     try {
-      await onSave({ type, title: title || meta.label, config, active });
+      await onSave({ type, title: title || meta.label, config, active, slot, pinned, duration });
       onClose();
     } finally { setSaving(false); }
   };
@@ -563,14 +569,41 @@ function BannerDialog({
           <>
             {/* Common fields */}
             {!isCountdown && (
-              <div className="flex-shrink-0 flex items-center gap-3 px-1 pt-2 pb-3 border-b">
-                <div className="flex-1 space-y-1">
-                  <Label className="text-xs text-muted-foreground">اسم البانر</Label>
-                  <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={meta.label} className="h-8" />
+              <div className="flex-shrink-0 space-y-0 border-b">
+                {/* Row 1: name + active */}
+                <div className="flex items-center gap-3 px-1 pt-2 pb-2">
+                  <div className="flex-1 space-y-1">
+                    <Label className="text-xs text-muted-foreground">اسم البانر</Label>
+                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={meta.label} className="h-8" />
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0 pt-4">
+                    <Switch checked={active} onCheckedChange={setActive} />
+                    <Label className="text-xs">مفعّل</Label>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 pt-4">
-                  <Switch checked={active} onCheckedChange={setActive} />
-                  <Label className="text-xs">مفعّل</Label>
+                {/* Row 2: slot + pinned + duration */}
+                <div className="flex items-center gap-3 px-1 pb-3 flex-wrap">
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    {(["top","bottom"] as const).map(s => (
+                      <button key={s} onClick={() => setSlot(s)}
+                        className={cn("text-xs px-2.5 py-1 rounded-lg border transition-colors",
+                          slot === s ? "bg-accent text-white border-accent" : "border-border hover:bg-muted")}>
+                        {s === "top" ? "⬆ الصندوق العلوي" : "⬇ الصندوق السفلي"}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Switch checked={pinned} onCheckedChange={setPinned} id="pinned-sw" className="scale-90" />
+                    <Label htmlFor="pinned-sw" className="text-xs cursor-pointer whitespace-nowrap">ثابت دائماً</Label>
+                  </div>
+                  {!pinned && (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Input type="number" min={3} max={120} value={duration}
+                        onChange={e => setDuration(Math.max(3, Number(e.target.value)))}
+                        className="h-7 w-16 text-xs text-center" />
+                      <span className="text-xs text-muted-foreground">ثانية</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -580,10 +613,31 @@ function BannerDialog({
               {isCountdown ? (
                 <div className="h-full">
                   {/* Countdown name + active above designer */}
-                  <div className="flex items-center gap-3 px-4 py-2 border-b bg-muted/20">
-                    <div className="flex-1">
+                  <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/20 flex-wrap">
+                    <div className="flex-1 min-w-[120px]">
                       <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="اسم البانر" className="h-7 text-sm" />
                     </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      {(["top","bottom"] as const).map(s => (
+                        <button key={s} onClick={() => setSlot(s)}
+                          className={cn("text-[10px] px-2 py-1 rounded border transition-colors",
+                            slot === s ? "bg-accent text-white border-accent" : "border-border hover:bg-muted")}>
+                          {s === "top" ? "⬆ أعلى" : "⬇ أسفل"}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <Switch checked={pinned} onCheckedChange={setPinned} id="cd-pinned" className="scale-75" />
+                      <Label htmlFor="cd-pinned" className="text-[10px] cursor-pointer">ثابت</Label>
+                    </div>
+                    {!pinned && (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Input type="number" min={3} max={120} value={duration}
+                          onChange={e => setDuration(Math.max(3, Number(e.target.value)))}
+                          className="h-6 w-12 text-[10px] text-center" />
+                        <span className="text-[10px] text-muted-foreground">ث</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <Switch checked={active} onCheckedChange={setActive} id="cd-active" />
                       <Label htmlFor="cd-active" className="text-xs cursor-pointer">مفعّل</Label>
@@ -612,7 +666,7 @@ function BannerDialog({
                     <p className="text-xs text-muted-foreground px-3 py-2 border-b bg-muted/30">معاينة</p>
                     <div className="p-3">
                       <SmartBannerDisplay
-                        banner={{ id: "_p", type, title, config, active, order: 0, createdAt: "" }}
+                        banner={{ id: "_p", type, title, config, active, order: 0, createdAt: "", slot, pinned, duration }}
                       />
                     </div>
                   </div>
@@ -672,7 +726,16 @@ function BannerCard({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate">{banner.title || meta.label}</p>
-        <p className="text-xs text-muted-foreground truncate">{meta.label}</p>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+            {banner.slot === "bottom" ? "⬇ أسفل" : "⬆ أعلى"}
+          </span>
+          {banner.pinned ? (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">ثابت</span>
+          ) : (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">{banner.duration ?? 10}ث</span>
+          )}
+        </div>
       </div>
 
       {/* Actions */}

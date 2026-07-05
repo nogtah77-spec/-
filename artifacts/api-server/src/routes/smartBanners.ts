@@ -229,9 +229,9 @@ router.get("/smart-banners", async (req, res): Promise<void> => {
 });
 
 router.post("/smart-banners", requireStaff, async (req, res): Promise<void> => {
-  const { type, title, config, active = true, order = 0 } = req.body as {
+  const { type, title, config, active = true, order = 0, slot = "top", pinned = false, duration = 10 } = req.body as {
     type?: string; title?: string; config?: Record<string, unknown>;
-    active?: boolean; order?: number;
+    active?: boolean; order?: number; slot?: string; pinned?: boolean; duration?: number;
   };
   const banner: InsertBanner = {
     id:        randomUUID(),
@@ -240,6 +240,9 @@ router.post("/smart-banners", requireStaff, async (req, res): Promise<void> => {
     config:    config    ?? {},
     active:    !!active,
     order:     Number(order),
+    slot:      slot      ?? "top",
+    pinned:    !!pinned,
+    duration:  Number(duration) || 10,
     createdAt: new Date().toISOString(),
   };
   await db.insert(smartBannersTable).values(banner);
@@ -289,7 +292,8 @@ router.delete("/smart-banners/:id", requireStaff, async (req, res): Promise<void
 type InsertBanner = {
   id: string; type: string; title: string;
   config: Record<string, unknown>; active: boolean;
-  order: number; createdAt: string;
+  order: number; slot: string; pinned: boolean;
+  duration: number; createdAt: string;
 };
 
 export default router;
