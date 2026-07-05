@@ -591,6 +591,7 @@ function emptyAd(type: AdType = "secondary"): AdForm {
     imageUrl:        "",
     linkUrl:         "",
     whatsappNumber:  "",
+    whatsappMessage: "",
     linkPriority:    "whatsapp",
     title:           "",
     order:           1,
@@ -749,7 +750,21 @@ function AdDialog({
                   </Button>
                 )}
               </div>
+            </div>
+
+            {/* رسالة الواتساب — تظهر فقط لو في رقم */}
+            {!!form.whatsappNumber?.trim() && (
+              <div className="space-y-1.5">
+                <Label>رسالة الواتساب <span className="text-muted-foreground text-xs">(تظهر جاهزة للعميل عند الضغط)</span></Label>
+                <textarea
+                  rows={2}
+                  placeholder={"السلام عليكم\nرأيت إعلانكم على منصة العمودي العقارية وأريد الاستفسار عن التشطيبات والديكور 🏠"}
+                  value={form.whatsappMessage ?? ""}
+                  onChange={e => patch({ whatsappMessage: e.target.value })}
+                  className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
               </div>
+            )}
 
             <div className="space-y-1.5">
               <Label>رابط الإعلان <span className="text-muted-foreground text-xs">(اختياري)</span></Label>
@@ -1251,8 +1266,9 @@ export default function Ads() {
             mobileImageUrl:  editTarget.mobileImageUrl ?? "",
             imageUrl:        editTarget.imageUrl ?? "",
             linkUrl:         editTarget.linkUrl        ?? "",
-            whatsappNumber:  editTarget.whatsappNumber ?? "",
-            linkPriority:    editTarget.linkPriority   ?? "whatsapp",
+            whatsappNumber:  editTarget.whatsappNumber  ?? "",
+            whatsappMessage: editTarget.whatsappMessage ?? "",
+            linkPriority:    editTarget.linkPriority    ?? "whatsapp",
             title:           editTarget.title    ?? "",
             order:           editTarget.order,
             duration:        editTarget.duration ?? 6,

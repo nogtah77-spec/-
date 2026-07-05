@@ -135,6 +135,7 @@ export interface Ad {
   linkUrl?: string;
   whatsappNumber?: string;       // رقم واتساب للتواصل المباشر عند النقر
   linkPriority?: "whatsapp" | "url"; // الأولوية لو الاثنان موجودان (افتراضي: whatsapp)
+  whatsappMessage?: string;          // الرسالة الجاهزة اللي بتظهر للعميل عند فتح الواتساب
   title?: string;
   order: number;
   duration: number;

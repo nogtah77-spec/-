@@ -603,14 +603,18 @@ function useAdTracking() {
       // كلاهما موجود — نحترم الأولوية
       if (priority === "whatsapp") {
         actionType = "whatsapp";
-        openUrl    = `https://wa.me/${ad.whatsappNumber!.replace(/\D/g, "")}`;
+        const phone = ad.whatsappNumber!.replace(/\D/g, "");
+        const msg   = ad.whatsappMessage?.trim();
+        openUrl     = `https://wa.me/${phone}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
       } else {
         actionType = "url";
         openUrl    = ad.linkUrl;
       }
     } else if (hasWa) {
       actionType = "whatsapp";
-      openUrl    = `https://wa.me/${ad.whatsappNumber!.replace(/\D/g, "")}`;
+      const phone = ad.whatsappNumber!.replace(/\D/g, "");
+      const msg   = ad.whatsappMessage?.trim();
+      openUrl     = `https://wa.me/${phone}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
     } else if (hasUrl) {
       actionType = "url";
       openUrl    = ad.linkUrl;
