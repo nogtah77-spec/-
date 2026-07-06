@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import type { ReactNode } from "react";
 import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink } from "lucide-react";
-import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
+import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { getTiktokUrl, getTiktokName } from "@/lib/socials";
 
@@ -56,6 +56,11 @@ export function Footer() {
       icon: <Instagram className="h-4 w-4" />,
       label: "إنستغرام",
       href: settings.instagram,
+    },
+    settings.telegram && {
+      icon: <TelegramIcon className="h-4 w-4" />,
+      label: "تيليجرام",
+      href: settings.telegram,
     },
   ].filter(Boolean) as { icon: ReactNode; label: string; href: string }[];
 

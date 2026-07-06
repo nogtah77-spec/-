@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate,
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -15,6 +15,7 @@ const sidebarItems = [
   { href: "/admin/users", label: "المستخدمين", icon: Users },
   { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck },
   { separator: true },
+  { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser },
   { href: "/admin/inquiries", label: "استفسارات العملاء", icon: MessageSquare, badge: "inquiries" },
   { href: "/admin/property-requests", label: "طلبات إضافة عقار", icon: ClipboardList, badge: "propertyRequests" },
   { href: "/admin/finishing-requests", label: "طلبات التشطيبات", icon: Wrench, badge: "finishingRequests" },

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MapPin, Facebook, Instagram, Plus, Play, ExternalLink } from "lucide-react";
-import { WhatsAppIcon, TikTokIcon } from "@/components/icons/BrandIcons";
+import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -216,6 +216,13 @@ export default function Settings() {
                         رابط إنستغرام
                       </Label>
                       <Input id="instagram" dir="ltr" className="text-right text-xs" value={form.instagram} onChange={set("instagram")} placeholder="https://instagram.com/..." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telegram" className="flex items-center gap-2">
+                        <TelegramIcon className="h-3.5 w-3.5 text-accent" />
+                        رابط تيليجرام
+                      </Label>
+                      <Input id="telegram" dir="ltr" className="text-right text-xs" value={form.telegram ?? ""} onChange={set("telegram")} placeholder="https://t.me/..." />
                     </div>
                   </div>
                 </div>

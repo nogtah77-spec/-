@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
 import { Menu, MapPin, Sparkles } from "lucide-react";
-import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
+import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "../ui/sheet";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -45,6 +45,7 @@ export function Navbar() {
   const whatsappHref = settings.whatsapp
     ? `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`
     : null;
+  const telegramHref = settings.telegram || null;
   const mapsHref = settings.mapsUrl || null;
 
   return (
@@ -113,6 +114,18 @@ export function Navbar() {
           >
             <TikTokIcon className="h-4 w-4" />
           </a>
+          {telegramHref && (
+            <a
+              href={telegramHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="تيليجرام"
+              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-[#2AABEE] hover:bg-[#2AABEE]/10 transition-colors"
+              data-testid="link-telegram"
+            >
+              <TelegramIcon className="h-4 w-4" />
+            </a>
+          )}
           {mapsHref && (
             <a
               href={mapsHref}
@@ -233,6 +246,13 @@ export function Navbar() {
                 <TikTokIcon className="h-4 w-4" />
                 تيك توك
               </a>
+              {telegramHref && (
+                <a href={telegramHref} target="_blank" rel="noopener noreferrer"
+                  className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-[#2AABEE] hover:bg-[#2AABEE]/10 transition-colors flex items-center gap-2">
+                  <TelegramIcon className="h-4 w-4" />
+                  تيليجرام
+                </a>
+              )}
               {mapsHref && (
                 <a href={mapsHref} target="_blank" rel="noopener noreferrer"
                   className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2">

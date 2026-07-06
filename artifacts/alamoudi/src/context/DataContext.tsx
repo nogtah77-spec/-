@@ -40,6 +40,8 @@ export interface Property {
   floorText?: string;
   location?: string;
   source?: string;
+  sourcePhones?: string[];
+  sourceEmail?: string;
   views?: number;
 }
 
@@ -163,6 +165,7 @@ export interface SiteSettings {
   tiktokAvatar: string;
   facebook: string;
   instagram: string;
+  telegram: string;
   mapsUrl: string;
   heroImageUrl: string;
   heroOverlayOpacity: number;
@@ -184,6 +187,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   tiktokAvatar: "",
   facebook: "",
   instagram: "",
+  telegram: "",
   mapsUrl: "https://maps.google.com",
   heroImageUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
   heroOverlayOpacity: 85,

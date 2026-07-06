@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -52,6 +52,8 @@ export default function PropertyForm() {
     floorText: existing?.floorText ?? "",
     location: existing?.location ?? "",
     source: existing?.source ?? (existing?.code ? SEED_SOURCES[existing.code] ?? "" : ""),
+    sourcePhones: existing?.sourcePhones ?? [""],
+    sourceEmail: existing?.sourceEmail ?? "",
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);
@@ -329,9 +331,68 @@ export default function PropertyForm() {
                   </Select>
                   <p className="text-xs text-muted-foreground">يظهر للمدير فقط</p>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">المصدر (خاص)</Label>
-                  <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="بروكر / مباشر / اسم المصدر..." />
+                <div className="border-t pt-4 space-y-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">بيانات المصدر / التواصل</p>
+                  <div className="space-y-2">
+                    <Label className="text-sm">اسم المصدر</Label>
+                    <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="بروكر / مالك / اسم المصدر..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5" />
+                      أرقام التواصل
+                    </Label>
+                    <div className="space-y-2">
+                      {form.sourcePhones.map((ph, i) => (
+                        <div key={i} className="flex gap-2">
+                          <Input
+                            dir="ltr"
+                            className="flex-1 text-right"
+                            placeholder="+20 10 0000 0000"
+                            value={ph}
+                            onChange={e => {
+                              const updated = [...form.sourcePhones];
+                              updated[i] = e.target.value;
+                              set("sourcePhones", updated);
+                            }}
+                          />
+                          {form.sourcePhones.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => set("sourcePhones", form.sourcePhones.filter((_, idx) => idx !== i))}
+                              className="w-9 h-9 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors flex-shrink-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {form.sourcePhones.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={() => set("sourcePhones", [...form.sourcePhones, ""])}
+                          className="w-full flex items-center justify-center gap-1.5 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-accent hover:border-accent transition-colors"
+                        >
+                          <Plus className="h-4 w-4" />
+                          أضف رقم
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5" />
+                      البريد الإلكتروني
+                    </Label>
+                    <Input
+                      dir="ltr"
+                      className="text-right"
+                      type="email"
+                      placeholder="example@mail.com"
+                      value={form.sourceEmail}
+                      onChange={e => set("sourceEmail", e.target.value)}
+                    />
+                  </div>
                   <p className="text-xs text-muted-foreground">خاص بالإدارة — لا يظهر للزوّار</p>
                 </div>
               </CardContent>
