@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
+import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
@@ -20,10 +21,6 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
-/** فتح رابط الفيديو — دايماً في المتصفح علشان يشتغل حتى بدون تطبيق */
-function openVideoLink(url: string) {
-  window.open(url, "_blank", "noopener,noreferrer");
-}
 
 const categoryLabels: Record<string, string> = {
   sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
@@ -125,6 +122,7 @@ export default function PropertyDetails() {
   const detailVideoThumb = images.length === 0 ? getVideoThumbnailUrl(property.videoUrl) : null;
   const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
   const showDetailVideoPoster = images.length === 0 && propHasVideo && (!detailVideoThumb || detailThumbFailed);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -278,7 +276,7 @@ export default function PropertyDetails() {
             )}
             {property.videoUrl && (
               <button
-                onClick={() => openVideoLink(property.videoUrl!)}
+                onClick={() => setVideoModalOpen(true)}
                 className="flex items-center gap-1.5 bg-accent text-white rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
               >
                 <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
@@ -299,8 +297,8 @@ export default function PropertyDetails() {
             <div
               role="button"
               tabIndex={0}
-              onClick={() => openVideoLink(property.videoUrl!)}
-              onKeyDown={e => e.key === "Enter" && openVideoLink(property.videoUrl!)}
+              onClick={() => setVideoModalOpen(true)}
+              onKeyDown={e => e.key === "Enter" && setVideoModalOpen(true)}
               className="group relative block h-[300px] sm:h-[380px] rounded-2xl overflow-hidden mb-10 bg-muted cursor-pointer"
               data-testid="link-video-cover"
             >
@@ -373,7 +371,7 @@ export default function PropertyDetails() {
                 )}
                 {property.videoUrl && (
                   <button
-                    onClick={() => openVideoLink(property.videoUrl!)}
+                    onClick={() => setVideoModalOpen(true)}
                     data-testid="link-watch-video"
                     className="flex items-center gap-1.5 bg-accent text-white rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
                   >
@@ -573,6 +571,14 @@ export default function PropertyDetails() {
         </div>
       </main>
       <Footer />
+
+      {property.videoUrl && (
+        <VideoPlayerModal
+          open={videoModalOpen}
+          onClose={() => setVideoModalOpen(false)}
+          videoUrl={property.videoUrl}
+        />
+      )}
     </div>
   );
 }
