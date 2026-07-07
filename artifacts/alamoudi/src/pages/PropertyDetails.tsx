@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PropertyGallery } from "@/components/ui/PropertyGallery";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
-  Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil
+  Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
+  Mail, Link as LinkIcon, FileText
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
@@ -433,6 +434,64 @@ export default function PropertyDetails() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Source info — admin only */}
+              {isStaff && (
+                (property.sourcePhones?.some(ph => ph.trim()) ||
+                 property.sourceEmail?.trim() ||
+                 property.sourceLocation?.trim() ||
+                 property.sourceNotes?.trim() ||
+                 property.source?.trim())
+              ) && (
+                <Card className="card-luxury border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                      <FileText className="h-4 w-4" />
+                      بيانات المصدر
+                      <span className="text-[10px] font-normal bg-amber-200/60 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">للمدير فقط</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {property.source?.trim() && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground w-20 flex-shrink-0">المصدر</span>
+                        <span className="font-medium">{property.source}</span>
+                      </div>
+                    )}
+                    {(property.sourcePhones ?? []).filter(ph => ph.trim()).map((ph, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
+                        <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-accent hover:underline font-medium" dir="ltr">
+                          <Phone className="h-3.5 w-3.5 flex-shrink-0" />{ph}
+                        </a>
+                      </div>
+                    ))}
+                    {property.sourceEmail?.trim() && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
+                        <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-accent hover:underline" dir="ltr">
+                          <Mail className="h-3.5 w-3.5 flex-shrink-0" />{property.sourceEmail}
+                        </a>
+                      </div>
+                    )}
+                    {property.sourceLocation?.trim() && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground w-20 flex-shrink-0">الموقع</span>
+                        <a href={property.sourceLocation} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-accent hover:underline">
+                          <LinkIcon className="h-3.5 w-3.5 flex-shrink-0" />افتح الرابط
+                        </a>
+                      </div>
+                    )}
+                    {property.sourceNotes?.trim() && (
+                      <div className="flex gap-2 text-sm">
+                        <span className="text-muted-foreground w-20 flex-shrink-0">ملاحظات</span>
+                        <p className="text-sm leading-relaxed whitespace-pre-line">{property.sourceNotes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Map */}
               {property.mapsUrl && (

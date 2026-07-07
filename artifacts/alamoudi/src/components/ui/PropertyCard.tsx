@@ -183,7 +183,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
         <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[65%]">
-          <Badge className="bg-background/90 text-foreground backdrop-blur-sm text-[11px] px-2 py-0.5">{property.typeName || "عقار"}</Badge>
+          <Badge className="bg-white/95 text-foreground border border-white/60 shadow-sm shadow-black/20 backdrop-blur-sm text-[11px] px-2 py-0.5 font-semibold">{property.typeName || "عقار"}</Badge>
           <Badge className="bg-accent text-white border-none text-[11px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
         </div>
 

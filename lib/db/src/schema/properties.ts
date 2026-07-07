@@ -41,6 +41,10 @@ export const propertiesTable = pgTable("properties", {
   floorText: text("floor_text").notNull().default(""),
   location: text("location").notNull().default(""),
   source: text("source").notNull().default(""),
+  sourcePhones: jsonb("source_phones").$type<string[]>().notNull().default([]),
+  sourceEmail: text("source_email").notNull().default(""),
+  sourceLocation: text("source_location").notNull().default(""),
+  sourceNotes: text("source_notes").notNull().default(""),
   views: integer("views").notNull().default(0),
 });
 

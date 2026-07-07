@@ -54,6 +54,8 @@ export default function PropertyForm() {
     source: existing?.source ?? (existing?.code ? SEED_SOURCES[existing.code] ?? "" : ""),
     sourcePhones: existing?.sourcePhones ?? [""],
     sourceEmail: existing?.sourceEmail ?? "",
+    sourceLocation: existing?.sourceLocation ?? "",
+    sourceNotes: existing?.sourceNotes ?? "",
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);
@@ -391,6 +393,28 @@ export default function PropertyForm() {
                       placeholder="example@mail.com"
                       value={form.sourceEmail}
                       onChange={e => set("sourceEmail", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-1.5">
+                      <LinkIcon className="h-3.5 w-3.5" />
+                      رابط الموقع (Location)
+                    </Label>
+                    <Input
+                      dir="ltr"
+                      className="text-right text-xs"
+                      placeholder="https://maps.google.com/..."
+                      value={form.sourceLocation}
+                      onChange={e => set("sourceLocation", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">ملاحظات إضافية</Label>
+                    <Textarea
+                      rows={3}
+                      placeholder="تفاصيل إضافية عن المصدر أو موقع العقار..."
+                      value={form.sourceNotes}
+                      onChange={e => set("sourceNotes", e.target.value)}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">خاص بالإدارة — لا يظهر للزوّار</p>

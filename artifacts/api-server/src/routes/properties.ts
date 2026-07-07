@@ -27,7 +27,7 @@ router.get("/properties", async (req, res): Promise<void> => {
   // Public view: only active listings; strip manager-only fields.
   const rows = await db.select().from(propertiesTable)
     .where(eq(propertiesTable.status, "active"));
-  const publicRows = rows.map(({ source: _source, agentType: _agentType, ...rest }) => rest);
+  const publicRows = rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest);
   res.json(publicRows);
 });
 

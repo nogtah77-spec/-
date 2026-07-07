@@ -42,6 +42,8 @@ export interface Property {
   source?: string;
   sourcePhones?: string[];
   sourceEmail?: string;
+  sourceLocation?: string;
+  sourceNotes?: string;
   views?: number;
 }
 
