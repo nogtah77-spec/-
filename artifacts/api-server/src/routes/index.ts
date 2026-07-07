@@ -16,6 +16,7 @@ import adsManagementRouter from "./adsManagement";
 import smartBannersRouter from "./smartBanners";
 import activityLogsRouter from "./activityLogs";
 import visitorsRouter from "./visitors";
+import finishingGalleryRouter from "./finishingGallery";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(adsManagementRouter);
 router.use(smartBannersRouter);
 router.use(activityLogsRouter);
 router.use(visitorsRouter);
+router.use(finishingGalleryRouter);
 
 export default router;

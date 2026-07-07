@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser,
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -19,6 +19,7 @@ const sidebarItems = [
   { href: "/admin/inquiries", label: "استفسارات العملاء", icon: MessageSquare, badge: "inquiries" },
   { href: "/admin/property-requests", label: "طلبات إضافة عقار", icon: ClipboardList, badge: "propertyRequests" },
   { href: "/admin/finishing-requests", label: "طلبات التشطيبات", icon: Wrench, badge: "finishingRequests" },
+  { href: "/admin/finishing-gallery", label: "معرض التشطيبات", icon: Images },
   ...(AI_ASSISTANT_ENABLED
     ? [{ href: "/admin/ai-leads", label: "عملاء المستشار الذكي", icon: Sparkles, badge: "aiLeads" }]
     : []),

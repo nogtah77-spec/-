@@ -11,3 +11,4 @@ export * from "./activityLogs";
 export * from "./visitorPings";
 export * from "./adEvents";
 export * from "./smartBanners";
+export * from "./finishingGallery";

@@ -47,7 +47,8 @@ const Backup = lazy(() => import("@/pages/admin/Backup"));
 const AdsAdmin        = lazy(() => import("@/pages/admin/Ads"));
 const AdAnalytics     = lazy(() => import("@/pages/admin/AdAnalytics"));
 const SmartBanners    = lazy(() => import("@/pages/admin/SmartBanners"));
-const Sources         = lazy(() => import("@/pages/admin/Sources"));
+const Sources              = lazy(() => import("@/pages/admin/Sources"));
+const FinishingGallery     = lazy(() => import("@/pages/admin/FinishingGallery"));
 
 const queryClient = new QueryClient();
 
@@ -206,6 +207,7 @@ function Router() {
       <Route path="/admin/ads/:id/analytics">{() => <Protected component={AdAnalytics} />}</Route>
       <Route path="/admin/smart-banners">{() => <Protected component={SmartBanners} />}</Route>
       <Route path="/admin/sources">{() => <Protected component={Sources} />}</Route>
+      <Route path="/admin/finishing-gallery">{() => <Protected component={FinishingGallery} />}</Route>
 
       <Route component={NotFound} />
     </Switch>
