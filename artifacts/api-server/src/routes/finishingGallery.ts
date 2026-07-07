@@ -1,52 +1,69 @@
 import { Router, type IRouter } from "express";
-import { randomUUID } from "node:crypto";
-import { db, finishingGalleryTable } from "@workspace/db";
-import { eq, asc } from "drizzle-orm";
+import { db, settingsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { requireStaff } from "../lib/auth";
 import { logActivity, actorFromReq } from "../lib/activityLog";
 
+export interface GalleryImage { id: string; url: string; title: string }
+export interface GalleryVideo { id: string; url: string; title: string }
+export interface GalleryConfig {
+  interval: number;
+  images: GalleryImage[];
+  videos: GalleryVideo[];
+}
+
+const DEFAULT_CONFIG: GalleryConfig = { interval: 4, images: [], videos: [] };
+
+export async function getGalleryConfig(): Promise<GalleryConfig> {
+  const [row] = await db.select().from(settingsTable).where(eq(settingsTable.id, "main")).limit(1);
+  const data = (row?.data ?? {}) as Record<string, unknown>;
+  const cfg = data.finishingGallery as GalleryConfig | undefined;
+  if (!cfg) return DEFAULT_CONFIG;
+  return {
+    interval: typeof cfg.interval === "number" ? cfg.interval : 4,
+    images: Array.isArray(cfg.images) ? cfg.images : [],
+    videos: Array.isArray(cfg.videos) ? cfg.videos : [],
+  };
+}
+
+async function saveGalleryConfig(config: GalleryConfig): Promise<void> {
+  const [row] = await db.select().from(settingsTable).where(eq(settingsTable.id, "main")).limit(1);
+  const existing = (row?.data ?? {}) as Record<string, unknown>;
+  const newData = { ...existing, finishingGallery: config };
+  await db.insert(settingsTable).values({ id: "main", data: newData })
+    .onConflictDoUpdate({ target: settingsTable.id, set: { data: newData } });
+}
+
 const router: IRouter = Router();
 
-router.get("/finishing-gallery", async (req, res): Promise<void> => {
-  const sess = req.session as { userId?: string; role?: string };
-  const isStaff = !!sess?.userId && (sess.role === "admin" || sess.role === "agent");
-  const rows = await db.select().from(finishingGalleryTable).orderBy(asc(finishingGalleryTable.displayOrder));
-  res.json(isStaff ? rows : rows.filter(r => r.active));
+router.get("/finishing-gallery", async (_req, res): Promise<void> => {
+  const config = await getGalleryConfig();
+  res.json(config);
 });
 
-router.post("/finishing-gallery", requireStaff, async (req, res): Promise<void> => {
-  const { title = "", description = "", imageUrl = "", videoUrl = "", displayOrder = 0, active = true } = req.body as {
-    title?: string; description?: string; imageUrl?: string;
-    videoUrl?: string; displayOrder?: number; active?: boolean;
+router.put("/finishing-gallery", requireStaff, async (req, res): Promise<void> => {
+  const body = req.body as GalleryConfig;
+  const config: GalleryConfig = {
+    interval: Math.max(1, Math.min(60, Number(body.interval) || 4)),
+    images: Array.isArray(body.images) ? body.images.map((img: GalleryImage) => ({
+      id: String(img.id),
+      url: String(img.url),
+      title: String(img.title ?? ""),
+    })) : [],
+    videos: Array.isArray(body.videos) ? body.videos.map((vid: GalleryVideo) => ({
+      id: String(vid.id),
+      url: String(vid.url),
+      title: String(vid.title ?? ""),
+    })) : [],
   };
-  const item = {
-    id: randomUUID(),
-    title, description, imageUrl, videoUrl,
-    displayOrder: Number(displayOrder),
-    active: !!active,
-    createdAt: new Date().toISOString(),
-  };
-  await db.insert(finishingGalleryTable).values(item);
-  await logActivity({ action: "created", entityType: "finishing_gallery", title: `تم إضافة عنصر للمعرض: ${title || "بدون عنوان"}`, actor: actorFromReq(req) });
-  res.status(201).json(item);
-});
-
-router.patch("/finishing-gallery/:id", requireStaff, async (req, res): Promise<void> => {
-  const id = String(req.params.id);
-  const [existing] = await db.select().from(finishingGalleryTable).where(eq(finishingGalleryTable.id, id)).limit(1);
-  if (!existing) { res.status(404).json({ error: "not found" }); return; }
-  await db.update(finishingGalleryTable).set(req.body).where(eq(finishingGalleryTable.id, id));
-  await logActivity({ action: "updated", entityType: "finishing_gallery", title: `تم تعديل عنصر المعرض: ${existing.title || "بدون عنوان"}`, actor: actorFromReq(req) });
-  res.json({ ...existing, ...req.body });
-});
-
-router.delete("/finishing-gallery/:id", requireStaff, async (req, res): Promise<void> => {
-  const id = String(req.params.id);
-  const [existing] = await db.select().from(finishingGalleryTable).where(eq(finishingGalleryTable.id, id)).limit(1);
-  if (!existing) { res.status(404).json({ error: "not found" }); return; }
-  await db.delete(finishingGalleryTable).where(eq(finishingGalleryTable.id, id));
-  await logActivity({ action: "deleted", entityType: "finishing_gallery", title: `تم حذف عنصر المعرض: ${existing.title || "بدون عنوان"}`, actor: actorFromReq(req) });
-  res.json({ ok: true });
+  await saveGalleryConfig(config);
+  await logActivity({
+    action: "updated",
+    entityType: "finishing_gallery",
+    title: `تم تحديث معرض التشطيبات — ${config.images.length} صورة، ${config.videos.length} فيديو`,
+    actor: actorFromReq(req),
+  });
+  res.json(config);
 });
 
 export default router;

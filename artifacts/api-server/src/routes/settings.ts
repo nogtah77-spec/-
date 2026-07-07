@@ -7,7 +7,10 @@ const router: IRouter = Router();
 
 router.get("/settings", async (_req, res): Promise<void> => {
   const [row] = await db.select().from(settingsTable).limit(1);
-  res.json(row?.data ?? {});
+  const data = { ...(row?.data ?? {}) } as Record<string, unknown>;
+  // Exclude large gallery blobs from app startup payload — served via /api/finishing-gallery
+  delete data.finishingGallery;
+  res.json(data);
 });
 
 router.put("/settings", requireStaff, async (req, res): Promise<void> => {
@@ -16,10 +19,14 @@ router.put("/settings", requireStaff, async (req, res): Promise<void> => {
     res.status(400).json({ error: "settings must be an object" });
     return;
   }
+  // Preserve gallery data when saving platform settings
+  const [row] = await db.select().from(settingsTable).limit(1);
+  const existing = (row?.data ?? {}) as Record<string, unknown>;
+  const merged = { ...body, finishingGallery: existing.finishingGallery };
   await db
     .insert(settingsTable)
-    .values({ id: "main", data: body })
-    .onConflictDoUpdate({ target: settingsTable.id, set: { data: body } });
+    .values({ id: "main", data: merged })
+    .onConflictDoUpdate({ target: settingsTable.id, set: { data: merged } });
   await logActivity({
     action: "updated",
     entityType: "settings",

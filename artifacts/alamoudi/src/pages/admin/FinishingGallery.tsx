@@ -1,85 +1,66 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Image, Play, Eye, EyeOff, GripVertical } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Plus, Trash2, Upload, Link, Play, Image as ImageIcon, Save, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 
-interface GalleryItem {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  videoUrl: string;
-  displayOrder: number;
-  active: boolean;
-  createdAt: string;
-}
+interface GalleryImage { id: string; url: string; title: string }
+interface GalleryVideo { id: string; url: string; title: string }
+interface GalleryConfig { interval: number; images: GalleryImage[]; videos: GalleryVideo[] }
 
-const emptyForm = { title: "", description: "", imageUrl: "", videoUrl: "", displayOrder: 0, active: true };
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+const ACCEPTED = "image/jpeg,image/png,image/webp,image/gif,image/avif";
+
+async function compressImage(file: File, maxW = 1400, quality = 0.88): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > maxW) { height = Math.round((height / width) * maxW); width = maxW; }
+      const canvas = document.createElement("canvas");
+      canvas.width = width; canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/webp", quality));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 
 export default function FinishingGallery() {
   const { toast } = useToast();
-  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [config, setConfig] = useState<GalleryConfig>({ interval: 4, images: [], videos: [] });
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<GalleryItem | null>(null);
-  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<GalleryItem | null>(null);
-  const [thumbErrors, setThumbErrors] = useState<Record<string, boolean>>({});
+  const [uploading, setUploading] = useState(false);
+  const [imgUrlInput, setImgUrlInput] = useState("");
+  const [vidUrlInput, setVidUrlInput] = useState("");
+  const [vidTitleInput, setVidTitleInput] = useState("");
+  const [vidThumbErrors, setVidThumbErrors] = useState<Record<string, boolean>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchItems = async () => {
-    try {
-      const data = await api.get<GalleryItem[]>("/finishing-gallery");
-      setItems(data);
-    } catch {
-      toast({ title: "فشل تحميل المعرض", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { void fetchItems(); }, []);
-
-  const openAdd = () => {
-    setEditing(null);
-    setForm({ ...emptyForm, displayOrder: items.length });
-    setDialogOpen(true);
-  };
-
-  const openEdit = (item: GalleryItem) => {
-    setEditing(item);
-    setForm({ title: item.title, description: item.description, imageUrl: item.imageUrl, videoUrl: item.videoUrl, displayOrder: item.displayOrder, active: item.active });
-    setDialogOpen(true);
-  };
+  useEffect(() => {
+    api.get<GalleryConfig>("/finishing-gallery")
+      .then(data => setConfig(data))
+      .catch(() => toast({ title: "فشل تحميل المعرض", variant: "destructive" }))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSave = async () => {
-    if (!form.imageUrl && !form.videoUrl) {
-      toast({ title: "يجب إدخال صورة أو رابط فيديو على الأقل", variant: "destructive" });
-      return;
-    }
     setSaving(true);
     try {
-      if (editing) {
-        const updated = await api.patch<GalleryItem>(`/finishing-gallery/${editing.id}`, form);
-        setItems(prev => prev.map(i => i.id === editing.id ? { ...i, ...updated } : i));
-        toast({ title: "تم تحديث العنصر" });
-      } else {
-        const created = await api.post<GalleryItem>("/finishing-gallery", form);
-        setItems(prev => [...prev, created]);
-        toast({ title: "تم إضافة العنصر" });
-      }
-      setDialogOpen(false);
+      await api.put("/finishing-gallery", config);
+      toast({ title: "تم حفظ المعرض بنجاح" });
     } catch {
       toast({ title: "فشل الحفظ", variant: "destructive" });
     } finally {
@@ -87,204 +68,274 @@ export default function FinishingGallery() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setUploading(true);
     try {
-      await api.del(`/finishing-gallery/${deleteTarget.id}`);
-      setItems(prev => prev.filter(i => i.id !== deleteTarget.id));
-      toast({ title: "تم حذف العنصر" });
+      const compressed = await Promise.all(files.map(f => compressImage(f)));
+      const newImgs: GalleryImage[] = compressed.map(url => ({ id: uid(), url, title: "" }));
+      setConfig(c => ({ ...c, images: [...c.images, ...newImgs] }));
+      toast({ title: `تم رفع ${files.length} ${files.length === 1 ? "صورة" : "صور"}` });
     } catch {
-      toast({ title: "فشل الحذف", variant: "destructive" });
+      toast({ title: "فشل ضغط الصور", variant: "destructive" });
     } finally {
-      setDeleteTarget(null);
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const toggleActive = async (item: GalleryItem) => {
-    try {
-      await api.patch(`/finishing-gallery/${item.id}`, { active: !item.active });
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, active: !i.active } : i));
-    } catch {
-      toast({ title: "فشل التحديث", variant: "destructive" });
-    }
+  const addImageUrl = () => {
+    const url = imgUrlInput.trim();
+    if (!url) return;
+    setConfig(c => ({ ...c, images: [...c.images, { id: uid(), url, title: "" }] }));
+    setImgUrlInput("");
   };
 
-  const videoThumb = (url: string, id: string) =>
-    !thumbErrors[id] ? getVideoThumbnailUrl(url) : null;
+  const removeImage = useCallback((id: string) => {
+    setConfig(c => ({ ...c, images: c.images.filter(img => img.id !== id) }));
+  }, []);
+
+  const addVideo = () => {
+    const url = vidUrlInput.trim();
+    if (!url) return;
+    if (!hasVideo(url)) {
+      toast({ title: "رابط غير صحيح — يدعم يوتيوب وتيك توك فقط", variant: "destructive" });
+      return;
+    }
+    setConfig(c => ({ ...c, videos: [...c.videos, { id: uid(), url, title: vidTitleInput.trim() }] }));
+    setVidUrlInput(""); setVidTitleInput("");
+  };
+
+  const removeVideo = useCallback((id: string) => {
+    setConfig(c => ({ ...c, videos: c.videos.filter(v => v.id !== id) }));
+  }, []);
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64 text-muted-foreground">جارٍ التحميل...</div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-4xl">
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">معرض أعمال التشطيبات</h1>
-            <p className="text-sm text-muted-foreground mt-1">أضف صور وفيديوهات أعمالك السابقة لتظهر في صفحة خدمات التشطيبات</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {config.images.length} صورة · {config.videos.length} فيديو
+            </p>
           </div>
-          <Button onClick={openAdd} className="bg-accent text-white hover:bg-accent/90 gap-2">
-            <Plus className="h-4 w-4" />إضافة عنصر
+          <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90 gap-2">
+            <Save className="h-4 w-4" />
+            {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
           </Button>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="aspect-square bg-muted animate-pulse rounded-xl" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <Card className="card-luxury border-none">
-            <CardContent className="py-16 text-center">
-              <Image className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground">لا توجد عناصر بعد — أضف صور وفيديوهات أعمالك</p>
-              <Button onClick={openAdd} className="mt-4 bg-accent text-white hover:bg-accent/90 gap-2">
-                <Plus className="h-4 w-4" />أضف أول عنصر
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {items.map(item => {
-              const thumb = item.videoUrl && hasVideo(item.videoUrl)
-                ? videoThumb(item.videoUrl, item.id)
-                : null;
-              const coverSrc = item.imageUrl || thumb;
-              const isVideo = !!item.videoUrl && hasVideo(item.videoUrl);
-
-              return (
-                <div key={item.id} className={cn("group relative rounded-xl overflow-hidden border border-border aspect-square bg-muted", !item.active && "opacity-50")}>
-                  {coverSrc ? (
-                    <img
-                      src={coverSrc}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      onError={() => setThumbErrors(p => ({ ...p, [item.id]: true }))}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-muted">
-                      <Image className="h-8 w-8 text-muted-foreground/30" />
-                    </div>
-                  )}
-
-                  {isVideo && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
-                        <Play className="h-4 w-4 text-white fill-white translate-x-px" />
-                      </span>
-                    </div>
-                  )}
-
-                  {item.title && (
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-4 pb-2">
-                      <p className="text-white text-xs font-medium line-clamp-1">{item.title}</p>
-                    </div>
-                  )}
-
-                  <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEdit(item)} className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-white" title="تعديل">
-                      <Pencil className="h-3.5 w-3.5 text-foreground" />
-                    </button>
-                    <button onClick={() => setDeleteTarget(item)} className="w-7 h-7 rounded-full bg-red-500/90 flex items-center justify-center shadow hover:bg-red-500" title="حذف">
-                      <Trash2 className="h-3.5 w-3.5 text-white" />
-                    </button>
-                    <button onClick={() => toggleActive(item)} className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow hover:bg-white" title={item.active ? "إخفاء" : "إظهار"}>
-                      {item.active ? <Eye className="h-3.5 w-3.5 text-foreground" /> : <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />}
-                    </button>
-                  </div>
-
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    {isVideo && (
-                      <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-sm">
-                        <Play className="h-2.5 w-2.5 fill-white" />فيديو
-                      </span>
-                    )}
-                    {!item.active && (
-                      <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full backdrop-blur-sm">مخفي</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>{editing ? "تعديل عنصر" : "إضافة عنصر جديد"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>رابط الصورة</Label>
-              <Input
-                value={form.imageUrl}
-                onChange={e => setForm(p => ({ ...p, imageUrl: e.target.value }))}
-                placeholder="https://example.com/image.jpg"
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">الصق رابط صورة مباشر (jpg، png، webp...)</p>
-            </div>
-            <div className="space-y-2">
-              <Label>رابط الفيديو (اختياري)</Label>
-              <Input
-                value={form.videoUrl}
-                onChange={e => setForm(p => ({ ...p, videoUrl: e.target.value }))}
-                placeholder="https://www.youtube.com/watch?v=... أو TikTok"
-                dir="ltr"
-              />
-              <p className="text-xs text-muted-foreground">يدعم روابط يوتيوب وتيك توك — سيُفتح داخل المنصة عند الضغط عليه</p>
-            </div>
-            <div className="space-y-2">
-              <Label>العنوان (اختياري)</Label>
-              <Input value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder="مثال: شقة سوبر لوكس - التجمع" />
-            </div>
-            <div className="space-y-2">
-              <Label>وصف (اختياري)</Label>
-              <Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="وصف مختصر للعمل..." className="min-h-[70px]" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>ترتيب العرض</Label>
-                <Input type="number" value={form.displayOrder} onChange={e => setForm(p => ({ ...p, displayOrder: Number(e.target.value) }))} min={0} />
-              </div>
-              <div className="flex items-end gap-3 pb-0.5">
-                <Switch checked={form.active} onCheckedChange={v => setForm(p => ({ ...p, active: v }))} />
-                <Label className="cursor-pointer">{form.active ? "ظاهر" : "مخفي"}</Label>
-              </div>
-            </div>
-
-            {(form.imageUrl || (form.videoUrl && hasVideo(form.videoUrl))) && (
-              <div className="rounded-lg overflow-hidden border border-border aspect-video bg-muted">
-                <img
-                  src={form.imageUrl || getVideoThumbnailUrl(form.videoUrl) || ""}
-                  alt="معاينة"
-                  className="w-full h-full object-cover"
-                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+        {/* Interval Setting */}
+        <Card className="card-luxury border-none">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-accent" />
+              مدة التغيير بين الصور
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <Slider
+                  min={1} max={15} step={1}
+                  value={[config.interval]}
+                  onValueChange={([v]) => setConfig(c => ({ ...c, interval: v }))}
+                  className="w-full"
                 />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>1 ثانية</span>
+                  <span>15 ثانية</span>
+                </div>
+              </div>
+              <div className="w-24 text-center bg-accent/10 rounded-lg py-2 px-3 flex-shrink-0">
+                <p className="text-2xl font-bold text-accent">{config.interval}</p>
+                <p className="text-xs text-muted-foreground">ثانية</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Images Section */}
+        <Card className="card-luxury border-none">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-accent" />
+              الصور ({config.images.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Upload + URL Inputs */}
+            <div className="flex flex-wrap gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED}
+                multiple
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button
+                variant="outline"
+                className="gap-2 border-accent/40 text-accent hover:bg-accent/10"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload className="h-4 w-4" />
+                {uploading ? "جارٍ الضغط..." : "رفع صور"}
+              </Button>
+              <p className="w-full text-xs text-muted-foreground">
+                يدعم: JPG، PNG، WebP، AVIF — يتم ضغط الصور تلقائياً للحصول على أفضل جودة
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Input
+                value={imgUrlInput}
+                onChange={e => setImgUrlInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && addImageUrl()}
+                placeholder="أو الصق رابط صورة مباشر..."
+                dir="ltr"
+                className="flex-1"
+              />
+              <Button variant="outline" onClick={addImageUrl} className="gap-1.5 shrink-0">
+                <Link className="h-3.5 w-3.5" />إضافة
+              </Button>
+            </div>
+
+            {/* Image Grid */}
+            {config.images.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                {config.images.map((img) => (
+                  <div key={img.id} className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted">
+                    <img
+                      src={img.url}
+                      alt={img.title || "صورة"}
+                      className="w-full h-full object-cover"
+                      onError={e => { (e.target as HTMLImageElement).style.opacity = "0.3"; }}
+                    />
+                    <button
+                      onClick={() => removeImage(img.id)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                      title="حذف"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                className="border-2 border-dashed border-border rounded-xl p-10 text-center cursor-pointer hover:border-accent/40 hover:bg-accent/5 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">اضغط لرفع الصور أو اسحبها هنا</p>
               </div>
             )}
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90">
-              {saving ? "جارٍ الحفظ..." : editing ? "تحديث" : "إضافة"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-            <AlertDialogDescription>هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-500 text-white hover:bg-red-600">حذف</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Videos Section */}
+        <Card className="card-luxury border-none">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Play className="h-4 w-4 text-accent" />
+              الفيديوهات ({config.videos.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-2 items-end">
+              <div className="space-y-1.5">
+                <Label className="text-xs">رابط الفيديو (يوتيوب / تيك توك)</Label>
+                <Input
+                  value={vidUrlInput}
+                  onChange={e => setVidUrlInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && addVideo()}
+                  placeholder="https://youtube.com/watch?v=..."
+                  dir="ltr"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">عنوان (اختياري)</Label>
+                <Input
+                  value={vidTitleInput}
+                  onChange={e => setVidTitleInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && addVideo()}
+                  placeholder="مثال: شقة 3 غرف..."
+                />
+              </div>
+              <Button onClick={addVideo} className="bg-accent text-white hover:bg-accent/90 gap-1.5 shrink-0">
+                <Plus className="h-4 w-4" />إضافة
+              </Button>
+            </div>
+
+            {config.videos.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {config.videos.map((vid) => {
+                  const thumb = !vidThumbErrors[vid.id] ? getVideoThumbnailUrl(vid.url) : null;
+                  return (
+                    <div key={vid.id} className="group relative aspect-video rounded-lg overflow-hidden border border-border bg-muted">
+                      {thumb ? (
+                        <img
+                          src={thumb}
+                          alt={vid.title || "فيديو"}
+                          className="w-full h-full object-cover"
+                          onError={() => setVidThumbErrors(p => ({ ...p, [vid.id]: true }))}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <Play className="h-6 w-6 text-muted-foreground/30" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <span className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+                          <Play className="h-3.5 w-3.5 text-accent fill-accent translate-x-px" />
+                        </span>
+                      </div>
+                      {vid.title && (
+                        <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-1.5 pt-4">
+                          <p className="text-white text-[10px] font-medium line-clamp-1">{vid.title}</p>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => removeVideo(vid.id)}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow"
+                        title="حذف"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                <Play className="h-7 w-7 mx-auto text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">أضف روابط فيديو يوتيوب أو تيك توك</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Bottom Save */}
+        <div className="flex justify-end pb-4">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="bg-accent text-white hover:bg-accent/90 gap-2 px-8">
+            <Save className="h-4 w-4" />
+            {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
+          </Button>
+        </div>
+      </div>
     </AdminLayout>
   );
 }
