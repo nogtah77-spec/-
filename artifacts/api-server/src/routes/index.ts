@@ -17,6 +17,7 @@ import smartBannersRouter from "./smartBanners";
 import activityLogsRouter from "./activityLogs";
 import visitorsRouter from "./visitors";
 import finishingGalleryRouter from "./finishingGallery";
+import aboutPageRouter from "./aboutPage";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(smartBannersRouter);
 router.use(activityLogsRouter);
 router.use(visitorsRouter);
 router.use(finishingGalleryRouter);
+router.use(aboutPageRouter);
 
 export default router;
