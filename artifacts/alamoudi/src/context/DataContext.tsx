@@ -45,6 +45,7 @@ export interface Property {
   sourceLocation?: string;
   sourceNotes?: string;
   views?: number;
+  coverPriority?: "image" | "video";
 }
 
 export interface User {

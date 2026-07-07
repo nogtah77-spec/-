@@ -46,6 +46,7 @@ export const propertiesTable = pgTable("properties", {
   sourceLocation: text("source_location").notNull().default(""),
   sourceNotes: text("source_notes").notNull().default(""),
   views: integer("views").notNull().default(0),
+  coverPriority: text("cover_priority").notNull().default("image"),
 });
 
 export const insertPropertySchema = createInsertSchema(propertiesTable);

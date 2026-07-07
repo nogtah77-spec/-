@@ -56,9 +56,15 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
 
   const heroImg = property.images?.[0];
   const propHasVideo = hasVideo(property.videoUrl);
-  const videoThumb = !heroImg ? getVideoThumbnailUrl(property.videoUrl) : null;
-  const showVideoCover = !heroImg && !!videoThumb && !thumbFailed;
-  const showVideoPoster = !heroImg && propHasVideo && (!videoThumb || thumbFailed);
+  const videoFirst = property.coverPriority === "video" && propHasVideo;
+  const videoThumb = (videoFirst || !heroImg) ? getVideoThumbnailUrl(property.videoUrl) : null;
+  const showVideoCover = videoFirst
+    ? !!videoThumb && !thumbFailed
+    : !heroImg && !!videoThumb && !thumbFailed;
+  const showVideoPoster = videoFirst
+    ? (!videoThumb || thumbFailed)
+    : !heroImg && propHasVideo && (!videoThumb || thumbFailed);
+  const coverImg = videoFirst ? null : heroImg;
   const imageCount = property.images?.length || 0;
   const isNew = () => { try { return Date.now() - new Date(property.createdAt).getTime() < 7 * 86400000; } catch { return false; } };
   const goToDetails = () => navigate(`/properties/${property.id}`);
@@ -114,10 +120,10 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
     return (
       <Card onClick={goToDetails} className="flex flex-row overflow-hidden border-border shadow-sm group cursor-pointer card-luxury hover:-translate-y-0.5 transition-all duration-200 h-28">
         <div className="relative w-28 flex-shrink-0 bg-muted overflow-hidden">
-          {heroImg
-            ? <img src={heroImg} alt={property.title} className="w-full h-full object-cover" />
-            : showVideoCover
-              ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
+          {showVideoCover
+            ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
+            : coverImg
+              ? <img src={coverImg} alt={property.title} className="w-full h-full object-cover" />
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
           {(showVideoCover || showVideoPoster) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
@@ -142,7 +148,11 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           <div className="min-w-0">
             <div className="flex items-center justify-between gap-1.5">
               <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
-              {property.typeName && <span className="flex-shrink-0 text-[9px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{property.typeName}</span>}
+              {property.typeName && (
+            <span className="flex-shrink-0 text-[9px] font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded-full">
+              {property.typeName}
+            </span>
+          )}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
             {property.finishing && <p className="text-[10px] text-accent/90 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
@@ -165,10 +175,10 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
   return (
     <Card onClick={goToDetails} className="overflow-hidden border-border shadow-sm group cursor-pointer card-luxury flex flex-col h-full hover:-translate-y-1 transition-all duration-300">
       <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", imageHeight)}>
-        {heroImg
-          ? <img src={heroImg} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          : showVideoCover
-            ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {showVideoCover
+          ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          : coverImg
+            ? <img src={coverImg} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             : showVideoPoster
               ? <div className="w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center"><Video className="h-10 w-10 text-accent/50" /></div>
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
@@ -183,7 +193,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
         <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[65%]">
-          <Badge className="bg-white/95 text-foreground border border-white/60 shadow-sm shadow-black/20 backdrop-blur-sm text-[11px] px-2 py-0.5 font-semibold">{property.typeName || "عقار"}</Badge>
+          <Badge className="bg-black/60 text-amber-200 border border-amber-300/30 backdrop-blur-sm shadow shadow-black/30 text-[11px] px-2.5 py-0.5 font-bold tracking-wide">{property.typeName || "عقار"}</Badge>
           <Badge className="bg-accent text-white border-none text-[11px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
         </div>
 

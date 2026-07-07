@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +56,7 @@ export default function PropertyForm() {
     sourceEmail: existing?.sourceEmail ?? "",
     sourceLocation: existing?.sourceLocation ?? "",
     sourceNotes: existing?.sourceNotes ?? "",
+    coverPriority: existing?.coverPriority ?? "image",
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);
@@ -240,6 +241,38 @@ export default function PropertyForm() {
                 <div className="space-y-2">
                   <Label>رابط فيديو خارجي</Label>
                   <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} placeholder="أي رابط — YouTube، TikTok، Telegram، وغيره" dir="ltr" />
+                </div>
+
+                {/* Cover Priority */}
+                <div className="space-y-2">
+                  <Label className="text-sm">أولوية غلاف البطاقة</Label>
+                  <div className="flex rounded-lg border border-border overflow-hidden text-sm">
+                    <button
+                      type="button"
+                      onClick={() => set("coverPriority", "image")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 transition-colors ${
+                        form.coverPriority === "image" || !form.coverPriority
+                          ? "bg-accent text-white font-semibold"
+                          : "bg-background text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                      الصورة أولاً
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => set("coverPriority", "video")}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 border-r border-border transition-colors ${
+                        form.coverPriority === "video"
+                          ? "bg-accent text-white font-semibold"
+                          : "bg-background text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      الفيديو أولاً
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">اختر ما يظهر كغلاف للبطاقة عند توفّر الاثنين معاً</p>
                 </div>
                 <div className="space-y-2">
                   <Label>رابط خارجي للعقار</Label>
