@@ -254,7 +254,7 @@ export default function Home() {
               style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}
             >
               <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
-              أعرض عقارك
+              أعرض عقارك لدينا
             </Link>
             <Link
               href="/finishing-services"
