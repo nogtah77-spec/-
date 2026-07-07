@@ -10,6 +10,7 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useAIChat } from "@/context/AIChatContext";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
+import { buildWaUrl } from "@/lib/phone";
 import { getTiktokUrl } from "@/lib/socials";
 
 export function Navbar() {
@@ -43,7 +44,7 @@ export function Navbar() {
   ];
 
   const whatsappHref = settings.whatsapp
-    ? `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`
+    ? buildWaUrl(settings.whatsapp)
     : null;
   const telegramHref = settings.telegram || null;
   const mapsHref = settings.mapsUrl || null;

@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink } from "lucide-r
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { getTiktokUrl, getTiktokName } from "@/lib/socials";
+import { buildWaUrl } from "@/lib/phone";
 
 export function Footer() {
   const { settings } = useData();
@@ -22,7 +23,7 @@ export function Footer() {
     settings.whatsapp && {
       icon: <WhatsAppIcon className="h-4 w-4 flex-shrink-0 text-green-500" />,
       label: "واتساب",
-      href: `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`,
+      href: buildWaUrl(settings.whatsapp) ?? "#",
     },
     settings.email && {
       icon: <Mail className="h-4 w-4 flex-shrink-0" />,
@@ -40,7 +41,7 @@ export function Footer() {
     settings.whatsapp && {
       icon: <WhatsAppIcon className="h-4 w-4" />,
       label: "واتساب",
-      href: `https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`,
+      href: buildWaUrl(settings.whatsapp) ?? "#",
     },
     settings.tiktok && {
       icon: <TikTokIcon className="h-4 w-4" />,

@@ -7,6 +7,7 @@ import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
 import { useData } from "@/context/DataContext";
 import { getTiktokUrl, getTiktokName } from "@/lib/socials";
+import { normalizePhoneForWa } from "@/lib/phone";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -79,7 +80,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
 
   const handleWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const num = (settings.whatsapp || settings.phone1).replace(/[\s+]/g, "");
+    const num = normalizePhoneForWa(settings.whatsapp || settings.phone1);
     const text = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
     if (num) window.open(`https://wa.me/${num}?text=${text}`, "_blank");
     else toast({ title: "لم يتم إعداد واتساب", variant: "destructive" });

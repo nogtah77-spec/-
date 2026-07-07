@@ -11,6 +11,7 @@ import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { buildWaUrl } from "@/lib/phone";
 
 function genId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -85,7 +86,7 @@ export default function Consultation() {
               {settings.whatsapp && (
                 <Card className="card-luxury border-none bg-green-50 dark:bg-green-950/20">
                   <CardContent className="p-5">
-                    <a href={`https://wa.me/${settings.whatsapp.replace(/[\s+]/g, "")}`} target="_blank" rel="noopener noreferrer"
+                    <a href={buildWaUrl(settings.whatsapp) ?? "#"} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-green-700 dark:text-green-400">
                       <WhatsAppIcon className="h-5 w-5" />
                       <div>

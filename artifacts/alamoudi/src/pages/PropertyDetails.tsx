@@ -12,6 +12,7 @@ import {
   Mail, Link as LinkIcon, FileText
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
+import { normalizePhoneForWa } from "@/lib/phone";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
@@ -102,7 +103,7 @@ export default function PropertyDetails() {
   const regionName = regions.find(r => r.id === property.regionId)?.name;
   const similar = properties.filter(p => p.id !== property.id && (p.regionId === property.regionId || p.typeId === property.typeId)).slice(0, 6);
 
-  const waNum = (settings.whatsapp || settings.phone1 || "").replace(/[\s+]/g, "");
+  const waNum = normalizePhoneForWa(settings.whatsapp || settings.phone1 || "");
   const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
   const waHref = waNum ? `https://wa.me/${waNum}?text=${waMsg}` : null;
 
