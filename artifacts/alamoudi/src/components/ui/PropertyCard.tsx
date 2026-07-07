@@ -246,14 +246,14 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         <div className="mt-auto">
           {(property.finishing || property.view) && (
             <div className="flex flex-wrap items-center gap-1.5 pt-3">
-              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span className="text-[11px] bg-accent/10 text-accent px-2 py-0.5 rounded-full line-clamp-1">{property.finishing}</span>}
-              {property.view && <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full line-clamp-1 max-w-[55%]">{property.view}</span>}
+              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-full line-clamp-1">{property.finishing}</span>}
+              {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full line-clamp-1 max-w-[55%]">{property.view}</span>}
             </div>
           )}
-          <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-xs" : "mt-4 pt-4 text-xs")}>
-            {property.beds > 0 && <span className="flex items-center gap-1"><Bed className="h-3.5 w-3.5" />{property.beds}</span>}
-            {property.baths > 0 && <span className="flex items-center gap-1"><Bath className="h-3.5 w-3.5" />{property.baths}</span>}
-            <span className="flex items-center gap-1"><Square className="h-3.5 w-3.5" />{property.area} م²</span>
+          <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-[13px]" : "mt-4 pt-4 text-[13px]")}>
+            {property.beds > 0 && <span className="flex items-center gap-1 font-medium"><Bed className="h-3.5 w-3.5" />{property.beds}</span>}
+            {property.baths > 0 && <span className="flex items-center gap-1 font-medium"><Bath className="h-3.5 w-3.5" />{property.baths}</span>}
+            <span className="flex items-center gap-1 font-medium"><Square className="h-3.5 w-3.5" />{property.area} م²</span>
           </div>
         </div>
       </CardContent>

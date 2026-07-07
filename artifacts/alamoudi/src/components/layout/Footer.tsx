@@ -114,7 +114,7 @@ export function Footer() {
               <li><Link href="/about" className="hover:text-accent transition-colors">من نحن</Link></li>
               <li><Link href="/consultation" className="hover:text-accent transition-colors">استشارة عقارية</Link></li>
               <li><Link href="/finishing-services" className="hover:text-accent transition-colors">خدمات التشطيبات</Link></li>
-              <li><Link href="/add-property" className="hover:text-accent transition-colors">أضف عقارك</Link></li>
+              <li><Link href="/add-property" className="hover:text-accent transition-colors">أعرض عقارك</Link></li>
               <li><Link href="/favorites" className="hover:text-accent transition-colors">المفضلة</Link></li>
               <li><Link href="/compare" className="hover:text-accent transition-colors">المقارنة</Link></li>
             </ul>

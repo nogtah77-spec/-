@@ -254,7 +254,7 @@ export default function Home() {
               style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}
             >
               <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
-              أضف عقارك
+              أعرض عقارك
             </Link>
             <Link
               href="/finishing-services"
@@ -541,12 +541,12 @@ export default function Home() {
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">هل تمتلك عقاراً للبيع أو الإيجار؟</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-md mx-auto">
-                أضف عقارك لدينا واحصل على أفضل عرض سعر. نتواصل معك في أقرب وقت.
+                أعرض عقارك لدينا واحصل على أفضل عرض سعر. نتواصل معك في أقرب وقت.
               </p>
               <div className="flex flex-nowrap justify-center gap-2 sm:gap-3">
                 <Button asChild size="lg" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
                   style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                  <Link href="/add-property"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />أضف عقارك الآن</Link>
+                  <Link href="/add-property"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />أعرض عقارك الآن</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0">
                   <Link href="/consultation">اطرح استفسارك</Link>

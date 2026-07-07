@@ -170,7 +170,7 @@ export default function AddProperty() {
       <main className="flex-1 bg-[#F5F2EC] dark:bg-background py-12 md:py-16">
         <div className="container px-6 max-w-3xl mx-auto">
           <div className="text-center mb-10">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">أضف عقارك لدينا</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">أعرض عقارك لدينا</h1>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               أدخل بيانات عقارك وسيتواصل معك أحد مستشارينا في أقرب وقت.
             </p>

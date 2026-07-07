@@ -222,7 +222,7 @@ export function Navbar() {
               )}
               <div className="my-2 border-t border-border" />
               <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-medium text-accent hover:bg-accent/10 transition-colors">
-                أضف عقارك
+                أعرض عقارك
               </Link>
               {isStaff ? (
                 <Link href="/admin" className="py-2.5 px-3 rounded-md text-base font-bold text-foreground hover:text-accent hover:bg-accent/5 transition-colors">

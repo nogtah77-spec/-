@@ -87,7 +87,7 @@ export default function About() {
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-white" style={{ background: "linear-gradient(135deg, #A27B5B, #C49A72)" }}>
-                <Link href="/add-property">أضف عقارك</Link>
+                <Link href="/add-property">أعرض عقارك</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-12 px-8 rounded-full font-bold text-sm border-[#DCD7C9]/40 text-[#DCD7C9] hover:bg-white/10">
                 <Link href="/">تصفح العقارات</Link>
