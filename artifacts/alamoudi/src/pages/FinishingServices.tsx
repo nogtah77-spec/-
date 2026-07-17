@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Wrench, CheckCircle2, Play, X, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
+import { Link } from "wouter";
 
 const finishingTypes = ["سوبر لوكس", "لوكس", "كلاسيك", "مودرن", "بسيط", "متكامل مع الأثاث"];
 
@@ -209,6 +211,7 @@ export default function FinishingServices() {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", location: "", area: "", finishingType: "", description: "" });
 
   const [gallery, setGallery] = useState<GalleryConfig>({ interval: 4, images: [], videos: [] });
@@ -223,6 +226,10 @@ export default function FinishingServices() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreed) {
+      toast({ title: "يجب الموافقة على سياسة الخصوصية وشروط الاستخدام", variant: "destructive" });
+      return;
+    }
     if (!form.name || !form.phone || !form.finishingType) {
       toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" });
       return;
@@ -328,7 +335,28 @@ export default function FinishingServices() {
                       <Label>وصف إضافي</Label>
                       <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="أي تفاصيل إضافية أو متطلبات خاصة..." className="min-h-[100px]" />
                     </div>
-                    <Button type="submit" disabled={loading} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg">
+                    {/* Terms agreement */}
+                    <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${agreed ? "border-accent/30 bg-accent/5" : "border-border bg-card/50"}`}>
+                      <Checkbox
+                        id="finishing-terms-agree"
+                        checked={agreed}
+                        onCheckedChange={v => setAgreed(!!v)}
+                        className="mt-0.5 shrink-0"
+                      />
+                      <label htmlFor="finishing-terms-agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
+                        أقر بأنني قرأت ووافقت على{" "}
+                        <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                          سياسة الخصوصية
+                        </Link>
+                        {" "}و{" "}
+                        <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                          شروط الاستخدام
+                        </Link>
+                        {" "}الخاصة بمنصة العمودي للتسويق العقاري.
+                      </label>
+                    </div>
+
+                    <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg disabled:opacity-50">
                       {loading ? "جاري الإرسال..." : "إرسال الطلب"}
                     </Button>
                   </form>

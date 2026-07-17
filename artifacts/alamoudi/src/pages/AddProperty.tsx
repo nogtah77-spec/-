@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, X, CheckCircle2, Phone, Mail, User, MapPin, ImagePlus } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +68,7 @@ export default function AddProperty() {
   const [images, setImages] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set = (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -113,6 +115,10 @@ export default function AddProperty() {
       setErrors(errs);
       const firstErr = document.querySelector("[data-error]");
       firstErr?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    if (!agreed) {
+      toast({ title: "يجب الموافقة على سياسة الخصوصية وشروط الاستخدام", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -336,8 +342,29 @@ export default function AddProperty() {
               </CardContent>
             </Card>
 
+            {/* Terms agreement */}
+            <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${agreed ? "border-accent/30 bg-accent/5" : "border-border bg-card"}`}>
+              <Checkbox
+                id="terms-agree"
+                checked={agreed}
+                onCheckedChange={v => setAgreed(!!v)}
+                className="mt-0.5 shrink-0"
+              />
+              <label htmlFor="terms-agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
+                أقر بأنني قرأت ووافقت على{" "}
+                <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                  سياسة الخصوصية
+                </Link>
+                {" "}و{" "}
+                <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                  شروط الاستخدام
+                </Link>
+                {" "}الخاصة بمنصة العمودي للتسويق العقاري.
+              </label>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3 pb-4">
-              <Button type="submit" disabled={loading} className="flex-1 h-12 bg-accent text-white hover:bg-accent/90 rounded-xl font-bold text-sm">
+              <Button type="submit" disabled={loading || !agreed} className="flex-1 h-12 bg-accent text-white hover:bg-accent/90 rounded-xl font-bold text-sm disabled:opacity-50">
                 {loading ? "جاري الإرسال..." : "إرسال الطلب"}
               </Button>
               <Button type="button" variant="outline" asChild className="h-12 rounded-xl text-sm">
