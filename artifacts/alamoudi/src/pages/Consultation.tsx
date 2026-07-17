@@ -6,12 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MessageCircle, Phone, Clock, CheckCircle2 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { buildWaUrl } from "@/lib/phone";
+import { Link } from "wouter";
 
 function genId() {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -22,12 +24,17 @@ export default function Consultation() {
   const { toast } = useToast();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", email: "", subject: "", message: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.phone || !form.subject || !form.message) {
       toast({ title: "يرجى ملء جميع الحقول المطلوبة", variant: "destructive" });
+      return;
+    }
+    if (!agreed) {
+      toast({ title: "يجب الموافقة على سياسة الخصوصية وشروط الاستخدام", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -154,7 +161,28 @@ export default function Consultation() {
                         <Label>تفاصيل الاستفسار *</Label>
                         <Textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="اكتب تفاصيل استفسارك هنا..." className="min-h-[120px]" />
                       </div>
-                      <Button type="submit" disabled={loading} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg">
+                      {/* Terms agreement */}
+                      <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${agreed ? "border-accent/30 bg-accent/5" : "border-border bg-card/50"}`}>
+                        <Checkbox
+                          id="consult-terms-agree"
+                          checked={agreed}
+                          onCheckedChange={v => setAgreed(!!v)}
+                          className="mt-0.5 shrink-0"
+                        />
+                        <label htmlFor="consult-terms-agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
+                          أقر بأنني قرأت ووافقت على{" "}
+                          <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                            سياسة الخصوصية
+                          </Link>
+                          {" "}و{" "}
+                          <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                            شروط الاستخدام
+                          </Link>
+                          {" "}الخاصة بمنصة العمودي للتسويق العقاري.
+                        </label>
+                      </div>
+
+                      <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg disabled:opacity-50">
                         {loading ? "جاري الإرسال..." : "إرسال الاستشارة"}
                       </Button>
                     </form>
