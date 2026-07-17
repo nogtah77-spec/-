@@ -95,6 +95,17 @@ export function LiveVisitorsBubble() {
     });
   }, []);
 
+  // Hide behind any open Radix sheet/dialog (z-50) so it never blocks overlays
+  const [modalOpen, setModalOpen] = useState(false);
+  useEffect(() => {
+    const check = () => setModalOpen(
+      !!document.querySelector('[data-radix-popper-content-wrapper], [role="dialog"][data-state="open"]')
+    );
+    const obs = new MutationObserver(check);
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state"] });
+    return () => obs.disconnect();
+  }, []);
+
   if (!pos) return null;
 
   const totalLeads   = inquiries.length + finishingRequests.length + propertyRequests.length;
@@ -110,7 +121,7 @@ export function LiveVisitorsBubble() {
 
   return (
     <div
-      style={{ position: "fixed", left: pos.x, top: pos.y, width: w, touchAction: "none", zIndex: 60 }}
+      style={{ position: "fixed", left: pos.x, top: pos.y, width: w, touchAction: "none", zIndex: modalOpen ? 40 : 60, pointerEvents: modalOpen ? "none" : "auto" }}
       className="select-none"
     >
       <div className="rounded-xl border border-amber-300/40 bg-gradient-to-br from-[#1f2937] to-[#0f172a] shadow-lg shadow-black/30 ring-1 ring-white/10 overflow-hidden transition-all duration-300">

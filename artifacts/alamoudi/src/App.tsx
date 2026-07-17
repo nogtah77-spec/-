@@ -261,7 +261,8 @@ function App() {
                 <AIChatProvider>
                   <KeepAlive />
                   <VisitorTracker />
-                  <SwipeMenuHandler />
+                  {/* SwipeMenuHandler disabled — keep component, skip render */}
+                  {/* <SwipeMenuHandler /> */}
                   <AppReadyGate>
                     <ErrorBoundary>
                       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

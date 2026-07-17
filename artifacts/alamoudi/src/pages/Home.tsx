@@ -168,7 +168,7 @@ export default function Home() {
   });
 
   const featuredProps = useMemo(() => properties.filter(p => p.featured).map(resolve), [properties, propertyTypes, regions]);
-  const latestProps = useMemo(() => [...properties].reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
+  const latestProps = useMemo(() => [...properties].filter(p => !p.featured).reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
 
   // Normalise a finishing string for comparison: collapse whitespace so that
   // "ألترا سوبرلوكس" and "ألترا سوبر لوكس" both produce the same key.
