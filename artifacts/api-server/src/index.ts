@@ -24,9 +24,11 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
 
-  seedDatabase()
-    .then(() => normalizeFinishingValues())
-    .catch((seedErr) => {
-      logger.error({ err: seedErr }, "Seed / normalise step failed (non-fatal)");
-    });
+  if (!process.env.REPLIT_DEPLOYMENT) {
+    seedDatabase()
+      .then(() => normalizeFinishingValues())
+      .catch((seedErr) => {
+        logger.error({ err: seedErr }, "Seed / normalise step failed (non-fatal)");
+      });
+  }
 });
