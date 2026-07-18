@@ -66,7 +66,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <span className="sr-only">القائمة</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-64 p-0 bg-sidebar">
+              <SheetContent side="right" className="w-64 p-0 bg-sidebar flex flex-col overflow-hidden">
                 <div className="h-16 px-6 border-b border-sidebar-border flex items-center">
                   <SidebarBrand />
                 </div>

@@ -45,7 +45,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto py-4">
+    <div className="flex-1 overflow-y-auto overscroll-contain py-4 [touch-action:pan-y]">
       <nav className="space-y-0.5 px-3">
         {sidebarItems.map((item, i) => {
           if ("separator" in item) {
