@@ -6,3 +6,9 @@ id = "qM9B_oR2TIebrV97TEyNC"
 uri = "file://ad-specifications.pdf"
 type = "pdf"
 title = "مواصفات الإعلانات — العمودي للتسويق العقاري"
+
+[[outputs]]
+id = "hksGLjRY_317FurRxmC07"
+uri = "file://attached_assets/IMG_5979_1782521138401.jpeg"
+type = "image"
+title = "ألوان هوية العمودي للتسويق العقاري"
