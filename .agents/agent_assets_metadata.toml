@@ -12,3 +12,9 @@ id = "hksGLjRY_317FurRxmC07"
 uri = "file://attached_assets/IMG_5979_1782521138401.jpeg"
 type = "image"
 title = "ألوان هوية العمودي للتسويق العقاري"
+
+[[outputs]]
+id = "S5IRUPqErnJ84pPEowYbu"
+uri = "file://alamoudi-real-properties.csv"
+type = "table"
+title = "ملف استيراد العقارات الحقيقية (13 عقار)"
