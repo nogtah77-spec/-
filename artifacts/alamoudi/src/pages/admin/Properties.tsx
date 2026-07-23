@@ -2,12 +2,16 @@ import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Plus, Pencil, Trash2, Home as HomeIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/EmptyState";
 
@@ -30,22 +34,13 @@ const statusColors: Record<PropertyStatus, string> = {
 };
 
 export default function Properties() {
-  const { properties, regions, propertyTypes, deleteProperty, updateProperty } = useData();
+  const { properties, regions, propertyTypes, deleteProperty, updateProperty, bulkDeleteProperties, bulkUpdateProperties } = useData();
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<PropertyStatus | "">("");
   const { toast } = useToast();
-
-  const handleDelete = () => {
-    if (!deleteTarget) return;
-    deleteProperty(deleteTarget.id);
-    setDeleteTarget(null);
-    toast({ title: "تم بنجاح", description: "تم حذف العقار بنجاح" });
-  };
-
-  const handleStatusChange = (id: string, status: PropertyStatus) => {
-    updateProperty(id, { status });
-    toast({ title: "تم بنجاح", description: "تم تحديث حالة العقار" });
-  };
 
   const filteredProperties = properties.filter((p) => {
     if (!search) return true;
@@ -62,6 +57,67 @@ export default function Properties() {
       regionName.toLowerCase().includes(term)
     );
   });
+
+  const allSelected = filteredProperties.length > 0 && filteredProperties.every(p => selectedIds.has(p.id));
+  const someSelected = filteredProperties.some(p => selectedIds.has(p.id));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        filteredProperties.forEach(p => next.delete(p.id));
+        return next;
+      });
+    } else {
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        filteredProperties.forEach(p => next.add(p.id));
+        return next;
+      });
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteProperty(deleteTarget.id);
+    setSelectedIds(prev => { const n = new Set(prev); n.delete(deleteTarget.id); return n; });
+    setDeleteTarget(null);
+    toast({ title: "تم بنجاح", description: "تم حذف العقار بنجاح" });
+  };
+
+  const handleStatusChange = (id: string, status: PropertyStatus) => {
+    updateProperty(id, { status });
+    toast({ title: "تم بنجاح", description: "تم تحديث حالة العقار" });
+  };
+
+  const handleBulkDelete = () => {
+    const ids = Array.from(selectedIds);
+    bulkDeleteProperties(ids);
+    clearSelection();
+    setShowBulkDeleteDialog(false);
+    toast({ title: "تم الحذف", description: `تم حذف ${ids.length} عقار بنجاح` });
+  };
+
+  const handleBulkStatusChange = () => {
+    if (!bulkStatus) return;
+    const ids = Array.from(selectedIds);
+    bulkUpdateProperties(ids, { status: bulkStatus as PropertyStatus });
+    clearSelection();
+    setBulkStatus("");
+    toast({ title: "تم التحديث", description: `تم تغيير حالة ${ids.length} عقار إلى "${statusLabels[bulkStatus as PropertyStatus]}"` });
+  };
+
+  const selectedCount = selectedIds.size;
 
   return (
     <AdminLayout>
@@ -82,8 +138,8 @@ export default function Properties() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="بحث بالعنوان، المنطقة، أو النوع..." 
+            <Input
+              placeholder="بحث بالعنوان، الكود، المنطقة، أو النوع..."
               className="pr-9"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -91,10 +147,65 @@ export default function Properties() {
           </div>
         </div>
 
+        {/* Bulk Action Bar */}
+        {selectedCount > 0 && (
+          <div className="flex flex-wrap items-center gap-3 bg-accent/10 border border-accent/30 rounded-lg px-4 py-3">
+            <span className="text-sm font-semibold text-accent">
+              تم تحديد {selectedCount} عقار
+            </span>
+            <div className="flex items-center gap-2 mr-auto flex-wrap">
+              <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as PropertyStatus)}>
+                <SelectTrigger className="w-[140px] h-8 text-xs">
+                  <SelectValue placeholder="تغيير الحالة إلى..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(statusLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+                disabled={!bulkStatus}
+                onClick={handleBulkStatusChange}
+              >
+                تطبيق
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 text-xs"
+                onClick={() => setShowBulkDeleteDialog(true)}
+              >
+                <Trash2 className="h-3 w-3 ml-1" />
+                حذف المحددة
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 text-xs text-muted-foreground"
+                onClick={clearSelection}
+              >
+                إلغاء التحديد
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="border rounded-md bg-card overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10 pr-4">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="تحديد الكل"
+                    className={someSelected && !allSelected ? "opacity-50" : ""}
+                  />
+                </TableHead>
                 <TableHead>الكود</TableHead>
                 <TableHead>النوع</TableHead>
                 <TableHead>المنطقة</TableHead>
@@ -105,16 +216,28 @@ export default function Properties() {
             </TableHeader>
             <TableBody>
               {filteredProperties.map((property) => (
-                <TableRow key={property.id}>
+                <TableRow
+                  key={property.id}
+                  className={selectedIds.has(property.id) ? "bg-accent/5" : ""}
+                >
+                  <TableCell className="pr-4">
+                    <Checkbox
+                      checked={selectedIds.has(property.id)}
+                      onCheckedChange={() => toggleSelect(property.id)}
+                      aria-label={`تحديد ${property.code}`}
+                    />
+                  </TableCell>
                   <TableCell>
-                    <span className="font-mono text-xs font-semibold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap">{property.code}</span>
+                    <span className="font-mono text-xs font-semibold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap">
+                      {property.code}
+                    </span>
                   </TableCell>
                   <TableCell>{propertyTypes.find(t => t.id === property.typeId)?.name}</TableCell>
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
                   <TableCell>{property.price.toLocaleString("en-US")} EGP</TableCell>
                   <TableCell>
-                    <Select 
-                      value={property.status} 
+                    <Select
+                      value={property.status}
                       onValueChange={(val) => handleStatusChange(property.id, val as PropertyStatus)}
                     >
                       <SelectTrigger className={`w-[120px] h-8 text-xs ${statusColors[property.status]} border-none font-semibold`}>
@@ -134,7 +257,11 @@ export default function Properties() {
                           <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => setDeleteTarget(property)}>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                        onClick={() => setDeleteTarget(property)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -143,8 +270,8 @@ export default function Properties() {
               ))}
               {filteredProperties.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="p-0">
-                    <EmptyState 
+                  <TableCell colSpan={7} className="p-0">
+                    <EmptyState
                       icon={<HomeIcon className="h-8 w-8" />}
                       title="لا توجد عقارات"
                       description="لم يتم العثور على أي عقارات مسجلة."
@@ -156,19 +283,44 @@ export default function Properties() {
             </TableBody>
           </Table>
         </div>
+
+        {filteredProperties.length > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            {filteredProperties.length} عقار{selectedCount > 0 ? ` — محدد ${selectedCount}` : ""}
+          </p>
+        )}
       </div>
 
+      {/* Single Delete Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>هل أنت متأكد من الحذف؟</AlertDialogTitle>
             <AlertDialogDescription>
-              هذا الإجراء لا يمكن التراجع عنه. سيتم حذف العقار نهائياً.
+              سيتم حذف العقار <strong>{deleteTarget?.code}</strong> نهائياً ولا يمكن التراجع.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>إلغاء</AlertDialogCancel>
             <AlertDialogAction className="bg-red-500 hover:bg-red-600 text-white" onClick={handleDelete}>حذف</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف {selectedCount} عقار؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف {selectedCount} عقار نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-500 hover:bg-red-600 text-white" onClick={handleBulkDelete}>
+              حذف الكل
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -234,6 +234,8 @@ interface DataContextType {
   addProperty: (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => void;
   updateProperty: (id: string, p: Partial<Property>) => void;
   deleteProperty: (id: string) => void;
+  bulkDeleteProperties: (ids: string[]) => void;
+  bulkUpdateProperties: (ids: string[], updates: Partial<Property>) => void;
   importProperties: (items: Omit<Property, "id" | "createdAt">[]) => { added: number; updated: number };
   addUser: (u: Omit<User, "id" | "joinedAt">) => void;
   updateUser: (id: string, u: Partial<User>) => void;
@@ -524,6 +526,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProperties(p => p.filter(x => x.id !== id));
     persist(api.del(`/properties/${id}`));
   };
+  const bulkDeleteProperties = (ids: string[]) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setProperties(p => p.filter(x => !idSet.has(x.id)));
+    persist(api.del("/properties/bulk", { ids }));
+  };
+  const bulkUpdateProperties = (ids: string[], updates: Partial<Property>) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    setProperties(p => p.map(x => idSet.has(x.id) ? { ...x, ...updates } : x));
+    persist(api.patch("/properties/bulk", { ids, updates }));
+  };
 
   const importProperties = (items: Omit<Property, "id" | "createdAt">[]) => {
     let added = 0;
@@ -688,7 +702,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       reloadAiLeads, updateAiLeadStatus, deleteAiLead,
       addRegion, updateRegion, deleteRegion, toggleRegion,
       addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType,
-      addProperty, updateProperty, deleteProperty, importProperties,
+      addProperty, updateProperty, deleteProperty, bulkDeleteProperties, bulkUpdateProperties, importProperties,
       addUser, updateUser, deleteUser, toggleUser,
       addInquiry, updateInquiryStatus, deleteInquiry,
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,

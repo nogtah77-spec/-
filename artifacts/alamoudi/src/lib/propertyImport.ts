@@ -62,32 +62,21 @@ export function parseArea(raw: unknown): number {
 export function parsePrice(raw: unknown): number {
   const cleaned = arabicToWestern(cleanCell(raw)).replace(/[,،]/g, "").trim();
   if (!cleaned) return 0;
-  // When several pricing options are listed (e.g. "5 مليون كاش | 5.5 مليون 6 شهور",
-  // "50 ألف طويل | 55 ألف قصير"), use only the first/primary option.
   const segment = cleaned.split(/[|\n]/)[0];
-  // Sum every amount within the segment, e.g. "3 مليون و 600 ألف" = 3,600,000.
   let total = 0;
   let hasUnit = false;
   for (const m of segment.matchAll(/([\d.]+)\s*مليون/g)) {
     const v = parseFloat(m[1]);
-    if (!Number.isNaN(v)) {
-      total += v * 1_000_000;
-      hasUnit = true;
-    }
+    if (!Number.isNaN(v)) { total += v * 1_000_000; hasUnit = true; }
   }
   for (const m of segment.matchAll(/([\d.]+)\s*(?:ألف|الف)/g)) {
     const v = parseFloat(m[1]);
-    if (!Number.isNaN(v)) {
-      total += v * 1000;
-      hasUnit = true;
-    }
+    if (!Number.isNaN(v)) { total += v * 1000; hasUnit = true; }
   }
   if (hasUnit) return Math.round(total);
-  // No unit word (e.g. "1500 / يوم" or a plain number): take the first numeric run.
   const m = segment.match(/[\d.]+/);
   if (!m) return 0;
   let token = m[0];
-  // Grouped thousands separators like "3.600.000" -> strip the dots.
   if (/^\d{1,3}(\.\d{3})+$/.test(token)) token = token.replace(/\./g, "");
   const num = parseFloat(token);
   return Number.isNaN(num) ? 0 : Math.round(num);
@@ -113,9 +102,7 @@ function parseFloorNumber(raw: unknown): number {
 function sourceToAgentType(source: string): "direct" | "broker" {
   const s = source.trim().toLowerCase();
   if (!s) return "direct";
-  // Explicit "direct owner" wording wins.
   if (/(مباشر|مالك|صاحب|direct|owner)/.test(s)) return "direct";
-  // Any broker/agent/office wording (Arabic or English) => broker.
   if (/(بروكر|سمسار|وسيط|مكتب|شركة|broker|agent|agency|office)/.test(s)) return "broker";
   return "direct";
 }
@@ -130,25 +117,12 @@ export function sheetMeta(sheetName: string): SheetMeta {
   const n = sheetName;
   let regionId = "";
   let regionName = "";
-  if (/شروق/.test(n)) {
-    regionId = "shorouk";
-    regionName = "مدينة الشروق";
-  } else if (/مدينتي/.test(n)) {
-    regionId = "madinaty";
-    regionName = "مدينتي";
-  } else if (/وصال/.test(n)) {
-    regionId = "wasal";
-    regionName = "كمباوند وصال";
-  } else if (/بدر/.test(n)) {
-    regionId = "badr";
-    regionName = "مدينة بدر";
-  } else if (/نصر/.test(n)) {
-    regionId = "nasr_city";
-    regionName = "مدينة نصر";
-  } else {
-    regionId = n.trim().replace(/\s*\(.*\)\s*/, "").replace(/\s+/g, "_") || "other";
-    regionName = n.replace(/\s*\(.*\)\s*/, "").trim();
-  }
+  if (/شروق/.test(n)) { regionId = "shorouk"; regionName = "مدينة الشروق"; }
+  else if (/مدينتي/.test(n)) { regionId = "madinaty"; regionName = "مدينتي"; }
+  else if (/وصال/.test(n)) { regionId = "wasal"; regionName = "كمباوند وصال"; }
+  else if (/بدر/.test(n)) { regionId = "badr"; regionName = "مدينة بدر"; }
+  else if (/نصر/.test(n)) { regionId = "nasr_city"; regionName = "مدينة نصر"; }
+  else { regionId = n.trim().replace(/\s*\(.*\)\s*/, "").replace(/\s+/g, "_") || "other"; regionName = n.replace(/\s*\(.*\)\s*/, "").trim(); }
 
   let category: PropertyCategory = "sale";
   if (/إيجار|ايجار/.test(n)) category = "rent";
@@ -158,6 +132,59 @@ export function sheetMeta(sheetName: string): SheetMeta {
   return { regionId, regionName, category };
 }
 
+// ─── Smart header mapping ───────────────────────────────────────────
+// Normalise: strip diacritics, spaces, convert to lowercase.
+function normalizeHeader(h: string): string {
+  return h
+    .trim()
+    .replace(/[\u064B-\u065F\u0670]/g, "") // Arabic diacritics
+    .replace(/\s+/g, "")
+    .toLowerCase();
+}
+
+// All valid aliases per internal field name (normalised).
+const FIELD_ALIASES: Record<string, string[]> = {
+  unitType:  ["النوع", "نوع الوحدة", "نوع_الوحدة", "type", "unittype"],
+  code:      ["الكود", "كود", "رقم الوحدة", "رقم_الوحدة", "code", "رقم"],
+  subArea:   ["المنطقة", "المنطقة الفرعية", "منطقة_فرعية", "المنطقةالفرعية", "subarea", "حي", "الحي"],
+  area:      ["المساحة", "مساحة", "area", "م2", "م²"],
+  floorText: ["الدور", "دور", "floor", "الطابق", "طابق"],
+  layout:    ["التوزيع", "توزيع", "layout", "الغرف", "غرف"],
+  master:    ["ماستر", "master"],
+  finishing: ["التشطيب", "تشطيب", "finishing"],
+  elevator:  ["أسانسير", "اسانسير", "مصعد", "elevator", "lift"],
+  view:      ["الفيو", "فيو", "الإطلالة", "إطلالة", "view"],
+  price:     ["السعر", "سعر", "price"],
+  source:    ["المصدر", "مصدر", "source"],
+  location:  ["الموقع", "موقع", "location"],
+  // Extended CSV fields
+  title:      ["العنوان", "عنوان", "title"],
+  description:["الوصف", "وصف", "description"],
+  regionName: ["المنطقة_الرئيسية", "منطقة", "region", "المنطقةالرئيسية"],
+  category:   ["الفئة", "فئة", "category"],
+  status:     ["الحالة", "حالة", "status"],
+  beds:       ["غرف_النوم", "غرفالنوم", "الغرف", "beds", "غرف"],
+  baths:      ["الحمامات", "حمامات", "baths"],
+  featured:   ["مميز", "مُميز", "featured"],
+  agentType:  ["نوع_العرض", "نوعالعرض", "agenttype", "agenttype"],
+  videoUrl:   ["رابط_الفيديو", "الفيديو", "رابطالفيديو", "videourl", "tiktok"],
+  mapsUrl:    ["رابط_الخريطة", "الخريطة", "رابطالخريطة", "mapsurl"],
+  externalUrl:["رابط_خارجي", "رابطخارجي", "externalurl"],
+};
+
+// Build reverse lookup: normalised alias → internal field name
+const ALIAS_TO_FIELD: Map<string, string> = new Map();
+for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+  for (const alias of aliases) {
+    ALIAS_TO_FIELD.set(normalizeHeader(alias), field);
+  }
+}
+
+function mapHeader(raw: string): string | undefined {
+  return ALIAS_TO_FIELD.get(normalizeHeader(raw));
+}
+
+// ─── Excel sheet parsing (unchanged logic, using new header mapper) ──
 const HEADER_FIELD: Record<string, string> = {
   "النوع": "unitType",
   "الكود": "code",
@@ -323,34 +350,40 @@ export function parseWorkbookBytes(bytes: Uint8Array): ParseResult {
   return { items, sheets };
 }
 
-function detectDelimiter(line: string): string {
-  const tabs = (line.match(/\t/g) || []).length;
-  const commas = (line.match(/,/g) || []).length;
-  return tabs > commas ? "\t" : ",";
-}
+// ─── Proper CSV row splitter (handles quoted multi-line fields) ──────
+function splitCsvIntoRows(text: string): string[][] {
+  const rows: string[][] = [];
+  let cells: string[] = [];
+  let cell = "";
+  let inQ = false;
 
-function splitDelimited(line: string, delim: string): string[] {
-  const out: string[] = [];
-  let cur = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
     if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        cur += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === delim && !inQuotes) {
-      out.push(cur);
-      cur = "";
+      if (inQ && text[i + 1] === '"') { cell += '"'; i++; }
+      else inQ = !inQ;
+    } else if ((ch === "," || ch === "\t") && !inQ) {
+      cells.push(cell);
+      cell = "";
+    } else if (ch === "\r" && !inQ) {
+      if (text[i + 1] === "\n") i++;
+      cells.push(cell);
+      if (cells.some(c => c.trim())) rows.push(cells);
+      cells = [];
+      cell = "";
+    } else if (ch === "\n" && !inQ) {
+      cells.push(cell);
+      if (cells.some(c => c.trim())) rows.push(cells);
+      cells = [];
+      cell = "";
     } else {
-      cur += ch;
+      cell += ch;
     }
   }
-  out.push(cur);
-  return out.map((c) => c.trim());
+  // Trailing row
+  cells.push(cell);
+  if (cells.some(c => c.trim())) rows.push(cells);
+  return rows;
 }
 
 interface RegionLite {
@@ -359,12 +392,7 @@ interface RegionLite {
 }
 
 const STATUS_VALUES = new Set([
-  "active",
-  "listed",
-  "draft",
-  "sold",
-  "rented",
-  "reserved",
+  "active", "listed", "draft", "sold", "rented", "reserved",
 ]);
 
 export function parseDelimitedText(
@@ -372,60 +400,78 @@ export function parseDelimitedText(
   regions: RegionLite[],
   types: RegionLite[] = [],
 ): ParseResult {
-  const clean = text.replace(/^\uFEFF/, "");
-  const lines = clean.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length < 2) return { items: [], sheets: [] };
-  const delim = detectDelimiter(lines[0]);
-  const headers = splitDelimited(lines[0], delim);
+  const clean = text.replace(/^\uFEFF/, ""); // strip BOM
+  const rows = splitCsvIntoRows(clean);
+  if (rows.length < 2) return { items: [], sheets: [] };
+
+  // Detect delimiter from first row (most tabs or most commas)
+  // Already handled by splitCsvIntoRows which uses both
+
+  const rawHeaders = rows[0].map(h => h.trim());
+  // Map each header to an internal field using smart alias matching
+  const fieldByIdx: (string | undefined)[] = rawHeaders.map(h => mapHeader(h));
 
   const regionByName = new Map(regions.map((r) => [r.name.trim(), r.id]));
   const typeByName = new Map(types.map((t) => [t.name.trim(), t.id]));
   const typeIds = new Set(types.map((t) => t.id));
+
   const catByLabel: Record<string, PropertyCategory> = {
-    "للبيع": "sale",
-    "بيع": "sale",
-    sale: "sale",
-    "للإيجار": "rent",
-    "إيجار": "rent",
-    rent: "rent",
-    "مفروش": "furnished",
-    furnished: "furnished",
-    "إداري": "administrative",
-    administrative: "administrative",
-    "طبي": "medical",
-    medical: "medical",
-    "تجاري": "commercial",
-    commercial: "commercial",
+    "للبيع": "sale", "بيع": "sale", sale: "sale",
+    "للإيجار": "rent", "إيجار": "rent", rent: "rent",
+    "مفروش": "furnished", furnished: "furnished",
+    "إداري": "administrative", administrative: "administrative",
+    "طبي": "medical", medical: "medical",
+    "تجاري": "commercial", commercial: "commercial",
   };
 
-  const pick = (cells: string[], names: string[]): string => {
-    for (const n of names) {
-      const idx = headers.indexOf(n);
-      if (idx !== -1) return cleanCell(cells[idx]);
+  const pick = (cells: string[], ...fieldNames: string[]): string => {
+    for (const fn of fieldNames) {
+      const idx = fieldByIdx.findIndex(f => f === fn);
+      if (idx !== -1 && cells[idx] !== undefined) return cleanCell(cells[idx]);
     }
     return "";
   };
 
   const items: ParsedProperty[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cells = splitDelimited(lines[i], delim);
-    const title = pick(cells, ["العنوان", "title"]);
-    const layoutRaw = pick(cells, ["التوزيع", "layout"]);
-    const { beds: lb, baths: lba } = parseLayout(layoutRaw);
-    const bedsRaw = pick(cells, ["غرف_النوم", "الغرف", "beds"]);
-    const bathsRaw = pick(cells, ["الحمامات", "baths"]);
-    const regionName = pick(cells, ["المنطقة", "region"]);
-    const catRaw = pick(cells, ["الفئة", "category"]);
-    const source = pick(cells, ["المصدر", "source"]);
-    const code = pick(cells, ["الكود", "code"]);
-    const finishing = pick(cells, ["التشطيب", "finishing"]);
-    const view = pick(cells, ["الفيو", "view"]);
-    const typeRaw = pick(cells, ["النوع", "type", "unitType"]);
-    const statusRaw = pick(cells, ["الحالة", "status"]).trim().toLowerCase();
-    const featuredRaw = pick(cells, ["مميز", "featured"]).trim();
-    const agentRaw = pick(cells, ["نوع_العرض", "agentType"]).trim().toLowerCase();
 
-    if (!title && !code && !pick(cells, ["السعر", "price"])) continue;
+  for (let i = 1; i < rows.length; i++) {
+    const cells = rows[i].map(c => c.trim());
+
+    // Skip totally empty rows
+    if (cells.every(c => !c)) continue;
+
+    const code = pick(cells, "code");
+    const title = pick(cells, "title");
+    const priceRaw = pick(cells, "price");
+    const areaRaw = pick(cells, "area");
+    const layoutRaw = pick(cells, "layout");
+    const bedsRaw = pick(cells, "beds");
+    const bathsRaw = pick(cells, "baths");
+    const regionName = pick(cells, "regionName", "subArea");
+    const catRaw = pick(cells, "category");
+    const source = pick(cells, "source");
+    const finishing = pick(cells, "finishing");
+    const view = pick(cells, "view");
+    const typeRaw = pick(cells, "unitType");
+    const statusRaw = pick(cells, "status").trim().toLowerCase();
+    const featuredRaw = pick(cells, "featured").trim();
+    const agentRaw = pick(cells, "agentType").trim().toLowerCase();
+    const description = pick(cells, "description");
+    const floorRaw = pick(cells, "floorText");
+    const location = pick(cells, "location");
+    const master = pick(cells, "master");
+    const elevator = pick(cells, "elevator");
+    const subArea = pick(cells, "subArea");
+    const videoUrl = pick(cells, "videoUrl");
+    const mapsUrl = pick(cells, "mapsUrl");
+    const externalUrl = pick(cells, "externalUrl");
+
+    // Skip rows without any useful data
+    if (!code && !title && !priceRaw && !areaRaw) continue;
+
+    const area = parseArea(areaRaw);
+    const price = parsePrice(priceRaw);
+    const { beds: lb, baths: lba } = parseLayout(layoutRaw);
 
     const regionId = regionByName.get(regionName.trim()) || "";
     const category = catByLabel[catRaw.trim()] || "sale";
@@ -434,22 +480,23 @@ export function parseDelimitedText(
     const status = (STATUS_VALUES.has(statusRaw) ? statusRaw : "active") as PropertyStatus;
     const featured = /^(نعم|true|1|yes)$/i.test(featuredRaw);
     const agentType: "direct" | "broker" =
-      agentRaw === "broker" || agentRaw === "بروكر"
-        ? "broker"
-        : agentRaw === "direct" || agentRaw === "مباشر"
-          ? "direct"
-          : sourceToAgentType(source);
+      agentRaw === "broker" || agentRaw === "بروكر" ? "broker"
+      : agentRaw === "direct" || agentRaw === "مباشر" ? "direct"
+      : sourceToAgentType(source);
+
+    // Build a clean title if not provided
+    const finalTitle = title || buildTitle({ area, regionName, category });
 
     items.push({
-      code: code || "",
-      title: title || buildTitle({ area: parseArea(pick(cells, ["المساحة", "area"])), regionName, category }),
-      description: pick(cells, ["الوصف", "description"]),
-      price: parsePrice(pick(cells, ["السعر", "price"])),
-      area: parseArea(pick(cells, ["المساحة", "area"])),
+      code,
+      title: finalTitle,
+      description,
+      price,
+      area,
       beds: bedsRaw ? parseInt(arabicToWestern(bedsRaw), 10) || 0 : lb,
       baths: bathsRaw ? parseInt(arabicToWestern(bathsRaw), 10) || 0 : lba,
       floors: 0,
-      floor: parseFloorNumber(pick(cells, ["الدور", "floor"])),
+      floor: parseFloorNumber(floorRaw),
       finishing,
       view,
       typeId,
@@ -459,18 +506,27 @@ export function parseDelimitedText(
       featured,
       agentType,
       images: [],
-      videoUrl: pick(cells, ["رابط_الفيديو", "الفيديو", "videoUrl"]),
-      externalUrl: pick(cells, ["رابط_خارجي", "externalUrl"]),
-      mapsUrl: pick(cells, ["رابط_الخريطة", "الخريطة", "mapsUrl"]),
-      unitType: pick(cells, ["النوع", "unitType"]),
-      subArea: pick(cells, ["المنطقة الفرعية", "subArea"]),
+      videoUrl,
+      externalUrl,
+      mapsUrl,
+      unitType: typeRaw,
+      subArea,
       layout: arabicToWestern(layoutRaw),
-      master: pick(cells, ["ماستر", "master"]),
-      elevator: pick(cells, ["أسانسير", "اسانسير", "elevator"]),
-      floorText: arabicToWestern(pick(cells, ["الدور", "floor"])),
-      location: pick(cells, ["الموقع", "location"]),
+      master,
+      elevator,
+      floorText: arabicToWestern(floorRaw),
+      location,
       source,
     });
   }
+
   return { items, sheets: [{ name: "ملف", count: items.length }] };
+}
+
+// ─── Export detected header mapping for import preview ───────────────
+export function detectHeaders(text: string): { raw: string; field: string | undefined }[] {
+  const clean = text.replace(/^\uFEFF/, "");
+  const rows = splitCsvIntoRows(clean);
+  if (rows.length === 0) return [];
+  return rows[0].map(h => ({ raw: h.trim(), field: mapHeader(h.trim()) }));
 }

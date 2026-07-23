@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, inArray } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, propertiesTable, insertPropertySchema } from "@workspace/db";
 import { requireStaff } from "../lib/auth";
@@ -114,6 +114,37 @@ router.patch("/properties/:id", requireStaff, async (req, res): Promise<void> =>
     actor: actorFromReq(req),
   });
   res.json(row);
+});
+
+router.delete("/properties/bulk", requireStaff, async (req, res): Promise<void> => {
+  const parsed = z.object({ ids: z.array(z.string()).min(1) }).safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { ids } = parsed.data;
+  await db.delete(propertiesTable).where(inArray(propertiesTable.id, ids));
+  await logActivity({
+    action: "deleted",
+    entityType: "property",
+    title: `تم حذف ${ids.length} عقار دفعة واحدة`,
+    actor: actorFromReq(req),
+  });
+  res.json({ deleted: ids.length });
+});
+
+router.patch("/properties/bulk", requireStaff, async (req, res): Promise<void> => {
+  const parsed = z.object({
+    ids: z.array(z.string()).min(1),
+    updates: insertPropertySchema.partial(),
+  }).safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+  const { ids, updates } = parsed.data;
+  await db.update(propertiesTable).set(updates).where(inArray(propertiesTable.id, ids));
+  await logActivity({
+    action: "updated",
+    entityType: "property",
+    title: `تم تحديث ${ids.length} عقار دفعة واحدة`,
+    actor: actorFromReq(req),
+  });
+  res.json({ updated: ids.length });
 });
 
 router.delete("/properties/:id", requireStaff, async (req, res): Promise<void> => {
