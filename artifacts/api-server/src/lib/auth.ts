@@ -17,7 +17,7 @@ const PgSession = connectPgSimple(session);
 export const sessionMiddleware: RequestHandler = session({
   store: new PgSession({
     pool,
-    createTableIfMissing: false,
+    createTableIfMissing: true,
     tableName: "session",
   }),
   secret: process.env.SESSION_SECRET || "alamoudi-dev-secret-change-me",
