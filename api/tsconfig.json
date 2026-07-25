@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    /* Override Vercel's default node16 resolution with bundler — the same
+       setting used across the entire workspace — to suppress TS2834/TS2835
+       ("relative import paths need explicit .js extensions").
+       Bundler resolution resolves extensionless imports to their .ts
+       counterparts, matching how esbuild and Vite work at runtime.
+
+       We cannot switch to node16/nodenext because lib/db exports raw .ts
+       files directly ("exports": { ".": "./src/index.ts" }), which is
+       incompatible with strict node16 package-exports resolution.
+
+       noEmit: Vercel uses esbuild (not tsc) to emit the function bundle;
+       tsc is only used for type-checking here. */
+    "moduleResolution": "bundler",
+    "noEmit": true
+  },
+  "include": ["*.ts"]
+}
