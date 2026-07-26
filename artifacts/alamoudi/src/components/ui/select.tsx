@@ -44,12 +44,13 @@ function SlowScrollButton({ direction }: { direction: "up" | "down" }) {
   const timer = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startScroll = () => {
-    const content = btnRef.current?.closest("[data-radix-select-content]");
-    const viewport = content?.querySelector("[data-radix-select-viewport]") as HTMLElement | null;
+    const viewport = btnRef.current?.parentElement?.querySelector(
+      "[data-radix-select-viewport]"
+    ) as HTMLElement | null;
     if (!viewport) return;
     timer.current = setInterval(() => {
-      viewport.scrollTop += direction === "down" ? 18 : -18;
-    }, 60);
+      viewport.scrollTop += direction === "down" ? 6 : -6;
+    }, 50);
   };
 
   const stopScroll = () => {
