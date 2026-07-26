@@ -142,7 +142,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             </div>
           )}
           <div className="absolute bottom-1.5 inset-x-0 flex justify-center">
-            <span className="bg-black/50 text-white/90 text-[9px] px-2 py-0.5 rounded font-mono tracking-wide backdrop-blur-sm">{property.code}</span>
+            <span dir="ltr" className="flex items-center gap-0.5 bg-[#10202D]/85 backdrop-blur-sm border border-[#B4986B]/60 text-[#B4986B] text-[9px] px-2 py-0.5 rounded font-mono tracking-wide font-bold">#{property.code}</span>
           </div>
         </div>
         <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
@@ -216,8 +216,8 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         </div>
 
         <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5">
-          <span className="bg-black/55 text-white/95 backdrop-blur-sm px-2 py-0.5 rounded font-mono text-[11px] tracking-wide font-medium">
-            {property.code}
+          <span dir="ltr" className="flex items-center gap-1 bg-[#10202D]/85 backdrop-blur-sm border border-[#B4986B]/65 text-[#B4986B] px-2.5 py-1 rounded font-mono text-[11px] tracking-wider font-bold shadow-sm">
+            #{property.code}
           </span>
           {imageCount > 0 && (
             <span className="text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1">
@@ -237,7 +237,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors", size === "medium" ? "text-base" : "text-lg")}>
             {property.code}
           </h3>
-          <span className="flex-shrink-0 font-mono text-[10px] text-accent/70 bg-accent/8 border border-accent/20 px-1.5 py-0.5 rounded text-nowrap">
+          <span dir="ltr" className="flex-shrink-0 font-mono text-[10px] bg-foreground/10 text-foreground border border-foreground/20 px-2 py-0.5 rounded text-nowrap tracking-wider font-semibold">
             #{property.code}
           </span>
         </div>
@@ -277,10 +277,10 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           </Button>
         </div>
         <div className="flex gap-1.5 w-full">
-          <Button variant="outline" size="sm" className="flex-1 h-7 text-green-600 border-green-200 hover:bg-green-50 dark:border-green-900 dark:hover:bg-green-950/30 text-xs gap-1" onClick={handleWhatsApp}>
+          <Button variant="outline" size="sm" className="flex-1 h-7 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-400 dark:hover:border-green-700 text-xs gap-1 transition-colors" onClick={handleWhatsApp}>
             <WhatsAppIcon className="h-3 w-3" />واتساب
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 h-7 text-accent border-accent/30 hover:bg-accent/10 dark:border-accent/20 dark:hover:bg-accent/10 text-xs gap-1" onClick={handleCall}>
+          <Button variant="outline" size="sm" className="flex-1 h-7 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-700 text-xs gap-1 transition-colors" onClick={handleCall}>
             <Phone className="h-3 w-3" />اتصال
           </Button>
           <Button variant="outline" size="sm" className="h-7 text-muted-foreground border-border hover:text-accent text-xs gap-1 px-2" onClick={handleCopy} title="نسخ الكود">

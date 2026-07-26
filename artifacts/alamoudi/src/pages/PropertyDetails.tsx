@@ -460,16 +460,16 @@ export default function PropertyDetails() {
                     {(property.sourcePhones ?? []).filter(ph => ph.trim()).map((ph, i) => (
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
-                        <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-accent hover:underline font-medium" dir="ltr">
-                          <Phone className="h-3.5 w-3.5 flex-shrink-0" />{ph}
+                        <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline font-medium transition-colors" dir="ltr">
+                          <Phone className="h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />{ph}
                         </a>
                       </div>
                     ))}
                     {property.sourceEmail?.trim() && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
-                        <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-accent hover:underline" dir="ltr">
-                          <Mail className="h-3.5 w-3.5 flex-shrink-0" />{property.sourceEmail}
+                        <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-foreground hover:text-violet-600 dark:hover:text-violet-400 hover:underline transition-colors" dir="ltr">
+                          <Mail className="h-3.5 w-3.5 flex-shrink-0 text-violet-600 dark:text-violet-400" />{property.sourceEmail}
                         </a>
                       </div>
                     )}
@@ -528,7 +528,7 @@ export default function PropertyDetails() {
                   )}
                   {settings.phone1 && (
                     <a href={`tel:${settings.phone1.replace(/\s/g, "")}`}>
-                      <Button variant="outline" className="w-full gap-2 rounded-lg mt-2">
+                      <Button variant="outline" className="w-full gap-2 rounded-lg mt-2 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30">
                         <Phone className="h-4 w-4" />
                         {settings.phone1}
                       </Button>
