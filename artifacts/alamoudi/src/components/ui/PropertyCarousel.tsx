@@ -9,7 +9,7 @@ interface PropertyCarouselProps {
   className?: string;
 }
 
-export function PropertyCarousel({ properties, size = "medium", className }: PropertyCarouselProps) {
+export function PropertyCarousel({ properties, size = "compact", className }: PropertyCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
@@ -72,7 +72,7 @@ export function PropertyCarousel({ properties, size = "medium", className }: Pro
         {properties.map(p => (
           <div
             key={p.id}
-            className="flex-shrink-0 w-[82vw] sm:w-[46vw] md:w-[268px] lg:w-[280px]"
+            className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
             style={{ scrollSnapAlign: "start" }}
           >
             <PropertyCard property={p} size={size} />

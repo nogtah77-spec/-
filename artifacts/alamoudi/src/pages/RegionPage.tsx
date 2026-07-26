@@ -1,10 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { PropertyCard, type CardSize } from "@/components/ui/PropertyCard";
+import { PropertyCard } from "@/components/ui/PropertyCard";
 import { Button } from "@/components/ui/button";
 import { useData } from "@/context/DataContext";
-import { LayoutGrid, AlignJustify, List, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 
@@ -25,34 +25,6 @@ const SECTOR_FILTERS = [
 
 type CategoryFilter = typeof CATEGORY_FILTERS[number]["value"];
 type SectorFilter   = typeof SECTOR_FILTERS[number]["value"];
-
-const CARD_SIZE_KEY = "alamoudi_card_size";
-
-function SizeToggle({ size, onChange }: { size: CardSize; onChange: (s: CardSize) => void }) {
-  return (
-    <div className="flex items-center gap-1 bg-muted rounded-sm p-1">
-      {([
-        { value: "large"   as CardSize, icon: <LayoutGrid   className="h-3.5 w-3.5" />, label: "كبير"   },
-        { value: "medium"  as CardSize, icon: <AlignJustify className="h-3.5 w-3.5" />, label: "متوسط"  },
-        { value: "compact" as CardSize, icon: <List         className="h-3.5 w-3.5" />, label: "مضغوط"  },
-      ] as const).map(opt => (
-        <button
-          key={opt.value}
-          onClick={() => onChange(opt.value)}
-          title={opt.label}
-          className={cn(
-            "w-7 h-7 rounded-sm flex items-center justify-center transition-all",
-            size === opt.value
-              ? "bg-background text-accent shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {opt.icon}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function FilterChip({
   label, active, onClick,
@@ -80,15 +52,6 @@ export default function RegionPage({ params }: { params: { regionId: string } })
 
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [sectorFilter,   setSectorFilter  ] = useState<SectorFilter  >("all");
-  const [cardSize, setCardSize] = useState<CardSize>(() => {
-    try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "compact"; } catch { return "compact"; }
-  });
-
-  const handleCardSize = (s: CardSize) => {
-    setCardSize(s);
-    try { localStorage.setItem(CARD_SIZE_KEY, s); } catch {}
-  };
-
   const resolve = useCallback((p: any) => ({
     ...p,
     typeName:   propertyTypes.find(t => t.id === p.typeId)?.name,
@@ -115,12 +78,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     return list.map(resolve);
   }, [properties, regionId, categoryFilter, sectorFilter, resolve]);
 
-  const gridClass =
-    cardSize === "compact"
-      ? "grid grid-cols-1 md:grid-cols-2 gap-3"
-      : cardSize === "medium"
-      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-      : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+  const gridClass = "grid grid-cols-1 md:grid-cols-2 gap-3";
 
   /* ── Not found ── */
   if (!region) {
@@ -172,7 +130,6 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                       : `${filtered.length} عقار متاح`}
                   </p>
                 </div>
-                <SizeToggle size={cardSize} onChange={handleCardSize} />
               </div>
             </div>
 
@@ -214,7 +171,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
             ) : (
               <div className={gridClass}>
                 {filtered.map(p => (
-                  <PropertyCard key={p.id} property={p} size={cardSize} />
+                  <PropertyCard key={p.id} property={p} size="compact" />
                 ))}
               </div>
             )}

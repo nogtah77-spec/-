@@ -119,8 +119,9 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
 
   if (size === "compact") {
     return (
-      <Card onClick={goToDetails} className="flex flex-row overflow-hidden border-border shadow-sm group cursor-pointer card-luxury hover:-translate-y-0.5 transition-all duration-200 h-28">
-        <div className="relative w-28 flex-shrink-0 bg-muted overflow-hidden">
+      <Card onClick={goToDetails} className="flex flex-row overflow-hidden border-border shadow-sm group cursor-pointer card-luxury hover:-translate-y-0.5 transition-all duration-200 h-32">
+        {/* ── صورة العقار — أكبر بنسبة ~14% ── */}
+        <div className="relative w-32 flex-shrink-0 bg-muted overflow-hidden">
           {showVideoCover
             ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
             : coverImg
@@ -128,8 +129,8 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
           {(showVideoCover || showVideoPoster) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <span className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow">
-                <Play className="h-3.5 w-3.5 text-accent fill-accent" />
+              <span className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow">
+                <Play className="h-4 w-4 text-accent fill-accent" />
               </span>
             </div>
           )}
@@ -137,14 +138,17 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
           </div>
           {propHasVideo && (
-            <div className="absolute top-2 left-2">
-              <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
+            <div className="absolute bottom-2 left-2">
+              <span className="bg-black/65 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
             </div>
           )}
         </div>
-        <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+
+        {/* ── محتوى البطاقة ── */}
+        <div className="flex-1 px-3.5 py-3 flex flex-col justify-between min-w-0">
+          {/* صف العنوان */}
           <div className="min-w-0">
-            <div className="flex items-start justify-between gap-1.5">
+            <div className="flex items-start justify-between gap-1.5 mb-1">
               <div className="min-w-0 flex items-baseline gap-1.5">
                 <h3 dir="ltr" className="text-sm font-bold font-mono tracking-wide text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
                 <span className="text-[9px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
@@ -155,15 +159,20 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
-            {property.finishing && <p className="text-[10px] text-accent/90 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
+            <p className="text-[11px] text-muted-foreground line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
+            {property.finishing && <p className="text-[10px] text-accent/80 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
           </div>
-          <div className="flex items-center justify-between gap-1.5">
-            <p className="text-sm font-bold text-accent whitespace-nowrap">{property.price.toLocaleString("en-US")} <span className="text-[10px] font-normal text-muted-foreground">EGP</span></p>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground flex-shrink-0">
+
+          {/* صف السعر والتفاصيل */}
+          <div className="mt-1">
+            <p className="text-base font-bold text-accent leading-tight">
+              {property.price.toLocaleString("en-US")}
+              <span className="text-[11px] font-normal text-muted-foreground mr-1">EGP</span>
+            </p>
+            <div className="flex items-center gap-2.5 mt-1 text-[10px] text-muted-foreground">
               {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3" />{property.beds}</span>}
               {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3 w-3" />{property.baths}</span>}
-              <span className="flex items-center gap-0.5"><Square className="h-3 w-3" />{property.area}</span>
+              <span className="flex items-center gap-0.5"><Square className="h-3 w-3" />{property.area} م²</span>
             </div>
           </div>
         </div>

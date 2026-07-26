@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { PropertyCard, type CardSize } from "@/components/ui/PropertyCard";
+import { PropertyCard } from "@/components/ui/PropertyCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Search, UserCheck, Plus, ChevronLeft, X,
-  LayoutGrid, AlignJustify, List, ExternalLink, Play,
+  ExternalLink, Play,
   Building2, MessageCircle,
 } from "lucide-react";
 import { TikTokIcon } from "@/components/icons/BrandIcons";
@@ -127,25 +127,6 @@ function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void 
   );
 }
 
-const CARD_SIZE_KEY = "alamoudi_card_size";
-
-function SizeToggle({ size, onChange }: { size: CardSize; onChange: (s: CardSize) => void }) {
-  return (
-    <div className="flex items-center gap-1 bg-muted rounded-sm p-1">
-      {([
-        { value: "large" as CardSize, icon: <LayoutGrid className="h-3.5 w-3.5" />, label: "كبير" },
-        { value: "medium" as CardSize, icon: <AlignJustify className="h-3.5 w-3.5" />, label: "متوسط" },
-        { value: "compact" as CardSize, icon: <List className="h-3.5 w-3.5" />, label: "مضغوط" },
-      ] as const).map((opt) => (
-        <button key={opt.value} onClick={() => onChange(opt.value)} title={opt.label}
-          className={cn("w-7 h-7 rounded-sm flex items-center justify-center transition-all",
-            size === opt.value ? "bg-background text-accent shadow-sm" : "text-muted-foreground hover:text-foreground")}>
-          {opt.icon}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export default function Home() {
   const { properties, regions, propertyTypes, settings } = useData();
@@ -156,12 +137,6 @@ export default function Home() {
   const [selectedFinishing, setSelectedFinishing] = useState("");
   const [searchText, setSearchText] = useState("");
   const [filtersApplied, setFiltersApplied] = useState(false);
-  const [cardSize, setCardSize] = useState<CardSize>(() => {
-    try { return (localStorage.getItem(CARD_SIZE_KEY) as CardSize) || "compact"; } catch { return "compact"; }
-  });
-
-  useEffect(() => { try { localStorage.setItem(CARD_SIZE_KEY, cardSize); } catch {} }, [cardSize]);
-
   const resolve = (p: any) => ({
     ...p,
     typeName: propertyTypes.find((t) => t.id === p.typeId)?.name,
@@ -243,17 +218,9 @@ export default function Home() {
   const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 3);
   const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
 
-  const gridClass = cardSize === "compact"
-    ? "grid grid-cols-1 md:grid-cols-2 gap-3"
-    : cardSize === "medium"
-    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"
-    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6";
+  const gridClass = "grid grid-cols-1 md:grid-cols-2 gap-3";
 
-  const videoGridClass = cardSize === "compact"
-    ? "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5"
-    : cardSize === "medium"
-    ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3"
-    : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3";
+  const videoGridClass = "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -384,7 +351,6 @@ export default function Home() {
                   <p className="text-sm text-muted-foreground mt-1">{filterResults.length} عقار</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <SizeToggle size={cardSize} onChange={setCardSize} />
                   <Button variant="outline" className="h-8 gap-1.5 border-accent/40 text-accent hover:bg-accent/10 text-sm"
                     onClick={clearFilters}>
                     <X className="h-4 w-4" />مسح الفلاتر
@@ -398,7 +364,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div className={gridClass}>
-                  {filterResults.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
+                  {filterResults.map(p => <PropertyCard key={p.id} property={p} size="compact" />)}
                 </div>
               )}
             </div>
@@ -509,7 +475,6 @@ export default function Home() {
                   <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
                 </h2>
               </div>
-              <SizeToggle size={cardSize} onChange={setCardSize} />
             </div>
             {featuredProps.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">
@@ -517,7 +482,7 @@ export default function Home() {
               </div>
             ) : (
               <div className={gridClass}>
-                {featuredProps.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
+                {featuredProps.map(p => <PropertyCard key={p.id} property={p} size="compact" />)}
               </div>
             )}
           </div>
@@ -536,12 +501,12 @@ export default function Home() {
               <div className="flex gap-4 overflow-hidden">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="flex-shrink-0 w-[82vw] sm:w-[46vw] md:w-[268px] lg:w-[280px]">
-                    <PropertyCard isLoading size="medium" />
+                    <PropertyCard isLoading size="compact" />
                   </div>
                 ))}
               </div>
             ) : (
-              <PropertyCarousel properties={latestProps} size="medium" />
+              <PropertyCarousel properties={latestProps} />
             )}
           </div>
         </section>
@@ -580,7 +545,7 @@ export default function Home() {
                       </Link>
                     </Button>
                   </div>
-                  <PropertyCarousel properties={items.slice(0, 8)} size="medium" />
+                  <PropertyCarousel properties={items.slice(0, 8)} />
                 </div>
               ))}
             </div>
