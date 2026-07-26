@@ -328,7 +328,7 @@ export default function About() {
               تواصل معنا اليوم واطرح استفسارك وسيرد عليك أحد خبرائنا العقاريين.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-white" style={{ background: "linear-gradient(135deg, #0A5A5A, #0D6B6B)" }}>
+              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-white" style={{ background: "linear-gradient(135deg, #9A7F59, #B4986B)" }}>
                 <Link href="/add-property">أعرض عقارك</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-12 px-8 rounded-full font-bold text-sm border-[#DCD7C9]/40 text-[#DCD7C9] hover:bg-white/10">

@@ -251,7 +251,7 @@ export default function Home() {
             <Link
               href="/add-property"
               className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #0A5A5A, #0D6B6B)" }}
+              style={{ background: "linear-gradient(135deg, #9A7F59, #B4986B)" }}
             >
               <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
               أعرض عقارك لدينا
@@ -259,7 +259,7 @@ export default function Home() {
             <Link
               href="/finishing-services"
               className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
-              style={{ background: "linear-gradient(135deg, #1a2224, #111827)", color: "#F5F5F5", border: "1px solid rgba(255,255,255,0.10)" }}
+              style={{ background: "linear-gradient(135deg, #0d1a24, #10202D)", color: "#F7F7F7", border: "1px solid rgba(255,255,255,0.10)" }}
             >
               <Building2 className="h-4 w-4 sm:h-6 sm:w-6" />
               خدمات التشطيبات
@@ -267,9 +267,9 @@ export default function Home() {
             <Link
               href="/consultation"
               className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
-              style={{ border: "1.5px solid #0D6B6B" }}
+              style={{ border: "1.5px solid #B4986B" }}
             >
-              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: "#0D6B6B" }} />
+              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: "#B4986B" }} />
               اطرح استفسارك
             </Link>
           </div>
@@ -307,7 +307,7 @@ export default function Home() {
                     "inline-flex items-center justify-center cursor-pointer",
                     "transition-all duration-[180ms] ease-out",
                     searchCategory === btn.value
-                      ? "bg-accent text-white shadow-[0_2px_8px_rgba(13,107,107,0.30)]"
+                      ? "bg-accent text-white shadow-[0_2px_8px_rgba(180,152,107,0.30)]"
                       : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent"
                   )}>
                   {btn.label}
@@ -323,7 +323,7 @@ export default function Home() {
                     "inline-flex items-center justify-center cursor-pointer",
                     "transition-all duration-[180ms] ease-out",
                     searchSector === btn.value
-                      ? "border-accent bg-accent text-white shadow-[0_2px_8px_rgba(13,107,107,0.30)]"
+                      ? "border-accent bg-accent text-white shadow-[0_2px_8px_rgba(180,152,107,0.30)]"
                       : "border-border text-muted-foreground hover:border-accent/50 hover:text-accent"
                   )}>
                   {btn.label}
@@ -396,7 +396,7 @@ export default function Home() {
           <div className="container px-4 sm:px-6">
             <div className="max-w-3xl mx-auto">
               <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
-                <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#0D6B6B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#B4986B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
                 <div className="relative flex flex-row items-center gap-3 sm:gap-4">
 
                   {/* ── عمود البروفايل (يمين في RTL) ── */}
@@ -557,7 +557,7 @@ export default function Home() {
               </p>
               <div className="flex flex-nowrap justify-center gap-2 sm:gap-3">
                 <Button asChild size="lg" className="h-9 sm:h-11 px-4 sm:px-8 rounded-md font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
-                  style={{ background: "linear-gradient(135deg, #0A5A5A, #0D6B6B)" }}>
+                  style={{ background: "linear-gradient(135deg, #9A7F59, #B4986B)" }}>
                   <Link href="/add-property"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />أعرض عقارك الآن</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-9 sm:h-11 px-4 sm:px-8 rounded-md text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0">

@@ -15,28 +15,20 @@
   to   { width: 100%; }
 }
 
-/* إخفاء سكرولبار كاروسيل الإعلانات */
 .ads-carousel::-webkit-scrollbar { display: none; }
 
 @keyframes ai-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45);
-  }
-  50% {
-    transform: scale(1.12);
-    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
-  }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.45); }
+  50%       { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(255,255,255,0); }
 }
-
 .animate-ai-pulse {
-  animation: ai-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: ai-pulse 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
 }
 
 /* ────────────────────────────────────────────────────────────
-   Tailwind v4 theme tokens
-   Radius: sm=7px (inputs) | md=8px (buttons) | lg=10px (cards) | xl=12px
-   Brand: Premium Burgundy #5C2D3A replaces Sand Gold
+   Design System — العمودي للتسويق العقاري
+   Midnight Blue #10202D · Antique Brass #B4986B · Soft White #F7F7F7
+   Radius: chips=8px | buttons/inputs/dropdowns=12px | cards=16px
    ──────────────────────────────────────────────────────────── */
 @theme inline {
   --color-background: hsl(var(--background));
@@ -88,187 +80,179 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  /* ── Radius system — minimal, Apple/Notion style ── */
-  --radius-sm: 4px;    /* chips, badges, small elements */
-  --radius-md: 6px;    /* buttons, inputs, selects */
-  --radius-lg: 8px;    /* cards, containers */
-  --radius-xl: 8px;    /* filter card, action tiles */
+  /* ── Radius system — Design System spec ── */
+  --radius-sm:  8px;   /* chips, badges */
+  --radius-md: 12px;   /* buttons, inputs, dropdowns */
+  --radius-lg: 16px;   /* cards */
+  --radius-xl: 12px;   /* action tiles, filter card */
 }
 
 /* ────────────────────────────────────────────────────────────
-   Light mode — Premium Burgundy brand palette
-   Background #FFFFFF · Cards #FFFFFF · Primary #111827
-   Accent (Burgundy) #5C2D3A · Borders #E5E7EB
-   Secondary text #6B7280
+   Light mode
+   Background: #F7F7F7 (Soft White) · Cards: #FFFFFF
+   Primary text: #10202D (Midnight Blue) · Accent: #B4986B (Antique Brass)
+   Border: #DDE2E7
    ──────────────────────────────────────────────────────────── */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
-
+  --button-outline: rgba(0,0,0,.12);
+  --badge-outline: rgba(0,0,0,.08);
   --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(0,0,0,.03);
+  --elevate-2: rgba(0,0,0,.06);
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .06);
+  /* Core palette */
+  --background:  210 14% 97%;          /* #F7F7F7 Soft White */
+  --foreground:  207 48% 12%;          /* #10202D Midnight Blue */
+  --border:      210 13% 87%;          /* #DDE2E7 */
 
-  /* Palette */
-  --background: 0 0% 100%;             /* #FFFFFF */
-  --foreground: 222 47% 11%;           /* #111827 */
-  --border: 220 13% 91%;               /* #E5E7EB */
+  --card:        0 0% 100%;            /* #FFFFFF */
+  --card-foreground: 207 48% 12%;
+  --card-border: 210 13% 87%;
 
-  --card: 0 0% 100%;                   /* #FFFFFF */
-  --card-foreground: 222 47% 11%;      /* #111827 */
-  --card-border: 220 13% 91%;          /* #E5E7EB */
-
-  /* Shadows — depend on spacing/borders, kept very subtle */
-  --shadow-luxury: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-luxury:    0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
   --shadow-luxury-lg: 0 4px 16px rgba(0,0,0,0.08);
-  --gradient-hero: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
+  --gradient-hero:    linear-gradient(135deg,#10202D 0%,#1a3245 50%,#10202D 100%);
 
-  --sidebar: 0 0% 97%;
-  --sidebar-foreground: 222 47% 11%;
-  --sidebar-border: 220 13% 91%;
-  --sidebar-primary: 222 47% 11%;
+  --sidebar: 210 14% 95%;
+  --sidebar-foreground: 207 48% 12%;
+  --sidebar-border: 210 13% 87%;
+  --sidebar-primary: 207 48% 12%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 180 78% 24%;       /* Teal */
+  --sidebar-accent: 37 33% 56%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 180 78% 24%;
+  --sidebar-ring: 37 33% 56%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --popover-border: 220 13% 91%;
+  --popover-foreground: 207 48% 12%;
+  --popover-border: 210 13% 87%;
 
-  --primary: 222 47% 11%;              /* #111827 */
+  --primary: 207 48% 12%;              /* #10202D */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 220 14% 96%;            /* #F8F9FA */
-  --secondary-foreground: 222 47% 11%;
+  --secondary: 210 10% 94%;            /* light gray */
+  --secondary-foreground: 207 48% 12%;
 
-  --muted: 220 14% 96%;                /* #F8F9FA — section alt bg */
-  --muted-foreground: 220 9% 46%;      /* #6B7280 */
+  --muted: 210 10% 94%;
+  --muted-foreground: 207 15% 50%;     /* medium blue-gray */
 
-  /* ── Teal / Petrol Blue accent: #0D6B6B ── */
-  --accent: 180 78% 24%;               /* #0D6B6B */
-  --accent-foreground: 0 0% 100%;      /* white */
+  /* ── Antique Brass accent: #B4986B ── */
+  --accent: 37 33% 56%;                /* #B4986B */
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 60%;            /* #DC2626 */
+  --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 220 13% 91%;               /* #E5E7EB */
-  --ring: 180 78% 24%;                /* Teal focus ring */
+  --input: 210 13% 87%;
+  --ring: 37 33% 56%;                  /* Brass focus ring */
 
-  --chart-1: 222 47% 11%;
-  --chart-2: 343 34% 27%;
-  --chart-3: 220 13% 91%;
-  --chart-4: 220 14% 96%;
-  --chart-5: 220 9% 46%;
+  --chart-1: 207 48% 12%;
+  --chart-2: 37 33% 56%;
+  --chart-3: 210 13% 87%;
+  --chart-4: 210 10% 94%;
+  --chart-5: 207 15% 50%;
 
-  --app-font-sans: 'Cairo', 'Noto Sans Arabic', sans-serif;
-  --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
+  --app-font-sans: 'Cairo','Noto Sans Arabic',sans-serif;
+  --app-font-serif: Georgia,serif;
+  --app-font-mono: Menlo,monospace;
 
   --sidebar-primary-border: hsl(var(--sidebar-primary));
-  --sidebar-accent-border: hsl(var(--sidebar-accent));
-  --primary-border: hsl(var(--primary));
-  --secondary-border: hsl(var(--secondary));
-  --muted-border: hsl(var(--muted));
-  --accent-border: hsl(var(--accent));
-  --destructive-border: hsl(var(--destructive));
+  --sidebar-accent-border:  hsl(var(--sidebar-accent));
+  --primary-border:         hsl(var(--primary));
+  --secondary-border:       hsl(var(--secondary));
+  --muted-border:           hsl(var(--muted));
+  --accent-border:          hsl(var(--accent));
+  --destructive-border:     hsl(var(--destructive));
 }
 
 /* ────────────────────────────────────────────────────────────
-   Dark mode — Premium Burgundy brand palette
-   Background #0F1416 · Cards #151C1E · Text #F5F5F5
-   Accent (Burgundy) #5C2D3A · Borders rgba(255,255,255,0.06)
+   Dark mode
+   Background: #10202D (Midnight Blue) · Cards: #152535
+   Text: #F7F7F7 (Soft White) · Accent: #B4986B (Antique Brass)
+   Border: rgba(255,255,255,0.08)
    ──────────────────────────────────────────────────────────── */
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255,255,255,.10);
+  --badge-outline: rgba(255,255,255,.06);
   --opaque-button-border-intensity: 9;
+  --elevate-1: rgba(255,255,255,.03);
+  --elevate-2: rgba(255,255,255,.07);
 
-  --elevate-1: rgba(255,255,255, .03);
-  --elevate-2: rgba(255,255,255, .07);
+  --shadow-luxury:    0 1px 4px rgba(0,0,0,0.40), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-luxury-lg: 0 4px 20px rgba(0,0,0,0.60);
 
-  --shadow-luxury: 0 1px 4px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.04);
-  --shadow-luxury-lg: 0 4px 16px rgba(0,0,0,0.50);
+  --background: 207 48% 12%;           /* #10202D Midnight Blue */
+  --foreground: 0 0% 97%;              /* #F7F7F7 Soft White */
+  --border:     207 35% 18%;           /* subtle dark border */
 
-  /* Palette */
-  --background: 197 19% 7%;            /* #0F1416 */
-  --foreground: 0 0% 96%;              /* #F5F5F5 */
-  --border: 200 13% 14%;               /* subtle dark border */
+  --card:           207 43% 15%;       /* #152535 slightly lighter */
+  --card-foreground: 0 0% 97%;
+  --card-border:     207 35% 18%;
 
-  --card: 193 18% 10%;                 /* #151C1E */
-  --card-foreground: 0 0% 96%;         /* #F5F5F5 */
-  --card-border: 200 13% 14%;
-
-  --sidebar: 193 18% 10%;
-  --sidebar-foreground: 0 0% 96%;
-  --sidebar-border: 200 13% 14%;
-  --sidebar-primary: 0 0% 96%;
-  --sidebar-primary-foreground: 197 19% 7%;
-  --sidebar-accent: 180 78% 24%;       /* Teal */
+  --sidebar: 207 43% 15%;
+  --sidebar-foreground: 0 0% 97%;
+  --sidebar-border: 207 35% 18%;
+  --sidebar-primary: 0 0% 97%;
+  --sidebar-primary-foreground: 207 48% 12%;
+  --sidebar-accent: 37 33% 56%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 180 78% 24%;
+  --sidebar-ring: 37 33% 56%;
 
-  --popover: 193 18% 10%;
-  --popover-foreground: 0 0% 96%;
-  --popover-border: 200 13% 14%;
+  --popover: 207 43% 15%;
+  --popover-foreground: 0 0% 97%;
+  --popover-border: 207 35% 18%;
 
-  --primary: 0 0% 96%;                 /* light text as primary in dark */
-  --primary-foreground: 197 19% 7%;
+  --primary: 0 0% 97%;
+  --primary-foreground: 207 48% 12%;
 
-  --secondary: 200 14% 14%;
-  --secondary-foreground: 0 0% 96%;
+  --secondary: 207 35% 18%;
+  --secondary-foreground: 0 0% 97%;
 
-  --muted: 200 14% 13%;
-  --muted-foreground: 0 0% 67%;        /* #A1A1AA */
+  --muted: 207 35% 17%;
+  --muted-foreground: 207 12% 65%;     /* muted blue-gray text */
 
-  --accent: 180 78% 24%;               /* #0D6B6B — teal in both modes */
+  --accent: 37 33% 56%;                /* #B4986B — same in both modes */
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 62% 47%;            /* #EF4444 adjusted */
+  --destructive: 0 62% 47%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 200 13% 14%;
-  --ring: 180 78% 24%;
+  --input: 207 35% 18%;
+  --ring: 37 33% 56%;
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply font-sans antialiased bg-background text-foreground;
     direction: rtl;
     text-align: right;
   }
 
-  /* ── Card — minimal shadow + 8px radius ── */
+  /* ── Card — 16px radius, Design System spec ── */
   .card-luxury {
     box-shadow: var(--shadow-luxury);
     border: 1px solid hsl(var(--card-border));
-    border-radius: 8px;
+    border-radius: 16px;
   }
   .dark .card-luxury {
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255,255,255,0.07);
   }
 
-  /* ── Navbar — glass effect ── */
+  /* ── Navbar — glass over Soft White / Midnight Blue ── */
   .glass-navbar {
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(247,247,247,0.94);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid hsl(220 13% 91%);
+    border-bottom: 1px solid hsl(210 13% 87%);
   }
   .dark .glass-navbar {
-    background: rgba(15, 20, 22, 0.92);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(16,32,45,0.94);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
   }
 }
 
 @layer utilities {
-  input[type="search"]::-webkit-search-cancel-button {
-    @apply hidden;
-  }
+  input[type="search"]::-webkit-search-cancel-button { @apply hidden; }
 
   [contenteditable][data-placeholder]:empty::before {
     content: attr(data-placeholder);
@@ -288,14 +272,8 @@
     border-radius: inherit;
     z-index: -1;
   }
-
-  .toggle-elevate.toggle-elevated::before {
-    background-color: var(--elevate-2);
-  }
-
-  .border.toggle-elevate::before {
-    inset: -1px;
-  }
+  .toggle-elevate.toggle-elevated::before { background-color: var(--elevate-2); }
+  .border.toggle-elevate::before { inset: -1px; }
 
   .hover-elevate:not(.no-default-hover-elevate),
   .active-elevate:not(.no-default-active-elevate),
@@ -316,17 +294,14 @@
     border-radius: inherit;
     z-index: 999;
   }
-
   .hover-elevate:hover:not(.no-default-hover-elevate)::after,
   .active-elevate:active:not(.no-default-active-elevate)::after {
     background-color: var(--elevate-1);
   }
-
   .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
   .active-elevate-2:active:not(.no-default-active-elevate)::after {
     background-color: var(--elevate-2);
   }
-
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
   .border.active-elevate:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
