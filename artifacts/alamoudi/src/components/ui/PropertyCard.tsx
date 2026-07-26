@@ -158,10 +158,10 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
 
           {/* صف السعر والتفاصيل */}
           <div className="mt-1">
-            <p className="text-base font-bold text-accent leading-tight">
-              {property.price.toLocaleString("en-US")}
-              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground mr-2.5">EGP</span>
-            </p>
+            <div dir="ltr" className="flex items-baseline gap-2.5">
+              <span className="text-base font-bold text-accent leading-tight">{property.price.toLocaleString("en-US")}</span>
+              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground">EGP</span>
+            </div>
             <div className="flex items-center gap-2.5 mt-1 text-[10px] text-muted-foreground">
               {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3" />{property.beds}</span>}
               {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3 w-3" />{property.baths}</span>}
@@ -231,9 +231,10 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           </h3>
           <span className="text-[10px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
         </div>
-        <p className={cn("font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
-          {property.price.toLocaleString("en-US")} <span className="text-xs font-semibold tracking-widest text-muted-foreground ml-2">EGP</span>
-        </p>
+        <div dir="ltr" className={cn("flex items-baseline gap-2.5 font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
+          <span>{property.price.toLocaleString("en-US")}</span>
+          <span className="text-xs font-semibold tracking-widest text-muted-foreground">EGP</span>
+        </div>
         <div className="mt-auto">
           {(property.finishing || property.view) && (
             <div className="flex flex-wrap items-center gap-1.5 pt-3">
