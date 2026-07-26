@@ -127,13 +127,6 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             : coverImg
               ? <img src={coverImg} alt={property.title} className="w-full h-full object-cover" />
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
-          {(showVideoCover || showVideoPoster) && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <span className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center shadow">
-                <Play className="h-4 w-4 text-accent fill-accent" />
-              </span>
-            </div>
-          )}
           <div className="absolute top-2 right-2">
             <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
           </div>
@@ -193,14 +186,6 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
               ? <div className="w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center"><Video className="h-10 w-10 text-accent/50" /></div>
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
         }
-        {(showVideoCover || showVideoPoster) && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <span className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <Play className="h-5 w-5 text-accent fill-accent translate-x-px" />
-            </span>
-          </div>
-        )}
-
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
         <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[65%]">
