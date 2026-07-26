@@ -17,6 +17,21 @@
 
 .ads-carousel::-webkit-scrollbar { display: none; }
 
+/* ── إصلاح scroll في Radix Select — يتجاوز الـ overflow:hidden الـ inline ── */
+[data-radix-select-viewport] {
+  overflow-y: auto !important;
+  max-height: min(22rem, var(--radix-select-content-available-height, 22rem)) !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+[data-radix-select-viewport]::-webkit-scrollbar { width: 6px; }
+[data-radix-select-viewport]::-webkit-scrollbar-track { background: transparent; }
+[data-radix-select-viewport]::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 999px;
+}
+
 @keyframes ai-pulse {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.45); }
   50%       { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(255,255,255,0); }
