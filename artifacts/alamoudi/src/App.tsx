@@ -27,6 +27,7 @@ import PropertyDetails from "@/pages/PropertyDetails";
 import Favorites from "@/pages/Favorites";
 import Compare from "@/pages/Compare";
 import Login from "@/pages/Login";
+import RegionPage from "@/pages/RegionPage";
 
 const Dashboard = lazy(() => import("@/pages/admin/Dashboard"));
 const Properties = lazy(() => import("@/pages/admin/Properties"));
@@ -185,6 +186,7 @@ function Router() {
       <Route path="/favorites" component={Favorites} />
       <Route path="/compare" component={Compare} />
       <Route path="/login" component={Login} />
+      <Route path="/region/:regionId" component={RegionPage} />
 
       <Route path="/admin">{() => <Protected component={Dashboard} />}</Route>
       <Route path="/admin/properties">{() => <Protected component={Properties} />}</Route>

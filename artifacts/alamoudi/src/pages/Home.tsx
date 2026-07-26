@@ -19,6 +19,7 @@ import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { PublicBannerSlot } from "@/components/ui/AdsBanner";
+import { PropertyCarousel } from "@/components/ui/PropertyCarousel";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -169,6 +170,20 @@ export default function Home() {
 
   const featuredProps = useMemo(() => properties.filter(p => p.featured).map(resolve), [properties, propertyTypes, regions]);
   const latestProps = useMemo(() => [...properties].filter(p => !p.featured).reverse().slice(0, 6).map(resolve), [properties, propertyTypes, regions]);
+
+  const propertiesByRegion = useMemo(() => {
+    const groups = new Map<string, { name: string; items: any[] }>();
+    for (const p of properties) {
+      const region = regions.find(r => r.id === p.regionId);
+      if (!region || !region.active) continue;
+      if (!groups.has(p.regionId)) groups.set(p.regionId, { name: region.name, items: [] });
+      groups.get(p.regionId)!.items.push(resolve(p));
+    }
+    return [...groups.entries()]
+      .map(([id, { name, items }]) => ({ id, name, items }))
+      .filter(g => g.items.length > 0)
+      .sort((a, b) => b.items.length - a.items.length);
+  }, [properties, regions, propertyTypes]);
 
   // Normalise a finishing string for comparison: collapse whitespace so that
   // "ألترا سوبرلوكس" and "ألترا سوبر لوكس" both produce the same key.
@@ -508,7 +523,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Latest Properties ── */}
+        {/* ── Latest Properties — Carousel ── */}
         <section className="py-12 md:py-14 bg-background">
           <div className="container px-6">
             <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
@@ -516,15 +531,62 @@ export default function Home() {
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">أحدث العقارات</h2>
                 <p className="text-sm text-muted-foreground mt-1">تصفح أحدث ما أضيف لمجموعتنا العقارية</p>
               </div>
-              <SizeToggle size={cardSize} onChange={setCardSize} />
             </div>
-            <div className={gridClass}>
-              {latestProps.length === 0
-                ? [1, 2, 3].map(i => <PropertyCard key={i} isLoading size={cardSize} />)
-                : latestProps.map(p => <PropertyCard key={p.id} property={p} size={cardSize} />)}
+            {latestProps.length === 0 ? (
+              <div className="flex gap-4 overflow-hidden">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex-shrink-0 w-[82vw] sm:w-[46vw] md:w-[268px] lg:w-[280px]">
+                    <PropertyCard isLoading size="medium" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <PropertyCarousel properties={latestProps} size="medium" />
+            )}
+          </div>
+        </section>
+
+        {/* ── Explore All Properties — grouped by region ── */}
+        {propertiesByRegion.length > 0 && (
+        <section className="py-12 md:py-14 bg-muted dark:bg-background">
+          <div className="container px-6">
+            <div className="mb-10">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground relative inline-block">
+                استكشف جميع العقارات
+                <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
+              </h2>
+              <p className="text-sm text-muted-foreground mt-4">تصفح عقاراتنا مرتبةً حسب المدينة والمنطقة</p>
+            </div>
+
+            <div className="space-y-12">
+              {propertiesByRegion.map(({ id, name, items }) => (
+                <div key={id}>
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="text-lg font-bold text-foreground">{name}</h3>
+                      <span className="text-xs text-muted-foreground bg-background border border-border px-2 py-0.5 rounded-sm">
+                        {items.length} عقار
+                      </span>
+                    </div>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 border-accent/30 text-accent hover:bg-accent/10 rounded-md text-xs h-8"
+                    >
+                      <Link href={`/region/${id}`}>
+                        عرض جميع عقارات {name}
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </div>
+                  <PropertyCarousel properties={items.slice(0, 8)} size="medium" />
+                </div>
+              ))}
             </div>
           </div>
         </section>
+        )}
 
         {/* ── Finishing Services Preview ── */}
         <section className="py-12 md:py-14 bg-muted dark:bg-background">
