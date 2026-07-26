@@ -448,7 +448,7 @@ export default function Home() {
                   {/* ── الفيديوهات (يسار في RTL) ── */}
                   <div className="flex-1 min-w-0">
                     {tiktokVideos.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/30 gap-2 h-full min-h-[120px]">
+                      <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border bg-muted/30 gap-2 h-full min-h-[120px]">
                         <Play className="h-5 w-5 text-accent/40" />
                         <p className="text-xs text-muted-foreground">لا توجد فيديوهات حالياً</p>
                         <a

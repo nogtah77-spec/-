@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
   // Base: pill chip — consistent height, centered text, 600 weight, 180ms transition
-  "whitespace-nowrap inline-flex items-center justify-center rounded-full border " +
-  "h-6 px-3 text-xs font-semibold " +
+  "whitespace-nowrap inline-flex items-center justify-center rounded-sm border " +
+  "h-5 px-2 text-xs font-semibold " +
   "transition-all duration-[180ms] ease-out " +
   "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 " +
   "hover-elevate",

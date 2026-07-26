@@ -300,7 +300,7 @@ export default function PropertyDetails() {
               tabIndex={0}
               onClick={() => setVideoModalOpen(true)}
               onKeyDown={e => e.key === "Enter" && setVideoModalOpen(true)}
-              className="group relative block h-[300px] sm:h-[380px] rounded-2xl overflow-hidden mb-10 bg-muted cursor-pointer"
+              className="group relative block h-[300px] sm:h-[380px] rounded-lg overflow-hidden mb-10 bg-muted cursor-pointer"
               data-testid="link-video-cover"
             >
               {showDetailVideoCover ? (
@@ -322,11 +322,11 @@ export default function PropertyDetails() {
                 <span className="w-20 h-20 rounded-full bg-white/95 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
                   <Play className="h-9 w-9 text-accent fill-accent translate-x-0.5" />
                 </span>
-                <span className="text-white font-semibold text-sm bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full">مشاهدة فيديو العقار</span>
+                <span className="text-white font-semibold text-sm bg-black/40 backdrop-blur-sm px-3 py-1 rounded-md">مشاهدة فيديو العقار</span>
               </div>
             </div>
           ) : (
-            <div className="h-64 bg-muted rounded-2xl flex items-center justify-center mb-10 border border-dashed border-border">
+            <div className="h-64 bg-muted rounded-lg flex items-center justify-center mb-10 border border-dashed border-border">
               <div className="text-center text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-2 opacity-30" />
                 <p className="text-sm">لا توجد صور لهذا العقار</p>
@@ -340,33 +340,33 @@ export default function PropertyDetails() {
               {/* Compact specs row — desktop only (mobile version is above gallery) */}
               <div className="hidden lg:flex flex-wrap gap-2">
                 {property.beds > 0 && (
-                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
                     <Bed className="h-4 w-4 text-accent flex-shrink-0" />
                     <span className="font-semibold">{property.beds}</span>
                     <span className="text-muted-foreground text-xs">غرف</span>
                   </div>
                 )}
                 {property.baths > 0 && (
-                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
                     <Bath className="h-4 w-4 text-accent flex-shrink-0" />
                     <span className="font-semibold">{property.baths}</span>
                     <span className="text-muted-foreground text-xs">حمام</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
                   <Square className="h-4 w-4 text-accent flex-shrink-0" />
                   <span className="font-semibold">{property.area}</span>
                   <span className="text-muted-foreground text-xs">م²</span>
                 </div>
                 {property.floor > 0 && (
-                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
+                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
                     <Layers className="h-4 w-4 text-accent flex-shrink-0" />
                     <span className="font-semibold">{property.floor}</span>
                     <span className="text-muted-foreground text-xs">دور</span>
                   </div>
                 )}
                 {property.finishing && (
-                  <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-xl px-3 py-2 text-sm">
+                  <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-md px-3 py-2 text-sm">
                     <span className="text-accent text-xs font-medium">{finishingLabels[property.finishing] || property.finishing}</span>
                   </div>
                 )}
@@ -374,7 +374,7 @@ export default function PropertyDetails() {
                   <button
                     onClick={() => setVideoModalOpen(true)}
                     data-testid="link-watch-video"
-                    className="flex items-center gap-1.5 bg-accent text-white rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+                    className="flex items-center gap-1.5 bg-accent text-white rounded-md px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
                   >
                     <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
                     <span className="text-xs font-medium">فيديو العقار</span>

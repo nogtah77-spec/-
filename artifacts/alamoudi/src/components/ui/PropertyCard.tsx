@@ -138,22 +138,22 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           </div>
           {propHasVideo && (
             <div className="absolute top-2 left-2">
-              <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-sm"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
+              <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
             </div>
           )}
-          <div className="absolute bottom-1.5 inset-x-0 flex justify-center">
-            <span dir="ltr" className="flex items-center gap-0.5 bg-[#10202D]/85 backdrop-blur-sm border border-[#B4986B]/60 text-[#B4986B] text-[9px] px-2 py-0.5 rounded font-mono tracking-wide font-bold">#{property.code}</span>
-          </div>
         </div>
         <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
           <div className="min-w-0">
-            <div className="flex items-center justify-between gap-1.5">
-              <h3 className="text-sm font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
+            <div className="flex items-start justify-between gap-1.5">
+              <div className="min-w-0">
+                <p className="text-[8px] text-muted-foreground tracking-widest uppercase leading-none mb-0.5">كود</p>
+                <h3 dir="ltr" className="text-sm font-bold font-mono tracking-wide text-foreground line-clamp-1 group-hover:text-accent transition-colors">#{property.code}</h3>
+              </div>
               {property.typeName && (
-            <span className="flex-shrink-0 text-[9px] font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded-full">
-              {property.typeName}
-            </span>
-          )}
+                <span className="flex-shrink-0 text-[9px] font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded-sm">
+                  {property.typeName}
+                </span>
+              )}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
             {property.finishing && <p className="text-[10px] text-accent/90 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
@@ -191,6 +191,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
             </span>
           </div>
         )}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
         <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[65%]">
@@ -200,7 +201,7 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
 
         <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
           {propHasVideo && (
-            <span className="bg-black/65 text-white backdrop-blur-sm text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 shadow">
+            <span className="bg-black/65 text-white backdrop-blur-sm text-[10px] px-2 py-0.5 rounded flex items-center gap-1 shadow">
               <Play className="h-2.5 w-2.5 fill-white flex-shrink-0" />فيديو
             </span>
           )}
@@ -216,9 +217,6 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         </div>
 
         <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5">
-          <span dir="ltr" className="flex items-center gap-1 bg-[#10202D]/85 backdrop-blur-sm border border-[#B4986B]/65 text-[#B4986B] px-2.5 py-1 rounded font-mono text-[11px] tracking-wider font-bold shadow-sm">
-            #{property.code}
-          </span>
           {imageCount > 0 && (
             <span className="text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1">
               <Camera className="h-3 w-3" />{imageCount}
@@ -233,13 +231,11 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
       </div>
 
       <CardContent className={cn("flex-1 flex flex-col", size === "medium" ? "p-4" : "p-5")}>
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <h3 className={cn("font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors", size === "medium" ? "text-base" : "text-lg")}>
-            {property.code}
-          </h3>
-          <span dir="ltr" className="flex-shrink-0 font-mono text-[10px] bg-foreground/10 text-foreground border border-foreground/20 px-2 py-0.5 rounded text-nowrap tracking-wider font-semibold">
+        <div className="mb-2">
+          <p className="text-[9px] text-muted-foreground tracking-widest uppercase mb-0.5">كود العقار</p>
+          <h3 dir="ltr" className={cn("font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors", size === "medium" ? "text-lg" : "text-xl")}>
             #{property.code}
-          </span>
+          </h3>
         </div>
         <p className={cn("font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
           {property.price.toLocaleString("en-US")} <span className="text-xs font-normal text-muted-foreground">EGP</span>
@@ -247,8 +243,8 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         <div className="mt-auto">
           {(property.finishing || property.view) && (
             <div className="flex flex-wrap items-center gap-1.5 pt-3">
-              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-full line-clamp-1">{property.finishing}</span>}
-              {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-full line-clamp-1 max-w-[55%]">{property.view}</span>}
+              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-sm line-clamp-1">{property.finishing}</span>}
+              {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-sm line-clamp-1 max-w-[55%]">{property.view}</span>}
             </div>
           )}
           <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-[13px]" : "mt-4 pt-4 text-[13px]")}>

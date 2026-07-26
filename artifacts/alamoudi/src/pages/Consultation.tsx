@@ -82,7 +82,7 @@ export default function Consultation() {
               ].map((item, i) => (
                 <Card key={i} className="card-luxury border-none bg-card">
                   <CardContent className="p-5 flex items-start gap-4">
-                    <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent flex-shrink-0">{item.icon}</div>
+                    <div className="w-10 h-10 bg-accent/10 rounded-md flex items-center justify-center text-accent flex-shrink-0">{item.icon}</div>
                     <div>
                       <h3 className="font-semibold text-sm mb-1">{item.title}</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
@@ -128,7 +128,7 @@ export default function Consultation() {
                     </div>
                     <h2 className="text-xl font-bold text-foreground mb-2">تم إرسال طلبك بنجاح</h2>
                     <p className="text-sm text-muted-foreground">سيتواصل معك فريقنا خلال 24 ساعة على رقم الهاتف الذي أدخلته.</p>
-                    <Button className="mt-6 bg-accent text-white hover:bg-accent/90 rounded-full px-8"
+                    <Button className="mt-6 bg-accent text-white hover:bg-accent/90 px-8"
                       onClick={() => { setSubmitted(false); setForm({ name: "", phone: "", email: "", subject: "", message: "" }); }}>
                       إرسال استفسار آخر
                     </Button>
