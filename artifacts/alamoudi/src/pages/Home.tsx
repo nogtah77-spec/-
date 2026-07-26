@@ -96,7 +96,7 @@ function TiktokCard({ video, onPlay }: { video: TiktokVideo; onPlay: () => void 
   return (
     <button
       onClick={onPlay}
-      className="group block w-full text-right rounded-xl overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+      className="group block w-full text-right rounded-md overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
     >
       <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {!failed ? (
@@ -130,14 +130,14 @@ const CARD_SIZE_KEY = "alamoudi_card_size";
 
 function SizeToggle({ size, onChange }: { size: CardSize; onChange: (s: CardSize) => void }) {
   return (
-    <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+    <div className="flex items-center gap-1 bg-muted rounded-sm p-1">
       {([
         { value: "large" as CardSize, icon: <LayoutGrid className="h-3.5 w-3.5" />, label: "كبير" },
         { value: "medium" as CardSize, icon: <AlignJustify className="h-3.5 w-3.5" />, label: "متوسط" },
         { value: "compact" as CardSize, icon: <List className="h-3.5 w-3.5" />, label: "مضغوط" },
       ] as const).map((opt) => (
         <button key={opt.value} onClick={() => onChange(opt.value)} title={opt.label}
-          className={cn("w-7 h-7 rounded-md flex items-center justify-center transition-all",
+          className={cn("w-7 h-7 rounded-sm flex items-center justify-center transition-all",
             size === opt.value ? "bg-background text-accent shadow-sm" : "text-muted-foreground hover:text-foreground")}>
           {opt.icon}
         </button>
@@ -250,7 +250,7 @@ export default function Home() {
           <div className="flex gap-2 sm:gap-3 max-w-3xl mx-auto">
             <Link
               href="/add-property"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
               style={{ background: "linear-gradient(135deg, #0A5A5A, #0D6B6B)" }}
             >
               <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
@@ -258,7 +258,7 @@ export default function Home() {
             </Link>
             <Link
               href="/finishing-services"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
               style={{ background: "linear-gradient(135deg, #1a2224, #111827)", color: "#F5F5F5", border: "1px solid rgba(255,255,255,0.10)" }}
             >
               <Building2 className="h-4 w-4 sm:h-6 sm:w-6" />
@@ -266,7 +266,7 @@ export default function Home() {
             </Link>
             <Link
               href="/consultation"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
               style={{ border: "1.5px solid #0D6B6B" }}
             >
               <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: "#0D6B6B" }} />
@@ -283,7 +283,7 @@ export default function Home() {
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">
-          <div className="relative z-20 bg-card border border-border rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5 max-w-3xl mx-auto">
+          <div className="relative z-20 bg-card border border-border rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5 max-w-3xl mx-auto">
             <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -303,7 +303,7 @@ export default function Home() {
               {[{ value: "sale", label: "للبيع" }, { value: "rent", label: "للإيجار" }, { value: "furnished", label: "مفروش" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchCategory(btn.value as typeof searchCategory)}
                   className={cn(
-                    "h-9 px-5 rounded-full text-sm font-semibold whitespace-nowrap",
+                    "h-9 px-5 rounded-sm text-sm font-semibold whitespace-nowrap",
                     "inline-flex items-center justify-center cursor-pointer",
                     "transition-all duration-[180ms] ease-out",
                     searchCategory === btn.value
@@ -319,7 +319,7 @@ export default function Home() {
               {[{ value: "residential", label: "سكني" }, { value: "administrative", label: "إداري" }, { value: "medical", label: "طبي" }, { value: "commercial", label: "تجاري" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchSector(btn.value as typeof searchSector)}
                   className={cn(
-                    "h-9 px-4 rounded-full text-sm font-semibold border whitespace-nowrap",
+                    "h-9 px-4 rounded-sm text-sm font-semibold border whitespace-nowrap",
                     "inline-flex items-center justify-center cursor-pointer",
                     "transition-all duration-[180ms] ease-out",
                     searchSector === btn.value
@@ -395,7 +395,7 @@ export default function Home() {
         <section className="py-4 md:py-5 bg-background">
           <div className="container px-4 sm:px-6">
             <div className="max-w-3xl mx-auto">
-              <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
+              <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
                 <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#0D6B6B 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
                 <div className="relative flex flex-row items-center gap-3 sm:gap-4">
 
@@ -406,7 +406,7 @@ export default function Home() {
                       <a
                         href={settings.tiktok || "#"}
                         {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        className="block w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                        className="block w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
                         aria-label="حساب تيك توك"
                       >
                         {settings.tiktokAvatar ? (
@@ -438,7 +438,7 @@ export default function Home() {
                     <a
                       href={settings.tiktok || "#"}
                       {...(settings.tiktok ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                      className="w-full inline-flex items-center justify-center gap-1 rounded-full bg-foreground text-background hover:bg-foreground/80 transition-colors text-[11px] font-semibold h-7 px-2 shadow-sm"
+                      className="w-full inline-flex items-center justify-center gap-1 rounded-sm bg-foreground text-background hover:bg-foreground/80 transition-colors text-[11px] font-semibold h-7 px-2 shadow-sm"
                     >
                       <TikTokIcon className="h-2.5 w-2.5 shrink-0" />
                       <span>متابعة</span>
@@ -534,7 +534,7 @@ export default function Home() {
               <p className="text-sm text-muted-foreground max-w-lg mx-auto">نقدم خدمات تشطيب متكاملة لجميع أنواع الوحدات بأعلى مستوى من الجودة وأفضل الأسعار</p>
             </div>
             <div className="text-center">
-              <Button asChild size="lg" variant="outline" className="rounded-full px-8 gap-2 border-accent/40 text-accent hover:bg-accent/10">
+              <Button asChild size="lg" variant="outline" className="rounded-md px-8 gap-2 border-accent/40 text-accent hover:bg-accent/10">
                 <Link href="/finishing-services">
                   <Building2 className="h-4 w-4" />استعرض خدمات التشطيبات
                   <ChevronLeft className="h-4 w-4" />
@@ -547,8 +547,8 @@ export default function Home() {
         {/* ── Add Property CTA ── */}
         <section className="py-12 md:py-14 bg-muted dark:bg-background">
           <div className="container px-6">
-            <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-xl p-8 card-luxury">
-              <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-4">
+            <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-lg p-8 card-luxury">
+              <div className="w-14 h-14 bg-accent/10 rounded-md flex items-center justify-center text-accent mx-auto mb-4">
                 <UserCheck className="h-7 w-7" />
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">هل تمتلك عقاراً للبيع أو الإيجار؟</h2>
@@ -556,11 +556,11 @@ export default function Home() {
                 أعرض عقارك لدينا واحصل على أفضل عرض سعر. نتواصل معك في أقرب وقت.
               </p>
               <div className="flex flex-nowrap justify-center gap-2 sm:gap-3">
-                <Button asChild size="lg" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
+                <Button asChild size="lg" className="h-9 sm:h-11 px-4 sm:px-8 rounded-md font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
                   style={{ background: "linear-gradient(135deg, #0A5A5A, #0D6B6B)" }}>
                   <Link href="/add-property"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />أعرض عقارك الآن</Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0">
+                <Button asChild size="lg" variant="outline" className="h-9 sm:h-11 px-4 sm:px-8 rounded-md text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0">
                   <Link href="/consultation">اطرح استفسارك</Link>
                 </Button>
               </div>

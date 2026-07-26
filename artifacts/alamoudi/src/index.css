@@ -88,11 +88,11 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  /* ── Radius system — reduced ~50% from previous values ── */
-  --radius-sm: 7px;    /* inputs, small chips */
-  --radius-md: 8px;    /* buttons, select triggers */
-  --radius-lg: 10px;   /* cards */
-  --radius-xl: 12px;   /* filter card, action tiles */
+  /* ── Radius system — minimal, Apple/Notion style ── */
+  --radius-sm: 4px;    /* chips, badges, small elements */
+  --radius-md: 6px;    /* buttons, inputs, selects */
+  --radius-lg: 8px;    /* cards, containers */
+  --radius-xl: 8px;    /* filter card, action tiles */
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -242,11 +242,11 @@
     text-align: right;
   }
 
-  /* ── Card — minimal shadow + 10px radius (reduced 50%) ── */
+  /* ── Card — minimal shadow + 8px radius ── */
   .card-luxury {
     box-shadow: var(--shadow-luxury);
     border: 1px solid hsl(var(--card-border));
-    border-radius: 10px;
+    border-radius: 8px;
   }
   .dark .card-luxury {
     border: 1px solid rgba(255, 255, 255, 0.06);
