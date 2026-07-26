@@ -250,26 +250,26 @@ export default function Home() {
           <div className="flex gap-2 sm:gap-3 max-w-3xl mx-auto">
             <Link
               href="/add-property"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
-              style={{ background: "linear-gradient(135deg, #B8895B, #C89B6D)" }}
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
+              style={{ background: "linear-gradient(135deg, #4A2331, #5C2D3A)" }}
             >
               <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
               أعرض عقارك لدينا
             </Link>
             <Link
               href="/finishing-services"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-2xl py-4 sm:py-5 shadow-md hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
-              style={{ background: "linear-gradient(135deg, #2E4041, #243334)", color: "#F5F5F3", border: "1px solid rgba(245,245,243,0.15)" }}
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
+              style={{ background: "linear-gradient(135deg, #1a2224, #111827)", color: "#F5F5F5", border: "1px solid rgba(255,255,255,0.10)" }}
             >
               <Building2 className="h-4 w-4 sm:h-6 sm:w-6" />
               خدمات التشطيبات
             </Link>
             <Link
               href="/consultation"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-2xl py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
-              style={{ border: "1.5px solid #C89B6D" }}
+              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-xl py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
+              style={{ border: "1.5px solid #5C2D3A" }}
             >
-              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: "#C89B6D" }} />
+              <MessageCircle className="h-4 w-4 sm:h-6 sm:w-6" style={{ color: "#5C2D3A" }} />
               اطرح استفسارك
             </Link>
           </div>
@@ -283,7 +283,7 @@ export default function Home() {
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-6">
-          <div className="relative z-20 bg-card border border-border rounded-2xl shadow-[0_8px_40px_-8px_rgba(44,54,57,0.18)] p-5 max-w-3xl mx-auto">
+          <div className="relative z-20 bg-card border border-border rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5 max-w-3xl mx-auto">
             <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -307,7 +307,7 @@ export default function Home() {
                     "inline-flex items-center justify-center cursor-pointer",
                     "transition-all duration-[180ms] ease-out",
                     searchCategory === btn.value
-                      ? "bg-accent text-white shadow-[0_2px_8px_rgba(200,155,109,0.35)]"
+                      ? "bg-accent text-white shadow-[0_2px_8px_rgba(92,45,58,0.30)]"
                       : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent"
                   )}>
                   {btn.label}
@@ -323,7 +323,7 @@ export default function Home() {
                     "inline-flex items-center justify-center cursor-pointer",
                     "transition-all duration-[180ms] ease-out",
                     searchSector === btn.value
-                      ? "border-accent bg-accent text-white shadow-[0_2px_8px_rgba(200,155,109,0.35)]"
+                      ? "border-accent bg-accent text-white shadow-[0_2px_8px_rgba(92,45,58,0.30)]"
                       : "border-border text-muted-foreground hover:border-accent/50 hover:text-accent"
                   )}>
                   {btn.label}
@@ -396,7 +396,7 @@ export default function Home() {
           <div className="container px-4 sm:px-6">
             <div className="max-w-3xl mx-auto">
               <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(#C89B6D 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
+                <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(#5C2D3A 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
                 <div className="relative flex flex-row items-center gap-3 sm:gap-4">
 
                   {/* ── عمود البروفايل (يمين في RTL) ── */}
@@ -547,7 +547,7 @@ export default function Home() {
         {/* ── Add Property CTA ── */}
         <section className="py-12 md:py-14 bg-muted dark:bg-background">
           <div className="container px-6">
-            <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-2xl p-8 card-luxury">
+            <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-xl p-8 card-luxury">
               <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-4">
                 <UserCheck className="h-7 w-7" />
               </div>
@@ -557,7 +557,7 @@ export default function Home() {
               </p>
               <div className="flex flex-nowrap justify-center gap-2 sm:gap-3">
                 <Button asChild size="lg" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
-                  style={{ background: "linear-gradient(135deg, #B8895B, #C89B6D)" }}>
+                  style={{ background: "linear-gradient(135deg, #4A2331, #5C2D3A)" }}>
                   <Link href="/add-property"><Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />أعرض عقارك الآن</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-9 sm:h-11 px-4 sm:px-8 rounded-full text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0">

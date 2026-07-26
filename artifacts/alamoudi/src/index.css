@@ -35,7 +35,8 @@
 
 /* ────────────────────────────────────────────────────────────
    Tailwind v4 theme tokens
-   Radius: sm=14px (inputs) | md=16px (buttons) | lg=20px (cards) | xl=24px
+   Radius: sm=7px (inputs) | md=8px (buttons) | lg=10px (cards) | xl=12px
+   Brand: Premium Burgundy #5C2D3A replaces Sand Gold
    ──────────────────────────────────────────────────────────── */
 @theme inline {
   --color-background: hsl(var(--background));
@@ -87,17 +88,17 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  /* ── Radius system (brand guide values) ── */
-  --radius-sm: 14px;   /* inputs, small chips */
-  --radius-md: 16px;   /* buttons, select triggers */
-  --radius-lg: 20px;   /* cards */
-  --radius-xl: 24px;   /* extra large */
+  /* ── Radius system — reduced ~50% from previous values ── */
+  --radius-sm: 7px;    /* inputs, small chips */
+  --radius-md: 8px;    /* buttons, select triggers */
+  --radius-lg: 10px;   /* cards */
+  --radius-xl: 12px;   /* filter card, action tiles */
 }
 
 /* ────────────────────────────────────────────────────────────
-   Light mode — brand palette
-   Background #FFFFFF · Cards #FFFFFF · Primary #243334
-   Accent #C89B6D · Hover #B8895B · Borders #E8E8E8
+   Light mode — Premium Burgundy brand palette
+   Background #FFFFFF · Cards #FFFFFF · Primary #111827
+   Accent (Burgundy) #5C2D3A · Borders #E5E7EB
    Secondary text #6B7280
    ──────────────────────────────────────────────────────────── */
 :root {
@@ -107,57 +108,59 @@
   --opaque-button-border-intensity: -8;
 
   --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-2: rgba(0,0,0, .06);
 
   /* Palette */
   --background: 0 0% 100%;             /* #FFFFFF */
-  --foreground: 184 18% 17%;           /* #243334 */
-  --border: 0 0% 91%;                  /* #E8E8E8 */
+  --foreground: 222 47% 11%;           /* #111827 */
+  --border: 220 13% 91%;               /* #E5E7EB */
 
   --card: 0 0% 100%;                   /* #FFFFFF */
-  --card-foreground: 184 18% 17%;      /* #243334 */
-  --card-border: 0 0% 91%;             /* #E8E8E8 */
+  --card-foreground: 222 47% 11%;      /* #111827 */
+  --card-border: 220 13% 91%;          /* #E5E7EB */
 
-  --shadow-luxury: 0 4px 12px rgba(0,0,0,0.06);
-  --shadow-luxury-lg: 0 8px 24px rgba(0,0,0,0.10);
-  --gradient-hero: linear-gradient(135deg, #243334 0%, #2E4041 50%, #243334 100%);
+  /* Shadows — depend on spacing/borders, kept very subtle */
+  --shadow-luxury: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04);
+  --shadow-luxury-lg: 0 4px 16px rgba(0,0,0,0.08);
+  --gradient-hero: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
 
   --sidebar: 0 0% 97%;
-  --sidebar-foreground: 184 18% 17%;
-  --sidebar-border: 0 0% 91%;
-  --sidebar-primary: 184 18% 17%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-primary: 222 47% 11%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 30 45% 61%;
+  --sidebar-accent: 343 34% 27%;       /* Burgundy */
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 30 45% 61%;
+  --sidebar-ring: 343 34% 27%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 184 18% 17%;
-  --popover-border: 0 0% 91%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 220 13% 91%;
 
-  --primary: 184 18% 17%;              /* #243334 */
-  --primary-foreground: 0 0% 100%;     /* white */
+  --primary: 222 47% 11%;              /* #111827 */
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 96%;
-  --secondary-foreground: 184 18% 17%;
+  --secondary: 220 14% 96%;            /* #F8F9FA */
+  --secondary-foreground: 222 47% 11%;
 
-  --muted: 0 0% 97%;                   /* #F7F7F7 — section alt bg */
+  --muted: 220 14% 96%;                /* #F8F9FA — section alt bg */
   --muted-foreground: 220 9% 46%;      /* #6B7280 */
 
-  --accent: 30 45% 61%;                /* #C89B6D */
+  /* ── Premium Burgundy accent: #5C2D3A ── */
+  --accent: 343 34% 27%;               /* #5C2D3A */
   --accent-foreground: 0 0% 100%;      /* white */
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 84% 60%;            /* #DC2626 */
   --destructive-foreground: 0 0% 100%;
 
-  --input: 0 0% 91%;                   /* #E8E8E8 */
-  --ring: 30 45% 61%;                  /* #C89B6D */
+  --input: 220 13% 91%;               /* #E5E7EB */
+  --ring: 343 34% 27%;                /* Burgundy focus ring */
 
-  --chart-1: 184 18% 17%;
-  --chart-2: 186 17% 25%;
-  --chart-3: 30 45% 61%;
-  --chart-4: 0 0% 91%;
-  --chart-5: 0 0% 50%;
+  --chart-1: 222 47% 11%;
+  --chart-2: 343 34% 27%;
+  --chart-3: 220 13% 91%;
+  --chart-4: 220 14% 96%;
+  --chart-5: 220 9% 46%;
 
   --app-font-sans: 'Cairo', 'Noto Sans Arabic', sans-serif;
   --app-font-serif: Georgia, serif;
@@ -173,60 +176,60 @@
 }
 
 /* ────────────────────────────────────────────────────────────
-   Dark mode — brand palette
-   Background #182122 · Cards #243334 · Text #F5F5F3
-   Accent #C89B6D · Borders rgba(255,255,255,0.08)
+   Dark mode — Premium Burgundy brand palette
+   Background #0F1416 · Cards #151C1E · Text #F5F5F5
+   Accent (Burgundy) #5C2D3A · Borders rgba(255,255,255,0.06)
    ──────────────────────────────────────────────────────────── */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
   --opaque-button-border-intensity: 9;
 
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255,255,255, .03);
+  --elevate-2: rgba(255,255,255, .07);
 
-  --shadow-luxury: 0 4px 12px rgba(0,0,0,0.25);
-  --shadow-luxury-lg: 0 8px 24px rgba(0,0,0,0.40);
+  --shadow-luxury: 0 1px 4px rgba(0,0,0,0.30), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-luxury-lg: 0 4px 16px rgba(0,0,0,0.50);
 
   /* Palette */
-  --background: 186 17% 11%;           /* #182122 */
-  --foreground: 60 9% 96%;             /* #F5F5F3 */
-  --border: 186 11% 18%;               /* ≈ rgba(255,255,255,0.08) on dark */
+  --background: 197 19% 7%;            /* #0F1416 */
+  --foreground: 0 0% 96%;              /* #F5F5F5 */
+  --border: 200 13% 14%;               /* subtle dark border */
 
-  --card: 184 18% 17%;                 /* #243334 */
-  --card-foreground: 60 9% 96%;        /* #F5F5F3 */
-  --card-border: 186 11% 18%;
+  --card: 193 18% 10%;                 /* #151C1E */
+  --card-foreground: 0 0% 96%;         /* #F5F5F5 */
+  --card-border: 200 13% 14%;
 
-  --sidebar: 184 18% 17%;
-  --sidebar-foreground: 60 9% 96%;
-  --sidebar-border: 186 11% 18%;
-  --sidebar-primary: 60 9% 96%;
-  --sidebar-primary-foreground: 186 17% 11%;
-  --sidebar-accent: 30 45% 61%;
+  --sidebar: 193 18% 10%;
+  --sidebar-foreground: 0 0% 96%;
+  --sidebar-border: 200 13% 14%;
+  --sidebar-primary: 0 0% 96%;
+  --sidebar-primary-foreground: 197 19% 7%;
+  --sidebar-accent: 343 34% 27%;       /* Burgundy */
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 30 45% 61%;
+  --sidebar-ring: 343 34% 27%;
 
-  --popover: 184 18% 17%;
-  --popover-foreground: 60 9% 96%;
-  --popover-border: 186 11% 18%;
+  --popover: 193 18% 10%;
+  --popover-foreground: 0 0% 96%;
+  --popover-border: 200 13% 14%;
 
-  --primary: 60 9% 96%;                /* light text as primary in dark */
-  --primary-foreground: 186 17% 11%;   /* dark bg */
+  --primary: 0 0% 96%;                 /* light text as primary in dark */
+  --primary-foreground: 197 19% 7%;
 
-  --secondary: 184 15% 22%;
-  --secondary-foreground: 60 9% 96%;
+  --secondary: 200 14% 14%;
+  --secondary-foreground: 0 0% 96%;
 
-  --muted: 184 15% 20%;
-  --muted-foreground: 60 9% 68%;
+  --muted: 200 14% 13%;
+  --muted-foreground: 0 0% 67%;        /* #A1A1AA */
 
-  --accent: 30 45% 61%;                /* #C89B6D — same in both modes */
+  --accent: 343 34% 27%;               /* #5C2D3A — same in both modes */
   --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 62% 30%;
+  --destructive: 0 62% 47%;            /* #EF4444 adjusted */
   --destructive-foreground: 0 0% 100%;
 
-  --input: 186 11% 18%;
-  --ring: 30 45% 61%;
+  --input: 200 13% 14%;
+  --ring: 343 34% 27%;
 }
 
 @layer base {
@@ -239,26 +242,26 @@
     text-align: right;
   }
 
-  /* ── Card — premium shadow + 20px radius ── */
+  /* ── Card — minimal shadow + 10px radius (reduced 50%) ── */
   .card-luxury {
     box-shadow: var(--shadow-luxury);
-    border: 1px solid rgba(232, 232, 232, 0.80);
-    border-radius: 20px;
+    border: 1px solid hsl(var(--card-border));
+    border-radius: 10px;
   }
   .dark .card-luxury {
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   /* ── Navbar — glass effect ── */
   .glass-navbar {
-    background: rgba(255, 255, 255, 0.90);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(232, 232, 232, 0.80);
+    border-bottom: 1px solid hsl(220 13% 91%);
   }
   .dark .glass-navbar {
-    background: rgba(24, 33, 34, 0.90);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 20, 22, 0.92);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 }
 
