@@ -160,14 +160,14 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
               )}
             </div>
             <p className="text-[11px] text-muted-foreground line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
-            {property.finishing && <p className="text-[10px] text-accent/80 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
+            {property.finishing && <p dir="rtl" className="text-[10px] text-accent/80 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
           </div>
 
           {/* صف السعر والتفاصيل */}
           <div className="mt-1">
             <p className="text-base font-bold text-accent leading-tight">
               {property.price.toLocaleString("en-US")}
-              <span className="text-[11px] font-normal text-muted-foreground mr-1">EGP</span>
+              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground mr-2.5">EGP</span>
             </p>
             <div className="flex items-center gap-2.5 mt-1 text-[10px] text-muted-foreground">
               {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3" />{property.beds}</span>}
@@ -247,12 +247,12 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           <span className="text-[10px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
         </div>
         <p className={cn("font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
-          {property.price.toLocaleString("en-US")} <span className="text-xs font-normal text-muted-foreground">EGP</span>
+          {property.price.toLocaleString("en-US")} <span className="text-xs font-semibold tracking-widest text-muted-foreground ml-2">EGP</span>
         </p>
         <div className="mt-auto">
           {(property.finishing || property.view) && (
             <div className="flex flex-wrap items-center gap-1.5 pt-3">
-              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-sm line-clamp-1">{property.finishing}</span>}
+              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span dir="rtl" className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-sm line-clamp-1">{property.finishing}</span>}
               {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-sm line-clamp-1 max-w-[55%]">{property.view}</span>}
             </div>
           )}

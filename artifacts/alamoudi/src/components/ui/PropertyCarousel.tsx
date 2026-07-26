@@ -47,15 +47,16 @@ export function PropertyCarousel({ properties, size = "compact", className }: Pr
 
   return (
     <div className={cn("relative", className)}>
-      {/* Previous arrow — on desktop only, appears when not at start */}
+      {/* Previous arrow — always visible when not at start */}
       {canPrev && (
         <button
           onClick={() => scroll("prev")}
           aria-label="السابق"
-          className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 hidden md:flex w-8 h-8 rounded-full
-            bg-background border border-border shadow-md
-            items-center justify-center text-muted-foreground
-            hover:text-accent hover:border-accent/40 transition-all duration-150"
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
+            bg-background/80 backdrop-blur-sm border border-border/60 shadow-lg
+            items-center justify-center text-foreground/70
+            hover:text-accent hover:border-accent/50 hover:bg-background
+            transition-all duration-200"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -80,15 +81,16 @@ export function PropertyCarousel({ properties, size = "compact", className }: Pr
         ))}
       </div>
 
-      {/* Next arrow — on desktop only, appears when not at end */}
+      {/* Next arrow — always visible when not at end */}
       {canNext && (
         <button
           onClick={() => scroll("next")}
           aria-label="التالي"
-          className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 hidden md:flex w-8 h-8 rounded-full
-            bg-background border border-border shadow-md
-            items-center justify-center text-muted-foreground
-            hover:text-accent hover:border-accent/40 transition-all duration-150"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
+            bg-background/80 backdrop-blur-sm border border-border/60 shadow-lg
+            items-center justify-center text-foreground/70
+            hover:text-accent hover:border-accent/50 hover:bg-background
+            transition-all duration-200"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
