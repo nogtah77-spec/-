@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MapPin, Facebook, Instagram, Plus, Play, ExternalLink } from "lucide-react";
+import { Save, Upload, X, Image as ImageIcon, Phone, Mail, MapPin, Facebook, Instagram, Plus, Play, ExternalLink, Sun, Moon, SunMoon } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -594,6 +594,49 @@ export default function Settings() {
           {/* ── System ── */}
           <TabsContent value="system" className="mt-6">
             <div className="space-y-4">
+
+              {/* ── Appearance / Theme Mode ── */}
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle>المظهر</CardTitle>
+                  <CardDescription>تحكم في وضع الإضاءة للمنصة</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: "light", label: "فاتح دائماً", icon: <Sun className="h-5 w-5" /> },
+                      { value: "dark",  label: "داكن دائماً", icon: <Moon className="h-5 w-5" /> },
+                      { value: "user",  label: "يتحكم المستخدم", icon: <SunMoon className="h-5 w-5" /> },
+                    ].map(opt => {
+                      const active = (form.themeMode ?? "user") === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            setForm(p => ({ ...p, themeMode: opt.value as "light" | "dark" | "user" }));
+                            updateSettings({ themeMode: opt.value as "light" | "dark" | "user" });
+                          }}
+                          className={`flex flex-col items-center gap-2 p-4 rounded-md border-2 transition-all duration-200 text-sm font-medium ${
+                            active
+                              ? "border-accent bg-accent/10 text-accent"
+                              : "border-border bg-card text-muted-foreground hover:border-accent/40 hover:text-foreground"
+                          }`}
+                        >
+                          {opt.icon}
+                          <span className="text-center leading-tight">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    {(form.themeMode ?? "user") === "user"
+                      ? "يظهر زر تبديل الوضع في شريط التنقل لكل زائر"
+                      : "يُطبّق الوضع المختار على جميع الزوار ويُخفى زر التبديل"}
+                  </p>
+                </CardContent>
+              </Card>
+
               <Card className="card-luxury">
                 <CardHeader>
                   <CardTitle>الإشعارات</CardTitle>

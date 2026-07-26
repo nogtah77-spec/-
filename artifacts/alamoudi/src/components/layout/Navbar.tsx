@@ -139,8 +139,12 @@ export function Navbar() {
               <MapPin className="h-4 w-4" />
             </a>
           )}
-          <div className="w-px h-4 bg-border mx-1" />
-          <ThemeToggle />
+          {(!settings.themeMode || settings.themeMode === "user") && (
+            <>
+              <div className="w-px h-4 bg-border mx-1" />
+              <ThemeToggle />
+            </>
+          )}
           {isStaff ? (
             <Button
               asChild
@@ -269,7 +273,7 @@ export function Navbar() {
           <span className="text-2xl font-bold text-foreground dark:text-white">العمودي</span>
         </Link>
 
-        <ThemeToggle />
+        {(!settings.themeMode || settings.themeMode === "user") && <ThemeToggle />}
       </div>
     </header>
   );

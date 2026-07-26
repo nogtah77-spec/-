@@ -3,7 +3,7 @@ import { ComponentType, Suspense, lazy, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
 import NotFound from "@/pages/not-found";
 import { DataProvider, useData } from "@/context/DataContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
@@ -239,6 +239,17 @@ function AppReadyGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// ── ThemeEnforcer: يطبّق وضع الإضاءة المحدد من لوحة التحكم ──────────────────
+function ThemeEnforcer() {
+  const { settings } = useData();
+  const { setTheme } = useTheme();
+  useEffect(() => {
+    const mode = settings.themeMode ?? "user";
+    if (mode === "light" || mode === "dark") setTheme(mode);
+  }, [settings.themeMode, setTheme]);
+  return null;
+}
+
 // بينج الـ API كل 4 دقايق علشان الـ server ميدخلش في نوم
 function KeepAlive() {
   useEffect(() => {
@@ -259,6 +270,7 @@ function App() {
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
                 <AIChatProvider>
+                  <ThemeEnforcer />
                   <KeepAlive />
                   <VisitorTracker />
                   {/* SwipeMenuHandler disabled — keep component, skip render */}

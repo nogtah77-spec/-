@@ -299,7 +299,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex flex-nowrap justify-center gap-2 mb-2">
+            <div className="flex flex-wrap justify-center gap-2 mb-2">
               {[{ value: "sale", label: "للبيع" }, { value: "rent", label: "للإيجار" }, { value: "furnished", label: "مفروش" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchCategory(btn.value as typeof searchCategory)}
                   className={cn(
@@ -315,7 +315,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="flex flex-nowrap justify-center gap-1.5 sm:gap-2 mb-3">
+            <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-3">
               {[{ value: "residential", label: "سكني" }, { value: "administrative", label: "إداري" }, { value: "medical", label: "طبي" }, { value: "commercial", label: "تجاري" }].map(btn => (
                 <button key={btn.value} onClick={() => setSearchSector(btn.value as typeof searchSector)}
                   className={cn(
