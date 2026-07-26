@@ -28,14 +28,20 @@ const connectionString =
   process.env.SUPABASE_DATABASE_URL ??
   process.env.DATABASE_URL;
 
+// Do NOT throw here at module-load time.  In serverless environments (e.g.
+// Vercel) the module is loaded once and any top-level throw causes every
+// invocation to return FUNCTION_INVOCATION_FAILED — even healthz.  If the
+// connection string is missing the error will surface clearly on the first
+// query instead.
 if (!connectionString) {
-  throw new Error(
-    "No database connection string found. " +
-      "Set SUPABASE_DB_PASSWORD + SUPABASE_URL, or SUPABASE_DATABASE_URL, or DATABASE_URL.",
+  console.error(
+    "[db] WARNING: No database connection string found. " +
+      "Set SUPABASE_DB_PASSWORD + SUPABASE_URL, SUPABASE_DATABASE_URL, or DATABASE_URL. " +
+      "All database queries will fail until one of these is provided.",
   );
 }
 
-export const pool = new Pool({ connectionString });
+export const pool = new Pool(connectionString ? { connectionString } : {});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
