@@ -129,9 +129,9 @@
   --sidebar-border: 220 13% 91%;
   --sidebar-primary: 222 47% 11%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 343 34% 27%;       /* Burgundy */
+  --sidebar-accent: 180 78% 24%;       /* Teal */
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 343 34% 27%;
+  --sidebar-ring: 180 78% 24%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
@@ -146,15 +146,15 @@
   --muted: 220 14% 96%;                /* #F8F9FA — section alt bg */
   --muted-foreground: 220 9% 46%;      /* #6B7280 */
 
-  /* ── Premium Burgundy accent: #5C2D3A ── */
-  --accent: 343 34% 27%;               /* #5C2D3A */
+  /* ── Teal / Petrol Blue accent: #0D6B6B ── */
+  --accent: 180 78% 24%;               /* #0D6B6B */
   --accent-foreground: 0 0% 100%;      /* white */
 
   --destructive: 0 84% 60%;            /* #DC2626 */
   --destructive-foreground: 0 0% 100%;
 
   --input: 220 13% 91%;               /* #E5E7EB */
-  --ring: 343 34% 27%;                /* Burgundy focus ring */
+  --ring: 180 78% 24%;                /* Teal focus ring */
 
   --chart-1: 222 47% 11%;
   --chart-2: 343 34% 27%;
@@ -205,9 +205,9 @@
   --sidebar-border: 200 13% 14%;
   --sidebar-primary: 0 0% 96%;
   --sidebar-primary-foreground: 197 19% 7%;
-  --sidebar-accent: 343 34% 27%;       /* Burgundy */
+  --sidebar-accent: 180 78% 24%;       /* Teal */
   --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 343 34% 27%;
+  --sidebar-ring: 180 78% 24%;
 
   --popover: 193 18% 10%;
   --popover-foreground: 0 0% 96%;
@@ -222,14 +222,14 @@
   --muted: 200 14% 13%;
   --muted-foreground: 0 0% 67%;        /* #A1A1AA */
 
-  --accent: 343 34% 27%;               /* #5C2D3A — same in both modes */
+  --accent: 180 78% 24%;               /* #0D6B6B — teal in both modes */
   --accent-foreground: 0 0% 100%;
 
   --destructive: 0 62% 47%;            /* #EF4444 adjusted */
   --destructive-foreground: 0 0% 100%;
 
   --input: 200 13% 14%;
-  --ring: 343 34% 27%;
+  --ring: 180 78% 24%;
 }
 
 @layer base {

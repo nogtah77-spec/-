@@ -56,7 +56,7 @@ export function Navbar() {
         {/* Brand — far right (RTL start) */}
         <div className="flex justify-start items-center">
           <Link href="/" data-testid="link-brand">
-            <span className="text-2xl font-bold text-accent tracking-tight leading-none">
+            <span className="text-2xl font-bold text-foreground dark:text-white tracking-tight leading-none">
               العمودي
             </span>
             <span className="text-sm font-light text-muted-foreground mr-2 tracking-wide">
@@ -191,7 +191,7 @@ export function Navbar() {
             }}
           >
             <div className="mb-6 pt-2">
-              <span className="text-2xl font-bold text-accent">العمودي</span>
+              <span className="text-2xl font-bold text-foreground dark:text-white">العمودي</span>
               <span className="text-sm font-light text-muted-foreground mr-2">شريكك نحو الاستثمار الأفضل</span>
             </div>
             <nav className="flex flex-col gap-1">
@@ -266,7 +266,7 @@ export function Navbar() {
         </Sheet>
 
         <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-          <span className="text-2xl font-bold text-accent">العمودي</span>
+          <span className="text-2xl font-bold text-foreground dark:text-white">العمودي</span>
         </Link>
 
         <ThemeToggle />

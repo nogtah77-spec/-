@@ -33,7 +33,7 @@ export default function Login() {
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent/8 blur-3xl" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(#5C2D3A 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(#0D6B6B 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
       </div>
 
       <div className="w-full max-w-sm relative z-10">

@@ -8,14 +8,15 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          // radius-sm = 14px (brand guide: Inputs Radius 14px)
-          "flex h-9 w-full rounded-sm border border-input bg-transparent px-3 py-1 " +
-          "text-base shadow-[0_1px_3px_rgba(0,0,0,0.06)] " +
+          // Always visible: solid border + white bg + subtle shadow
+          "flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 " +
+          "text-sm text-foreground " +
+          "shadow-[0_1px_2px_rgba(0,0,0,0.06)] " +
           "transition-all duration-[180ms] ease-out " +
           "file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground " +
-          "placeholder:text-muted-foreground " +
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-ring " +
-          "hover:border-ring/50 " +
+          "placeholder:text-muted-foreground/70 " +
+          "hover:border-ring/60 " +
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:border-ring " +
           "disabled:cursor-not-allowed disabled:opacity-50 " +
           "md:text-sm",
           className
