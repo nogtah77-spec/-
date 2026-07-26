@@ -77,6 +77,7 @@ export default function ImportExport() {
     sheets: { name: string; count: number }[];
   } | null>(null);
   const [pending, setPending] = useState<PendingImport | null>(null);
+  const [fallbackRegionId, setFallbackRegionId] = useState<string>("");
 
   const getExportData = () => {
     switch (exportType) {
@@ -160,10 +161,14 @@ export default function ImportExport() {
   const confirmImport = () => {
     if (!pending) return;
     const { items, sheets } = pending;
-    const valid = items.filter(
+    // Apply fallback region to rows with empty regionId
+    const patched = fallbackRegionId
+      ? items.map(p => p.regionId ? p : { ...p, regionId: fallbackRegionId })
+      : items;
+    const valid = patched.filter(
       (p) => p.price || p.area || p.code || (p.title && p.title.trim()),
     );
-    const errors = items.length - valid.length;
+    const errors = patched.length - valid.length;
     if (valid.length === 0) {
       toast({ title: "لم يتم العثور على بيانات صالحة", variant: "destructive" });
       return;
@@ -171,6 +176,7 @@ export default function ImportExport() {
     const { added, updated } = importProperties(valid);
     setImportResult({ added, updated, errors, sheets });
     setPending(null);
+    setFallbackRegionId("");
     toast({
       title: "تم الاستيراد بنجاح",
       description: `أُضيف ${added} عقار، حُدّث ${updated}، تخطّي ${errors}`,
@@ -220,6 +226,7 @@ export default function ImportExport() {
   const existingCodes = new Set(properties.map((p) => p.code));
   const pendingAdded = pending ? pending.items.filter((i) => i.code && !existingCodes.has(i.code)).length : 0;
   const pendingUpdated = pending ? pending.items.filter((i) => i.code && existingCodes.has(i.code)).length : 0;
+  const unresolvedRegion = pending ? pending.items.filter((i) => !i.regionId).length : 0;
   const previewRows = pending?.items.slice(0, 5) ?? [];
   const unmappedHeaders = pending?.headerMap?.filter((h) => !h.field) ?? [];
 
@@ -269,6 +276,26 @@ export default function ImportExport() {
                 )}
               </div>
 
+              {/* Unresolved region warning + fallback selector */}
+              {unresolvedRegion > 0 && (
+                <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20 p-3 space-y-2.5">
+                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400 text-sm font-medium">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    {unresolvedRegion} عقار بدون منطقة محددة — اختر منطقة افتراضية تُطبَّق عليها
+                  </div>
+                  <Select value={fallbackRegionId} onValueChange={setFallbackRegionId}>
+                    <SelectTrigger className="h-8 text-sm bg-background">
+                      <SelectValue placeholder="اختر المنطقة الافتراضية..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {regions.filter(r => r.active !== false).map(r => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               {/* Header Mapping */}
               {pending.headerMap && pending.headerMap.length > 0 && (
                 <div>
@@ -302,36 +329,47 @@ export default function ImportExport() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="text-xs">الكود</TableHead>
-                        <TableHead className="text-xs">المنطقة</TableHead>
+                        <TableHead className="text-xs">المنطقة الرئيسية</TableHead>
+                        <TableHead className="text-xs">الكمباوند/الحي</TableHead>
                         <TableHead className="text-xs">السعر</TableHead>
                         <TableHead className="text-xs">المساحة</TableHead>
-                        <TableHead className="text-xs">الحالة</TableHead>
                         <TableHead className="text-xs">وضع</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {previewRows.map((row, idx) => (
-                        <TableRow key={idx} className="text-xs">
-                          <TableCell className="font-mono font-semibold text-accent">
-                            {row.code || <span className="text-muted-foreground italic">بدون كود</span>}
-                          </TableCell>
-                          <TableCell>
-                            {regions.find((r) => r.id === row.regionId)?.name ||
-                              row.subArea ||
-                              <span className="text-muted-foreground">—</span>}
-                          </TableCell>
-                          <TableCell>{row.price ? row.price.toLocaleString("en-US") : "—"}</TableCell>
-                          <TableCell>{row.area ? `${row.area}م²` : "—"}</TableCell>
-                          <TableCell>{row.status}</TableCell>
-                          <TableCell>
-                            {row.code && existingCodes.has(row.code) ? (
-                              <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">تحديث</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[10px] bg-green-50 text-green-600 border-green-200">جديد</Badge>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {previewRows.map((row, idx) => {
+                        const resolvedRegion = regions.find(r => r.id === row.regionId);
+                        const fallback = !row.regionId && fallbackRegionId
+                          ? regions.find(r => r.id === fallbackRegionId)
+                          : null;
+                        return (
+                          <TableRow key={idx} className="text-xs">
+                            <TableCell className="font-mono font-semibold text-accent">
+                              {row.code || <span className="text-muted-foreground italic">بدون كود</span>}
+                            </TableCell>
+                            <TableCell>
+                              {resolvedRegion
+                                ? resolvedRegion.name
+                                : fallback
+                                  ? <span className="text-orange-600 dark:text-orange-400">{fallback.name} <span className="opacity-60">(افتراضي)</span></span>
+                                  : <span className="flex items-center gap-1 text-red-500"><AlertCircle className="h-3 w-3" />غير محدد</span>
+                              }
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {row.subArea || "—"}
+                            </TableCell>
+                            <TableCell>{row.price ? row.price.toLocaleString("en-US") : "—"}</TableCell>
+                            <TableCell>{row.area ? `${row.area}م²` : "—"}</TableCell>
+                            <TableCell>
+                              {row.code && existingCodes.has(row.code) ? (
+                                <Badge variant="secondary" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">تحديث</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-[10px] bg-green-50 text-green-600 border-green-200">جديد</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                   {pending.items.length > 5 && (

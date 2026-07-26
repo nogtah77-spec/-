@@ -113,16 +113,36 @@ interface SheetMeta {
   category: PropertyCategory;
 }
 
+// Known region patterns — ordered by specificity (longest/most-specific first).
+// Compounds that belong inside a city come AFTER the city so the city wins when both appear.
+const REGION_PATTERNS: Array<{ pattern: RegExp; id: string; name: string }> = [
+  { pattern: /عاصمة|العاصمة الإدارية|new.?capital/i, id: "new_capital",   name: "العاصمة الإدارية الجديدة" },
+  { pattern: /بيت الوطن|beit.?el.?watan/i,            id: "beit_elwatan", name: "بيت الوطن" },
+  { pattern: /مدينتي|madinaty/i,                       id: "madinaty",     name: "مدينتي" },
+  { pattern: /شروق|shorouk/i,                          id: "shorouk",      name: "مدينة الشروق" },
+  { pattern: /بدر|badr/i,                              id: "badr",         name: "مدينة بدر" },
+  { pattern: /نصر|nasr/i,                              id: "nasr_city",    name: "مدينة نصر" },
+  { pattern: /رحاب|rehab/i,                            id: "rehab",        name: "مدينة الرحاب" },
+  { pattern: /تجمع|tagamoa/i,                          id: "tagamoa",      name: "التجمع الخامس" },
+  { pattern: /زايد|sheikh.?zayed/i,                    id: "sheikh_zayed", name: "الشيخ زايد" },
+  { pattern: /أكتوبر|اكتوبر|oct/i,                    id: "oct6",         name: "مدينة 6 أكتوبر" },
+  { pattern: /مهندسين|mohandeseen/i,                   id: "mohandeseen",  name: "المهندسين" },
+  // Compounds come last — if the sheet also contains a city name the city wins above.
+  { pattern: /وصال|wasal/i,                            id: "wasal",        name: "كمباوند وصال" },
+];
+
 export function sheetMeta(sheetName: string): SheetMeta {
   const n = sheetName;
   let regionId = "";
   let regionName = "";
-  if (/شروق/.test(n)) { regionId = "shorouk"; regionName = "مدينة الشروق"; }
-  else if (/مدينتي/.test(n)) { regionId = "madinaty"; regionName = "مدينتي"; }
-  else if (/وصال/.test(n)) { regionId = "wasal"; regionName = "كمباوند وصال"; }
-  else if (/بدر/.test(n)) { regionId = "badr"; regionName = "مدينة بدر"; }
-  else if (/نصر/.test(n)) { regionId = "nasr_city"; regionName = "مدينة نصر"; }
-  else { regionId = n.trim().replace(/\s*\(.*\)\s*/, "").replace(/\s+/g, "_") || "other"; regionName = n.replace(/\s*\(.*\)\s*/, "").trim(); }
+
+  for (const { pattern, id, name } of REGION_PATTERNS) {
+    if (pattern.test(n)) { regionId = id; regionName = name; break; }
+  }
+  if (!regionId) {
+    regionId = n.trim().replace(/\s*\(.*\)\s*/, "").replace(/\s+/g, "_") || "other";
+    regionName = n.replace(/\s*\(.*\)\s*/, "").trim();
+  }
 
   let category: PropertyCategory = "sale";
   if (/إيجار|ايجار/.test(n)) category = "rent";
@@ -130,6 +150,30 @@ export function sheetMeta(sheetName: string): SheetMeta {
   else if (/بيع/.test(n)) category = "sale";
 
   return { regionId, regionName, category };
+}
+
+/** Fuzzy-match a free-text region name against a list of known regions.
+ *  Returns the matching regionId, or "" if nothing is found. */
+export function resolveRegionId(raw: string, regions: RegionLite[]): string {
+  if (!raw.trim()) return "";
+
+  // 1. Exact match on registered region name
+  const exact = regions.find(r => r.name.trim() === raw.trim());
+  if (exact) return exact.id;
+
+  // 2. Contains match (region name contains query or vice-versa)
+  const lower = raw.trim();
+  const contains = regions.find(r =>
+    r.name.includes(lower) || lower.includes(r.name.trim()),
+  );
+  if (contains) return contains.id;
+
+  // 3. Pattern match against our known list
+  for (const { pattern, id } of REGION_PATTERNS) {
+    if (pattern.test(raw)) return id;
+  }
+
+  return "";
 }
 
 // ─── Smart header mapping ───────────────────────────────────────────
@@ -473,7 +517,7 @@ export function parseDelimitedText(
     const price = parsePrice(priceRaw);
     const { beds: lb, baths: lba } = parseLayout(layoutRaw);
 
-    const regionId = regionByName.get(regionName.trim()) || "";
+    const regionId = regionByName.get(regionName.trim()) || resolveRegionId(regionName, regions);
     const category = catByLabel[catRaw.trim()] || "sale";
     const typeKey = typeRaw.trim();
     const typeId = typeByName.get(typeKey) || (typeIds.has(typeKey) ? typeKey : "apartment");
