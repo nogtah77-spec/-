@@ -33,6 +33,10 @@
   animation: ai-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* ────────────────────────────────────────────────────────────
+   Tailwind v4 theme tokens
+   Radius: sm=14px (inputs) | md=16px (buttons) | lg=20px (cards) | xl=24px
+   ──────────────────────────────────────────────────────────── */
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -83,12 +87,19 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* ── Radius system (brand guide values) ── */
+  --radius-sm: 14px;   /* inputs, small chips */
+  --radius-md: 16px;   /* buttons, select triggers */
+  --radius-lg: 20px;   /* cards */
+  --radius-xl: 24px;   /* extra large */
 }
 
+/* ────────────────────────────────────────────────────────────
+   Light mode — brand palette
+   Background #FFFFFF · Cards #FFFFFF · Primary #243334
+   Accent #C89B6D · Hover #B8895B · Borders #E8E8E8
+   Secondary text #6B7280
+   ──────────────────────────────────────────────────────────── */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -98,59 +109,60 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 42 18% 83%;
-  --foreground: 189 13% 20%;
-  --border: 182 12% 28%;
-  --card: 42 20% 95%;
-  --card-foreground: 189 13% 20%;
-  --card-border: 182 12% 28%;
-  
-  --shadow-luxury: 0 4px 24px -4px rgba(44, 54, 57, 0.12), 0 1px 6px -1px rgba(44, 54, 57, 0.08);
-  --shadow-luxury-lg: 0 8px 40px -8px rgba(44, 54, 57, 0.18), 0 2px 12px -2px rgba(44, 54, 57, 0.10);
-  --gradient-hero: linear-gradient(135deg, #2C3639 0%, #3F4E4F 50%, #2C3639 100%);
-  
-  --sidebar: 42 20% 90%;
-  --sidebar-foreground: 189 13% 20%;
-  --sidebar-border: 182 12% 28%;
-  --sidebar-primary: 189 13% 20%;
-  --sidebar-primary-foreground: 42 18% 83%;
-  --sidebar-accent: 28 29% 49%;
-  --sidebar-accent-foreground: 42 18% 83%;
-  --sidebar-ring: 28 29% 49%;
+  /* Palette */
+  --background: 0 0% 100%;             /* #FFFFFF */
+  --foreground: 184 18% 17%;           /* #243334 */
+  --border: 0 0% 91%;                  /* #E8E8E8 */
 
-  --popover: 42 20% 90%;
-  --popover-foreground: 189 13% 20%;
-  --popover-border: 182 12% 28%;
+  --card: 0 0% 100%;                   /* #FFFFFF */
+  --card-foreground: 184 18% 17%;      /* #243334 */
+  --card-border: 0 0% 91%;             /* #E8E8E8 */
 
-  --primary: 189 13% 20%;
-  --primary-foreground: 42 18% 83%;
+  --shadow-luxury: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-luxury-lg: 0 8px 24px rgba(0,0,0,0.10);
+  --gradient-hero: linear-gradient(135deg, #243334 0%, #2E4041 50%, #243334 100%);
 
-  --secondary: 182 12% 28%;
-  --secondary-foreground: 42 18% 83%;
+  --sidebar: 0 0% 97%;
+  --sidebar-foreground: 184 18% 17%;
+  --sidebar-border: 0 0% 91%;
+  --sidebar-primary: 184 18% 17%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 30 45% 61%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 30 45% 61%;
 
-  --muted: 42 10% 70%;
-  --muted-foreground: 189 10% 40%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 184 18% 17%;
+  --popover-border: 0 0% 91%;
 
-  --accent: 28 29% 49%;
-  --accent-foreground: 42 18% 83%;
+  --primary: 184 18% 17%;              /* #243334 */
+  --primary-foreground: 0 0% 100%;     /* white */
+
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 184 18% 17%;
+
+  --muted: 0 0% 97%;                   /* #F7F7F7 — section alt bg */
+  --muted-foreground: 220 9% 46%;      /* #6B7280 */
+
+  --accent: 30 45% 61%;                /* #C89B6D */
+  --accent-foreground: 0 0% 100%;      /* white */
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 182 12% 28%;
-  --ring: 28 29% 49%;
+  --input: 0 0% 91%;                   /* #E8E8E8 */
+  --ring: 30 45% 61%;                  /* #C89B6D */
 
-  --chart-1: 189 13% 20%;
-  --chart-2: 182 12% 28%;
-  --chart-3: 28 29% 49%;
-  --chart-4: 42 18% 83%;
+  --chart-1: 184 18% 17%;
+  --chart-2: 186 17% 25%;
+  --chart-3: 30 45% 61%;
+  --chart-4: 0 0% 91%;
   --chart-5: 0 0% 50%;
 
   --app-font-sans: 'Cairo', 'Noto Sans Arabic', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: Menlo, monospace;
-  --radius: 0.5rem;
-  
+
   --sidebar-primary-border: hsl(var(--sidebar-primary));
   --sidebar-accent-border: hsl(var(--sidebar-accent));
   --primary-border: hsl(var(--primary));
@@ -160,6 +172,11 @@
   --destructive-border: hsl(var(--destructive));
 }
 
+/* ────────────────────────────────────────────────────────────
+   Dark mode — brand palette
+   Background #182122 · Cards #243334 · Text #F5F5F3
+   Accent #C89B6D · Borders rgba(255,255,255,0.08)
+   ──────────────────────────────────────────────────────────── */
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
@@ -168,43 +185,48 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 189 14% 12%;
-  --foreground: 42 18% 83%;
-  --border: 182 12% 28%;
-  --card: 189 13% 20%;
-  --card-foreground: 42 18% 83%;
-  --card-border: 182 12% 28%;
+  --shadow-luxury: 0 4px 12px rgba(0,0,0,0.25);
+  --shadow-luxury-lg: 0 8px 24px rgba(0,0,0,0.40);
 
-  --sidebar: 189 13% 20%;
-  --sidebar-foreground: 42 18% 83%;
-  --sidebar-border: 182 12% 28%;
-  --sidebar-primary: 42 18% 83%;
-  --sidebar-primary-foreground: 189 14% 12%;
-  --sidebar-accent: 28 29% 49%;
-  --sidebar-accent-foreground: 42 18% 83%;
-  --sidebar-ring: 28 29% 49%;
+  /* Palette */
+  --background: 186 17% 11%;           /* #182122 */
+  --foreground: 60 9% 96%;             /* #F5F5F3 */
+  --border: 186 11% 18%;               /* ≈ rgba(255,255,255,0.08) on dark */
 
-  --popover: 189 13% 20%;
-  --popover-foreground: 42 18% 83%;
-  --popover-border: 182 12% 28%;
+  --card: 184 18% 17%;                 /* #243334 */
+  --card-foreground: 60 9% 96%;        /* #F5F5F3 */
+  --card-border: 186 11% 18%;
 
-  --primary: 42 18% 83%;
-  --primary-foreground: 189 14% 12%;
+  --sidebar: 184 18% 17%;
+  --sidebar-foreground: 60 9% 96%;
+  --sidebar-border: 186 11% 18%;
+  --sidebar-primary: 60 9% 96%;
+  --sidebar-primary-foreground: 186 17% 11%;
+  --sidebar-accent: 30 45% 61%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 30 45% 61%;
 
-  --secondary: 182 12% 28%;
-  --secondary-foreground: 42 18% 83%;
+  --popover: 184 18% 17%;
+  --popover-foreground: 60 9% 96%;
+  --popover-border: 186 11% 18%;
 
-  --muted: 189 10% 25%;
-  --muted-foreground: 42 10% 60%;
+  --primary: 60 9% 96%;                /* light text as primary in dark */
+  --primary-foreground: 186 17% 11%;   /* dark bg */
 
-  --accent: 28 29% 49%;
-  --accent-foreground: 42 18% 83%;
+  --secondary: 184 15% 22%;
+  --secondary-foreground: 60 9% 96%;
+
+  --muted: 184 15% 20%;
+  --muted-foreground: 60 9% 68%;
+
+  --accent: 30 45% 61%;                /* #C89B6D — same in both modes */
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 62% 30%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 182 12% 28%;
-  --ring: 28 29% 49%;
+  --input: 186 11% 18%;
+  --ring: 30 45% 61%;
 }
 
 @layer base {
@@ -216,21 +238,27 @@
     direction: rtl;
     text-align: right;
   }
-  
+
+  /* ── Card — premium shadow + 20px radius ── */
   .card-luxury {
     box-shadow: var(--shadow-luxury);
-    border: 1px solid rgba(162, 123, 91, 0.15);
-    border-radius: 12px;
+    border: 1px solid rgba(232, 232, 232, 0.80);
+    border-radius: 20px;
   }
+  .dark .card-luxury {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* ── Navbar — glass effect ── */
   .glass-navbar {
-    background: rgba(220, 215, 201, 0.85);
+    background: rgba(255, 255, 255, 0.90);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(162, 123, 91, 0.2);
+    border-bottom: 1px solid rgba(232, 232, 232, 0.80);
   }
   .dark .glass-navbar {
-    background: rgba(26, 33, 34, 0.85);
-    border-bottom: 1px solid rgba(162, 123, 91, 0.15);
+    background: rgba(24, 33, 34, 0.90);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
 
