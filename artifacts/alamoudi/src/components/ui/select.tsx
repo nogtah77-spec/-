@@ -38,16 +38,49 @@ const SelectTrigger = React.forwardRef<
 ))
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
+// ── أزرار scroll مخصصة بسرعة متحكم بها (بديل عن Radix ScrollButtons السريعة) ──
+function SlowScrollButton({ direction }: { direction: "up" | "down" }) {
+  const btnRef = React.useRef<HTMLDivElement>(null);
+  const timer = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const startScroll = () => {
+    const content = btnRef.current?.closest("[data-radix-select-content]");
+    const viewport = content?.querySelector("[data-radix-select-viewport]") as HTMLElement | null;
+    if (!viewport) return;
+    timer.current = setInterval(() => {
+      viewport.scrollTop += direction === "down" ? 18 : -18;
+    }, 60);
+  };
+
+  const stopScroll = () => {
+    if (timer.current) { clearInterval(timer.current); timer.current = null; }
+  };
+
+  return (
+    <div
+      ref={btnRef}
+      onMouseEnter={startScroll}
+      onMouseLeave={stopScroll}
+      className={cn(
+        "flex cursor-default items-center justify-center py-1.5 select-none",
+        "text-muted-foreground hover:text-foreground bg-popover transition-colors",
+        direction === "up" ? "border-b border-border/40" : "border-t border-border/40"
+      )}
+    >
+      {direction === "up"
+        ? <ChevronUp className="h-4 w-4" />
+        : <ChevronDown className="h-4 w-4" />}
+    </div>
+  );
+}
+
 const SelectScrollUpButton = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
     ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1.5 text-muted-foreground hover:text-foreground bg-popover border-b border-border/50 transition-colors",
-      className
-    )}
+    className={cn("flex cursor-default items-center justify-center py-1", className)}
     {...props}
   >
     <ChevronUp className="h-4 w-4" />
@@ -61,10 +94,7 @@ const SelectScrollDownButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollDownButton
     ref={ref}
-    className={cn(
-      "flex cursor-default items-center justify-center py-1.5 text-muted-foreground hover:text-foreground bg-popover border-t border-border/50 transition-colors",
-      className
-    )}
+    className={cn("flex cursor-default items-center justify-center py-1", className)}
     {...props}
   >
     <ChevronDown className="h-4 w-4" />
@@ -103,7 +133,7 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <SelectScrollUpButton />
+      <SlowScrollButton direction="up" />
       <SelectPrimitive.Viewport
         className={cn(
           "p-1",
@@ -113,7 +143,7 @@ const SelectContent = React.forwardRef<
       >
         {children}
       </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
+      <SlowScrollButton direction="down" />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ))
