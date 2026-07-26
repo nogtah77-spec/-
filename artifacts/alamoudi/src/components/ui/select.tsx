@@ -73,6 +73,7 @@ const SelectContent = React.forwardRef<
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
+      onWheel={(e) => { e.currentTarget.scrollTop += e.deltaY; }}
       className={cn(
         // Floating premium menu — clearly separated, 12px radius
         "relative z-50 max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[8rem] " +

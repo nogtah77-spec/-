@@ -146,8 +146,8 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-1.5">
               <div className="min-w-0 flex items-baseline gap-1.5">
-                <span className="text-[9px] text-muted-foreground font-medium flex-shrink-0">code</span>
                 <h3 dir="ltr" className="text-sm font-bold font-mono tracking-wide text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
+                <span className="text-[9px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
               </div>
               {property.typeName && (
                 <span className="flex-shrink-0 text-[9px] font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded-sm">
@@ -231,11 +231,11 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
       </div>
 
       <CardContent className={cn("flex-1 flex flex-col", size === "medium" ? "p-4" : "p-5")}>
-        <div className="mb-2 flex items-baseline gap-2">
-          <span className="text-[10px] text-muted-foreground font-medium flex-shrink-0">code</span>
+        <div className="mb-3 flex items-baseline gap-2">
           <h3 dir="ltr" className={cn("font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors", size === "medium" ? "text-lg" : "text-xl")}>
             {property.code}
           </h3>
+          <span className="text-[10px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
         </div>
         <p className={cn("font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
           {property.price.toLocaleString("en-US")} <span className="text-xs font-normal text-muted-foreground">EGP</span>
