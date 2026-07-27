@@ -164,7 +164,17 @@ export function PropertyCarousel({
       {/* Previous arrow — always visible when not at start */}
       {canPrev && (
         <button
-          onClick={() => scroll("prev")}
+          onClick={() => {
+            stopAutoPlay();
+            autoPlayRef.current = null;
+            scroll("prev");
+
+            window.setTimeout(() => {
+              autoPlayRef.current = window.setInterval(() => {
+                scrollNext();
+              }, autoPlayDelay);
+            }, 5000);
+          }}
           aria-label="السابق"
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
             bg-black/25 dark:bg-black/30 backdrop-blur-md border border-white/20
@@ -198,7 +208,17 @@ export function PropertyCarousel({
       {/* Next arrow — always visible when not at end */}
       {canNext && (
         <button
-          onClick={() => scroll("next")}
+          onClick={() => {
+            stopAutoPlay();
+            autoPlayRef.current = null;
+            scroll("next");
+
+            window.setTimeout(() => {
+              autoPlayRef.current = window.setInterval(() => {
+                scrollNext();
+              }, autoPlayDelay);
+            }, 5000);
+          }}
           aria-label="التالي"
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
             bg-black/25 dark:bg-black/30 backdrop-blur-md border border-white/20
