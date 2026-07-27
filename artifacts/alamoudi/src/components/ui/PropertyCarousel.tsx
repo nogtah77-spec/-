@@ -7,13 +7,65 @@ interface PropertyCarouselProps {
   properties: any[];
   size?: CardSize;
   className?: string;
+
+  autoPlay?: boolean;
+  autoPlayDelay?: number;
+  infinite?: boolean;
+  randomStart?: boolean;
 }
 
-export function PropertyCarousel({ properties, size = "compact", className }: PropertyCarouselProps) {
+export function PropertyCarousel({
+  properties,
+  size = "compact",
+  className,
+
+  autoPlay = false,
+  autoPlayDelay = 3500,
+  infinite = false,
+  randomStart = false,
+}: PropertyCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
+  const autoPlayRef = useRef<number | null>(null);
+  const scrollNext = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
 
+    const amount = el.clientWidth * 0.78;
+
+    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
+      if (infinite) {
+        el.scrollTo({
+          left: 0,
+          behavior: "smooth",
+        });
+      }
+      return;
+    }
+
+    el.scrollBy({
+      left: amount,
+      behavior: "smooth",
+    });
+  }, [infinite]);
+
+  const stopAutoPlay = () => {
+    const startAutoPlay = () => {
+      if (!autoPlay) return;
+
+      stopAutoPlay();
+
+      autoPlayRef.current = window.setInterval(() => {
+        scrollNext();
+      }, autoPlayDelay);
+    };
+
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current);
+      autoPlayRef.current = null;
+    }
+  };
   const updateArrows = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -34,19 +86,69 @@ export function PropertyCarousel({ properties, size = "compact", className }: Pr
       window.removeEventListener("resize", updateArrows);
     };
   }, [updateArrows, properties.length]);
+  useEffect(() => {
+    if (!autoPlay) return;
+
+    stopAutoPlay();
+
+    autoPlayRef.current = window.setInterval(() => {
+      scrollNext();
+    }, autoPlayDelay);
+
+    return () => {
+      stopAutoPlay();
+    };
+  }, [autoPlay, autoPlayDelay, scrollNext]);
+  useEffect(() => {
+    if (!randomStart) return;
+
+    const el = scrollRef.current;
+    if (!el) return;
+
+    setTimeout(() => {
+      const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+      console.log("maxScroll =", maxScroll);
+
+      const random = Math.random() * maxScroll;
+
+      el.scrollTo({
+        left: random,
+        behavior: "auto",
+      });
+
+      updateArrows();
+    }, 300);
+  }, [randomStart, properties.length, updateArrows]);
 
   const scroll = (dir: "prev" | "next") => {
     const el = scrollRef.current;
     if (!el) return;
+
+    stopAutoPlay();
+
     // Scroll roughly one "page" worth of cards
     const amount = el.clientWidth * 0.78;
-    el.scrollBy({ left: dir === "next" ? amount : -amount, behavior: "smooth" });
+    el.scrollBy({
+      left: dir === "next" ? amount : -amount,
+      behavior: "smooth",
+    });
   };
 
   if (properties.length === 0) return null;
 
   return (
-    <div className={cn("relative", className)}>
+    <div
+      className={cn("relative", className)}
+      onMouseEnter={stopAutoPlay}
+      onMouseLeave={() => {
+        if (!autoPlay) return;
+
+        stopAutoPlay();
+        autoPlayRef.current = window.setInterval(() => {
+          scrollNext();
+        }, autoPlayDelay);
+      }}
+    >
       {/* Previous arrow — always visible when not at start */}
       {canPrev && (
         <button
@@ -70,7 +172,7 @@ export function PropertyCarousel({ properties, size = "compact", className }: Pr
           [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {properties.map(p => (
+        {properties.map((p) => (
           <div
             key={p.id}
             className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
