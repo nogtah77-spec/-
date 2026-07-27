@@ -195,7 +195,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 lg:w-auto lg:grid-cols-6">
+          <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-3 lg:w-auto lg:grid-cols-6">
             <TabsTrigger value="general">عام</TabsTrigger>
             <TabsTrigger value="contact">التواصل</TabsTrigger>
             <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>
