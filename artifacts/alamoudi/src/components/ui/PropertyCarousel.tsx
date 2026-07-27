@@ -140,6 +140,7 @@ export function PropertyCarousel({
     <div
       className={cn("relative", className)}
       onMouseEnter={stopAutoPlay}
+      onTouchStart={stopAutoPlay}
       onMouseLeave={() => {
         if (!autoPlay) return;
 
@@ -147,6 +148,17 @@ export function PropertyCarousel({
         autoPlayRef.current = window.setInterval(() => {
           scrollNext();
         }, autoPlayDelay);
+      }}
+      onTouchEnd={() => {
+        if (!autoPlay) return;
+
+        stopAutoPlay();
+
+        window.setTimeout(() => {
+          autoPlayRef.current = window.setInterval(() => {
+            scrollNext();
+          }, autoPlayDelay);
+        }, 5000);
       }}
     >
       {/* Previous arrow — always visible when not at start */}
