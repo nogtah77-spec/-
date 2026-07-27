@@ -51,20 +51,20 @@ export function PropertyCarousel({
   }, [infinite]);
 
   const stopAutoPlay = () => {
-    const startAutoPlay = () => {
-      if (!autoPlay) return;
-
-      stopAutoPlay();
-
-      autoPlayRef.current = window.setInterval(() => {
-        scrollNext();
-      }, autoPlayDelay);
-    };
-
     if (autoPlayRef.current) {
       clearInterval(autoPlayRef.current);
       autoPlayRef.current = null;
     }
+  };
+
+  const startAutoPlay = () => {
+    if (!autoPlay) return;
+
+    stopAutoPlay();
+
+    autoPlayRef.current = window.setInterval(() => {
+      scrollNext();
+    }, autoPlayDelay);
   };
   const updateArrows = useCallback(() => {
     const el = scrollRef.current;
@@ -89,11 +89,7 @@ export function PropertyCarousel({
   useEffect(() => {
     if (!autoPlay) return;
 
-    stopAutoPlay();
-
-    autoPlayRef.current = window.setInterval(() => {
-      scrollNext();
-    }, autoPlayDelay);
+    startAutoPlay();
 
     return () => {
       stopAutoPlay();
@@ -144,10 +140,7 @@ export function PropertyCarousel({
       onMouseLeave={() => {
         if (!autoPlay) return;
 
-        stopAutoPlay();
-        autoPlayRef.current = window.setInterval(() => {
-          scrollNext();
-        }, autoPlayDelay);
+        startAutoPlay();
       }}
       onTouchEnd={() => {
         if (!autoPlay) return;
@@ -155,9 +148,7 @@ export function PropertyCarousel({
         stopAutoPlay();
 
         window.setTimeout(() => {
-          autoPlayRef.current = window.setInterval(() => {
-            scrollNext();
-          }, autoPlayDelay);
+          startAutoPlay();
         }, 5000);
       }}
     >
@@ -170,9 +161,7 @@ export function PropertyCarousel({
             scroll("prev");
 
             window.setTimeout(() => {
-              autoPlayRef.current = window.setInterval(() => {
-                scrollNext();
-              }, autoPlayDelay);
+              startAutoPlay();
             }, 5000);
           }}
           aria-label="السابق"
@@ -214,9 +203,7 @@ export function PropertyCarousel({
             scroll("next");
 
             window.setTimeout(() => {
-              autoPlayRef.current = window.setInterval(() => {
-                scrollNext();
-              }, autoPlayDelay);
+              startAutoPlay();
             }, 5000);
           }}
           aria-label="التالي"
