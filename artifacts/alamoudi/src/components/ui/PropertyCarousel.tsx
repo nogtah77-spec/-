@@ -7,7 +7,6 @@ interface PropertyCarouselProps {
   properties: any[];
   size?: CardSize;
   className?: string;
-
   autoPlay?: boolean;
   autoPlayDelay?: number;
   infinite?: boolean;
@@ -18,7 +17,6 @@ export function PropertyCarousel({
   properties,
   size = "compact",
   className,
-
   autoPlay = false,
   autoPlayDelay = 3500,
   infinite = false,
@@ -28,203 +26,257 @@ export function PropertyCarousel({
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const autoPlayRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const isAnimatingRef = useRef(false);
+  const loopWidthRef = useRef(0);
 
-  const smoothScrollTo = useCallback((target: number, duration = 1100) => {
+  const updateArrows = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const start = el.scrollLeft;
-    const distance = target - start;
-    const startedAt = performance.now();
-    const easeInOut = (value: number) =>
-      value < 0.5
-        ? 2 * value * value
-        : 1 - Math.pow(-2 * value + 2, 2) / 2;
+    if (infinite) {
+      const hasMultipleCards = properties.length > 1;
+      setCanPrev(hasMultipleCards);
+      setCanNext(hasMultipleCards);
+      return;
+    }
 
-    const frame = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / duration);
-      el.scrollLeft = start + distance * easeInOut(progress);
-      if (progress < 1) requestAnimationFrame(frame);
-    };
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, [infinite, properties.length]);
 
-    requestAnimationFrame(frame);
+  const updateLoopWidth = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el || !infinite) return;
+
+    const secondCopy = el.querySelector<HTMLElement>(
+      '[data-carousel-copy="1"]',
+    );
+    if (secondCopy) loopWidthRef.current = secondCopy.offsetLeft;
+  }, [infinite]);
+
+  const normalizeLoopPosition = useCallback(() => {
+    const el = scrollRef.current;
+    const loopWidth = loopWidthRef.current;
+    if (!el || !infinite || !loopWidth) return;
+
+    // The three copies are visually identical. Move between copies only
+    // after an animation has finished, so the user never sees a jump.
+    if (el.scrollLeft >= loopWidth * 2) {
+      el.scrollLeft -= loopWidth;
+    } else if (el.scrollLeft < loopWidth) {
+      el.scrollLeft += loopWidth;
+    }
+  }, [infinite]);
+
+  const cancelAnimation = useCallback(() => {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    isAnimatingRef.current = false;
   }, []);
+
+  const smoothScrollTo = useCallback(
+    (target: number, duration = 1300) => {
+      const el = scrollRef.current;
+      if (!el) return;
+
+      cancelAnimation();
+      const start = el.scrollLeft;
+      const distance = target - start;
+      const startedAt = performance.now();
+      const easeInOut = (value: number) =>
+        value < 0.5
+          ? 2 * value * value
+          : 1 - Math.pow(-2 * value + 2, 2) / 2;
+
+      isAnimatingRef.current = true;
+      const frame = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / duration);
+        el.scrollLeft = start + distance * easeInOut(progress);
+
+        if (progress < 1) {
+          animationFrameRef.current = requestAnimationFrame(frame);
+        } else {
+          animationFrameRef.current = null;
+          isAnimatingRef.current = false;
+          normalizeLoopPosition();
+          updateArrows();
+        }
+      };
+
+      animationFrameRef.current = requestAnimationFrame(frame);
+    },
+    [cancelAnimation, normalizeLoopPosition, updateArrows],
+  );
 
   const scrollNext = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
 
     const amount = el.clientWidth * 0.78;
-
-    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
-      if (infinite) {
-        smoothScrollTo(0);
-      }
+    if (!infinite && el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
       return;
     }
 
     smoothScrollTo(el.scrollLeft + amount);
   }, [infinite, smoothScrollTo]);
 
-  const stopAutoPlay = () => {
-    if (autoPlayRef.current) {
+  const stopAutoPlay = useCallback(() => {
+    if (autoPlayRef.current !== null) {
       clearInterval(autoPlayRef.current);
       autoPlayRef.current = null;
     }
-  };
+    cancelAnimation();
+  }, [cancelAnimation]);
 
-  const startAutoPlay = () => {
+  const startAutoPlay = useCallback(() => {
     if (!autoPlay) return;
 
     stopAutoPlay();
-
-    autoPlayRef.current = window.setInterval(() => {
-      scrollNext();
-    }, autoPlayDelay);
-  };
-  const updateArrows = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanPrev(el.scrollLeft > 4);
-    setCanNext(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, []);
+    autoPlayRef.current = window.setInterval(scrollNext, autoPlayDelay);
+  }, [autoPlay, autoPlayDelay, scrollNext, stopAutoPlay]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    // Delay slightly so layout is settled
-    const timer = setTimeout(updateArrows, 120);
-    el.addEventListener("scroll", updateArrows, { passive: true });
+
+    const timer = window.setTimeout(() => {
+      updateLoopWidth();
+      if (infinite && loopWidthRef.current) {
+        el.scrollLeft = loopWidthRef.current;
+      }
+      updateArrows();
+    }, 120);
+
+    const onScroll = () => {
+      if (infinite && !isAnimatingRef.current) normalizeLoopPosition();
+      updateArrows();
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", updateArrows, { passive: true });
+
     return () => {
       clearTimeout(timer);
-      el.removeEventListener("scroll", updateArrows);
+      el.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", updateArrows);
     };
-  }, [updateArrows, properties.length]);
+  }, [
+    infinite,
+    normalizeLoopPosition,
+    properties.length,
+    updateArrows,
+    updateLoopWidth,
+  ]);
+
   useEffect(() => {
     if (!autoPlay) return;
-
     startAutoPlay();
+    return stopAutoPlay;
+  }, [autoPlay, startAutoPlay, stopAutoPlay]);
 
-    return () => {
-      stopAutoPlay();
-    };
-  }, [autoPlay, autoPlayDelay, scrollNext]);
   useEffect(() => {
     if (!randomStart) return;
 
     const el = scrollRef.current;
     if (!el) return;
 
-    setTimeout(() => {
-      const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
-      console.log("maxScroll =", maxScroll);
-
+    const timer = window.setTimeout(() => {
+      updateLoopWidth();
+      const loopWidth = loopWidthRef.current;
+      const maxScroll = infinite
+        ? Math.max(0, loopWidth - el.clientWidth)
+        : Math.max(0, el.scrollWidth - el.clientWidth);
       const random = Math.random() * maxScroll;
-
-      el.scrollTo({
-        left: random,
-        behavior: "auto",
-      });
-
+      el.scrollLeft = infinite ? loopWidth + random : random;
       updateArrows();
     }, 300);
-  }, [randomStart, properties.length, updateArrows]);
+
+    return () => clearTimeout(timer);
+  }, [
+    infinite,
+    properties.length,
+    randomStart,
+    updateArrows,
+    updateLoopWidth,
+  ]);
+
+  useEffect(() => () => cancelAnimation(), [cancelAnimation]);
 
   const scroll = (dir: "prev" | "next") => {
     const el = scrollRef.current;
     if (!el) return;
 
     stopAutoPlay();
-
-    // Scroll roughly one "page" worth of cards
     const amount = el.clientWidth * 0.78;
     smoothScrollTo(el.scrollLeft + (dir === "next" ? amount : -amount));
   };
 
   if (properties.length === 0) return null;
 
+  const copies = infinite ? [0, 1, 2] : [0];
+
   return (
     <div
       className={cn("relative", className)}
       onMouseEnter={stopAutoPlay}
       onTouchStart={stopAutoPlay}
-      onMouseLeave={() => {
-        if (!autoPlay) return;
-
-        startAutoPlay();
-      }}
+      onMouseLeave={startAutoPlay}
       onTouchEnd={() => {
         if (!autoPlay) return;
-
         stopAutoPlay();
-
-        window.setTimeout(() => {
-          startAutoPlay();
-        }, 5000);
+        window.setTimeout(startAutoPlay, 5000);
       }}
     >
-      {/* Previous arrow — always visible when not at start */}
       {canPrev && (
         <button
           onClick={() => {
-            stopAutoPlay();
-            autoPlayRef.current = null;
             scroll("prev");
-
-            window.setTimeout(() => {
-              startAutoPlay();
-            }, 5000);
+            window.setTimeout(startAutoPlay, 5000);
           }}
           aria-label="السابق"
           className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
             bg-black/25 dark:bg-black/30 backdrop-blur-md border border-white/20
-            items-center justify-center text-white/80
-            hover:text-white hover:bg-black/45 hover:border-white/35
-            transition-all duration-200 shadow-sm"
+            items-center justify-center text-white/80 hover:text-white hover:bg-black/45
+            hover:border-white/35 transition-all duration-200 shadow-sm"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
       )}
 
-      {/* Scrollable strip — dir=ltr so scrollLeft is predictable across browsers */}
       <div
         ref={scrollRef}
         dir="ltr"
-        className="flex gap-4 overflow-x-auto scroll-smooth pb-2
-          [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {properties.map((p) => (
-          <div
-            key={p.id}
-            className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
-            style={{ scrollSnapAlign: "start" }}
-          >
-            <PropertyCard property={p} size={size} />
-          </div>
-        ))}
+        {copies.flatMap((copy) =>
+          properties.map((p) => (
+            <div
+              key={`${copy}-${p.id}`}
+              className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
+              style={{ scrollSnapAlign: "start" }}
+              data-carousel-copy={copy}
+            >
+              <PropertyCard property={p} size={size} />
+            </div>
+          )),
+        )}
       </div>
 
-      {/* Next arrow — always visible when not at end */}
       {canNext && (
         <button
           onClick={() => {
-            stopAutoPlay();
-            autoPlayRef.current = null;
             scroll("next");
-
-            window.setTimeout(() => {
-              startAutoPlay();
-            }, 5000);
+            window.setTimeout(startAutoPlay, 5000);
           }}
           aria-label="التالي"
           className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
             bg-black/25 dark:bg-black/30 backdrop-blur-md border border-white/20
-            items-center justify-center text-white/80
-            hover:text-white hover:bg-black/45 hover:border-white/35
-            transition-all duration-200 shadow-sm"
+            items-center justify-center text-white/80 hover:text-white hover:bg-black/45
+            hover:border-white/35 transition-all duration-200 shadow-sm"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
