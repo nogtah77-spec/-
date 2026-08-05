@@ -717,7 +717,7 @@ export default function Home() {
                   <PropertyCarousel
                     properties={latestProps}
                     autoPlay
-                    autoPlayDelay={3500}
+                    autoPlayDelay={6000}
                     infinite
                     randomStart
                   />
@@ -766,7 +766,7 @@ export default function Home() {
                         <PropertyCarousel
                           properties={items.slice(0, 8)}
                           autoPlay
-                          autoPlayDelay={3500}
+                          autoPlayDelay={6000}
                           infinite
                           randomStart
                         />

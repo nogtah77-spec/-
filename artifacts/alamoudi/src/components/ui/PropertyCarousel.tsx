@@ -28,6 +28,28 @@ export function PropertyCarousel({
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const autoPlayRef = useRef<number | null>(null);
+
+  const smoothScrollTo = useCallback((target: number, duration = 1100) => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const start = el.scrollLeft;
+    const distance = target - start;
+    const startedAt = performance.now();
+    const easeInOut = (value: number) =>
+      value < 0.5
+        ? 2 * value * value
+        : 1 - Math.pow(-2 * value + 2, 2) / 2;
+
+    const frame = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      el.scrollLeft = start + distance * easeInOut(progress);
+      if (progress < 1) requestAnimationFrame(frame);
+    };
+
+    requestAnimationFrame(frame);
+  }, []);
+
   const scrollNext = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -36,19 +58,13 @@ export function PropertyCarousel({
 
     if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
       if (infinite) {
-        el.scrollTo({
-          left: 0,
-          behavior: "smooth",
-        });
+        smoothScrollTo(0);
       }
       return;
     }
 
-    el.scrollBy({
-      left: amount,
-      behavior: "smooth",
-    });
-  }, [infinite]);
+    smoothScrollTo(el.scrollLeft + amount);
+  }, [infinite, smoothScrollTo]);
 
   const stopAutoPlay = () => {
     if (autoPlayRef.current) {
@@ -124,10 +140,7 @@ export function PropertyCarousel({
 
     // Scroll roughly one "page" worth of cards
     const amount = el.clientWidth * 0.78;
-    el.scrollBy({
-      left: dir === "next" ? amount : -amount,
-      behavior: "smooth",
-    });
+    smoothScrollTo(el.scrollLeft + (dir === "next" ? amount : -amount));
   };
 
   if (properties.length === 0) return null;
