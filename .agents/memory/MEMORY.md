@@ -1,1 +1,0 @@
-- [Carousel looping](carousel-looping.md) — use duplicated tracks and post-animation position normalization for seamless infinite carousel wraps.
