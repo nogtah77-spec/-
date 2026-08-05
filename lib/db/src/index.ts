@@ -4,13 +4,34 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+// Prefer Replit's built-in DATABASE_URL when available.
+// Fall back to Supabase connection for backward compatibility.
+function buildSupabaseUrl(): string | undefined {
+  const pw = process.env.SUPABASE_DB_PASSWORD;
+  const supaUrl = process.env.SUPABASE_URL;
+  if (!pw || !supaUrl) return undefined;
+
+  const ref = supaUrl.match(/https?:\/\/([^.]+)\.supabase\.co/)?.[1];
+  if (!ref) return undefined;
+
+  const encodedPw = encodeURIComponent(pw);
+  return `postgresql://postgres.${ref}:${encodedPw}@aws-0-eu-west-1.pooler.supabase.com:6543/postgres`;
+}
+
+const connectionString =
+  process.env.DATABASE_URL ??
+  process.env.SUPABASE_DATABASE_URL ??
+  buildSupabaseUrl();
+
+if (!connectionString) {
+  console.error(
+    "[db] WARNING: No database connection string found. " +
+      "Set DATABASE_URL, SUPABASE_DATABASE_URL, or SUPABASE_DB_PASSWORD + SUPABASE_URL. " +
+      "All database queries will fail until one of these is provided.",
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool(connectionString ? { connectionString } : {});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
