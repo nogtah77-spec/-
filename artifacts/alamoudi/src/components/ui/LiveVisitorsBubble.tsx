@@ -170,7 +170,7 @@ export function LiveVisitorsBubble() {
                   <span className="text-[9px] text-white/60 truncate">{m.label}</span>
                 </div>
                 <span className="text-xs font-bold text-white tabular-nums">
-                  {m.value.toLocaleString("ar-EG")}
+                  {m.value.toLocaleString("en-US")}
                 </span>
               </div>
             ))}
