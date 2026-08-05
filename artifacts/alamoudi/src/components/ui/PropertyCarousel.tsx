@@ -23,66 +23,24 @@ export function PropertyCarousel({
   randomStart = false,
 }: PropertyCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const autoPlayRef = useRef<number | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const isAnimatingRef = useRef(false);
-  const loopWidthRef = useRef(0);
 
-  const updateArrows = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-
-    if (infinite) {
-      const hasMultipleCards = properties.length > 1;
-      setCanPrev(hasMultipleCards);
-      setCanNext(hasMultipleCards);
-      return;
+  const cancelScrollAnimation = useCallback(() => {
+    if (animationRef.current !== null) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
     }
-
-    setCanPrev(el.scrollLeft > 4);
-    setCanNext(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, [infinite, properties.length]);
-
-  const updateLoopWidth = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el || !infinite) return;
-
-    const secondCopy = el.querySelector<HTMLElement>(
-      '[data-carousel-copy="1"]',
-    );
-    if (secondCopy) loopWidthRef.current = secondCopy.offsetLeft;
-  }, [infinite]);
-
-  const normalizeLoopPosition = useCallback(() => {
-    const el = scrollRef.current;
-    const loopWidth = loopWidthRef.current;
-    if (!el || !infinite || !loopWidth) return;
-
-    // The three copies are visually identical. Move between copies only
-    // after an animation has finished, so the user never sees a jump.
-    if (el.scrollLeft >= loopWidth * 2) {
-      el.scrollLeft -= loopWidth;
-    } else if (el.scrollLeft < loopWidth) {
-      el.scrollLeft += loopWidth;
-    }
-  }, [infinite]);
-
-  const cancelAnimation = useCallback(() => {
-    if (animationFrameRef.current !== null) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    isAnimatingRef.current = false;
   }, []);
 
-  const smoothScrollTo = useCallback(
-    (target: number, duration = 1300) => {
+  const animateScrollTo = useCallback(
+    (target: number, duration = 1200) => {
       const el = scrollRef.current;
       if (!el) return;
 
-      cancelAnimation();
+      cancelScrollAnimation();
       const start = el.scrollLeft;
       const distance = target - start;
       const startedAt = performance.now();
@@ -91,24 +49,19 @@ export function PropertyCarousel({
           ? 2 * value * value
           : 1 - Math.pow(-2 * value + 2, 2) / 2;
 
-      isAnimatingRef.current = true;
       const frame = (now: number) => {
         const progress = Math.min(1, (now - startedAt) / duration);
         el.scrollLeft = start + distance * easeInOut(progress);
-
         if (progress < 1) {
-          animationFrameRef.current = requestAnimationFrame(frame);
+          animationRef.current = requestAnimationFrame(frame);
         } else {
-          animationFrameRef.current = null;
-          isAnimatingRef.current = false;
-          normalizeLoopPosition();
-          updateArrows();
+          animationRef.current = null;
         }
       };
 
-      animationFrameRef.current = requestAnimationFrame(frame);
+      animationRef.current = requestAnimationFrame(frame);
     },
-    [cancelAnimation, normalizeLoopPosition, updateArrows],
+    [cancelScrollAnimation],
   );
 
   const scrollNext = useCallback(() => {
@@ -116,20 +69,27 @@ export function PropertyCarousel({
     if (!el) return;
 
     const amount = el.clientWidth * 0.78;
-    if (!infinite && el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
+    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+
+    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
+      if (infinite) {
+        // Keep the original track and smoothly glide back to the first card.
+        // No duplicated cards or data swapping are used.
+        animateScrollTo(0, 1700);
+      }
       return;
     }
 
-    smoothScrollTo(el.scrollLeft + amount);
-  }, [infinite, smoothScrollTo]);
+    animateScrollTo(Math.min(el.scrollLeft + amount, maxScroll), 1200);
+  }, [animateScrollTo, infinite]);
 
   const stopAutoPlay = useCallback(() => {
     if (autoPlayRef.current !== null) {
       clearInterval(autoPlayRef.current);
       autoPlayRef.current = null;
     }
-    cancelAnimation();
-  }, [cancelAnimation]);
+    cancelScrollAnimation();
+  }, [cancelScrollAnimation]);
 
   const startAutoPlay = useCallback(() => {
     if (!autoPlay) return;
@@ -138,38 +98,27 @@ export function PropertyCarousel({
     autoPlayRef.current = window.setInterval(scrollNext, autoPlayDelay);
   }, [autoPlay, autoPlayDelay, scrollNext, stopAutoPlay]);
 
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
-    const timer = window.setTimeout(() => {
-      updateLoopWidth();
-      if (infinite && loopWidthRef.current) {
-        el.scrollLeft = loopWidthRef.current;
-      }
-      updateArrows();
-    }, 120);
-
-    const onScroll = () => {
-      if (infinite && !isAnimatingRef.current) normalizeLoopPosition();
-      updateArrows();
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
+    const timer = window.setTimeout(updateArrows, 120);
+    el.addEventListener("scroll", updateArrows, { passive: true });
     window.addEventListener("resize", updateArrows, { passive: true });
 
     return () => {
       clearTimeout(timer);
-      el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scroll", updateArrows);
       window.removeEventListener("resize", updateArrows);
     };
-  }, [
-    infinite,
-    normalizeLoopPosition,
-    properties.length,
-    updateArrows,
-    updateLoopWidth,
-  ]);
+  }, [updateArrows, properties.length]);
 
   useEffect(() => {
     if (!autoPlay) return;
@@ -184,26 +133,16 @@ export function PropertyCarousel({
     if (!el) return;
 
     const timer = window.setTimeout(() => {
-      updateLoopWidth();
-      const loopWidth = loopWidthRef.current;
-      const maxScroll = infinite
-        ? Math.max(0, loopWidth - el.clientWidth)
-        : Math.max(0, el.scrollWidth - el.clientWidth);
+      const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
       const random = Math.random() * maxScroll;
-      el.scrollLeft = infinite ? loopWidth + random : random;
+      el.scrollLeft = random;
       updateArrows();
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [
-    infinite,
-    properties.length,
-    randomStart,
-    updateArrows,
-    updateLoopWidth,
-  ]);
+  }, [randomStart, properties.length, updateArrows]);
 
-  useEffect(() => () => cancelAnimation(), [cancelAnimation]);
+  useEffect(() => () => cancelScrollAnimation(), [cancelScrollAnimation]);
 
   const scroll = (dir: "prev" | "next") => {
     const el = scrollRef.current;
@@ -211,12 +150,15 @@ export function PropertyCarousel({
 
     stopAutoPlay();
     const amount = el.clientWidth * 0.78;
-    smoothScrollTo(el.scrollLeft + (dir === "next" ? amount : -amount));
+    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+    const target = Math.max(
+      0,
+      Math.min(maxScroll, el.scrollLeft + (dir === "next" ? amount : -amount)),
+    );
+    animateScrollTo(target, 1200);
   };
 
   if (properties.length === 0) return null;
-
-  const copies = infinite ? [0, 1, 2] : [0];
 
   return (
     <div
@@ -252,18 +194,15 @@ export function PropertyCarousel({
         className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ scrollSnapType: "x mandatory" }}
       >
-        {copies.flatMap((copy) =>
-          properties.map((p) => (
-            <div
-              key={`${copy}-${p.id}`}
-              className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
-              style={{ scrollSnapAlign: "start" }}
-              data-carousel-copy={copy}
-            >
-              <PropertyCard property={p} size={size} />
-            </div>
-          )),
-        )}
+        {properties.map((p) => (
+          <div
+            key={p.id}
+            className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
+            style={{ scrollSnapAlign: "start" }}
+          >
+            <PropertyCard property={p} size={size} />
+          </div>
+        ))}
       </div>
 
       {canNext && (
