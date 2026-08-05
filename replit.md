@@ -34,12 +34,7 @@ _Describe the high-level user-facing capabilities of this app once they exist._
 
 ## User preferences
 
-- **Always reply in Egyptian-Arabic.**
-- **Write clean Arabic prose that doesn't scramble (bidi).** The chat renderer reorders text when Arabic sentences contain inline English words, code, or numbers, making replies hard to read. To avoid this:
-  - Keep sentences fully Arabic; describe technical concepts in Arabic instead of English terms.
-  - When an English/code term is unavoidable, put it alone at the END of the sentence or on its own bullet line — never in the middle of an Arabic sentence.
-  - Don't mix digits + English inside Arabic prose; put any stats/codes on their own short line.
-  - Prefer short headings and bullets over long mixed-script paragraphs.
+_Populate as you build — explicit user instructions worth remembering across sessions._
 
 ## Gotchas
 

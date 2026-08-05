@@ -1,6 +1,5 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedDatabase, normalizeFinishingValues } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -23,12 +22,4 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
-
-  if (!process.env.REPLIT_DEPLOYMENT) {
-    seedDatabase()
-      .then(() => normalizeFinishingValues())
-      .catch((seedErr) => {
-        logger.error({ err: seedErr }, "Seed / normalise step failed (non-fatal)");
-      });
-  }
 });
