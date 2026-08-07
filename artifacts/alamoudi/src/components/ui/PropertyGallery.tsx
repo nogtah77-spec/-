@@ -71,7 +71,7 @@ export function PropertyGallery({ images, title, onClickImage, className }: Prop
 
         {/* Image area */}
         <div
-          className="flex-1 relative h-[280px] sm:h-[400px] cursor-pointer touch-pan-y overflow-hidden"
+          className="flex-1 relative h-[240px] xs:h-[280px] sm:h-[400px] cursor-pointer touch-pan-y overflow-hidden"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -83,6 +83,9 @@ export function PropertyGallery({ images, title, onClickImage, className }: Prop
             src={images[current]}
             aria-hidden
             draggable={false}
+            loading="eager"
+            decoding="async"
+            fetchPriority="low"
             className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-40 pointer-events-none"
           />
           {/* Main image — object-contain, never clipped */}
@@ -90,6 +93,9 @@ export function PropertyGallery({ images, title, onClickImage, className }: Prop
             src={images[current]}
             alt={title}
             draggable={false}
+            decoding="async"
+            fetchPriority="high"
+            sizes="(max-width: 640px) calc(100vw - 80px), 800px"
             className="relative w-full h-full object-contain pointer-events-none"
           />
 
@@ -146,7 +152,16 @@ export function PropertyGallery({ images, title, onClickImage, className }: Prop
                 i === current ? "border-white opacity-100 scale-105" : "border-transparent opacity-55 hover:opacity-85"
               )}
             >
-              <img src={img} alt="" className="w-full h-full object-cover" draggable={false} />
+              <img
+                src={img}
+                alt=""
+                loading={i === current ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={i === current ? "high" : "low"}
+                sizes="80px"
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
             </button>
           ))}
         </div>

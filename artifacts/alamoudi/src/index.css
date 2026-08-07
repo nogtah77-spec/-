@@ -266,6 +266,20 @@
   }
 }
 
+@media (max-width: 640px) {
+  /* Keep horizontal card strips touch-friendly without allowing the page to
+     acquire an accidental horizontal scrollbar. */
+  .overflow-x-auto {
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button { @apply hidden; }
 

@@ -78,7 +78,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     return list.map(resolve);
   }, [properties, regionId, categoryFilter, sectorFilter, resolve]);
 
-  const gridClass = "grid grid-cols-1 md:grid-cols-2 gap-3";
+  const gridClass = "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4";
 
   /* ── Not found ── */
   if (!region) {
@@ -106,7 +106,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
       <Navbar />
       <main className="flex-1">
         <section className="py-10 md:py-12">
-          <div className="container px-6">
+          <div className="container px-3 sm:px-6">
 
             {/* ── Breadcrumb + header ── */}
             <div className="mb-8">

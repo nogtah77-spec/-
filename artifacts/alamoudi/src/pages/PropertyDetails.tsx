@@ -195,7 +195,7 @@ export default function PropertyDetails() {
           </div>
         </div>
 
-        <div className="container px-6">
+        <div className="container px-3 sm:px-6">
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
             <div className="flex-1">
@@ -334,7 +334,7 @@ export default function PropertyDetails() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-8">
             <div className="lg:col-span-2 space-y-5">
 
               {/* Compact specs row — desktop only (mobile version is above gallery) */}
@@ -562,7 +562,7 @@ export default function PropertyDetails() {
           {similar.length > 0 && (
             <div className="mt-16">
               <h2 className="text-2xl font-bold mb-6">عقارات مشابهة</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {similar.map(p => (
                   <PropertyCard key={p.id} size="compact" property={{ ...p, typeName: propertyTypes.find(t => t.id === p.typeId)?.name, regionName: regions.find(r => r.id === p.regionId)?.name }} />
                 ))}

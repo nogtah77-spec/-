@@ -139,6 +139,9 @@ function TiktokCard({
             src={src}
             alt={video.title}
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            sizes="(max-width: 640px) 30vw, 180px"
             referrerPolicy="no-referrer"
             onError={() => setFailed(true)}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -299,7 +302,7 @@ export default function Home() {
   const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 3);
   const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
 
-  const gridClass = "grid grid-cols-1 md:grid-cols-2 gap-3";
+  const gridClass = "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4";
 
   const videoGridClass =
     "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5";
@@ -356,8 +359,8 @@ export default function Home() {
         )}
 
         {/* ── Search / Filter Widget ── */}
-        <div className="container px-6">
-          <div className="relative z-20 bg-card border border-border rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-5 max-w-3xl mx-auto">
+        <div className="container px-3 sm:px-6">
+            <div className="relative z-20 bg-card border border-border rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-3.5 sm:p-5 max-w-3xl mx-auto">
             <div className="relative mb-3">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -497,7 +500,7 @@ export default function Home() {
         {/* ── Filter / Search Results ── */}
         {isFiltering && (
           <section className="py-10 md:py-12 bg-background">
-            <div className="container px-6">
+            <div className="container px-3 sm:px-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
                 <div>
                   <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">
@@ -540,7 +543,7 @@ export default function Home() {
         {/* ── TikTok Section ── */}
         {!isFiltering && (
           <section className="py-4 md:py-5 bg-background">
-            <div className="container px-4 sm:px-6">
+              <div className="container px-3 sm:px-6">
               <div className="max-w-3xl mx-auto">
                 <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
                   <div
@@ -627,7 +630,7 @@ export default function Home() {
                           </a>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
                           {tiktokVideos.map((video) => (
                             <TiktokCard
                               key={video.id}

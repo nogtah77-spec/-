@@ -21,7 +21,7 @@ export default function Favorites() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 bg-[#F5F2EC] dark:bg-background py-12">
-        <div className="container px-6">
+        <div className="container px-3 sm:px-6">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-foreground mb-1">المفضلة</h1>
             <p className="text-sm text-muted-foreground">
@@ -41,7 +41,7 @@ export default function Favorites() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {favProps.map(p => <PropertyCard key={p.id} property={p} />)}
             </div>
           )}

@@ -123,9 +123,9 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         {/* ── صورة العقار — أكبر بنسبة ~14% ── */}
         <div className="relative w-32 flex-shrink-0 bg-muted overflow-hidden">
           {showVideoCover
-            ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
+            ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
             : coverImg
-              ? <img src={coverImg} alt={property.title} className="w-full h-full object-cover" />
+              ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" className="w-full h-full object-cover" />
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
           <div className="absolute top-2 right-2">
             <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
@@ -179,9 +179,9 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
     <Card onClick={goToDetails} className="overflow-hidden border-border shadow-sm group cursor-pointer card-luxury flex flex-col h-full hover:-translate-y-1 transition-all duration-300">
       <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", imageHeight)}>
         {showVideoCover
-          ? <img src={videoThumb!} alt={property.title} onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           : coverImg
-            ? <img src={coverImg} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, (max-width: 1024px) 380px, 400px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             : showVideoPoster
               ? <div className="w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center"><Video className="h-10 w-10 text-accent/50" /></div>
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
