@@ -774,10 +774,6 @@ export default function Contracts() {
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] space-y-6" dir="rtl">
         <section className="relative isolate overflow-hidden rounded-2xl border border-[#B4986B]/40 bg-[linear-gradient(135deg,#10202D_0%,#172F42_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
-          <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full border border-[#B4986B]/20" />
-          <div className="pointer-events-none absolute -bottom-32 right-[24%] h-72 w-72 rounded-full border border-white/5" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-[radial-gradient(circle_at_70%_35%,rgba(180,152,107,.16),transparent_58%)]" />
-
           <div className="relative grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0">
               <div className="mb-4 flex items-center gap-3">

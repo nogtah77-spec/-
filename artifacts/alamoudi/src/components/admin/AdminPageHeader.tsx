@@ -28,9 +28,6 @@ export function AdminPageHeader({
         className,
       )}
     >
-      <div className="pointer-events-none absolute -left-14 -top-20 h-44 w-44 rounded-full border border-[#B4986B]/15" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-[radial-gradient(circle_at_70%_35%,rgba(180,152,107,.14),transparent_62%)]" />
-
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B4986B]/40 bg-[#B4986B]/15 text-[#D6B77F]">
