@@ -211,20 +211,26 @@ export function PropertyCard({
             )}
           </div>
 
-          <div className={cn(compactHomeCard ? "mt-1 space-y-1 pt-1" : "mt-auto space-y-1.5 pt-2")}>
-            <div
-              dir="ltr"
-              className={cn(
-                "relative flex items-center justify-end gap-1 pt-2",
-                compactHomeCard
-                  ? "before:pointer-events-none before:absolute before:inset-x-0 before:-top-2 before:border-t before:border-border/70"
-                  : "border-t border-border/70",
-              )}
-            >
-              <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
-              <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
-            </div>
-            <div dir="rtl" className={cn("grid grid-cols-3 gap-1.5 text-center font-bold text-foreground/90", detailTextClass)}>
+          <div className={cn(
+            compactHomeCard ? "flex min-h-0 flex-1 flex-col" : "mt-auto space-y-1.5 pt-2",
+          )}>
+            {compactHomeCard && (
+              <div className="relative min-h-[18px] flex-1" aria-hidden="true">
+                <span className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-border/70" />
+              </div>
+            )}
+            <div className={cn(compactHomeCard ? "space-y-1 pt-1" : "space-y-1.5")}>
+              <div
+                dir="ltr"
+                className={cn(
+                  "flex items-center justify-end gap-1 pt-2",
+                  !compactHomeCard && "border-t border-border/70",
+                )}
+              >
+                <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
+                <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
+              </div>
+              <div dir="rtl" className={cn("grid grid-cols-3 gap-1.5 text-center font-bold text-foreground/90", detailTextClass)}>
               {property.beds > 0 ? (
                 <span className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
                   <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>غرف</span>
@@ -244,6 +250,7 @@ export function PropertyCard({
                 <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>م²</span>
                 <Square className={cn(detailIconClass, "text-accent")} />
               </span>
+              </div>
             </div>
           </div>
         </div>
