@@ -6,9 +6,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Download, Search, Activity } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { ActivityItem } from "@/components/admin/ActivityItem";
+import { RecentPropertiesPanel } from "@/components/admin/RecentPropertiesPanel";
 
 export default function ActivityLogs() {
-  const { activityLogs } = useData();
+  const { activityLogs, properties, regions, propertyTypes } = useData();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -49,6 +50,12 @@ export default function ActivityLogs() {
             تصدير السجل
           </Button>
         </div>
+
+        <RecentPropertiesPanel
+          properties={properties}
+          regions={regions}
+          propertyTypes={propertyTypes}
+        />
 
         <div className="flex gap-4">
           <div className="relative flex-1 max-w-md">
