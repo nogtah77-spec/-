@@ -52,6 +52,10 @@ export default function RegionPage({ params }: { params: { regionId: string } })
 
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [sectorFilter,   setSectorFilter  ] = useState<SectorFilter  >("all");
+  const [heroImageFailed, setHeroImageFailed] = useState(false);
+  // The supplied Shorouk reference is a finished hero screenshot and already
+  // contains its title and breadcrumb. Other city images remain dynamic.
+  const heroContainsPageHeading = region?.id === "shorouk" && !!region?.heroImage;
   const resolve = useCallback((p: any) => ({
     ...p,
     typeName:   propertyTypes.find(t => t.id === p.typeId)?.name,
@@ -105,36 +109,56 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
-        <section className="py-10 md:py-12">
+        {/* The hero is intentionally compact: it fills the same visual band
+            between the navigation edge and the first filter controls in the
+            reference, while scaling continuously across viewports. */}
+        <section className="relative isolate h-[clamp(150px,17.4vw,224px)] w-full overflow-hidden bg-primary">
+          {region.heroImage && !heroImageFailed ? (
+            <img
+              src={region.heroImage}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              onError={() => setHeroImageFailed(true)}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
+          )}
+          <div className="absolute inset-0 bg-primary/45" />
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/75 via-primary/20 to-primary/35" />
+          {!heroContainsPageHeading && (
+            <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
+              <div className="max-w-3xl">
+                <h1 className="text-2xl font-extrabold tracking-tight drop-shadow-md sm:text-3xl md:text-5xl">
+                  مدينة {region.name.replace(/^مدينة\s+/, "")}
+                </h1>
+                <nav aria-label="التنقل" className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-white/80 sm:text-sm">
+                  <Link href="/" className="transition-colors hover:text-accent">الرئيسية</Link>
+                  <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+                  <span>{region.name}</span>
+                </nav>
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="py-6 sm:py-8 md:py-10">
           <div className="container px-3 sm:px-6">
 
-            {/* ── Breadcrumb + header ── */}
-            <div className="mb-8">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-accent transition-colors mb-4"
-              >
-                <ChevronRight className="h-4 w-4" />
-                الرئيسية
-              </Link>
-
-              <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 relative inline-block">
-                    عقارات {region.name}
-                    <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-4">
-                    {filtered.length === 0
-                      ? "لا توجد نتائج للتصفية المحددة"
-                      : `${filtered.length} عقار متاح`}
-                  </p>
-                </div>
+            {/* ── Result heading ── */}
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-7">
+              <div>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                  عقارات {region.name}
+                  <span className="mr-2 text-sm font-normal text-muted-foreground">
+                    ({filtered.length})
+                  </span>
+                </h2>
+                <div className="mt-2 h-0.5 w-12 rounded-full bg-accent" />
               </div>
             </div>
 
             {/* ── Filter row 1: Transaction type ── */}
-            <div className="flex flex-wrap gap-2 mb-3">
+            <div className="flex flex-wrap gap-2 mb-3" aria-label="نوع العرض">
               {CATEGORY_FILTERS.map(f => (
                 <FilterChip
                   key={f.value}

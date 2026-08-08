@@ -13,7 +13,7 @@ import { hashPassword } from "./auth";
 import { logger } from "./logger";
 
 const DEFAULT_REGIONS = [
-  { id: "shorouk", name: "مدينة الشروق", active: true },
+  { id: "shorouk", name: "مدينة الشروق", active: true, heroImage: "/city-heroes/shorouk.jpg" },
   { id: "madinaty", name: "مدينتي", active: true },
   { id: "badr", name: "مدينة بدر", active: true },
   { id: "wasal", name: "كمباوند وصال", active: true },
@@ -91,6 +91,20 @@ export async function seedDatabase(): Promise<void> {
   if (existingRegions.length === 0) {
     await db.insert(regionsTable).values(DEFAULT_REGIONS);
     logger.info("Seeded default regions");
+  }
+
+  // Add the supplied city hero to an existing database without overwriting
+  // any image an administrator may already have chosen.
+  const [shorouk] = await db
+    .select({ heroImage: regionsTable.heroImage })
+    .from(regionsTable)
+    .where(eq(regionsTable.id, "shorouk"))
+    .limit(1);
+  if (shorouk && !shorouk.heroImage) {
+    await db
+      .update(regionsTable)
+      .set({ heroImage: "/city-heroes/shorouk.jpg" })
+      .where(eq(regionsTable.id, "shorouk"));
   }
 
   const existingTypes = await db

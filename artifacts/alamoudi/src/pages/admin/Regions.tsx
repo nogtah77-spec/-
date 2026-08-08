@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, Eye, EyeOff, Plus } from "lucide-react";
+import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Regions() {
@@ -16,6 +16,7 @@ export default function Regions() {
   const [editTarget, setEditTarget] = useState<Region | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Region | null>(null);
   const [newName, setNewName] = useState("");
+  const [heroImage, setHeroImage] = useState("");
   const { toast } = useToast();
 
   const handleAdd = () => {
@@ -28,9 +29,10 @@ export default function Regions() {
 
   const handleEdit = () => {
     if (!editTarget || !newName.trim()) return;
-    updateRegion(editTarget.id, newName.trim());
+    updateRegion(editTarget.id, newName.trim(), heroImage.trim());
     setEditTarget(null);
     setNewName("");
+    setHeroImage("");
     toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
   };
 
@@ -49,6 +51,7 @@ export default function Regions() {
   const openEdit = (r: Region) => {
     setEditTarget(r);
     setNewName(r.name);
+    setHeroImage(r.heroImage ?? "");
   };
 
   return (
@@ -70,7 +73,8 @@ export default function Regions() {
             <TableHeader>
               <TableRow>
                 <TableHead>اسم المنطقة</TableHead>
-                <TableHead>حالة التفعيل</TableHead>
+              <TableHead>صورة الغلاف</TableHead>
+              <TableHead>حالة التفعيل</TableHead>
                 <TableHead>الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
@@ -78,6 +82,15 @@ export default function Regions() {
               {regions.map((region) => (
                 <TableRow key={region.id}>
                   <TableCell className="font-medium">{region.name}</TableCell>
+                  <TableCell>
+                    {region.heroImage ? (
+                      <img src={region.heroImage} alt="" className="h-10 w-16 rounded-md object-cover border" />
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <ImageIcon className="h-3.5 w-3.5" /> افتراضية
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${region.active ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"}`}>
                       {region.active ? "نشط" : "غير نشط"}
@@ -100,7 +113,7 @@ export default function Regions() {
               ))}
               {regions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">لا توجد مناطق مضافة بعد.</TableCell>
+                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">لا توجد مناطق مضافة بعد.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -119,6 +132,9 @@ export default function Regions() {
               <Label>اسم المنطقة</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="مثال: التجمع الخامس" />
             </div>
+            <p className="text-xs text-muted-foreground">
+              يمكن إضافة صورة الغلاف من نافذة التعديل بعد إنشاء المنطقة.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>إلغاء</Button>
@@ -137,6 +153,15 @@ export default function Regions() {
             <div className="space-y-2">
               <Label>اسم المنطقة</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>رابط صورة غلاف المدينة</Label>
+              <Input
+                value={heroImage}
+                onChange={(e) => setHeroImage(e.target.value)}
+                placeholder="/city-heroes/city.jpg أو رابط صورة"
+                dir="ltr"
+              />
             </div>
           </div>
           <DialogFooter>

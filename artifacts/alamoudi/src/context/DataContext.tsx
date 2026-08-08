@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-export interface Region { id: string; name: string; active: boolean; }
+export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
 
 export type PropertyStatus = "active" | "listed" | "draft" | "sold" | "rented" | "reserved";
@@ -238,7 +238,7 @@ interface DataContextType {
   refreshVisitorStats: () => Promise<void>;
   updateSettings: (s: Partial<SiteSettings>) => void;
   addRegion: (name: string) => void;
-  updateRegion: (id: string, name: string) => void;
+  updateRegion: (id: string, name: string, heroImage?: string) => void;
   deleteRegion: (id: string) => void;
   toggleRegion: (id: string) => void;
   addPropertyType: (name: string) => void;
@@ -499,9 +499,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setRegions(p => [...p, region]);
     persist(api.post("/regions", region));
   };
-  const updateRegion = (id: string, name: string) => {
-    setRegions(p => p.map(r => r.id === id ? { ...r, name } : r));
-    persist(api.patch(`/regions/${id}`, { name }));
+  const updateRegion = (id: string, name: string, heroImage?: string) => {
+    setRegions(p => p.map(r => r.id === id ? { ...r, name, ...(heroImage !== undefined ? { heroImage } : {}) } : r));
+    persist(api.patch(`/regions/${id}`, { name, ...(heroImage !== undefined ? { heroImage } : {}) }));
   };
   const deleteRegion = (id: string) => {
     setRegions(p => p.filter(r => r.id !== id));

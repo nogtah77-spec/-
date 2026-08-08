@@ -6,6 +6,7 @@ export const regionsTable = pgTable("regions", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   active: boolean("active").notNull().default(true),
+  heroImage: text("hero_image").notNull().default(""),
 });
 
 export const insertRegionSchema = createInsertSchema(regionsTable);
