@@ -22,7 +22,7 @@ import {
   ChevronDown, ChevronUp, Settings2, CheckCircle2,
   XCircle, Loader2, ChevronRight, Wifi, Calendar,
   Trophy, Newspaper, CloudSun, Coins, Clock, Code2,
-  KeyRound, TestTube2, LayoutTemplate,
+  KeyRound, TestTube2, LayoutTemplate, Megaphone,
 } from "lucide-react";
 import {
   SmartBannerDisplay,
@@ -923,7 +923,7 @@ export default function SmartBanners() {
           title="البانر الذكي"
           subtitle="أنشئ وأدر بانرات ديناميكية احترافية"
           eyebrow="المحتوى التفاعلي"
-          icon={LayoutTemplate}
+          icon={Megaphone}
           actions={
             <>
               <Button

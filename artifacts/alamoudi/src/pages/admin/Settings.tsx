@@ -33,7 +33,7 @@ import {
   SunMoon,
   Palette,
   LockKeyhole,
-  Settings2,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import {
   WhatsAppIcon,
@@ -296,7 +296,7 @@ export default function Settings() {
           title="إعدادات المنصة"
           subtitle="إدارة إعدادات الموقع وبيانات التواصل"
           eyebrow="التخصيص والإدارة"
-          icon={Settings2}
+          icon={SettingsIcon}
         />
 
         <Tabs defaultValue="general" className="w-full">
