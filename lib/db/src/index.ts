@@ -4,8 +4,9 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-// Prefer Replit's built-in DATABASE_URL when available.
-// Fall back to Supabase connection for backward compatibility.
+// Replit development uses its managed DATABASE_URL. Vercel production uses
+// the project's Supabase connection when the Supabase component secrets are
+// available; otherwise it falls back to an explicitly supplied DATABASE_URL.
 function buildSupabaseUrl(): string | undefined {
   const pw = process.env.SUPABASE_DB_PASSWORD;
   const supaUrl = process.env.SUPABASE_URL;
@@ -19,9 +20,13 @@ function buildSupabaseUrl(): string | undefined {
 }
 
 const connectionString =
-  process.env.DATABASE_URL ??
-  process.env.SUPABASE_DATABASE_URL ??
-  buildSupabaseUrl();
+  process.env.VERCEL === "1" || process.env.VERCEL_ENV
+    ? buildSupabaseUrl() ??
+      process.env.SUPABASE_DATABASE_URL ??
+      process.env.DATABASE_URL
+    : process.env.DATABASE_URL ??
+      process.env.SUPABASE_DATABASE_URL ??
+      buildSupabaseUrl();
 
 if (!connectionString) {
   console.error(

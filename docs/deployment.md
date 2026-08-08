@@ -67,6 +67,28 @@ artifacts/api-server/dist/app.mjs
 
 لا تضع هذه القيم في Git أو داخل `vercel.json` أو ملفات التوثيق.
 
+### نشر Vercel منفصل عن Replit
+
+إذا كان النشر يتم من GitHub إلى Vercel، فلن تنتقل قاعدة بيانات Replit
+التطويرية أو مستخدموها إلى Vercel تلقائيًا. في هذا المشروع يستخدم تشغيل Vercel
+اتصال Supabase عند توفر `SUPABASE_URL` و`SUPABASE_DB_PASSWORD`، ثم يستخدم
+`SUPABASE_DATABASE_URL` أو `DATABASE_URL` كبديل. يجب أن يشير أحد هذه الاتصالات
+إلى قاعدة البيانات التي يستخدمها تطبيق Vercel، وأن تحتوي على الجداول المطلوبة،
+ومنها `users` و`session`.
+
+وجود المستخدم `admin` في قاعدة تطوير Replit لا يعني وجوده في قاعدة Vercel أو
+Supabase.
+أنشئ حساب الإدارة في قاعدة الإنتاج بالطريقة المعتمدة للمشروع، أو استخدم نشر
+Replit إذا كان المطلوب هو استخدام قاعدة Replit المُدارة.
+
+لا تعرض `DATABASE_URL` أو `SESSION_SECRET` في السجلات أو المحادثة. عند فشل
+تسجيل الدخول، ابحث في سجل Vercel عن:
+
+```text
+Login request failed
+Could not persist login session
+```
+
 ## التحقق قبل النشر
 
 نفذ محليًا قبل طلب النشر:
