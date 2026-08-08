@@ -180,9 +180,10 @@ export function PropertyCard({
         </div>
 
         <div className={cn(
-          "flex min-w-0 flex-1 flex-col pb-1",
+          "flex min-w-0 flex-1 flex-col",
+          compactHomeCard ? "pb-2" : "pb-1",
           compactHomeCard ? "justify-start" : "justify-between",
-          emphasized ? "px-4 pb-1 pt-2.5" : "px-3.5 pb-1 pt-2.5",
+          emphasized ? "px-4 pt-2.5" : "px-3.5 pt-2.5",
         )}>
           <div className="min-w-0">
             <div className="mb-1.5 flex items-center justify-between gap-2">
