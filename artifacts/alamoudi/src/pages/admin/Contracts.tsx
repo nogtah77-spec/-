@@ -773,34 +773,55 @@ export default function Contracts() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] space-y-6" dir="rtl">
-        <div className="relative overflow-hidden rounded-2xl border border-[#B4986B]/35 bg-[#10202D] px-5 py-6 text-white shadow-[0_12px_30px_rgba(16,32,45,.18)] sm:px-8 sm:py-7">
-          <div className="absolute -left-12 -top-16 h-44 w-44 rounded-full border border-accent/20" />
-          <div className="absolute bottom-[-70px] right-[38%] h-48 w-48 rounded-full border border-accent/10" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-[hsl(var(--accent))]">
-                <ShieldCheck className="h-4 w-4" />
-                مركز التوثيق والعمليات
+        <section className="relative isolate overflow-hidden rounded-2xl border border-[#B4986B]/40 bg-[linear-gradient(135deg,#10202D_0%,#172F42_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
+          <div className="pointer-events-none absolute -left-20 -top-24 h-64 w-64 rounded-full border border-[#B4986B]/20" />
+          <div className="pointer-events-none absolute -bottom-32 right-[24%] h-72 w-72 rounded-full border border-white/5" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-[radial-gradient(circle_at_70%_35%,rgba(180,152,107,.16),transparent_58%)]" />
+
+          <div className="relative grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="min-w-0">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B4986B]/45 bg-[#B4986B]/15 text-[#D6B77F]">
+                  <ShieldCheck className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-bold tracking-[.14em] text-[#D6B77F]">مركز التوثيق والعمليات</p>
+                  <p className="mt-0.5 text-[11px] text-white/55">مساحة عمل آمنة لفريق العمودي</p>
+                </div>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">إدارة العقود</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-7 text-primary-foreground/70">
-                سجل موحّد للعقود الإيجارية والبيوع والدفعات المستحقة، بتفاصيل تحفظ السياق القانوني لكل معاملة.
+              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">إدارة العقود</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-7 text-white/70">
+                سجل موحّد للإيجارات والبيوع والدفعات المستحقة، يحفظ تفاصيل كل معاملة وسياقها القانوني في مكان واحد.
               </p>
+              <div className="mt-5 flex items-center gap-2 text-[11px] text-white/55">
+                <ClipboardCheck className="h-3.5 w-3.5 text-[#D6B77F]" />
+                <span>كل تعديل يُحفظ مرتبطًا بالسجل الأصلي وقابلًا للمراجعة.</span>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" className="gap-2 border-primary-foreground/20 bg-primary-foreground/5 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground" onClick={() => void reload()} disabled={fetching}>
-                <RefreshCw className={fetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} /> تحديث السجل
-              </Button>
-              <Button className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90" onClick={openCreate}>
-                <Plus className="h-4 w-4" /> تسجيل عقد
-              </Button>
+
+            <div className="rounded-2xl border border-white/15 bg-black/15 p-2.5 shadow-inner shadow-black/10 lg:min-w-[250px]">
+              <p className="mb-2 px-1 text-[10px] font-semibold text-white/50">إجراءات سريعة</p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                <Button
+                  variant="outline"
+                  className="h-11 justify-center gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+                  onClick={() => void reload()}
+                  disabled={fetching}
+                >
+                  <RefreshCw className={fetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                  تحديث السجل
+                </Button>
+                <Button
+                  className="h-11 justify-center gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] shadow-[0_6px_16px_rgba(180,152,107,.22)] hover:bg-[#C5A978]"
+                  onClick={openCreate}
+                >
+                  <Plus className="h-4 w-4" />
+                  تسجيل عقد
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="relative mt-6 flex items-center gap-2 text-[11px] text-primary-foreground/55">
-            <ClipboardCheck className="h-3.5 w-3.5" />
-            كل تعديل يُحفظ عبر طبقة البيانات الحالية ويظل مرتبطًا بالسجل الأصلي.
-          </div>
-        </div>
+        </section>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
