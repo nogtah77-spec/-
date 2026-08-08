@@ -72,11 +72,7 @@ export default function Login() {
         <section className="login-card w-full max-w-[438px] rounded-[30px] px-5 py-7 sm:px-9 sm:py-9">
           <div className="mb-8 text-center">
             <Link href="/" className="inline-flex flex-col items-center" data-testid="link-login-brand">
-              <img
-                src="/branding/alamoudi-arabic-wordmark.png"
-                alt="العمودي"
-                className="login-wordmark"
-              />
+              <span className="login-brand-name text-[#fffaf0]">العمودي</span>
               <span className="mt-3 border-t border-[#d8bd87]/55 pt-2 text-[0.68rem] font-medium tracking-[0.24em] text-[#e0c58f]">
                 للتسويق العقاري
               </span>

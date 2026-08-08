@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;500;600;700;800;900&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -298,11 +298,14 @@
   backdrop-filter: blur(24px) saturate(128%);
 }
 
-.login-wordmark {
+.login-brand-name {
   display: block;
-  width: min(272px, 76vw);
-  height: auto;
-  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.28));
+  font-family: "Cairo", "Noto Sans Arabic", sans-serif;
+  font-size: clamp(3rem, 8vw, 3.55rem);
+  font-weight: 900;
+  letter-spacing: -0.1em;
+  line-height: 0.95;
+  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.3);
 }
 
 .login-field {
