@@ -78,26 +78,14 @@ function isStaffReq(req: Request): boolean {
 }
 
 router.get("/properties", async (req, res): Promise<void> => {
-  try {
-    if (isStaffReq(req)) {
-      const rows = await db.select().from(propertiesTable);
-      res.json(rows);
-      return;
-    }
-    // Public view: only active listings; strip manager-only fields.
-    const rows = await db.select().from(propertiesTable)
-      .where(eq(propertiesTable.status, "active"));
-    const publicRows = rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest);
-    res.json(publicRows);
-  } catch (error) {
-    if (!isMissingColumnError(error)) throw error;
-    const rows = await selectLegacyProperties(!isStaffReq(req));
-    if (isStaffReq(req)) {
-      res.json(rows);
-      return;
-    }
-    res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest));
+  // Read through the legacy-compatible projection. Production may still have
+  // an older properties schema until its next schema migration is applied.
+  const rows = await selectLegacyProperties(!isStaffReq(req));
+  if (isStaffReq(req)) {
+    res.json(rows);
+    return;
   }
+  res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest));
 });
 
 router.post("/properties/:id/view", async (req, res): Promise<void> => {
