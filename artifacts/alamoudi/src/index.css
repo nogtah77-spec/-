@@ -298,13 +298,11 @@
   backdrop-filter: blur(24px) saturate(128%);
 }
 
-.login-brand-name {
-  font-family: "Amiri", "Noto Serif Arabic", Georgia, serif;
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 0.95;
-  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.3);
+.login-wordmark {
+  display: block;
+  width: min(272px, 76vw);
+  height: auto;
+  filter: drop-shadow(0 3px 14px rgba(0, 0, 0, 0.28));
 }
 
 .login-field {
