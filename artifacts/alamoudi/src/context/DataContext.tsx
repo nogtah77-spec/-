@@ -174,6 +174,9 @@ export interface SiteSettings {
   heroOverlayOpacity: number;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
+  /** Seconds to wait after each card movement before starting the next one. */
+  carouselAutoPlayDelay: number;
+  /** Movement speed multiplier: 1 is the natural speed. */
   carouselMotionSpeed: number;
   themeMode?: "light" | "dark" | "user";
 }
@@ -198,6 +201,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   heroOverlayOpacity: 85,
   tiktokVideos: [],
   ads: [],
+  carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
   themeMode: "user",
 };

@@ -720,7 +720,7 @@ export default function Home() {
                   <PropertyCarousel
                     properties={latestProps}
                     autoPlay
-                    autoPlayDelay={3500}
+                    autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
                     infinite
                     randomStart
@@ -770,7 +770,7 @@ export default function Home() {
                         <PropertyCarousel
                           properties={items.slice(0, 8)}
                           autoPlay
-                          autoPlayDelay={3500}
+                          autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                           motionSpeed={settings.carouselMotionSpeed}
                           infinite
                           randomStart

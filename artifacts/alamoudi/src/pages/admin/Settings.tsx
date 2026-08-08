@@ -1198,27 +1198,69 @@ export default function Settings() {
               <CardHeader>
                 <CardTitle>إعدادات الكاروسيل</CardTitle>
                 <CardDescription>
-                  التحكم بحركة جميع الكاروسيلات في الموقع.
+                  تحكم منفصل في وقت الانتظار بين البطاقات وسرعة انزلاق البطاقة.
                 </CardDescription>
               </CardHeader>
 
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>تشغيل الحركة التلقائية</Label>
-                    <p className="text-sm text-muted-foreground">
-                      تشغيل أو إيقاف حركة الكاروسيل تلقائياً.
-                    </p>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <Label htmlFor="carouselAutoPlayDelay">
+                        زمن الانتظار بين البطاقات
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        عدد الثواني التي تبقى فيها البطاقة ظاهرة قبل بدء الانتقال إلى البطاقة التالية.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2" dir="ltr">
+                      <Input
+                        id="carouselAutoPlayDelay"
+                        type="number"
+                        min="1"
+                        max="30"
+                        step="0.5"
+                        value={Math.min(30, Math.max(1, Number(form.carouselAutoPlayDelay ?? 3.5)))}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          if (Number.isFinite(value)) {
+                            setForm((prev) => ({
+                              ...prev,
+                              carouselAutoPlayDelay: Math.min(30, Math.max(1, value)),
+                            }));
+                          }
+                        }}
+                        className="w-24 text-center"
+                        aria-label="زمن الانتظار بين البطاقات بالثواني"
+                      />
+                      <span className="text-sm text-muted-foreground">ثانية</span>
+                    </div>
                   </div>
-
-                  <Switch checked />
+                  <Slider
+                    dir="ltr"
+                    value={[Math.min(30, Math.max(1, Number(form.carouselAutoPlayDelay ?? 3.5)))]}
+                    min={1}
+                    max={30}
+                    step={0.5}
+                    onValueChange={([value]) =>
+                      setForm((prev) => ({ ...prev, carouselAutoPlayDelay: value }))
+                    }
+                    aria-label="زمن الانتظار بين البطاقات"
+                    className="py-2"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground" dir="ltr">
+                    <span>1 ثانية</span>
+                    <span>10 ثوانٍ</span>
+                    <span>30 ثانية</span>
+                  </div>
                 </div>
+
                 <div className="space-y-4 border-t pt-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <Label htmlFor="carouselMotionSpeed">سرعة حركة البطاقات</Label>
+                      <Label htmlFor="carouselMotionSpeed">سرعة انزلاق البطاقة</Label>
                       <p className="text-sm text-muted-foreground mt-1">
-                        تحكم في سرعة انزلاق البطاقة نفسها، وليس زمن الانتظار قبل البطاقة التالية.
+                        سرعة الحركة من اليمين إلى اليسار أثناء الانتقال، وليست زمن الانتظار قبل الانتقال.
                       </p>
                     </div>
                     <div className="flex items-center gap-2" dir="ltr">
@@ -1245,6 +1287,7 @@ export default function Settings() {
                     </div>
                   </div>
                   <Slider
+                    dir="ltr"
                     value={[Math.min(4, Math.max(0.25, Number(form.carouselMotionSpeed ?? 1)))]}
                     min={0.25}
                     max={4}
@@ -1261,7 +1304,7 @@ export default function Settings() {
                     <span>4x أسرع</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    قيمة 1x هي السرعة الطبيعية. القيمة 2x تضاعف سرعة الحركة، والقيمة 4x تجعلها أسرع أربع مرات.
+                    قيمة 1x هي السرعة الطبيعية. القيمة 0.25x تجعل الانزلاق أبطأ، والقيمة 4x تجعله أسرع أربع مرات.
                   </p>
                 </div>
               </CardContent>

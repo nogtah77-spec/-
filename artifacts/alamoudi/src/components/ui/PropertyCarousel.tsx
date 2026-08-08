@@ -53,15 +53,16 @@ export function PropertyCarousel({
       const distance = Math.abs(end - start);
       if (distance < 1) return;
 
-      // A fixed base velocity makes the setting a real speed control rather
-      // than another delay setting. The duration also scales with card distance.
-      const duration = Math.max(120, Math.min(2200, (distance / (700 * safeMotionSpeed)) * 1000));
+      // Keep the same smooth eased movement as the original native
+      // `scrollBy({ behavior: "smooth" })`, while making its duration
+      // controllable independently from the autoplay wait time.
+      const duration = Math.max(180, Math.min(3200, 900 / safeMotionSpeed));
       const startedAt = performance.now();
       const tick = (now: number) => {
         const progress = Math.min(1, (now - startedAt) / duration);
         const eased = progress < 0.5
-          ? 2 * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          ? 4 * progress * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
         el.scrollLeft = start + (end - start) * eased;
         if (progress < 1) {
           motionRef.current = requestAnimationFrame(tick);
