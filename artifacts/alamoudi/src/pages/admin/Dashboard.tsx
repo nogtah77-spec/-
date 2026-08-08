@@ -7,7 +7,7 @@ import { ActivityItem } from "@/components/admin/ActivityItem";
 import { Link } from "wouter";
 
 export default function Dashboard() {
-  const { properties, regions, users, activityLogs, inquiries, propertyRequests, finishingRequests, aiLeads, propertyTypes } = useData();
+  const { properties, regions, users, activityLogs, customerPropertyRequests, propertyTypes } = useData();
   const recentActivity = activityLogs.slice(0, 6);
   const recentProperties = properties
     .filter((property) => {
@@ -16,12 +16,7 @@ export default function Dashboard() {
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 6);
-  const newRequests = [
-    ...inquiries,
-    ...propertyRequests,
-    ...finishingRequests,
-    ...aiLeads,
-  ].filter((request) => request.status === "new").length;
+  const newRequests = customerPropertyRequests.filter((request) => request.status === "new").length;
   
   const totalProperties = properties.length;
   const activeProperties = properties.filter(p => p.status === "active" || p.status === "listed").length;
@@ -112,19 +107,19 @@ export default function Dashboard() {
           <Card className="card-luxury">
             <CardHeader className="flex flex-row items-start justify-between gap-3">
               <div>
-                <CardTitle>متابعة الطلبات</CardTitle>
-                <p className="mt-1 text-xs text-muted-foreground">طلبات جديدة تنتظر متابعة فريق العمل</p>
+                <CardTitle>الطلبات العقارية للعملاء</CardTitle>
+                <p className="mt-1 text-xs text-muted-foreground">احتياجات عقارية جديدة تنتظر متابعة فريق العمل</p>
               </div>
               <Inbox className="h-5 w-5 text-accent" />
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between gap-4 rounded-xl bg-accent/10 p-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">طلبات جديدة الآن</p>
+                  <p className="text-xs text-muted-foreground">طلبات عقارية جديدة الآن</p>
                   <p className="mt-1 text-3xl font-bold text-foreground">{newRequests}</p>
                 </div>
                 <Link href="/admin/requests" className="flex items-center gap-1 text-sm font-medium text-accent hover:underline">
-                  فتح المركز <ArrowLeft className="h-4 w-4" />
+                  فتح السجل <ArrowLeft className="h-4 w-4" />
                 </Link>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2 text-center text-xs">

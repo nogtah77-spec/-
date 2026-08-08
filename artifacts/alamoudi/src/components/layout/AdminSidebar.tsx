@@ -16,7 +16,7 @@ const sidebarItems = [
   { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck },
   { separator: true },
   { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser },
-  { href: "/admin/requests", label: "طلبات العملاء", icon: Inbox, badge: "customerRequests" },
+  { href: "/admin/requests", label: "الطلبات العقارية للعملاء", icon: Inbox, badge: "customerPropertyRequests" },
   { href: "/admin/inquiries", label: "استفسارات العملاء", icon: MessageSquare, badge: "inquiries" },
   { href: "/admin/property-requests", label: "طلبات إضافة عقار", icon: ClipboardList, badge: "propertyRequests" },
   { href: "/admin/finishing-requests", label: "طلبات التشطيبات", icon: Wrench, badge: "finishingRequests" },
@@ -36,16 +36,11 @@ const sidebarItems = [
 
 export function AdminSidebar() {
   const [location] = useLocation();
-  const { inquiries, propertyRequests, finishingRequests, aiLeads } = useData();
+  const { inquiries, propertyRequests, finishingRequests, aiLeads, customerPropertyRequests } = useData();
 
   const badgeCounts: Record<string, number> = {
     inquiries: inquiries.filter(x => x.status === "new").length,
-    customerRequests: [
-      ...inquiries,
-      ...propertyRequests,
-      ...finishingRequests,
-      ...aiLeads,
-    ].filter(x => x.status === "new").length,
+    customerPropertyRequests: customerPropertyRequests.filter(x => x.status === "new").length,
     propertyRequests: propertyRequests.filter(x => x.status === "new").length,
     finishingRequests: finishingRequests.filter(x => x.status === "new").length,
     aiLeads: aiLeads.filter(x => x.status === "new").length,

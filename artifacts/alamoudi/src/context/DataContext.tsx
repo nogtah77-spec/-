@@ -115,6 +115,35 @@ export interface AiLead {
   createdAt: string;
 }
 
+export type CustomerPropertyRequestStatus = "new" | "reviewed" | "replied";
+
+export interface CustomerPropertyRequest {
+  id: string;
+  customerName: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  requestType: string;
+  transactionType: string;
+  preferredAreas: string;
+  budgetMin: string;
+  budgetMax: string;
+  bedrooms: string;
+  bathrooms: string;
+  areaMin: string;
+  areaMax: string;
+  finishing: string;
+  furnished: string;
+  paymentMethod: string;
+  requiredFeatures: string;
+  details: string;
+  notes: string;
+  source: string;
+  followUpDate: string;
+  status: CustomerPropertyRequestStatus;
+  createdAt: string;
+}
+
 export interface ActivityLog {
   id: string;
   action: string;
@@ -255,6 +284,7 @@ interface DataContextType {
   finishingRequests: FinishingRequest[];
   propertyRequests: PropertyRequest[];
   aiLeads: AiLead[];
+  customerPropertyRequests: CustomerPropertyRequest[];
   activityLogs: ActivityLog[];
   visitorStats: VisitorStats;
   settings: SiteSettings;
@@ -288,6 +318,9 @@ interface DataContextType {
   addPropertyRequest: (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) => void;
   updatePropertyRequestStatus: (id: string, status: PropertyRequest["status"]) => void;
   deletePropertyRequest: (id: string) => void;
+  addCustomerPropertyRequest: (request: Omit<CustomerPropertyRequest, "id" | "createdAt" | "status">) => Promise<boolean>;
+  updateCustomerPropertyRequest: (id: string, request: Partial<Omit<CustomerPropertyRequest, "id" | "createdAt">>) => Promise<boolean>;
+  deleteCustomerPropertyRequest: (id: string) => void;
   reloadAiLeads: () => Promise<void>;
   updateAiLeadStatus: (id: string, status: AiLead["status"]) => void;
   deleteAiLead: (id: string) => void;
@@ -357,6 +390,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
   const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
+  const [customerPropertyRequests, setCustomerPropertyRequests] = useState<CustomerPropertyRequest[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
@@ -369,7 +403,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     const [
       regionsR, typesR, propertiesR, settingsR,
-      usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR, visitorStatsR,
+       usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, aiLeadsR, activityR, visitorStatsR,
     ] = await Promise.allSettled([
       api.get<Region[]>("/regions"),
       api.get<PropertyType[]>("/property-types"),
@@ -379,6 +413,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       api.get<Inquiry[]>("/inquiries"),
       api.get<FinishingRequest[]>("/finishing-requests"),
       api.get<PropertyRequest[]>("/property-requests"),
+      api.get<CustomerPropertyRequest[]>("/customer-property-requests"),
       api.get<AiLead[]>("/ai/leads"),
       api.get<ActivityLog[]>("/activity-logs"),
       api.get<VisitorStats>("/visitors/stats"),
@@ -396,6 +431,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
     setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
     setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
+    setCustomerPropertyRequests(customerPropertyRequestsR.status === "fulfilled" ? customerPropertyRequestsR.value : []);
     if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
     if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
     if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
@@ -495,16 +531,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
           api.get<User[]>("/users"),
           api.get<Inquiry[]>("/inquiries"),
           api.get<FinishingRequest[]>("/finishing-requests"),
-          api.get<PropertyRequest[]>("/property-requests"),
+           api.get<PropertyRequest[]>("/property-requests"),
+           api.get<CustomerPropertyRequest[]>("/customer-property-requests"),
           api.get<AiLead[]>("/ai/leads"),
           api.get<ActivityLog[]>("/activity-logs"),
           api.get<VisitorStats>("/visitors/stats"),
-        ]).then(([usersR, inquiriesR, finishingR, requestsR, aiLeadsR, activityR, visitorStatsR]) => {
+        ]).then(([usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, aiLeadsR, activityR, visitorStatsR]) => {
           if (destroyed) return;
           setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
           setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
           setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
           setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
+          setCustomerPropertyRequests(customerPropertyRequestsR.status === "fulfilled" ? customerPropertyRequestsR.value : []);
           if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
           if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
           if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
@@ -687,6 +725,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
     persist(api.del(`/property-requests/${id}`));
   };
 
+  const addCustomerPropertyRequest = async (request: Omit<CustomerPropertyRequest, "id" | "createdAt" | "status">) => {
+    const item: CustomerPropertyRequest = {
+      ...request,
+      id: genId(),
+      status: "new",
+      createdAt: new Date().toISOString(),
+    };
+    setCustomerPropertyRequests((current) => [item, ...current]);
+    try {
+      const saved = await api.post<CustomerPropertyRequest>("/customer-property-requests", request);
+      setCustomerPropertyRequests((current) => current.map((entry) => entry.id === item.id ? saved : entry));
+      return true;
+    } catch (err: unknown) {
+      setCustomerPropertyRequests((current) => current.filter((entry) => entry.id !== item.id));
+      const apiError = err as { status?: number; message?: string };
+      toast({
+        title: "تعذّر حفظ الطلب",
+        description: apiError.status === 401 ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى." : apiError.message || "تعذّر حفظ التغيير على الخادم",
+        variant: "destructive",
+      });
+      void reload();
+      return false;
+    }
+  };
+  const updateCustomerPropertyRequest = (id: string, request: Partial<Omit<CustomerPropertyRequest, "id" | "createdAt">>) => {
+    setCustomerPropertyRequests((current) => current.map((item) => item.id === id ? { ...item, ...request } : item));
+    return persist(api.patch(`/customer-property-requests/${id}`, request));
+  };
+  const deleteCustomerPropertyRequest = (id: string) => {
+    setCustomerPropertyRequests((current) => current.filter((item) => item.id !== id));
+    persist(api.del(`/customer-property-requests/${id}`));
+  };
+
   const updateAiLeadStatus = (id: string, status: AiLead["status"]) => {
     setAiLeads(p => p.map(x => x.id === id ? { ...x, status } : x));
     persist(api.patch(`/ai/leads/${id}`, { status }));
@@ -750,7 +821,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       ready, fetching, reload,
-      regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, activityLogs, settings,
+       regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, customerPropertyRequests, activityLogs, settings,
       visitorStats,
       trackPropertyView, refreshVisitorStats,
       updateSettings,
@@ -762,6 +833,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addInquiry, updateInquiryStatus, deleteInquiry,
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
+      addCustomerPropertyRequest, updateCustomerPropertyRequest, deleteCustomerPropertyRequest,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
       addAd, updateAd, deleteAd, reorderAds, trackAdView, trackAdClick,
     }}>

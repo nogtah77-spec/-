@@ -5,6 +5,7 @@ export * from "./users";
 export * from "./inquiries";
 export * from "./finishingRequests";
 export * from "./propertyRequests";
+export * from "./customerPropertyRequests";
 export * from "./aiLeads";
 export * from "./settings";
 export * from "./activityLogs";
