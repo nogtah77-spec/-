@@ -723,7 +723,6 @@ export default function Home() {
                     autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
                     infinite
-                    randomStart
                   />
                 )}
               </div>
@@ -773,7 +772,6 @@ export default function Home() {
                           autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                           motionSpeed={settings.carouselMotionSpeed}
                           infinite
-                          randomStart
                         />
                       </div>
                     ))}
