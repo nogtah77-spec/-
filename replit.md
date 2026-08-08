@@ -1,45 +1,103 @@
-# [Project name]
+# منصة العمودي للتسويق العقاري
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+منصة عربية متجاوبة لتصفح العقارات حسب المدينة، البحث والتصفية، إرسال الاستفسارات، وإدارة المحتوى والعقارات من لوحة تحكم داخلية.
 
-## Run & Operate
+## مصدر الحقيقة للعمل
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- التطبيق النشط: `artifacts/alamoudi`
+- خادم الواجهة البرمجية: `artifacts/api-server`
+- الذاكرة النشطة للوكلاء: `.agents/memory/MEMORY.md`
+- التعليمات العامة للوكلاء: `AGENTS.md`
+- مجلد `.migration-backup` نسخة احتياطية فقط، ولا يُستخدم للتعديل أو التشغيل.
+- مجلد `.local` يحتوي أدوات وتعليمات Replit المُدارة؛ لا تنسخ مهاراته إلى المشروع ولا تعدّلها كجزء من العمل المعتاد.
 
-## Stack
+قبل أي تعديل:
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+1. اقرأ هذا الملف و`AGENTS.md`.
+2. اقرأ فهرس الذاكرة `.agents/memory/MEMORY.md` وافتح الموضوع المرتبط بالمهمة.
+3. افحص الكود الحالي قبل اقتراح إعادة بناء أو نقل مكوّن.
+4. حافظ على الفرع النشط `main`، ولا تنفذ دفعًا إلى المستودع إلا بطلب صريح.
 
-## Where things live
+## التشغيل والتحقق
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `pnpm --filter @workspace/alamoudi run dev` — تشغيل واجهة المنصة.
+- `pnpm --filter @workspace/api-server run dev` — تشغيل خادم الواجهة البرمجية.
+- `pnpm --filter @workspace/alamoudi run typecheck` — فحص TypeScript للواجهة.
+- `pnpm run typecheck` — فحص TypeScript لجميع الحزم.
+- `pnpm --filter @workspace/alamoudi run build` — بناء الواجهة.
+- `pnpm run build` — بناء المشروع.
+- `pnpm --filter @workspace/api-spec run codegen` — إعادة توليد عقود الواجهة البرمجية عند الحاجة.
+- `pnpm --filter @workspace/db run push` — دفع مخطط قاعدة البيانات لبيئة التطوير فقط وبعد التحقق من التغييرات.
 
-## Architecture decisions
+بعد تعديل الواجهة أو إعدادات التشغيل:
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- أعد تشغيل سير العمل المناسب.
+- راجع سجلات الواجهة وخادم الواجهة البرمجية.
+- استخدم معاينة التطبيق للتغييرات المرئية المهمة.
+- لا تعتبر المهمة مكتملة اعتمادًا على نجاح البناء وحده إذا كان التغيير مرئيًا للمستخدم.
 
-## Product
+## البنية
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- مساحة العمل: `pnpm workspaces`
+- الواجهة: React وVite وTypeScript وTailwind CSS
+- الخادم: Express 5 وTypeScript
+- قاعدة البيانات: PostgreSQL عبر Drizzle ORM
+- التحقق من البيانات: Zod و`drizzle-zod`
+- توليد عقود الواجهة البرمجية: Orval
+- التشغيل في Replit: سير عمل منفصل للواجهة وسير عمل منفصل للخادم
 
-## User preferences
+## خريطة المشروع
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- `artifacts/alamoudi/src/pages` — صفحات الموقع ولوحة الإدارة.
+- `artifacts/alamoudi/src/components` — المكوّنات المشتركة.
+- `artifacts/alamoudi/src/context` — بيانات الجلسة والبيانات المشتركة.
+- `artifacts/alamoudi/src/lib/propertyFilters.ts` — عقد فلاتر العقارات.
+- `artifacts/alamoudi/src/pages/RegionPage.tsx` — صفحات المدن وأغلفتها وفلاترها.
+- `artifacts/alamoudi/src/pages/admin/Regions.tsx` — إدارة المناطق وصور الأغلفة.
+- `artifacts/api-server/src/routes` — مسارات الواجهة البرمجية.
+- `lib/db/src/schema` — مخططات قاعدة البيانات.
+- `artifacts/alamoudi/src/index.css` — نظام الألوان والخطوط والتنسيق العام.
 
-## Gotchas
+## قرارات معمارية مهمة
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- صفحات المدن تستخدم نظام الفلاتر المشترك مع الصفحة الرئيسية، مع تثبيت المدينة تلقائيًا داخل صفحة المدينة.
+- تحسينات بطاقات العقارات الخاصة بالمدن تمر عبر نمط إبراز مستقل حتى لا تتغير بطاقات الصفحة الرئيسية دون طلب.
+- أغلفة المدن تعرض العنوان ومسار التنقل فوق الصورة دائمًا، مع طبقة داكنة خفيفة وتدرج سفلي لتحسين القراءة.
+- صورة غلاف المدينة يمكن أن تكون رابطًا أو صورة مرفوعة تُحفظ حاليًا كـData URL؛ لا تدّعِ استخدام التخزين الكائني قبل تنفيذه فعليًا.
+- حذف صورة الغلاف من لوحة الإدارة يتم بتفريغها ثم حفظ التعديل، وليس بمجرد إزالة المعاينة.
+- بيانات المشروع الحالية ومسارات الواجهة النشطة أهم من الملفات الموجودة داخل `.migration-backup`.
 
-## Pointers
+## المنتج
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- تصفح العقارات والبحث فيها.
+- صفحات مستقلة للمدن والمناطق.
+- فلاتر موحدة للبيع والإيجار والنوع والسعر والمساحة وموقف السيارة والمميزات الإضافية.
+- بطاقات عقارات متجاوبة بوضعين للحجم.
+- تفاصيل العقار والمقارنة والمفضلة والاستفسارات.
+- خدمات التشطيب والإعلانات والبنرات الذكية.
+- لوحة إدارة للمناطق والعقارات والطلبات والمستخدمين والإعدادات.
+- مساعد وميزات متابعة للزوار والعملاء حسب الوحدات المفعلة.
+
+## تفضيلات المستخدم
+
+- الرد باللهجة المصرية العربية الواضحة.
+- استخدام عناوين ونقاط قصيرة عند شرح النتائج.
+- عدم خلط كلمات إنجليزية أو أرقام داخل جملة عربية طويلة قدر الإمكان؛ ضع المصطلح التقني أو الكود في سطر مستقل عند الحاجة.
+- الحفاظ على الهوية العربية واتجاه الكتابة من اليمين إلى اليسار.
+- تنفيذ التغيير المطلوب كاملًا والتحقق منه قبل طلب اختبار المستخدم.
+- عند وجود قرار بصري أو معماري سابق في الذاكرة، حافظ عليه إلا إذا طلب المستخدم تغييره.
+
+## محاذير
+
+- لا تستخدم `.migration-backup` كمصدر للكود النشط.
+- لا تعرض قيم الأسرار أو كلمات المرور أو الجلسات أو مفاتيح الاتصال.
+- لا تستبدل قاعدة البيانات أو نظام التخزين الموجود دون طلب صريح.
+- لا تنفذ `git push` أو `git pull` أو تغييرات واسعة في الفروع دون طلب واضح.
+- لا تغيّر إعدادات Replit المُدارة داخل `.local` كحل لمشكلة في التطبيق.
+- لا تعلن نجاح ميزة لم تُختبر سلوكيًا أو بصريًا عند الحاجة.
+
+## الملفات المرجعية
+
+- اقرأ `.agents/memory/MEMORY.md` أولًا، ثم افتح ملفات الموضوع المرتبطة بالمهمة.
+- حدّث الذاكرة فقط بقرارات دائمة لا يمكن استنتاجها بسهولة من الكود.
+- لا تضع أسرارًا أو بيانات شخصية أو سجل تغييرات مؤقتًا داخل الذاكرة.
