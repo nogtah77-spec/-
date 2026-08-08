@@ -60,4 +60,24 @@ app.use((req, res, next) => {
 
 app.use("/api", router);
 
+app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  logger.error(
+    {
+      err,
+      method: req.method,
+      url: req.originalUrl,
+    },
+    "Unhandled API request error",
+  );
+
+  if (req.originalUrl.startsWith("/api/")) {
+    res.status(500).json({
+      error: "تعذّر تنفيذ طلب API. تحقق من اتصال قاعدة البيانات وإعدادات الجلسة.",
+    });
+    return;
+  }
+
+  next(err);
+});
+
 export default app;
