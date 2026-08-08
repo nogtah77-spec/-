@@ -201,13 +201,13 @@ export function PropertyCard({
               <span className="min-w-0 truncate">{[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}</span>
             </p>
             {property.finishing && (
-              <p dir="rtl" className={cn("inline-flex max-w-[72%] translate-y-0.5 truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent", compactHomeCard ? "mt-3" : "mt-4")}>
+              <p dir="rtl" className={cn("inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent", compactHomeCard ? "mt-2.5" : "mt-4 translate-y-0.5")}>
                 {property.finishing}
               </p>
             )}
           </div>
 
-          <div className={cn("mt-auto", compactHomeCard ? "space-y-1 pt-1.5" : "space-y-1.5 pt-2")}>
+          <div className={cn(compactHomeCard ? "-mt-1 space-y-1 pt-1.5" : "mt-auto space-y-1.5 pt-2")}>
             <div dir="ltr" className="flex items-center justify-end gap-1 border-t border-border/70 pt-2">
               <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
               <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
