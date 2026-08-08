@@ -183,6 +183,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                     property={p}
                     size={filters.cardSize}
                     layout={filters.viewMode}
+                    emphasized
                   />
                 ))}
               </div>

@@ -22,6 +22,7 @@ interface PropertyCardProps {
   property?: Property & { typeName?: string; regionName?: string };
   size?: CardSize;
   layout?: "grid" | "list";
+  emphasized?: boolean;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -29,7 +30,13 @@ const categoryLabels: Record<string, string> = {
   administrative: "إداري", medical: "طبي", commercial: "تجاري",
 };
 
-export function PropertyCard({ isLoading = false, property, size = "large", layout = "grid" }: PropertyCardProps) {
+export function PropertyCard({
+  isLoading = false,
+  property,
+  size = "large",
+  layout = "grid",
+  emphasized = false,
+}: PropertyCardProps) {
   const { settings } = useData();
   const { compare, toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
@@ -70,6 +77,11 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
   const imageCount = property.images?.length || 0;
   const isNew = () => { try { return Date.now() - new Date(property.createdAt).getTime() < 7 * 86400000; } catch { return false; } };
   const goToDetails = () => navigate(`/properties/${property.id}`);
+  const highlightedDetails = [
+    property.parking ? `موقف: ${property.parking}` : "",
+    property.additionalFeatures || "",
+    property.finishing || "",
+  ].filter(Boolean).slice(0, emphasized ? 3 : 2);
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -120,9 +132,17 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
 
   if (size === "compact" && layout === "list") {
     return (
-      <Card onClick={goToDetails} className="flex flex-row overflow-hidden border-border shadow-sm group cursor-pointer card-luxury hover:-translate-y-0.5 transition-all duration-200 h-32">
+      <Card
+        onClick={goToDetails}
+        className={cn(
+          "flex flex-row overflow-hidden group cursor-pointer card-luxury transition-all duration-200",
+          emphasized
+            ? "h-40 border-accent/30 bg-card shadow-[0_8px_24px_rgba(0,0,0,0.14)] hover:-translate-y-1 hover:border-accent/60"
+            : "h-32 border-border shadow-sm hover:-translate-y-0.5",
+        )}
+      >
         {/* ── صورة العقار — أكبر بنسبة ~14% ── */}
-        <div className="relative w-32 flex-shrink-0 bg-muted overflow-hidden">
+        <div className={cn("relative flex-shrink-0 bg-muted overflow-hidden", emphasized ? "w-40" : "w-32")}>
           {showVideoCover
             ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
             : coverImg
@@ -139,47 +159,77 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
         </div>
 
         {/* ── محتوى البطاقة ── */}
-        <div className="flex-1 px-3.5 py-3 flex flex-col justify-between min-w-0">
+        <div className={cn("flex-1 flex flex-col justify-between min-w-0", emphasized ? "px-5 py-4" : "px-3.5 py-3")}>
           {/* صف العنوان */}
           <div className="min-w-0">
             <div className="flex items-start justify-between gap-1.5 mb-1">
               <div className="min-w-0 flex items-baseline gap-1.5">
-                <h3 dir="ltr" className="text-sm font-bold font-mono tracking-wide text-foreground line-clamp-1 group-hover:text-accent transition-colors">{property.code}</h3>
-                <span className="text-[9px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
+                <h3 dir="ltr" className={cn(
+                  "font-bold font-mono tracking-wide text-foreground line-clamp-1 group-hover:text-accent transition-colors",
+                  emphasized ? "text-lg" : "text-sm",
+                )}>{property.code}</h3>
+                <span className={cn(
+                  "text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0",
+                  emphasized ? "text-[10px]" : "text-[9px]",
+                )}>CODE</span>
               </div>
               {property.typeName && (
-                <span className="flex-shrink-0 text-[9px] font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 px-1.5 py-0.5 rounded-sm">
+                <span className={cn(
+                  "flex-shrink-0 font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 rounded-sm",
+                  emphasized ? "text-[11px] px-2 py-1" : "text-[9px] px-1.5 py-0.5",
+                )}>
                   {property.typeName}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground line-clamp-1">{[property.regionName, property.subArea].filter(Boolean).join(" - ")}</p>
-            {property.finishing && <p dir="rtl" className="text-[10px] text-accent/80 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>}
+            <p className={cn("text-muted-foreground line-clamp-1", emphasized ? "mt-1 text-sm" : "text-[11px]")}>
+              {[property.regionName, property.subArea].filter(Boolean).join(" - ")}
+            </p>
+            {emphasized && property.title && (
+              <p className="mt-1 text-xs text-foreground/75 line-clamp-1">{property.title}</p>
+            )}
+            {!emphasized && property.finishing && (
+              <p dir="rtl" className="text-[10px] text-accent/80 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>
+            )}
           </div>
 
           {/* صف السعر والتفاصيل */}
           <div className="mt-1">
             <div dir="ltr" className="flex items-baseline gap-2.5">
-              <span className="text-base font-bold text-accent leading-tight">{property.price.toLocaleString("en-US")}</span>
-              <span className="text-[10px] font-semibold tracking-widest text-muted-foreground">EGP</span>
+              <span className={cn("font-bold text-accent leading-tight", emphasized ? "text-xl" : "text-base")}>{property.price.toLocaleString("en-US")}</span>
+              <span className={cn("font-semibold tracking-widest text-muted-foreground", emphasized ? "text-xs" : "text-[10px]")}>EGP</span>
             </div>
-            <div className="flex items-center gap-2.5 mt-1 text-[10px] text-muted-foreground">
-              {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3" />{property.beds}</span>}
-              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3 w-3" />{property.baths}</span>}
-              <span className="flex items-center gap-0.5"><Square className="h-3 w-3" />{property.area} م²</span>
+            <div className={cn("flex items-center gap-3 mt-1.5 text-muted-foreground", emphasized ? "text-xs" : "text-[10px]")}>
+              {property.beds > 0 && <span className="flex items-center gap-1"><Bed className={emphasized ? "h-3.5 w-3.5 text-accent" : "h-3 w-3"} />{property.beds} غرف</span>}
+              {property.baths > 0 && <span className="flex items-center gap-1"><Bath className={emphasized ? "h-3.5 w-3.5 text-accent" : "h-3 w-3"} />{property.baths} حمام</span>}
+              <span className="flex items-center gap-1"><Square className={emphasized ? "h-3.5 w-3.5 text-accent" : "h-3 w-3"} />{property.area} م²</span>
             </div>
+            {emphasized && highlightedDetails.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {highlightedDetails.map((detail) => (
+                  <span key={detail} className="max-w-[48%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+                    {detail}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Card>
     );
   }
 
-  const imageHeight = size === "large" ? "h-52" : size === "medium" ? "h-36" : "h-32";
+  const imageHeight = emphasized
+    ? size === "large" ? "h-64" : size === "medium" ? "h-48" : "h-40"
+    : size === "large" ? "h-52" : size === "medium" ? "h-36" : "h-32";
   const listMode = layout === "list";
 
   return (
     <Card onClick={goToDetails} className={cn(
-      "overflow-hidden border-border shadow-sm group cursor-pointer card-luxury h-full hover:-translate-y-1 transition-all duration-300",
+      "overflow-hidden group cursor-pointer card-luxury h-full transition-all duration-300",
+      emphasized
+        ? "border-accent/30 shadow-[0_10px_30px_rgba(0,0,0,0.14)] hover:-translate-y-1 hover:border-accent/60"
+        : "border-border shadow-sm hover:-translate-y-1",
       listMode
         ? "flex flex-row flex-wrap sm:flex-nowrap"
         : "flex flex-col",
@@ -237,35 +287,53 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
 
       <CardContent className={cn(
         "flex-1 flex flex-col min-w-0",
-        listMode ? "p-3 sm:p-4" : size === "large" ? "p-5" : "p-3 sm:p-4",
+        listMode ? "p-3 sm:p-4" : emphasized ? "p-5 sm:p-6" : size === "large" ? "p-5" : "p-3 sm:p-4",
       )}>
-        <div className="mb-3 flex items-baseline gap-2">
+        <div className={cn("flex items-baseline gap-2", emphasized ? "mb-2" : "mb-3")}>
           <h3 dir="ltr" className={cn(
             "font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors",
-            size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
+            emphasized ? "text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
           )}>
             {property.code}
           </h3>
-          <span className="text-[10px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
+          <span className={cn(
+            "text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0",
+            emphasized ? "text-xs" : "text-[10px]",
+          )}>CODE</span>
         </div>
         <div dir="ltr" className={cn(
           "flex items-baseline gap-2.5 font-bold text-accent",
-          size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
+          emphasized ? "text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
         )}>
           <span>{property.price.toLocaleString("en-US")}</span>
-          <span className="text-xs font-semibold tracking-widest text-muted-foreground">EGP</span>
+          <span className={cn("font-semibold tracking-widest text-muted-foreground", emphasized ? "text-sm" : "text-xs")}>EGP</span>
         </div>
+        {emphasized && property.title && (
+          <p className="mt-2 text-sm leading-6 text-foreground/80 line-clamp-2">{property.title}</p>
+        )}
         <div className="mt-auto">
-          {(property.finishing || property.view) && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-3">
-              {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span dir="rtl" className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-sm line-clamp-1">{property.finishing}</span>}
-              {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-sm line-clamp-1 max-w-[55%]">{property.view}</span>}
+          {(property.finishing || property.view || (emphasized && highlightedDetails.length > 0)) && (
+            <div className={cn("flex flex-wrap items-center gap-1.5", emphasized ? "pt-4" : "pt-3")}>
+              {emphasized
+                ? highlightedDetails.map((detail) => (
+                    <span key={detail} className="max-w-full truncate rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent">
+                      {detail}
+                    </span>
+                  ))
+                : <>
+                    {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span dir="rtl" className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-sm line-clamp-1">{property.finishing}</span>}
+                    {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-sm line-clamp-1 max-w-[55%]">{property.view}</span>}
+                  </>
+              }
             </div>
           )}
-          <div className={cn("flex justify-between items-center text-muted-foreground border-t border-border", size === "medium" ? "mt-3 pt-3 text-[13px]" : "mt-4 pt-4 text-[13px]")}>
-            {property.beds > 0 && <span className="flex items-center gap-1 font-medium"><Bed className="h-3.5 w-3.5" />{property.beds}</span>}
-            {property.baths > 0 && <span className="flex items-center gap-1 font-medium"><Bath className="h-3.5 w-3.5" />{property.baths}</span>}
-            <span className="flex items-center gap-1 font-medium"><Square className="h-3.5 w-3.5" />{property.area} م²</span>
+          <div className={cn(
+            "flex justify-between items-center text-muted-foreground border-t border-border",
+            emphasized ? "mt-4 pt-4 text-sm" : size === "medium" ? "mt-3 pt-3 text-[13px]" : "mt-4 pt-4 text-[13px]",
+          )}>
+            {property.beds > 0 && <span className="flex items-center gap-1.5 font-medium"><Bed className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.beds} غرف</span>}
+            {property.baths > 0 && <span className="flex items-center gap-1.5 font-medium"><Bath className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.baths} حمام</span>}
+            <span className="flex items-center gap-1.5 font-medium"><Square className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.area} م²</span>
           </div>
         </div>
       </CardContent>
@@ -274,7 +342,7 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
         "flex-shrink-0 flex flex-col gap-2",
         listMode
           ? "w-full border-t border-border p-3 sm:w-48 sm:border-t-0 sm:border-r sm:p-3 md:w-56"
-          : size === "large" ? "p-5 pt-0" : "p-3 sm:p-4 pt-0",
+          : emphasized ? "p-5 sm:p-6 pt-0" : size === "large" ? "p-5 pt-0" : "p-3 sm:p-4 pt-0",
       )}>
         <div className="flex gap-1.5 w-full">
           <Button onClick={(e) => { e.stopPropagation(); goToDetails(); }} className="flex-1 h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium">
