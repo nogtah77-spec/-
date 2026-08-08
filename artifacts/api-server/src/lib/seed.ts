@@ -64,6 +64,7 @@ const DEFAULT_SETTINGS = {
     "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
   heroOverlayOpacity: 85,
   tiktokVideos: [],
+  carouselMotionSpeed: 1,
 };
 
 async function ensureSessionTable(): Promise<void> {

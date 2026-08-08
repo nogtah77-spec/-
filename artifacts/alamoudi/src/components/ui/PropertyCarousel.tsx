@@ -10,6 +10,8 @@ interface PropertyCarouselProps {
 
   autoPlay?: boolean;
   autoPlayDelay?: number;
+  /** Movement multiplier: 1 is the natural speed, 4 is four times faster. */
+  motionSpeed?: number;
   infinite?: boolean;
   randomStart?: boolean;
 }
@@ -21,6 +23,7 @@ export function PropertyCarousel({
 
   autoPlay = false,
   autoPlayDelay = 3500,
+  motionSpeed = 1,
   infinite = false,
   randomStart = false,
 }: PropertyCarouselProps) {
@@ -28,6 +31,50 @@ export function PropertyCarousel({
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const autoPlayRef = useRef<number | null>(null);
+  const motionRef = useRef<number | null>(null);
+  const safeMotionSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
+
+  const stopMotion = useCallback(() => {
+    if (motionRef.current !== null) {
+      cancelAnimationFrame(motionRef.current);
+      motionRef.current = null;
+    }
+  }, []);
+
+  const animateScrollTo = useCallback(
+    (target: number) => {
+      const el = scrollRef.current;
+      if (!el) return;
+
+      stopMotion();
+      const start = el.scrollLeft;
+      const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
+      const end = Math.min(maxScroll, Math.max(0, target));
+      const distance = Math.abs(end - start);
+      if (distance < 1) return;
+
+      // A fixed base velocity makes the setting a real speed control rather
+      // than another delay setting. The duration also scales with card distance.
+      const duration = Math.max(120, Math.min(2200, (distance / (700 * safeMotionSpeed)) * 1000));
+      const startedAt = performance.now();
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / duration);
+        const eased = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        el.scrollLeft = start + (end - start) * eased;
+        if (progress < 1) {
+          motionRef.current = requestAnimationFrame(tick);
+        } else {
+          motionRef.current = null;
+          updateArrows();
+        }
+      };
+      motionRef.current = requestAnimationFrame(tick);
+    },
+    [safeMotionSpeed, stopMotion],
+  );
+
   const scrollNext = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -36,19 +83,13 @@ export function PropertyCarousel({
 
     if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 8) {
       if (infinite) {
-        el.scrollTo({
-          left: 0,
-          behavior: "smooth",
-        });
+        animateScrollTo(0);
       }
       return;
     }
 
-    el.scrollBy({
-      left: amount,
-      behavior: "smooth",
-    });
-  }, [infinite]);
+    animateScrollTo(el.scrollLeft + amount);
+  }, [animateScrollTo, infinite]);
 
   const stopAutoPlay = () => {
     if (autoPlayRef.current) {
@@ -95,6 +136,7 @@ export function PropertyCarousel({
       stopAutoPlay();
     };
   }, [autoPlay, autoPlayDelay, scrollNext]);
+  useEffect(() => () => stopMotion(), [stopMotion]);
   useEffect(() => {
     if (!randomStart) return;
 
@@ -121,13 +163,11 @@ export function PropertyCarousel({
     if (!el) return;
 
     stopAutoPlay();
+    stopMotion();
 
     // Scroll roughly one "page" worth of cards
     const amount = el.clientWidth * 0.78;
-    el.scrollBy({
-      left: dir === "next" ? amount : -amount,
-      behavior: "smooth",
-    });
+    animateScrollTo(el.scrollLeft + (dir === "next" ? amount : -amount));
   };
 
   if (properties.length === 0) return null;
@@ -135,8 +175,14 @@ export function PropertyCarousel({
   return (
     <div
       className={cn("relative", className)}
-      onMouseEnter={stopAutoPlay}
-      onTouchStart={stopAutoPlay}
+      onMouseEnter={() => {
+        stopAutoPlay();
+        stopMotion();
+      }}
+      onTouchStart={() => {
+        stopAutoPlay();
+        stopMotion();
+      }}
       onMouseLeave={() => {
         if (!autoPlay) return;
 
@@ -179,9 +225,9 @@ export function PropertyCarousel({
       <div
         ref={scrollRef}
         dir="ltr"
-        className="flex gap-4 overflow-x-auto scroll-smooth pb-2
+        className="flex gap-4 overflow-x-auto pb-2
           [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ scrollSnapType: "x mandatory" }}
+        style={{ scrollSnapType: "x mandatory", scrollBehavior: "auto" }}
       >
         {properties.map((p) => (
           <div

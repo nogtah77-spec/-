@@ -174,6 +174,7 @@ export interface SiteSettings {
   heroOverlayOpacity: number;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
+  carouselMotionSpeed: number;
   themeMode?: "light" | "dark" | "user";
 }
 
@@ -197,6 +198,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   heroOverlayOpacity: 85,
   tiktokVideos: [],
   ads: [],
+  carouselMotionSpeed: 1,
   themeMode: "user",
 };
 

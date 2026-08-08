@@ -1202,7 +1202,7 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
 
-              <CardContent>
+              <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>تشغيل الحركة التلقائية</Label>
@@ -1213,22 +1213,68 @@ export default function Settings() {
 
                   <Switch checked />
                 </div>
-                <div className="space-y-2 mt-6">
-                  <Label>سرعة الحركة (بالثواني)</Label>
-
-                  <Input
-                    type="number"
-                    min="1"
-                    max="30"
-                    defaultValue="5"
-                    className="w-32"
+                <div className="space-y-4 border-t pt-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <Label htmlFor="carouselMotionSpeed">سرعة حركة البطاقات</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        تحكم في سرعة انزلاق البطاقة نفسها، وليس زمن الانتظار قبل البطاقة التالية.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2" dir="ltr">
+                      <Input
+                        id="carouselMotionSpeed"
+                        type="number"
+                        min="0.25"
+                        max="4"
+                        step="0.05"
+                        value={Math.min(4, Math.max(0.25, Number(form.carouselMotionSpeed ?? 1)))}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          if (Number.isFinite(value)) {
+                            setForm((prev) => ({
+                              ...prev,
+                              carouselMotionSpeed: Math.min(4, Math.max(0.25, value)),
+                            }));
+                          }
+                        }}
+                        className="w-24 text-center"
+                        aria-label="معامل سرعة حركة الكاروسيل"
+                      />
+                      <span className="text-sm text-muted-foreground">x</span>
+                    </div>
+                  </div>
+                  <Slider
+                    value={[Math.min(4, Math.max(0.25, Number(form.carouselMotionSpeed ?? 1)))]}
+                    min={0.25}
+                    max={4}
+                    step={0.05}
+                    onValueChange={([value]) =>
+                      setForm((prev) => ({ ...prev, carouselMotionSpeed: value }))
+                    }
+                    aria-label="سرعة حركة البطاقات"
+                    className="py-2"
                   />
-
-                  <p className="text-sm text-muted-foreground">
-                    عدد الثواني قبل انتقال الكاروسيل إلى العقار التالي.
+                  <div className="flex justify-between text-xs text-muted-foreground" dir="ltr">
+                    <span>0.25x أبطأ</span>
+                    <span>1x طبيعية</span>
+                    <span>4x أسرع</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    قيمة 1x هي السرعة الطبيعية. القيمة 2x تضاعف سرعة الحركة، والقيمة 4x تجعلها أسرع أربع مرات.
                   </p>
                 </div>
               </CardContent>
+              <CardFooter className="border-t pt-4">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-accent text-white hover:bg-accent/90 gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {saving ? "جاري الحفظ..." : "حفظ إعدادات الكاروسيل"}
+                </Button>
+              </CardFooter>
             </Card>
           </TabsContent>
         </Tabs>

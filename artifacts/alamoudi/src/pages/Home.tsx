@@ -721,6 +721,7 @@ export default function Home() {
                     properties={latestProps}
                     autoPlay
                     autoPlayDelay={3500}
+                    motionSpeed={settings.carouselMotionSpeed}
                     infinite
                     randomStart
                   />
@@ -770,6 +771,7 @@ export default function Home() {
                           properties={items.slice(0, 8)}
                           autoPlay
                           autoPlayDelay={3500}
+                          motionSpeed={settings.carouselMotionSpeed}
                           infinite
                           randomStart
                         />
