@@ -179,7 +179,11 @@ export function PropertyCard({
           </div>
         </div>
 
-        <div className={cn("flex min-w-0 flex-1 flex-col justify-between pb-1", emphasized ? "px-4 pb-1 pt-2.5" : "px-3.5 pb-1 pt-2.5")}>
+        <div className={cn(
+          "flex min-w-0 flex-1 flex-col pb-1",
+          compactHomeCard ? "justify-start" : "justify-between",
+          emphasized ? "px-4 pb-1 pt-2.5" : "px-3.5 pb-1 pt-2.5",
+        )}>
           <div className="min-w-0">
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <div dir="ltr" className={cn(
@@ -207,7 +211,7 @@ export function PropertyCard({
             )}
           </div>
 
-          <div className={cn(compactHomeCard ? "-mt-1 space-y-1 pt-1.5" : "mt-auto space-y-1.5 pt-2")}>
+          <div className={cn(compactHomeCard ? "mt-1 space-y-1 pt-1" : "mt-auto space-y-1.5 pt-2")}>
             <div dir="ltr" className="flex items-center justify-end gap-1 border-t border-border/70 pt-2">
               <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
               <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
