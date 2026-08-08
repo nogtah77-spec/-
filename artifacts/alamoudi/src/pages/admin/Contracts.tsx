@@ -773,7 +773,7 @@ export default function Contracts() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] space-y-6" dir="rtl">
-        <div className="relative overflow-hidden rounded-2xl border border-[hsl(var(--primary)/.18)] bg-[hsl(var(--primary))] px-5 py-6 text-primary-foreground shadow-[0_12px_30px_rgba(16,32,45,.12)] sm:px-8 sm:py-7">
+        <div className="relative overflow-hidden rounded-2xl border border-[#B4986B]/35 bg-[#10202D] px-5 py-6 text-white shadow-[0_12px_30px_rgba(16,32,45,.18)] sm:px-8 sm:py-7">
           <div className="absolute -left-12 -top-16 h-44 w-44 rounded-full border border-accent/20" />
           <div className="absolute bottom-[-70px] right-[38%] h-48 w-48 rounded-full border border-accent/10" />
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
