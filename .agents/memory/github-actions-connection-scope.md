@@ -3,8 +3,8 @@ name: GitHub Actions write scope
 description: Replit GitHub connections can read and show repo push permissions while rejecting writes that include GitHub workflow files.
 ---
 
-The Replit GitHub connection may report a healthy account with `repo` OAuth scope and repository-level `push/admin` permissions, while Git and GraphQL writes involving `.github/workflows` are rejected. A connection that exposes the separate `workflow` authorization scope is required before retrying this kind of push.
+The Replit GitHub OAuth connection may report a healthy account with `repo` scope and repository-level `push/admin` permissions while writes involving `.github/workflows` are rejected. A separately supplied GitHub credential can expose both `repo` and `workflow`, providing a distinct path for workflow-file writes.
 
-**Why:** Repeated reconnects changed the error but did not add the missing workflow write authorization; repeated pushes do not repair the credential.
+**Why:** Repeated OAuth reconnects did not add the missing workflow authorization, while the independently supplied credential exposed `repo, workflow` and authenticated successfully through the GitHub API.
 
-**How to apply:** Before pushing commits that add or edit GitHub Actions workflows, inspect the OAuth scopes and stop if `workflow` is absent. Do not alter Vercel or Supabase as a workaround.
+**How to apply:** Before a workflow-file push, inspect the credential actually used by the write path. Do not infer its scope from the Replit OAuth connection, and do not alter Vercel or Supabase as a workaround.

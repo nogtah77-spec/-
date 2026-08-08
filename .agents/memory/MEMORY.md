@@ -2,4 +2,4 @@
 - [منصة العمودي — عقد الفلاتر](property-filter-contract.md) — الفلاتر العامة موحّدة بين الرئيسية وصفحات المدن، ولا تُعرض خيارات لا يدعمها نموذج العقار فعليًا.
 - [بناء واجهة المعاينة والنشر](build-deployment.md) — إعدادات Vite لا يجب أن تفرض متغيرات تشغيل أثناء بناء الإنتاج.
 - [توافق مخطط Supabase الإنتاجي](supabase-production-schema.md) — قد تتأخر أعمدة الإنتاج عن مخطط Drizzle المحلي؛ يجب فحص المخطط قبل نقل البيانات.
-- [صلاحية GitHub للـWorkflows](github-actions-connection-scope.md) — نطاق `repo` وحده لا يكفي حاليًا لرفع ملفات `.github/workflows` عبر Git أو API من Replit.
+- [صلاحية GitHub للـWorkflows](github-actions-connection-scope.md) — اتصال OAuth يفتقد `workflow`، لكن اعتماد GitHub مستقل قد يملك النطاق ويصلح لمسار رفع منفصل.
