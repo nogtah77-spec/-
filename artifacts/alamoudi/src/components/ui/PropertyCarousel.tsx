@@ -7,6 +7,7 @@ interface PropertyCarouselProps {
   properties: any[];
   size?: CardSize;
   layout?: "grid" | "list";
+  emphasized?: boolean;
   className?: string;
   autoPlay?: boolean;
   /** Waiting time between the end of one movement and the next movement, in ms. */
@@ -20,6 +21,7 @@ export function PropertyCarousel({
   properties,
   size = "compact",
   layout = "grid",
+  emphasized = false,
   className,
   autoPlay = false,
   autoPlayDelay = 3500,
@@ -365,7 +367,7 @@ export function PropertyCarousel({
               key={`${property.id}-${index}`}
               className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
             >
-              <PropertyCard property={property} size={size} layout={layout} />
+              <PropertyCard property={property} size={size} layout={layout} emphasized={emphasized} />
             </div>
           ))}
         </div>

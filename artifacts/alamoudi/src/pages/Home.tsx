@@ -360,6 +360,7 @@ export default function Home() {
                       property={p}
                       size={filters.cardSize}
                       layout={filters.viewMode}
+                      emphasized
                     />
                   ))}
                 </div>
@@ -540,7 +541,7 @@ export default function Home() {
                         key={i}
                         className="flex-shrink-0 w-[82vw] sm:w-[46vw] md:w-[268px] lg:w-[280px]"
                       >
-                        <PropertyCard isLoading size={filters.cardSize} />
+                        <PropertyCard isLoading size={filters.cardSize} emphasized />
                       </div>
                     ))}
                   </div>
@@ -549,6 +550,7 @@ export default function Home() {
                     properties={latestProps}
                     size={filters.cardSize}
                     layout={filters.viewMode}
+                    emphasized
                     autoPlay
                     autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
@@ -600,6 +602,7 @@ export default function Home() {
                           properties={items.slice(0, 8)}
                            size={filters.cardSize}
                            layout={filters.viewMode}
+                           emphasized
                           autoPlay
                           autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                           motionSpeed={settings.carouselMotionSpeed}
