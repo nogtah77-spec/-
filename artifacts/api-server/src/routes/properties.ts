@@ -1,11 +1,70 @@
 import { Router, type IRouter, type Request } from "express";
 import { eq, sql, inArray } from "drizzle-orm";
 import { z } from "zod/v4";
-import { db, propertiesTable, insertPropertySchema } from "@workspace/db";
+import { db, pool, propertiesTable, insertPropertySchema } from "@workspace/db";
 import { requireStaff } from "../lib/auth";
 import { logActivity, actorFromReq } from "../lib/activityLog";
 
 const router: IRouter = Router();
+
+const LEGACY_PROPERTY_SELECT = `
+  id,
+  code,
+  title,
+  description,
+  price,
+  area,
+  beds,
+  baths,
+  floors,
+  floor,
+  finishing,
+  view,
+  type_id AS "typeId",
+  region_id AS "regionId",
+  category,
+  status,
+  featured,
+  agent_type AS "agentType",
+  images,
+  video_url AS "videoUrl",
+  external_url AS "externalUrl",
+  maps_url AS "mapsUrl",
+  created_at AS "createdAt",
+  unit_type AS "unitType",
+  sub_area AS "subArea",
+  layout,
+  master,
+  elevator,
+  floor_text AS "floorText",
+  location,
+  source,
+  source_phones AS "sourcePhones",
+  source_email AS "sourceEmail",
+  source_location AS "sourceLocation",
+  source_notes AS "sourceNotes",
+  views,
+  cover_priority AS "coverPriority"
+`;
+
+function isMissingColumnError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "42703"
+  );
+}
+
+async function selectLegacyProperties(activeOnly: boolean): Promise<Array<Record<string, unknown>>> {
+  const where = activeOnly ? ` WHERE status = 'active'` : "";
+  const result = await pool.query(`SELECT ${LEGACY_PROPERTY_SELECT} FROM properties${where}`);
+  return result.rows.map((row) => ({
+    ...row,
+    parking: "",
+    additionalFeatures: "",
+  }));
+}
 
 function propertyLabel(p: { title?: string | null; code?: string | null }): string {
   return p.title?.trim() || p.code || "عقار";
@@ -19,16 +78,26 @@ function isStaffReq(req: Request): boolean {
 }
 
 router.get("/properties", async (req, res): Promise<void> => {
-  if (isStaffReq(req)) {
-    const rows = await db.select().from(propertiesTable);
-    res.json(rows);
-    return;
+  try {
+    if (isStaffReq(req)) {
+      const rows = await db.select().from(propertiesTable);
+      res.json(rows);
+      return;
+    }
+    // Public view: only active listings; strip manager-only fields.
+    const rows = await db.select().from(propertiesTable)
+      .where(eq(propertiesTable.status, "active"));
+    const publicRows = rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest);
+    res.json(publicRows);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    const rows = await selectLegacyProperties(!isStaffReq(req));
+    if (isStaffReq(req)) {
+      res.json(rows);
+      return;
+    }
+    res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest));
   }
-  // Public view: only active listings; strip manager-only fields.
-  const rows = await db.select().from(propertiesTable)
-    .where(eq(propertiesTable.status, "active"));
-  const publicRows = rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest);
-  res.json(publicRows);
 });
 
 router.post("/properties/:id/view", async (req, res): Promise<void> => {

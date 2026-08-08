@@ -1,14 +1,31 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, regionsTable, insertRegionSchema } from "@workspace/db";
+import { db, pool, regionsTable, insertRegionSchema } from "@workspace/db";
 import { requireStaff } from "../lib/auth";
 import { logActivity, actorFromReq } from "../lib/activityLog";
 
 const router: IRouter = Router();
 
+function isMissingColumnError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "42703"
+  );
+}
+
 router.get("/regions", async (_req, res): Promise<void> => {
-  const rows = await db.select().from(regionsTable);
-  res.json(rows);
+  try {
+    const rows = await db.select().from(regionsTable);
+    res.json(rows);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    const result = await pool.query(
+      `SELECT id, name, active, ''::text AS "heroImage" FROM regions`,
+    );
+    res.json(result.rows);
+  }
 });
 
 router.post("/regions", requireStaff, async (req, res): Promise<void> => {
