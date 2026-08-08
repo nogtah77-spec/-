@@ -60,6 +60,7 @@ export default function PropertyForm() {
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);
+  const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = useCallback((files: FileList | null) => {
@@ -79,19 +80,24 @@ export default function PropertyForm() {
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.code.trim() || !form.typeId || !form.regionId) {
       toast({ title: "يرجى ملء الحقول المطلوبة (الكود، النوع، المنطقة)", variant: "destructive" });
       return;
     }
+    if (saving) return;
+    setSaving(true);
     const payload = { ...form, title: form.code.trim(), images };
-    if (isEdit && params.id) {
-      updateProperty(params.id, payload);
-    } else {
-      addProperty(payload);
+    try {
+      const saved = isEdit && params.id
+        ? await updateProperty(params.id, payload)
+        : await addProperty(payload);
+      if (!saved) return;
+      toast({ title: "تم الحفظ بنجاح", description: isEdit ? "تم تحديث بيانات العقار." : "تم إضافة العقار الجديد." });
+      setLocation("/admin/properties");
+    } finally {
+      setSaving(false);
     }
-    toast({ title: "تم الحفظ بنجاح", description: isEdit ? "تم تحديث بيانات العقار." : "تم إضافة العقار الجديد." });
-    setLocation("/admin/properties");
   };
 
   const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm(p => ({ ...p, [k]: v }));
@@ -106,8 +112,8 @@ export default function PropertyForm() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" asChild><Link href="/admin/properties">إلغاء</Link></Button>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave}>
-              <Save className="ml-2 h-4 w-4" />حفظ ونشر
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave} disabled={saving}>
+              <Save className="ml-2 h-4 w-4" />{saving ? "جارٍ الحفظ..." : "حفظ ونشر"}
             </Button>
           </div>
         </div>

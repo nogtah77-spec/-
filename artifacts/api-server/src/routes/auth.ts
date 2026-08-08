@@ -61,7 +61,15 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     title: `تسجيل الدخول إلى لوحة التحكم: ${user.name}`,
     actor: user.role === "agent" ? `موظف (${user.name})` : `الإدارة (${user.name})`,
   });
-  res.json(publicUser(user));
+  // Persist the session before responding so the first authenticated mutation
+  // after login cannot race the session store and arrive as a 401.
+  req.session.save((saveError) => {
+    if (saveError) {
+      res.status(500).json({ error: "تعذّر حفظ جلسة الدخول" });
+      return;
+    }
+    res.json(publicUser(user));
+  });
 });
 
 router.post("/auth/logout", async (req, res): Promise<void> => {

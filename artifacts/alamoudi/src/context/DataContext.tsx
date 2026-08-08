@@ -245,8 +245,8 @@ interface DataContextType {
   updatePropertyType: (id: string, name: string) => void;
   deletePropertyType: (id: string) => void;
   togglePropertyType: (id: string) => void;
-  addProperty: (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => void;
-  updateProperty: (id: string, p: Partial<Property>) => void;
+  addProperty: (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => Promise<boolean>;
+  updateProperty: (id: string, p: Partial<Property>) => Promise<boolean>;
   deleteProperty: (id: string) => void;
   bulkDeleteProperties: (ids: string[]) => void;
   bulkUpdateProperties: (ids: string[], updates: Partial<Property>) => void;
@@ -405,11 +405,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // Optimistic writes update local state first; if the server rejects, surface
   // the error and re-sync from the server so the UI never diverges from truth.
   const persist = useCallback((p: Promise<unknown>) => {
-    p.catch((err: unknown) => {
-      const message = err instanceof Error ? err.message : "تعذّر حفظ التغيير على الخادم";
-      toast({ title: "خطأ في الحفظ", description: message, variant: "destructive" });
-      void reload();
-    });
+    return p
+      .then(() => true)
+      .catch((err: unknown) => {
+        const apiError = err as { status?: number; message?: string };
+        const message = apiError.status === 401
+          ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم أعد حفظ العقار."
+          : apiError.status === 413
+            ? "حجم الصور كبير جدًا بالنسبة للطلب. صغّر الصور ثم حاول مرة أخرى."
+            : apiError.message || "تعذّر حفظ التغيير على الخادم";
+        toast({ title: "تعذّر حفظ التغيير", description: message, variant: "destructive" });
+        void reload();
+        return false;
+      });
   }, [toast, reload]);
 
   useEffect(() => {
@@ -530,11 +538,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const code = p.code?.trim() || genCode();
     const property: Property = { ...p, code, id: genId(), createdAt: new Date().toISOString() };
     setProperties(prev => [...prev, property]);
-    persist(api.post("/properties", property));
+    return persist(api.post("/properties", property));
   };
   const updateProperty = (id: string, p: Partial<Property>) => {
     setProperties(prev => prev.map(prop => prop.id === id ? { ...prop, ...p } : prop));
-    persist(api.patch(`/properties/${id}`, p));
+    return persist(api.patch(`/properties/${id}`, p));
   };
   const deleteProperty = (id: string) => {
     setProperties(p => p.filter(x => x.id !== id));
