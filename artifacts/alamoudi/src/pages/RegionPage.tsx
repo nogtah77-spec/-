@@ -6,43 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useData } from "@/context/DataContext";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
-import { cn } from "@/lib/utils";
-
-const CATEGORY_FILTERS = [
-  { value: "all",       label: "الكل"     },
-  { value: "sale",      label: "للبيع"    },
-  { value: "rent",      label: "للإيجار"  },
-  { value: "furnished", label: "مفروش"    },
-] as const;
-
-const SECTOR_FILTERS = [
-  { value: "all",            label: "الكل"    },
-  { value: "residential",    label: "سكني"    },
-  { value: "commercial",     label: "تجاري"   },
-  { value: "administrative", label: "إداري"   },
-  { value: "medical",        label: "طبي"     },
-] as const;
-
-type CategoryFilter = typeof CATEGORY_FILTERS[number]["value"];
-type SectorFilter   = typeof SECTOR_FILTERS[number]["value"];
-
-function FilterChip({
-  label, active, onClick,
-}: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "px-4 py-1.5 rounded-sm text-sm font-medium transition-all duration-150 border",
-        active
-          ? "bg-accent text-white border-accent shadow-sm"
-          : "bg-card text-muted-foreground border-border hover:border-accent/40 hover:text-foreground",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
+import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
+import {
+  DEFAULT_PROPERTY_FILTERS,
+  filterProperties,
+  type PropertyFilterState,
+} from "@/lib/propertyFilters";
 
 export default function RegionPage({ params }: { params: { regionId: string } }) {
   const { regionId } = params;
@@ -50,8 +19,14 @@ export default function RegionPage({ params }: { params: { regionId: string } })
 
   const region = regions.find(r => r.id === regionId);
 
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
-  const [sectorFilter,   setSectorFilter  ] = useState<SectorFilter  >("all");
+  const [filters, setFilters] = useState<PropertyFilterState>({
+    ...DEFAULT_PROPERTY_FILTERS,
+    regionId,
+  });
+  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>({
+    ...DEFAULT_PROPERTY_FILTERS,
+    regionId,
+  });
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   // The supplied Shorouk reference is a finished hero screenshot and already
   // contains its title and breadcrumb. Other city images remain dynamic.
@@ -63,26 +38,20 @@ export default function RegionPage({ params }: { params: { regionId: string } })
   }), [propertyTypes, region]);
 
   const filtered = useMemo(() => {
-    let list = properties.filter(p => p.regionId === regionId);
-
-    // Row 1 — transaction type
-    if (categoryFilter !== "all") {
-      list = list.filter(p => p.category === categoryFilter);
-    }
-
-    // Row 2 — sector
-    if (sectorFilter !== "all") {
-      if (sectorFilter === "residential") {
-        list = list.filter(p => ["sale", "rent", "furnished"].includes(p.category));
-      } else {
-        list = list.filter(p => p.category === sectorFilter);
-      }
-    }
-
-    return list.map(resolve);
-  }, [properties, regionId, categoryFilter, sectorFilter, resolve]);
+    return filterProperties(properties, appliedFilters, regions, propertyTypes).map(resolve);
+  }, [properties, appliedFilters, regions, propertyTypes, resolve]);
 
   const gridClass = "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4";
+  const applyFilters = (next: PropertyFilterState) => {
+    const fixed = { ...next, regionId };
+    setFilters(fixed);
+    setAppliedFilters(fixed);
+  };
+  const resetFilters = () => {
+    const reset = { ...DEFAULT_PROPERTY_FILTERS, regionId };
+    setFilters(reset);
+    setAppliedFilters(reset);
+  };
 
   /* ── Not found ── */
   if (!region) {
@@ -129,7 +98,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
             <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
               <div className="max-w-3xl">
                 <h1 className="text-2xl font-extrabold tracking-tight drop-shadow-md sm:text-3xl md:text-5xl">
-                  مدينة {region.name.replace(/^مدينة\s+/, "")}
+                  {region.name}
                 </h1>
                 <nav aria-label="التنقل" className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-white/80 sm:text-sm">
                   <Link href="/" className="transition-colors hover:text-accent">الرئيسية</Link>
@@ -157,45 +126,38 @@ export default function RegionPage({ params }: { params: { regionId: string } })
               </div>
             </div>
 
-            {/* ── Filter row 1: Transaction type ── */}
-            <div className="flex flex-wrap gap-2 mb-3" aria-label="نوع العرض">
-              {CATEGORY_FILTERS.map(f => (
-                <FilterChip
-                  key={f.value}
-                  label={f.label}
-                  active={categoryFilter === f.value}
-                  onClick={() => setCategoryFilter(f.value)}
-                />
-              ))}
-            </div>
-
-            {/* ── Filter row 2: Sector ── */}
-            <div className="flex flex-wrap gap-2 mb-8">
-              {SECTOR_FILTERS.map(f => (
-                <FilterChip
-                  key={f.value}
-                  label={f.label}
-                  active={sectorFilter === f.value}
-                  onClick={() => setSectorFilter(f.value)}
-                />
-              ))}
-            </div>
+            <PropertyFilterPanel
+              filters={filters}
+              regions={regions}
+              propertyTypes={propertyTypes}
+              fixedRegionId={regionId}
+              cityName={region.name}
+              resultCount={filtered.length}
+              onChange={(next) => setFilters({ ...next, regionId })}
+              onApply={applyFilters}
+              onReset={resetFilters}
+            />
 
             {/* ── Results ── */}
             {filtered.length === 0 ? (
               <div className="text-center py-20 text-muted-foreground">
                 <p className="text-sm">لا توجد عقارات تطابق التصفية المحددة في {region.name}.</p>
                 <button
-                  onClick={() => { setCategoryFilter("all"); setSectorFilter("all"); }}
+                  onClick={resetFilters}
                   className="mt-4 text-accent text-sm hover:underline"
                 >
                   إعادة ضبط الفلاتر
                 </button>
               </div>
             ) : (
-              <div className={gridClass}>
+              <div className={filters.viewMode === "list" ? "grid grid-cols-1 gap-3" : gridClass}>
                 {filtered.map(p => (
-                  <PropertyCard key={p.id} property={p} size="compact" />
+                  <PropertyCard
+                    key={p.id}
+                    property={p}
+                    size="compact"
+                    layout={filters.viewMode}
+                  />
                 ))}
               </div>
             )}

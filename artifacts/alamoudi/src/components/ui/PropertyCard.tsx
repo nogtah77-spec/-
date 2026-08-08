@@ -21,6 +21,7 @@ interface PropertyCardProps {
   isLoading?: boolean;
   property?: Property & { typeName?: string; regionName?: string };
   size?: CardSize;
+  layout?: "grid" | "list";
 }
 
 const categoryLabels: Record<string, string> = {
@@ -28,7 +29,7 @@ const categoryLabels: Record<string, string> = {
   administrative: "إداري", medical: "طبي", commercial: "تجاري",
 };
 
-export function PropertyCard({ isLoading = false, property, size = "large" }: PropertyCardProps) {
+export function PropertyCard({ isLoading = false, property, size = "large", layout = "grid" }: PropertyCardProps) {
   const { settings } = useData();
   const { compare, toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
@@ -174,10 +175,20 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
   }
 
   const imageHeight = size === "medium" ? "h-36" : "h-52";
+  const listMode = layout === "list";
 
   return (
-    <Card onClick={goToDetails} className="overflow-hidden border-border shadow-sm group cursor-pointer card-luxury flex flex-col h-full hover:-translate-y-1 transition-all duration-300">
-      <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", imageHeight)}>
+    <Card onClick={goToDetails} className={cn(
+      "overflow-hidden border-border shadow-sm group cursor-pointer card-luxury h-full hover:-translate-y-1 transition-all duration-300",
+      listMode
+        ? "flex flex-row flex-wrap sm:flex-nowrap"
+        : "flex flex-col",
+    )}>
+      <div className={cn(
+        "relative overflow-hidden bg-muted flex-shrink-0",
+        listMode ? "w-32 min-h-[160px] sm:w-48 md:w-56" : imageHeight,
+        listMode && "sm:min-h-0 sm:self-stretch",
+      )}>
         {showVideoCover
           ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           : coverImg
@@ -224,7 +235,10 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         </div>
       </div>
 
-      <CardContent className={cn("flex-1 flex flex-col", size === "medium" ? "p-4" : "p-5")}>
+      <CardContent className={cn(
+        "flex-1 flex flex-col min-w-0",
+        listMode ? "p-3 sm:p-4" : size === "medium" ? "p-4" : "p-5",
+      )}>
         <div className="mb-3 flex items-baseline gap-2">
           <h3 dir="ltr" className={cn("font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors", size === "medium" ? "text-lg" : "text-xl")}>
             {property.code}
@@ -250,7 +264,12 @@ export function PropertyCard({ isLoading = false, property, size = "large" }: Pr
         </div>
       </CardContent>
 
-      <CardFooter className={cn("flex-shrink-0 flex flex-col gap-2", size === "medium" ? "p-4 pt-0" : "p-5 pt-0")}>
+      <CardFooter className={cn(
+        "flex-shrink-0 flex flex-col gap-2",
+        listMode
+          ? "w-full border-t border-border p-3 sm:w-48 sm:border-t-0 sm:border-r sm:p-3 md:w-56"
+          : size === "medium" ? "p-4 pt-0" : "p-5 pt-0",
+      )}>
         <div className="flex gap-1.5 w-full">
           <Button onClick={(e) => { e.stopPropagation(); goToDetails(); }} className="flex-1 h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium">
             التفاصيل

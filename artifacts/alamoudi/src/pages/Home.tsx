@@ -3,14 +3,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Search,
   UserCheck,
@@ -26,12 +18,17 @@ import { TikTokIcon } from "@/components/icons/BrandIcons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useData, type TiktokVideo } from "@/context/DataContext";
-import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
-import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { PublicBannerSlot } from "@/components/ui/AdsBanner";
 import { PropertyCarousel } from "@/components/ui/PropertyCarousel";
+import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
+import {
+  DEFAULT_PROPERTY_FILTERS,
+  filterProperties,
+  hasActivePropertyFilters,
+  type PropertyFilterState,
+} from "@/lib/propertyFilters";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -168,17 +165,8 @@ function TiktokCard({
 
 export default function Home() {
   const { properties, regions, propertyTypes, settings } = useData();
-  const [searchCategory, setSearchCategory] = useState<
-    "sale" | "rent" | "furnished"
-  >("sale");
-  const [searchSector, setSearchSector] = useState<
-    "residential" | "administrative" | "medical" | "commercial"
-  >("residential");
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const [selectedType, setSelectedType] = useState("");
-  const [selectedFinishing, setSelectedFinishing] = useState("");
-  const [searchText, setSearchText] = useState("");
-  const [filtersApplied, setFiltersApplied] = useState(false);
+  const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_PROPERTY_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(DEFAULT_PROPERTY_FILTERS);
   const resolve = (p: any) => ({
     ...p,
     typeName: propertyTypes.find((t) => t.id === p.typeId)?.name,
@@ -214,84 +202,20 @@ export default function Home() {
       .sort((a, b) => b.items.length - a.items.length);
   }, [properties, regions, propertyTypes]);
 
-  // Normalise a finishing string for comparison: collapse whitespace so that
-  // "ألترا سوبرلوكس" and "ألترا سوبر لوكس" both produce the same key.
-  const normFin = (s: string) => (s || "").trim().replace(/\s+/g, "");
+  const isFiltering = hasActivePropertyFilters(appliedFilters);
+  const filterResults = useMemo(
+    () => filterProperties(properties, appliedFilters, regions, propertyTypes).map(resolve),
+    [properties, appliedFilters, regions, propertyTypes],
+  );
 
-  const isFiltering = filtersApplied || searchText.trim() !== "";
-
-  // Maps each non-residential sector button to the typeIds that belong to it.
-  // Residential has no explicit group — it's everything NOT in the other groups.
-  const SECTOR_TYPE_GROUPS: Record<string, string[]> = {
-    administrative: ["office"],
-    medical: ["clinic", "medical_center", "pharmacy"],
-    commercial: ["shop", "restaurant", "cafe"],
+  const applyFilters = (next: PropertyFilterState) => {
+    setFilters(next);
+    setAppliedFilters(next);
   };
 
-  const filterResults = useMemo(() => {
-    let list = properties;
-    const q = searchText.trim().toLowerCase();
-    if (q) {
-      list = list.filter((p) => {
-        const regionName = regions.find((r) => r.id === p.regionId)?.name ?? "";
-        const typeName =
-          propertyTypes.find((t) => t.id === p.typeId)?.name ?? "";
-        const hay = [
-          p.title,
-          p.code,
-          p.description,
-          p.location,
-          p.subArea,
-          p.finishing,
-          p.view,
-          p.unitType,
-          regionName,
-          typeName,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return hay.includes(q);
-      });
-    }
-    if (filtersApplied) {
-      // Always filter by the sale / rent / furnished category tab
-      list = list.filter((p) => p.category === searchCategory);
-      // For non-residential sectors, additionally narrow by property type group
-      if (searchSector !== "residential") {
-        const group = SECTOR_TYPE_GROUPS[searchSector] ?? [];
-        if (group.length) list = list.filter((p) => group.includes(p.typeId));
-      }
-      if (selectedRegion)
-        list = list.filter((p) => p.regionId === selectedRegion);
-      if (selectedType) list = list.filter((p) => p.typeId === selectedType);
-      if (selectedFinishing)
-        list = list.filter(
-          (p) => normFin(p.finishing) === normFin(selectedFinishing),
-        );
-    }
-    return list.map(resolve);
-  }, [
-    properties,
-    searchText,
-    filtersApplied,
-    searchCategory,
-    searchSector,
-    selectedRegion,
-    selectedType,
-    selectedFinishing,
-    propertyTypes,
-    regions,
-  ]);
-
   const clearFilters = () => {
-    setSearchText("");
-    setSelectedRegion("");
-    setSelectedType("");
-    setSelectedFinishing("");
-    setSearchCategory("sale");
-    setSearchSector("residential");
-    setFiltersApplied(false);
+    setFilters(DEFAULT_PROPERTY_FILTERS);
+    setAppliedFilters(DEFAULT_PROPERTY_FILTERS);
   };
 
   const heroImage =
@@ -360,141 +284,15 @@ export default function Home() {
 
         {/* ── Search / Filter Widget ── */}
         <div className="container px-3 sm:px-6">
-            <div className="relative z-20 bg-card border border-border rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-3.5 sm:p-5 max-w-3xl mx-auto">
-            <div className="relative mb-3">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                className="pr-10 h-10"
-                placeholder="ابحث بالكود، اسم العقار، المنطقة، النوع، التشطيب..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-              {searchText && (
-                <button
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSearchText("")}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2 mb-2">
-              {[
-                { value: "sale", label: "للبيع" },
-                { value: "rent", label: "للإيجار" },
-                { value: "furnished", label: "مفروش" },
-              ].map((btn) => (
-                <button
-                  key={btn.value}
-                  onClick={() =>
-                    setSearchCategory(btn.value as typeof searchCategory)
-                  }
-                  className={cn(
-                    "h-9 px-5 rounded-sm text-sm font-semibold whitespace-nowrap",
-                    "inline-flex items-center justify-center cursor-pointer",
-                    "transition-all duration-[180ms] ease-out",
-                    searchCategory === btn.value
-                      ? "bg-accent text-white shadow-[0_2px_8px_rgba(180,152,107,0.30)]"
-                      : "bg-muted text-muted-foreground hover:bg-accent/10 hover:text-accent",
-                  )}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-3">
-              {[
-                { value: "residential", label: "سكني" },
-                { value: "administrative", label: "إداري" },
-                { value: "medical", label: "طبي" },
-                { value: "commercial", label: "تجاري" },
-              ].map((btn) => (
-                <button
-                  key={btn.value}
-                  onClick={() =>
-                    setSearchSector(btn.value as typeof searchSector)
-                  }
-                  className={cn(
-                    "h-9 px-4 rounded-sm text-sm font-semibold border whitespace-nowrap",
-                    "inline-flex items-center justify-center cursor-pointer",
-                    "transition-all duration-[180ms] ease-out",
-                    searchSector === btn.value
-                      ? "border-accent bg-accent text-white shadow-[0_2px_8px_rgba(180,152,107,0.30)]"
-                      : "border-border text-muted-foreground hover:border-accent/50 hover:text-accent",
-                  )}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-center">
-              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-                <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
-                  <SelectValue placeholder="المنطقة" />
-                </SelectTrigger>
-                <SelectContent>
-                  {regions
-                    .filter((r) => r.active)
-                    .map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full sm:w-44 h-9 text-sm">
-                  <SelectValue placeholder="نوع العقار" />
-                </SelectTrigger>
-                <SelectContent>
-                  {propertyTypes
-                    .filter((t) => t.active)
-                    .map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedFinishing}
-                onValueChange={setSelectedFinishing}
-              >
-                <SelectTrigger className="w-full sm:w-40 h-9 text-sm">
-                  <SelectValue placeholder="التشطيب" />
-                </SelectTrigger>
-                <SelectContent>
-                  {FINISHING_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                className="h-9 px-6 bg-accent text-white hover:bg-accent/90 text-sm font-medium gap-1.5"
-                data-testid="button-search"
-                onClick={() => setFiltersApplied(true)}
-              >
-                <Search className="h-4 w-4" />
-                بحث
-              </Button>
-              {isFiltering && (
-                <Button
-                  variant="outline"
-                  className="h-9 px-5 text-sm font-medium gap-1.5 border-accent/40 text-accent hover:bg-accent/10"
-                  data-testid="button-clear-filters"
-                  onClick={clearFilters}
-                >
-                  <X className="h-4 w-4" />
-                  مسح الفلاتر
-                </Button>
-              )}
-            </div>
-          </div>
+          <PropertyFilterPanel
+            filters={filters}
+            regions={regions}
+            propertyTypes={propertyTypes}
+            onChange={setFilters}
+            onApply={applyFilters}
+            onReset={clearFilters}
+            resultCount={isFiltering ? filterResults.length : undefined}
+          />
         </div>
 
         {/* ── Filter / Search Results ── */}
@@ -530,9 +328,14 @@ export default function Home() {
                   <p className="text-sm">لا توجد عقارات مطابقة لبحثك.</p>
                 </div>
               ) : (
-                <div className={gridClass}>
+                <div className={filters.viewMode === "list" ? "grid grid-cols-1 gap-3" : gridClass}>
                   {filterResults.map((p) => (
-                    <PropertyCard key={p.id} property={p} size="compact" />
+                    <PropertyCard
+                      key={p.id}
+                      property={p}
+                      size="compact"
+                      layout={filters.viewMode}
+                    />
                   ))}
                 </div>
               )}
