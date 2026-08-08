@@ -353,7 +353,7 @@ export function PropertyCarousel({
       >
         <div
           ref={trackRef}
-          className="flex gap-4 w-max"
+          className="flex gap-2 sm:gap-3 w-max"
           style={{
             transform: `translate3d(${-trackOffset}px, 0, 0)`,
             transition: transitionEnabled
@@ -365,7 +365,7 @@ export function PropertyCarousel({
           {trackProperties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
+              className="flex-shrink-0 w-[96vw] sm:w-[60vw] md:w-[430px] lg:w-[430px]"
             >
               <PropertyCard property={property} size={size} layout={layout} emphasized={emphasized} />
             </div>

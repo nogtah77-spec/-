@@ -132,6 +132,7 @@ export function PropertyCard({
   if (size === "compact" && layout === "list") {
     return (
       <Card
+        dir="rtl"
         onClick={goToDetails}
         className={cn(
           "flex flex-row overflow-hidden group cursor-pointer card-luxury rounded-2xl transition-all duration-300",
@@ -164,15 +165,18 @@ export function PropertyCard({
         <div className={cn("flex min-w-0 flex-1 flex-col justify-between", emphasized ? "px-4 py-3.5" : "px-3.5 py-3")}>
           <div className="min-w-0">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-1.5">
-                <h3 dir="ltr" className={cn(
-                  "truncate font-bold font-mono tracking-[0.12em] text-foreground group-hover:text-accent transition-colors",
-                  emphasized ? "text-lg" : "text-sm",
-                )}>{property.code}</h3>
+              <div dir="ltr" className={cn(
+                "inline-flex min-w-0 items-center gap-1 rounded-md border border-accent/45 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-1.5 py-0.5 shadow-[0_3px_10px_rgba(180,152,107,0.14),inset_0_1px_0_rgba(255,255,255,0.08)]",
+                emphasized ? "sm:px-2 sm:py-1" : "",
+              )}>
                 <span className={cn(
-                  "inline-flex shrink-0 items-center justify-center rounded bg-foreground/5 px-1 py-0.5 font-bold tracking-widest text-muted-foreground uppercase leading-none",
-                  emphasized ? "text-[9px]" : "text-[8px]",
+                  "inline-flex shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 py-0.5 font-black tracking-[0.14em] text-accent uppercase leading-none",
+                  emphasized ? "text-[8px]" : "text-[7px]",
                 )}>CODE</span>
+                <h3 className={cn(
+                  "truncate font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
+                  emphasized ? "text-base" : "text-xs",
+                )}>{property.code}</h3>
               </div>
               {property.typeName && (
                 <span className="inline-flex max-w-[42%] shrink-0 truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent">
@@ -213,7 +217,7 @@ export function PropertyCard({
   const listMode = layout === "list";
 
   return (
-    <Card onClick={goToDetails} className={cn(
+    <Card dir="rtl" onClick={goToDetails} className={cn(
       "overflow-hidden group cursor-pointer card-luxury h-full rounded-[1.25rem] transition-all duration-300",
       emphasized
         ? "border-accent/30 shadow-[0_14px_36px_rgba(16,32,45,0.16)] hover:-translate-y-1.5 hover:border-accent/60"
@@ -306,16 +310,21 @@ export function PropertyCard({
         <div className={cn("flex items-start justify-between gap-3", emphasized ? "mb-3" : "mb-4")}>
           <div className="min-w-0">
             <div className="mb-2 flex items-center gap-2">
-              <h3 dir="ltr" className={cn(
-                "font-bold font-mono tracking-[0.16em] text-foreground group-hover:text-accent transition-colors",
-                emphasized ? "text-2xl" : size === "large" ? "text-lg" : size === "medium" ? "text-base" : "text-sm",
+              <div dir="ltr" className={cn(
+                "inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-accent/50 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-2 py-1 shadow-[0_5px_16px_rgba(180,152,107,0.16),inset_0_1px_0_rgba(255,255,255,0.1)]",
+                emphasized ? "sm:px-2.5 sm:py-1.5" : "",
               )}>
-                {property.code}
-              </h3>
-              <span className={cn(
-                "inline-flex shrink-0 items-center justify-center rounded bg-foreground/5 px-1.5 py-0.5 text-muted-foreground font-bold tracking-widest uppercase leading-none",
-                emphasized ? "text-[10px]" : "text-[9px]",
-              )}>CODE</span>
+                <span className={cn(
+                  "inline-flex shrink-0 items-center justify-center rounded bg-accent/20 px-1 py-0.5 font-black tracking-[0.16em] text-accent uppercase leading-none",
+                  emphasized ? "text-[9px]" : "text-[8px]",
+                )}>CODE</span>
+                <h3 className={cn(
+                  "truncate font-black font-mono tracking-[0.14em] text-accent group-hover:text-foreground transition-colors",
+                  emphasized ? "text-xl" : size === "large" ? "text-base" : size === "medium" ? "text-sm" : "text-xs",
+                )}>
+                  {property.code}
+                </h3>
+              </div>
             </div>
             <p className={cn("flex items-center gap-1.5 text-foreground/75 line-clamp-1", emphasized ? "text-sm" : "text-xs")}>
               <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
