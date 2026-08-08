@@ -4,7 +4,7 @@ export type ListingCategory = "all" | "sale" | "rent" | "furnished";
 export type PropertySector = "all" | "residential" | "commercial" | "administrative" | "medical";
 export type SortOption = "newest" | "priceAsc" | "priceDesc" | "areaDesc";
 export type ViewMode = "grid" | "list";
-export type CardSize = "compact" | "medium" | "large";
+export type FilterCardSize = "compact" | "medium";
 export const PROPERTY_VIEW_MODE_KEY = "alamoudi-property-view-mode";
 export const PROPERTY_CARD_SIZE_KEY = "alamoudi-property-card-size";
 
@@ -28,7 +28,7 @@ export interface PropertyFilterState {
   additionalFeatures: string;
   sort: SortOption;
   viewMode: ViewMode;
-  cardSize: CardSize;
+  cardSize: FilterCardSize;
 }
 
 export const DEFAULT_PROPERTY_FILTERS: PropertyFilterState = {

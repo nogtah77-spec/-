@@ -11,7 +11,6 @@ import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
   PROPERTY_CARD_SIZE_KEY,
-  PROPERTY_VIEW_MODE_KEY,
   type PropertyFilterState,
 } from "@/lib/propertyFilters";
 
@@ -20,17 +19,10 @@ export default function RegionPage({ params }: { params: { regionId: string } })
   const { properties, regions, propertyTypes } = useData();
 
   const region = regions.find(r => r.id === regionId);
-  const getInitialViewMode = () => {
-    try {
-      return localStorage.getItem(PROPERTY_VIEW_MODE_KEY) === "list" ? "list" as const : "grid" as const;
-    } catch {
-      return "grid" as const;
-    }
-  };
   const getInitialCardSize = () => {
     try {
       const stored = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
-      return stored === "medium" || stored === "large" ? stored as "medium" | "large" : "compact" as const;
+      return stored === "medium" ? "medium" as const : "compact" as const;
     } catch {
       return "compact" as const;
     }
@@ -39,20 +31,15 @@ export default function RegionPage({ params }: { params: { regionId: string } })
   const [filters, setFilters] = useState<PropertyFilterState>({
     ...DEFAULT_PROPERTY_FILTERS,
     regionId,
-    viewMode: getInitialViewMode(),
+    viewMode: getInitialCardSize() === "medium" ? "grid" : "list",
     cardSize: getInitialCardSize(),
   });
   const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>({
     ...DEFAULT_PROPERTY_FILTERS,
     regionId,
-    viewMode: getInitialViewMode(),
+    viewMode: getInitialCardSize() === "medium" ? "grid" : "list",
     cardSize: getInitialCardSize(),
   });
-  useEffect(() => {
-    try {
-      localStorage.setItem(PROPERTY_VIEW_MODE_KEY, filters.viewMode);
-    } catch {}
-  }, [filters.viewMode]);
   useEffect(() => {
     try {
       localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
@@ -79,7 +66,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     setAppliedFilters(fixed);
   };
   const resetFilters = () => {
-    const reset = { ...DEFAULT_PROPERTY_FILTERS, regionId, viewMode: filters.viewMode };
+    const reset = { ...DEFAULT_PROPERTY_FILTERS, regionId, viewMode: filters.viewMode, cardSize: filters.cardSize };
     setFilters(reset);
     setAppliedFilters(reset);
   };

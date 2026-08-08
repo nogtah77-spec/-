@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Grid2X2, List, Minus, Plus, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { Grid2X2, List, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -249,32 +249,24 @@ export function PropertyFilterPanel({
               <SelectItem value="areaDesc">المساحة: الأكبر</SelectItem>
             </SelectContent>
           </Select>
-          <span className="mr-2 text-xs text-muted-foreground">حجم البطاقات:</span>
-          <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
-            {([
-              ["compact", "صغير", Minus],
-              ["medium", "متوسط", Grid2X2],
-              ["large", "كبير", Plus],
-            ] as const).map(([value, label, Icon]) => (
-              <button
-                key={value}
-                type="button"
-                aria-label={`حجم البطاقات ${label}`}
-                title={`حجم ${label}`}
-                className={cn("flex items-center gap-1 rounded px-1.5 py-1 text-[11px]", filters.cardSize === value && "bg-accent text-white")}
-                onClick={() => update({ cardSize: value })}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{label}</span>
-              </button>
-            ))}
-          </div>
         </div>
         <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
-          <button type="button" aria-label="عرض شبكي" className={cn("rounded p-1.5", filters.viewMode === "grid" && "bg-accent text-white")} onClick={() => update({ viewMode: "grid" })}>
+          <button
+            type="button"
+            aria-label="بطاقات متوسطة"
+            title="بطاقات متوسطة"
+            className={cn("rounded p-1.5", filters.cardSize === "medium" && "bg-accent text-white")}
+            onClick={() => update({ viewMode: "grid", cardSize: "medium" })}
+          >
             <Grid2X2 className="h-4 w-4" />
           </button>
-          <button type="button" aria-label="عرض قائمة" className={cn("rounded p-1.5", filters.viewMode === "list" && "bg-accent text-white")} onClick={() => update({ viewMode: "list" })}>
+          <button
+            type="button"
+            aria-label="بطاقات صغيرة"
+            title="بطاقات صغيرة"
+            className={cn("rounded p-1.5", filters.cardSize === "compact" && "bg-accent text-white")}
+            onClick={() => update({ viewMode: "list", cardSize: "compact" })}
+          >
             <List className="h-4 w-4" />
           </button>
         </div>

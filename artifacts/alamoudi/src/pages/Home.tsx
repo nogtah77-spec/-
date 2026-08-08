@@ -28,7 +28,6 @@ import {
   filterProperties,
   hasActivePropertyFilters,
   PROPERTY_CARD_SIZE_KEY,
-  PROPERTY_VIEW_MODE_KEY,
   type PropertyFilterState,
 } from "@/lib/propertyFilters";
 
@@ -169,27 +168,22 @@ export default function Home() {
   const { properties, regions, propertyTypes, settings } = useData();
   const [filters, setFilters] = useState<PropertyFilterState>(() => {
     try {
-      const stored = localStorage.getItem(PROPERTY_VIEW_MODE_KEY);
       const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
-      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: stored === "list" ? "list" : "grid", cardSize: cardSize === "medium" || cardSize === "large" ? cardSize : "compact" };
+      const medium = cardSize === "medium";
+      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: medium ? "grid" : "list", cardSize: medium ? "medium" : "compact" };
     } catch {
       return DEFAULT_PROPERTY_FILTERS;
     }
   });
   const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(() => {
     try {
-      const stored = localStorage.getItem(PROPERTY_VIEW_MODE_KEY);
       const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
-      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: stored === "list" ? "list" : "grid", cardSize: cardSize === "medium" || cardSize === "large" ? cardSize : "compact" };
+      const medium = cardSize === "medium";
+      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: medium ? "grid" : "list", cardSize: medium ? "medium" : "compact" };
     } catch {
       return DEFAULT_PROPERTY_FILTERS;
     }
   });
-  useEffect(() => {
-    try {
-      localStorage.setItem(PROPERTY_VIEW_MODE_KEY, filters.viewMode);
-    } catch {}
-  }, [filters.viewMode]);
   useEffect(() => {
     try {
       localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
@@ -243,7 +237,7 @@ export default function Home() {
 
   const clearFilters = () => {
     const viewMode = filters.viewMode;
-    const reset = { ...DEFAULT_PROPERTY_FILTERS, viewMode };
+    const reset = { ...DEFAULT_PROPERTY_FILTERS, viewMode, cardSize: filters.cardSize };
     setFilters(reset);
     setAppliedFilters(reset);
   };
