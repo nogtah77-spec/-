@@ -289,13 +289,16 @@
 }
 
 .login-card {
-  background: linear-gradient(145deg, rgba(9, 10, 10, 0.54), rgba(0, 0, 0, 0.3));
+  /* Real glass: the scene must remain visible through the panel. Keep the
+     dark tint subtle and let the border/shadow define the card instead of a
+     solid gray fill, especially on mobile Safari. */
+  background: linear-gradient(145deg, rgba(9, 10, 10, 0.18), rgba(0, 0, 0, 0.08));
   border: 1px solid rgba(255, 247, 229, 0.26);
   box-shadow:
     0 28px 80px rgba(0, 0, 0, 0.42),
     inset 0 1px 0 rgba(255, 249, 234, 0.16);
-  -webkit-backdrop-filter: blur(26px) saturate(140%);
-  backdrop-filter: blur(26px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
 }
 
 .login-brand-name {
@@ -338,15 +341,6 @@
 }
 
 @media (max-width: 640px) {
-  /* Keep the uploaded scene readable around the shared desktop/mobile glass. */
-  .login-background-overlay {
-    opacity: 0.24;
-  }
-
-  .login-background-gradient {
-    opacity: 0.28;
-  }
-
   .login-brand-subtitle {
     margin-top: 1.75rem;
   }
