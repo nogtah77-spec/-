@@ -38,6 +38,8 @@ export const propertiesTable = pgTable("properties", {
   layout: text("layout").notNull().default(""),
   master: text("master").notNull().default(""),
   elevator: text("elevator").notNull().default(""),
+  parking: text("parking").notNull().default(""),
+  additionalFeatures: text("additional_features").notNull().default(""),
   floorText: text("floor_text").notNull().default(""),
   location: text("location").notNull().default(""),
   source: text("source").notNull().default(""),

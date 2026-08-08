@@ -118,7 +118,7 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
     toast({ title: wasIn ? "تمت الإزالة من المقارنة" : "تمت الإضافة للمقارنة" });
   };
 
-  if (size === "compact") {
+  if (size === "compact" && layout === "list") {
     return (
       <Card onClick={goToDetails} className="flex flex-row overflow-hidden border-border shadow-sm group cursor-pointer card-luxury hover:-translate-y-0.5 transition-all duration-200 h-32">
         {/* ── صورة العقار — أكبر بنسبة ~14% ── */}
@@ -174,7 +174,7 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
     );
   }
 
-  const imageHeight = size === "medium" ? "h-36" : "h-52";
+  const imageHeight = size === "large" ? "h-52" : size === "medium" ? "h-36" : "h-32";
   const listMode = layout === "list";
 
   return (
@@ -237,15 +237,21 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
 
       <CardContent className={cn(
         "flex-1 flex flex-col min-w-0",
-        listMode ? "p-3 sm:p-4" : size === "medium" ? "p-4" : "p-5",
+        listMode ? "p-3 sm:p-4" : size === "large" ? "p-5" : "p-3 sm:p-4",
       )}>
         <div className="mb-3 flex items-baseline gap-2">
-          <h3 dir="ltr" className={cn("font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors", size === "medium" ? "text-lg" : "text-xl")}>
+          <h3 dir="ltr" className={cn(
+            "font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors",
+            size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
+          )}>
             {property.code}
           </h3>
           <span className="text-[10px] text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0">CODE</span>
         </div>
-        <div dir="ltr" className={cn("flex items-baseline gap-2.5 font-bold text-accent", size === "medium" ? "text-lg" : "text-xl")}>
+        <div dir="ltr" className={cn(
+          "flex items-baseline gap-2.5 font-bold text-accent",
+          size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
+        )}>
           <span>{property.price.toLocaleString("en-US")}</span>
           <span className="text-xs font-semibold tracking-widest text-muted-foreground">EGP</span>
         </div>
@@ -268,7 +274,7 @@ export function PropertyCard({ isLoading = false, property, size = "large", layo
         "flex-shrink-0 flex flex-col gap-2",
         listMode
           ? "w-full border-t border-border p-3 sm:w-48 sm:border-t-0 sm:border-r sm:p-3 md:w-56"
-          : size === "medium" ? "p-4 pt-0" : "p-5 pt-0",
+          : size === "large" ? "p-5 pt-0" : "p-3 sm:p-4 pt-0",
       )}>
         <div className="flex gap-1.5 w-full">
           <Button onClick={(e) => { e.stopPropagation(); goToDetails(); }} className="flex-1 h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium">

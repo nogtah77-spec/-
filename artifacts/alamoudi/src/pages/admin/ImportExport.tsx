@@ -17,9 +17,9 @@ import {
 } from "@/lib/propertyImport";
 
 const TEMPLATE_HEADERS =
-  "الكود,العنوان,الوصف,النوع,المنطقة,الفئة,الحالة,السعر,المساحة,غرف_النوم,الحمامات,الدور,التشطيب,الفيو,المصدر,مميز,نوع_العرض,رابط_الفيديو,رابط_الخريطة,رابط_خارجي";
+  "الكود,العنوان,الوصف,النوع,المنطقة,الفئة,الحالة,السعر,المساحة,غرف_النوم,الحمامات,الدور,التشطيب,الفيو,موقف_سيارة,مميزات_إضافية,المصدر,مميز,نوع_العرض,رابط_الفيديو,رابط_الخريطة,رابط_خارجي";
 const TEMPLATE_ROW =
-  "ALM-1001,شقة فاخرة بمدينتي,وصف مختصر للعقار,شقة,مدينتي,للبيع,active,2500000,120,3,2,4,super-lux,بحري,مباشر,لا,direct,,,";
+  "ALM-1001,شقة فاخرة بمدينتي,وصف مختصر للعقار,شقة,مدينتي,للبيع,active,2500000,120,3,2,4,super-lux,بحري,يوجد,أمن وجراج,مباشر,لا,direct,,,";
 
 function toCSV(rows: Record<string, unknown>[], headers: string[]): string {
   const escape = (v: unknown) => {
@@ -53,6 +53,8 @@ const FIELD_LABELS: Record<string, string> = {
   externalUrl: "رابط خارجي",
   master: "ماستر",
   elevator: "أسانسير",
+  parking: "موقف سيارة",
+  additionalFeatures: "مميزات إضافية",
   location: "الموقع",
   layout: "التوزيع",
 };
@@ -93,6 +95,8 @@ export default function ImportExport() {
           الدور: p.floor,
           التشطيب: p.finishing,
           الفيو: p.view,
+          موقف_سيارة: p.parking,
+          مميزات_إضافية: p.additionalFeatures,
           الفئة: p.category,
           الحالة: p.status,
           مميز: p.featured ? "نعم" : "لا",

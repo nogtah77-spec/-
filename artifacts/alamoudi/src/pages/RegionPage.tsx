@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -10,6 +10,8 @@ import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
 import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
+  PROPERTY_CARD_SIZE_KEY,
+  PROPERTY_VIEW_MODE_KEY,
   type PropertyFilterState,
 } from "@/lib/propertyFilters";
 
@@ -18,15 +20,44 @@ export default function RegionPage({ params }: { params: { regionId: string } })
   const { properties, regions, propertyTypes } = useData();
 
   const region = regions.find(r => r.id === regionId);
+  const getInitialViewMode = () => {
+    try {
+      return localStorage.getItem(PROPERTY_VIEW_MODE_KEY) === "list" ? "list" as const : "grid" as const;
+    } catch {
+      return "grid" as const;
+    }
+  };
+  const getInitialCardSize = () => {
+    try {
+      const stored = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
+      return stored === "medium" || stored === "large" ? stored as "medium" | "large" : "compact" as const;
+    } catch {
+      return "compact" as const;
+    }
+  };
 
   const [filters, setFilters] = useState<PropertyFilterState>({
     ...DEFAULT_PROPERTY_FILTERS,
     regionId,
+    viewMode: getInitialViewMode(),
+    cardSize: getInitialCardSize(),
   });
   const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>({
     ...DEFAULT_PROPERTY_FILTERS,
     regionId,
+    viewMode: getInitialViewMode(),
+    cardSize: getInitialCardSize(),
   });
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROPERTY_VIEW_MODE_KEY, filters.viewMode);
+    } catch {}
+  }, [filters.viewMode]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
+    } catch {}
+  }, [filters.cardSize]);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   // The supplied Shorouk reference is a finished hero screenshot and already
   // contains its title and breadcrumb. Other city images remain dynamic.
@@ -48,7 +79,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     setAppliedFilters(fixed);
   };
   const resetFilters = () => {
-    const reset = { ...DEFAULT_PROPERTY_FILTERS, regionId };
+    const reset = { ...DEFAULT_PROPERTY_FILTERS, regionId, viewMode: filters.viewMode };
     setFilters(reset);
     setAppliedFilters(reset);
   };
@@ -155,7 +186,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                   <PropertyCard
                     key={p.id}
                     property={p}
-                    size="compact"
+                    size={filters.cardSize}
                     layout={filters.viewMode}
                   />
                 ))}

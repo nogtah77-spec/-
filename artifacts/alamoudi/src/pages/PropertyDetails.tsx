@@ -455,6 +455,8 @@ export default function PropertyDetails() {
                       { label: "التوزيع", value: property.layout || null },
                       { label: "ماستر", value: property.master || null },
                       { label: "أسانسير", value: property.elevator || null },
+                      { label: "موقف سيارة", value: property.parking || null },
+                      { label: "المميزات الإضافية", value: property.additionalFeatures || null },
                       { label: "التشطيب", value: property.finishing ? (finishingLabels[property.finishing] || property.finishing) : null },
                       { label: "الفيو", value: property.view || null },
                       { label: "الموقع", value: property.location || null },

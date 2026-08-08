@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Grid2X2, List, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { Grid2X2, List, Minus, Plus, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -91,7 +91,7 @@ export function PropertyFilterPanel({
 
       <div className="mb-3">
         <p className="mb-2 text-xs font-semibold text-muted-foreground">نوع العرض</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           {CATEGORY_OPTIONS.map((option) => (
             <Chip
               key={option.value}
@@ -105,7 +105,7 @@ export function PropertyFilterPanel({
 
       <div className="mb-3">
         <p className="mb-2 text-xs font-semibold text-muted-foreground">نوع العقار</p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-center gap-2">
           {SECTOR_OPTIONS.map((option) => (
             <Chip
               key={option.value}
@@ -203,9 +203,29 @@ export function PropertyFilterPanel({
               </SelectContent>
             </Select>
           </label>
-          <p className="self-end text-xs leading-5 text-muted-foreground sm:col-span-2 lg:col-span-3">
-            لا تظهر خيارات مواقف السيارات والمميزات الإضافية لأنها غير محفوظة كحقول مستقلة في بيانات العقارات الحالية.
-          </p>
+          <label className="space-y-1.5 text-xs font-medium">
+            <span>موقف سيارة</span>
+            <Select value={filters.parking} onValueChange={(value) => update({ parking: value })}>
+              <SelectTrigger><SelectValue placeholder="الكل" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="يوجد">يوجد موقف سيارة</SelectItem>
+                <SelectItem value="لا يوجد">لا يوجد موقف سيارة</SelectItem>
+                <SelectItem value="خاص">موقف خاص</SelectItem>
+                <SelectItem value="مشترك">موقف مشترك</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="space-y-1.5 text-xs font-medium sm:col-span-2 lg:col-span-2">
+            <span>المميزات الإضافية</span>
+            <Input
+              value={filters.additionalFeatures}
+              onChange={(e) => update({ additionalFeatures: e.target.value })}
+              placeholder="مثال: جراج، أمن، جيم، مسبح، حديقة..."
+            />
+            <span className="block text-[11px] font-normal text-muted-foreground">
+              يبحث داخل موقف السيارة والوصف والموقع وباقي بيانات العقار.
+            </span>
+          </label>
           <div className="flex items-end gap-2">
             <Button type="button" className="h-9 flex-1 gap-1.5 bg-accent text-white hover:bg-accent/90" onClick={() => onApply(filters)}>
               <Search className="h-4 w-4" /> تطبيق الفلاتر
@@ -218,7 +238,7 @@ export function PropertyFilterPanel({
       )}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs text-muted-foreground">ترتيب حسب:</span>
           <Select value={filters.sort} onValueChange={(value) => update({ sort: value as PropertyFilterState["sort"] }, true)}>
             <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
@@ -229,6 +249,26 @@ export function PropertyFilterPanel({
               <SelectItem value="areaDesc">المساحة: الأكبر</SelectItem>
             </SelectContent>
           </Select>
+          <span className="mr-2 text-xs text-muted-foreground">حجم البطاقات:</span>
+          <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
+            {([
+              ["compact", "صغير", Minus],
+              ["medium", "متوسط", Grid2X2],
+              ["large", "كبير", Plus],
+            ] as const).map(([value, label, Icon]) => (
+              <button
+                key={value}
+                type="button"
+                aria-label={`حجم البطاقات ${label}`}
+                title={`حجم ${label}`}
+                className={cn("flex items-center gap-1 rounded px-1.5 py-1 text-[11px]", filters.cardSize === value && "bg-accent text-white")}
+                onClick={() => update({ cardSize: value })}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-center gap-1 rounded-md border border-border p-0.5">
           <button type="button" aria-label="عرض شبكي" className={cn("rounded p-1.5", filters.viewMode === "grid" && "bg-accent text-white")} onClick={() => update({ viewMode: "grid" })}>

@@ -37,6 +37,8 @@ export interface Property {
   layout?: string;
   master?: string;
   elevator?: string;
+  parking?: string;
+  additionalFeatures?: string;
   floorText?: string;
   location?: string;
   source?: string;

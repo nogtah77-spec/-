@@ -4,6 +4,9 @@ export type ListingCategory = "all" | "sale" | "rent" | "furnished";
 export type PropertySector = "all" | "residential" | "commercial" | "administrative" | "medical";
 export type SortOption = "newest" | "priceAsc" | "priceDesc" | "areaDesc";
 export type ViewMode = "grid" | "list";
+export type CardSize = "compact" | "medium" | "large";
+export const PROPERTY_VIEW_MODE_KEY = "alamoudi-property-view-mode";
+export const PROPERTY_CARD_SIZE_KEY = "alamoudi-property-card-size";
 
 export interface PropertyFilterState {
   searchText: string;
@@ -21,8 +24,11 @@ export interface PropertyFilterState {
   finishing: string;
   floor: string;
   elevator: string;
+  parking: string;
+  additionalFeatures: string;
   sort: SortOption;
   viewMode: ViewMode;
+  cardSize: CardSize;
 }
 
 export const DEFAULT_PROPERTY_FILTERS: PropertyFilterState = {
@@ -41,8 +47,11 @@ export const DEFAULT_PROPERTY_FILTERS: PropertyFilterState = {
   finishing: "",
   floor: "",
   elevator: "",
+  parking: "",
+  additionalFeatures: "",
   sort: "newest",
   viewMode: "grid",
+  cardSize: "compact",
 };
 
 export const SECTOR_OPTIONS: Array<{ value: PropertySector; label: string }> = [
@@ -69,6 +78,68 @@ const SECTOR_TYPE_GROUPS: Record<Exclude<PropertySector, "all" | "residential">,
 const normalise = (value: unknown) => String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 const normaliseFinishing = (value: unknown) => normalise(value).replace(/\s+/g, "");
 const numberValue = (value: string) => (value.trim() ? Number(value) : null);
+const normaliseArabic = (value: unknown) =>
+  normalise(value)
+    .replace(/[إأآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه");
+
+const FEATURE_SYNONYMS: Record<string, string[]> = {
+  "موقف سيارة": ["موقف سيارة", "موقف سيارات", "جراج", "باركينج", "parking", "garage"],
+  "جراج": ["موقف سيارة", "موقف سيارات", "جراج", "باركينج", "parking", "garage"],
+  "باركينج": ["موقف سيارة", "موقف سيارات", "جراج", "باركينج", "parking", "garage"],
+  "حمام سباحة": ["حمام سباحة", "مسبح", "swimming pool", "pool"],
+  "أمن": ["امن", "حراسة", "security", "guard"],
+  "جيم": ["جيم", "نادي صحي", "gym", "fitness"],
+};
+
+function featureTerms(query: string): string[] {
+  const value = normaliseArabic(query);
+  const terms = new Set([value]);
+  for (const [key, synonyms] of Object.entries(FEATURE_SYNONYMS)) {
+    if (value.includes(normaliseArabic(key)) || synonyms.some((term) => value.includes(normaliseArabic(term)))) {
+      synonyms.forEach((term) => terms.add(normaliseArabic(term)));
+    }
+  }
+  return [...terms].filter(Boolean);
+}
+
+function matchesFeatureQuery(property: Property, query: string): boolean {
+  const terms = featureTerms(query);
+  const text = normaliseArabic([
+    property.description,
+    property.title,
+    property.location,
+    property.subArea,
+    property.view,
+    property.unitType,
+    property.layout,
+    property.master,
+    property.finishing,
+    property.parking,
+    property.additionalFeatures,
+  ].join(" "));
+  const negativeMarkers = ["لا يوجد", "بدون", "غير متوفر", "لايتوفر", "منغير"];
+  return terms.some((term) => {
+    const index = text.indexOf(term);
+    if (index < 0) return false;
+    const nearby = text.slice(Math.max(0, index - 18), index);
+    return !negativeMarkers.some((marker) => nearby.includes(marker));
+  });
+}
+
+function matchesParking(property: Property, requested: string): boolean {
+  const value = normaliseArabic(property.parking);
+  const wanted = normaliseArabic(requested);
+  if (!wanted) return true;
+  if (wanted === "يوجد" || wanted === "نعم") {
+    return Boolean(value) && !["لا", "لايوجد", "بدون", "غيرمتوفر"].some((word) => value.includes(word));
+  }
+  if (wanted === "لايوجد" || wanted === "لا" || wanted === "بدون") {
+    return !value || ["لا", "لايوجد", "بدون", "غيرمتوفر"].some((word) => value.includes(word));
+  }
+  return value.includes(wanted);
+}
 
 function matchesSector(property: Property, sector: PropertySector): boolean {
   if (sector === "all") return true;
@@ -108,6 +179,8 @@ export function filterProperties(
     if (filters.finishing && normaliseFinishing(property.finishing) !== normaliseFinishing(filters.finishing)) return false;
     if (filters.floor && ![String(property.floor), property.floorText ?? ""].some((value) => normalise(value).includes(normalise(filters.floor)))) return false;
     if (filters.elevator && normalise(property.elevator) !== normalise(filters.elevator)) return false;
+    if (filters.parking && !matchesParking(property, filters.parking)) return false;
+    if (filters.additionalFeatures && !matchesFeatureQuery(property, filters.additionalFeatures)) return false;
     if (filters.location) {
       const location = normalise(filters.location);
       const searchableLocation = normalise([property.location, property.subArea, property.view].join(" "));
@@ -123,6 +196,8 @@ export function filterProperties(
         property.finishing,
         property.view,
         property.unitType,
+        property.parking,
+        property.additionalFeatures,
         regionNames.get(property.regionId),
         typeNames.get(property.typeId),
       ].join(" "));
@@ -154,6 +229,8 @@ export function hasActivePropertyFilters(filters: PropertyFilterState): boolean 
     filters.finishing ||
     filters.floor ||
     filters.elevator ||
+    filters.parking ||
+    filters.additionalFeatures ||
     filters.category !== "all" ||
     filters.sector !== "all",
   );

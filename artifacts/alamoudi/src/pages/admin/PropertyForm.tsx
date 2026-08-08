@@ -49,6 +49,8 @@ export default function PropertyForm() {
     layout: existing?.layout ?? "",
     master: existing?.master ?? "",
     elevator: existing?.elevator ?? "",
+    parking: existing?.parking ?? "",
+    additionalFeatures: existing?.additionalFeatures ?? "",
     floorText: existing?.floorText ?? "",
     location: existing?.location ?? "",
     source: existing?.source ?? (existing?.code ? SEED_SOURCES[existing.code] ?? "" : ""),
@@ -196,6 +198,14 @@ export default function PropertyForm() {
                   <div className="space-y-2">
                     <Label>أسانسير</Label>
                     <Input value={form.elevator} onChange={e => set("elevator", e.target.value)} placeholder="نعم / لا" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>موقف سيارة</Label>
+                    <Input value={form.parking} onChange={e => set("parking", e.target.value)} placeholder="يوجد / لا يوجد / خاص / مشترك" />
+                  </div>
+                  <div className="space-y-2 col-span-2 sm:col-span-3">
+                    <Label>المميزات الإضافية</Label>
+                    <Input value={form.additionalFeatures} onChange={e => set("additionalFeatures", e.target.value)} placeholder="جراج، أمن، جيم، مسبح، حديقة..." />
                   </div>
                   <div className="space-y-2 col-span-2 sm:col-span-3">
                     <Label>الموقع</Label>

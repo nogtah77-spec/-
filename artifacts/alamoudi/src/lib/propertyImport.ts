@@ -28,6 +28,8 @@ export interface ParsedProperty {
   layout?: string;
   master?: string;
   elevator?: string;
+  parking?: string;
+  additionalFeatures?: string;
   floorText?: string;
   location?: string;
   source?: string;
@@ -197,6 +199,8 @@ const FIELD_ALIASES: Record<string, string[]> = {
   master:    ["ماستر", "master"],
   finishing: ["التشطيب", "تشطيب", "finishing"],
   elevator:  ["أسانسير", "اسانسير", "مصعد", "elevator", "lift"],
+  parking:   ["موقف سيارة", "موقف سيارات", "موقف_سيارة", "جراج", "باركينج", "parking", "garage"],
+  additionalFeatures: ["مميزات إضافية", "المميزات الإضافية", "مميزات_إضافية", "المميزات_الإضافية", "additional features", "additionalfeatures", "features"],
   view:      ["الفيو", "فيو", "الإطلالة", "إطلالة", "view"],
   price:     ["السعر", "سعر", "price"],
   source:    ["المصدر", "مصدر", "source"],
@@ -240,6 +244,12 @@ const HEADER_FIELD: Record<string, string> = {
   "التشطيب": "finishing",
   "أسانسير": "elevator",
   "اسانسير": "elevator",
+  "موقف سيارة": "parking",
+  "موقف سيارات": "parking",
+  "جراج": "parking",
+  "باركينج": "parking",
+  "مميزات إضافية": "additionalFeatures",
+  "المميزات الإضافية": "additionalFeatures",
   "الفيو": "view",
   "السعر": "price",
   "المصدر": "source",
@@ -287,6 +297,8 @@ function rowToProperty(
   const master = get("master");
   const finishing = get("finishing");
   const elevator = get("elevator");
+  const parking = get("parking");
+  const additionalFeatures = get("additionalFeatures");
   const view = get("view");
   const priceRaw = get("price");
   const source = get("source");
@@ -308,6 +320,7 @@ function rowToProperty(
       layout || "",
       finishing ? `التشطيب: ${finishing}` : "",
       view ? `الفيو: ${view}` : "",
+      additionalFeatures ? `مميزات إضافية: ${additionalFeatures}` : "",
     ]),
     price,
     area,
@@ -332,6 +345,8 @@ function rowToProperty(
     layout,
     master,
     elevator,
+    parking,
+    additionalFeatures,
     floorText: arabicToWestern(floorText),
     location,
     source,
@@ -505,6 +520,8 @@ export function parseDelimitedText(
     const location = pick(cells, "location");
     const master = pick(cells, "master");
     const elevator = pick(cells, "elevator");
+    const parking = pick(cells, "parking");
+    const additionalFeatures = pick(cells, "additionalFeatures");
     const subArea = pick(cells, "subArea");
     const videoUrl = pick(cells, "videoUrl");
     const mapsUrl = pick(cells, "mapsUrl");
@@ -558,6 +575,8 @@ export function parseDelimitedText(
       layout: arabicToWestern(layoutRaw),
       master,
       elevator,
+      parking,
+      additionalFeatures,
       floorText: arabicToWestern(floorRaw),
       location,
       source,

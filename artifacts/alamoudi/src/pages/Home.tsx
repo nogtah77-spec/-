@@ -27,6 +27,8 @@ import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
   hasActivePropertyFilters,
+  PROPERTY_CARD_SIZE_KEY,
+  PROPERTY_VIEW_MODE_KEY,
   type PropertyFilterState,
 } from "@/lib/propertyFilters";
 
@@ -165,8 +167,34 @@ function TiktokCard({
 
 export default function Home() {
   const { properties, regions, propertyTypes, settings } = useData();
-  const [filters, setFilters] = useState<PropertyFilterState>(DEFAULT_PROPERTY_FILTERS);
-  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(DEFAULT_PROPERTY_FILTERS);
+  const [filters, setFilters] = useState<PropertyFilterState>(() => {
+    try {
+      const stored = localStorage.getItem(PROPERTY_VIEW_MODE_KEY);
+      const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
+      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: stored === "list" ? "list" : "grid", cardSize: cardSize === "medium" || cardSize === "large" ? cardSize : "compact" };
+    } catch {
+      return DEFAULT_PROPERTY_FILTERS;
+    }
+  });
+  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(() => {
+    try {
+      const stored = localStorage.getItem(PROPERTY_VIEW_MODE_KEY);
+      const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
+      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: stored === "list" ? "list" : "grid", cardSize: cardSize === "medium" || cardSize === "large" ? cardSize : "compact" };
+    } catch {
+      return DEFAULT_PROPERTY_FILTERS;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROPERTY_VIEW_MODE_KEY, filters.viewMode);
+    } catch {}
+  }, [filters.viewMode]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
+    } catch {}
+  }, [filters.cardSize]);
   const resolve = (p: any) => ({
     ...p,
     typeName: propertyTypes.find((t) => t.id === p.typeId)?.name,
@@ -214,8 +242,10 @@ export default function Home() {
   };
 
   const clearFilters = () => {
-    setFilters(DEFAULT_PROPERTY_FILTERS);
-    setAppliedFilters(DEFAULT_PROPERTY_FILTERS);
+    const viewMode = filters.viewMode;
+    const reset = { ...DEFAULT_PROPERTY_FILTERS, viewMode };
+    setFilters(reset);
+    setAppliedFilters(reset);
   };
 
   const heroImage =
@@ -333,7 +363,7 @@ export default function Home() {
                     <PropertyCard
                       key={p.id}
                       property={p}
-                      size="compact"
+                      size={filters.cardSize}
                       layout={filters.viewMode}
                     />
                   ))}
