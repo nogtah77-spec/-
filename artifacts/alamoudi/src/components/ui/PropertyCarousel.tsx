@@ -325,7 +325,7 @@ export function PropertyCarousel({
 
   return (
     <div
-      className={cn("relative overflow-hidden", className)}
+      className={cn("relative overflow-visible", className)}
       onMouseEnter={pauseForInteraction}
       onMouseLeave={() => resumeAfterInteraction(1000)}
       onTouchStart={pauseForInteraction}
@@ -348,7 +348,7 @@ export function PropertyCarousel({
       <div
         ref={viewportRef}
         dir="ltr"
-        className="overflow-hidden pb-2"
+        className="overflow-hidden pb-3 pt-3"
         style={{ touchAction: "pan-y" }}
       >
         <div
@@ -365,7 +365,7 @@ export function PropertyCarousel({
           {trackProperties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 w-[96vw] sm:w-[60vw] md:w-[430px] lg:w-[430px]"
+              className="flex-shrink-0 w-[98vw] sm:w-[62vw] md:w-[440px] lg:w-[440px]"
             >
               <PropertyCard property={property} size={size} layout={layout} emphasized={emphasized} />
             </div>

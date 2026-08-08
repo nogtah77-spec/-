@@ -149,7 +149,14 @@ export function PropertyCard({
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
           <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-1">
-            <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+            <div className="flex min-w-0 flex-wrap items-center gap-1">
+              <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+              {property.typeName && (
+                <span className="inline-flex max-w-[58%] truncate rounded-full border border-accent/45 bg-black/45 px-2 py-0.5 text-[9px] font-bold text-accent backdrop-blur-sm">
+                  {property.typeName}
+                </span>
+              )}
+            </div>
           </div>
           <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
             {propHasVideo && (
@@ -178,24 +185,19 @@ export function PropertyCard({
                   emphasized ? "text-base" : "text-xs",
                 )}>{property.code}</h3>
               </div>
-              {property.typeName && (
-                <span className="inline-flex max-w-[42%] shrink-0 truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent">
-                  {property.typeName}
-                </span>
-              )}
             </div>
             <p className="flex items-center gap-1 text-[10px] text-muted-foreground line-clamp-1">
               <MapPin className="h-3 w-3 shrink-0 text-accent" />
               {[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}
             </p>
             {property.finishing && (
-              <p dir="rtl" className="mt-1 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
+              <p dir="rtl" className="mt-2 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
                 {property.finishing}
               </p>
             )}
           </div>
 
-          <div className="mt-1.5 flex items-end justify-between gap-2">
+          <div className="mt-2 flex flex-nowrap items-end justify-between gap-3 whitespace-nowrap">
             <div dir="ltr" className="flex min-w-0 items-baseline gap-1">
               <span className={cn("truncate font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
               <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/70">EGP</span>
@@ -242,8 +244,13 @@ export function PropertyCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
          <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-            <div className="flex flex-wrap gap-1.5 max-w-[68%]">
-             <Badge className="rounded-full bg-accent text-white border-none text-[11px] px-2.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+            <div className="flex max-w-[68%] flex-wrap items-center gap-1.5">
+              <Badge className="rounded-full bg-accent text-white border-none text-[11px] px-2.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+              {property.typeName && (
+                <span className="inline-flex max-w-[55%] truncate rounded-full border border-accent/45 bg-black/45 px-2.5 py-0.5 text-[10px] font-bold text-accent backdrop-blur-sm">
+                  {property.typeName}
+                </span>
+              )}
            </div>
            <div className="flex shrink-0 gap-1.5">
              <Button
@@ -309,7 +316,7 @@ export function PropertyCard({
       )}>
         <div className={cn("flex items-start justify-between gap-3", emphasized ? "mb-3" : "mb-4")}>
           <div className="min-w-0">
-            <div className="mb-2 flex items-center gap-2">
+             <div className="mb-2 flex items-center gap-2">
               <div dir="ltr" className={cn(
                 "inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-accent/50 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-2 py-1 shadow-[0_5px_16px_rgba(180,152,107,0.16),inset_0_1px_0_rgba(255,255,255,0.1)]",
                 emphasized ? "sm:px-2.5 sm:py-1.5" : "",
@@ -324,7 +331,7 @@ export function PropertyCard({
                 )}>
                   {property.code}
                 </h3>
-              </div>
+             </div>
             </div>
             <p className={cn("flex items-center gap-1.5 text-foreground/75 line-clamp-1", emphasized ? "text-sm" : "text-xs")}>
               <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
