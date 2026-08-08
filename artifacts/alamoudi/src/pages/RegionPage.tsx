@@ -111,18 +111,18 @@ export default function RegionPage({ params }: { params: { regionId: string } })
           ) : (
             <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
           )}
-          <div className="absolute inset-0 bg-primary/45" />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/75 via-primary/20 to-primary/35" />
+          <div className="absolute inset-0 bg-black/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
           {!heroContainsPageHeading && (
             <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
-              <div className="max-w-3xl">
-                <h1 className="text-2xl font-extrabold tracking-tight drop-shadow-md sm:text-3xl md:text-5xl">
+              <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
+                <h1 className="font-sans text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl md:text-5xl">
                   {region.name}
                 </h1>
-                <nav aria-label="التنقل" className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-white/80 sm:text-sm">
+                <nav aria-label="التنقل" className="mt-5 flex items-center justify-center gap-2.5 text-xs font-semibold text-white/95 sm:mt-7 sm:gap-3 sm:text-sm">
                   <Link href="/" className="transition-colors hover:text-accent">الرئيسية</Link>
-                  <ChevronRight className="h-3.5 w-3.5 rotate-180" />
-                  <span>{region.name}</span>
+                  <ChevronRight className="h-4 w-4 rotate-180 text-white/75" />
+                  <span className="text-white">{region.name}</span>
                 </nav>
               </div>
             </div>

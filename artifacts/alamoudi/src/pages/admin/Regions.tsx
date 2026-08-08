@@ -76,6 +76,14 @@ export default function Regions() {
 
   const clearHeroImage = () => setHeroImage("");
 
+  const removeSavedHeroImage = () => {
+    setHeroImage("");
+    toast({
+      title: "تمت إزالة الصورة من التعديل",
+      description: "اضغط «حفظ» لتأكيد حذف صورة الغلاف من المنطقة.",
+    });
+  };
+
   const renderHeroEditor = () => (
     <div className="space-y-3">
       <Label>صورة غلاف المدينة</Label>
@@ -103,6 +111,17 @@ export default function Regions() {
         <Upload className="h-4 w-4" />
         {heroImage.startsWith("data:") ? "تغيير الصورة المرفوعة" : "رفع صورة من الجهاز"}
       </Button>
+      {editTarget && heroImage && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+          onClick={removeSavedHeroImage}
+        >
+          <Trash2 className="h-4 w-4" />
+          حذف صورة الغلاف الحالية
+        </Button>
+      )}
       <p className="text-[11px] text-muted-foreground">PNG أو JPG أو WEBP — بحد أقصى 4 ميجابايت.</p>
       <div className="space-y-2">
         <Label htmlFor="regionHeroUrl">أو رابط صورة الغلاف</Label>
