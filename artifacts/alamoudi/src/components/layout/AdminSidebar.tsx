@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import {
-  LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings,
+  LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings, FileCheck2,
   BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ const sidebarItems = [
   { href: "/admin/properties", label: "العقارات", icon: Building2 },
   { href: "/admin/regions", label: "المناطق", icon: MapPin },
   { href: "/admin/property-types", label: "أنواع العقارات", icon: Home },
+  { href: "/admin/contracts", label: "العقود", icon: FileCheck2 },
   { href: "/admin/users", label: "المستخدمين", icon: Users },
   { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck },
   { separator: true },

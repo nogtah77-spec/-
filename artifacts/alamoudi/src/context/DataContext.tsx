@@ -144,6 +144,73 @@ export interface CustomerPropertyRequest {
   createdAt: string;
 }
 
+export type ContractType = "rent" | "furnished_rent" | "sale" | "installment";
+export type ContractStatus = "draft" | "active" | "completed" | "cancelled";
+export type ContractInstallmentStatus = "pending" | "paid" | "overdue";
+
+export interface ContractDocument {
+  id: string;
+  objectPath: string;
+  name: string;
+  contentType: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface ContractInstallment {
+  id: string;
+  dueDate: string;
+  amount: string;
+  status: ContractInstallmentStatus;
+  notes: string;
+}
+
+export interface Contract {
+  id: string;
+  contractNumber: string;
+  contractType: ContractType;
+  status: ContractStatus;
+  propertyId: string;
+  propertyCode: string;
+  propertyTitle: string;
+  propertyType: string;
+  propertyRegion: string;
+  propertyAddress: string;
+  partyOneRole: string;
+  partyOneName: string;
+  partyOnePhone: string;
+  partyOneEmail: string;
+  partyOneNationalId: string;
+  partyOneAddress: string;
+  partyTwoRole: string;
+  partyTwoName: string;
+  partyTwoPhone: string;
+  partyTwoEmail: string;
+  partyTwoNationalId: string;
+  partyTwoAddress: string;
+  startDate: string;
+  endDate: string;
+  signingDate: string;
+  handoverDate: string;
+  renewalDate: string;
+  noticePeriod: string;
+  totalAmount: string;
+  paidAmount: string;
+  remainingAmount: string;
+  insuranceAmount: string;
+  depositAmount: string;
+  currency: string;
+  paymentMethod: string;
+  paymentFrequency: string;
+  nextPaymentDate: string;
+  installments: ContractInstallment[];
+  terms: string;
+  notes: string;
+  documents: ContractDocument[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ActivityLog {
   id: string;
   action: string;
@@ -285,6 +352,7 @@ interface DataContextType {
   propertyRequests: PropertyRequest[];
   aiLeads: AiLead[];
   customerPropertyRequests: CustomerPropertyRequest[];
+  contracts: Contract[];
   activityLogs: ActivityLog[];
   visitorStats: VisitorStats;
   settings: SiteSettings;
@@ -321,6 +389,9 @@ interface DataContextType {
   addCustomerPropertyRequest: (request: Omit<CustomerPropertyRequest, "id" | "createdAt" | "status">) => Promise<boolean>;
   updateCustomerPropertyRequest: (id: string, request: Partial<Omit<CustomerPropertyRequest, "id" | "createdAt">>) => Promise<boolean>;
   deleteCustomerPropertyRequest: (id: string) => void;
+  addContract: (contract: Omit<Contract, "id" | "createdAt" | "updatedAt" | "contractNumber"> & { contractNumber?: string }) => Promise<boolean>;
+  updateContract: (id: string, contract: Partial<Omit<Contract, "id" | "createdAt" | "updatedAt">>) => Promise<boolean>;
+  deleteContract: (id: string) => Promise<boolean>;
   reloadAiLeads: () => Promise<void>;
   updateAiLeadStatus: (id: string, status: AiLead["status"]) => void;
   deleteAiLead: (id: string) => void;
@@ -391,6 +462,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
   const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
   const [customerPropertyRequests, setCustomerPropertyRequests] = useState<CustomerPropertyRequest[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
@@ -403,7 +475,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     const [
       regionsR, typesR, propertiesR, settingsR,
-       usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, aiLeadsR, activityR, visitorStatsR,
+       usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR,
     ] = await Promise.allSettled([
       api.get<Region[]>("/regions"),
       api.get<PropertyType[]>("/property-types"),
@@ -414,6 +486,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       api.get<FinishingRequest[]>("/finishing-requests"),
       api.get<PropertyRequest[]>("/property-requests"),
       api.get<CustomerPropertyRequest[]>("/customer-property-requests"),
+      api.get<Contract[]>("/contracts"),
       api.get<AiLead[]>("/ai/leads"),
       api.get<ActivityLog[]>("/activity-logs"),
       api.get<VisitorStats>("/visitors/stats"),
@@ -432,6 +505,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
     setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
     setCustomerPropertyRequests(customerPropertyRequestsR.status === "fulfilled" ? customerPropertyRequestsR.value : []);
+    setContracts(contractsR.status === "fulfilled" ? contractsR.value : []);
     if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
     if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
     if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
@@ -533,16 +607,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
           api.get<FinishingRequest[]>("/finishing-requests"),
            api.get<PropertyRequest[]>("/property-requests"),
            api.get<CustomerPropertyRequest[]>("/customer-property-requests"),
+           api.get<Contract[]>("/contracts"),
           api.get<AiLead[]>("/ai/leads"),
           api.get<ActivityLog[]>("/activity-logs"),
           api.get<VisitorStats>("/visitors/stats"),
-        ]).then(([usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, aiLeadsR, activityR, visitorStatsR]) => {
+         ]).then(([usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR]) => {
           if (destroyed) return;
           setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
           setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
           setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
           setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
           setCustomerPropertyRequests(customerPropertyRequestsR.status === "fulfilled" ? customerPropertyRequestsR.value : []);
+           setContracts(contractsR.status === "fulfilled" ? contractsR.value : []);
           if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
           if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
           if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
@@ -758,6 +834,54 @@ export function DataProvider({ children }: { children: ReactNode }) {
     persist(api.del(`/customer-property-requests/${id}`));
   };
 
+  const addContract = async (contract: Omit<Contract, "id" | "createdAt" | "updatedAt" | "contractNumber"> & { contractNumber?: string }) => {
+    try {
+      const saved = await api.post<Contract>("/contracts", contract);
+      setContracts((current) => [saved, ...current]);
+      return true;
+    } catch (err: unknown) {
+      const apiError = err as { status?: number; message?: string };
+      toast({
+        title: "تعذّر حفظ العقد",
+        description: apiError.status === 401 ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى." : apiError.message || "تعذّر حفظ العقد على الخادم",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const updateContract = async (id: string, contract: Partial<Omit<Contract, "id" | "createdAt" | "updatedAt">>) => {
+    try {
+      const saved = await api.patch<Contract>(`/contracts/${id}`, contract);
+      setContracts((current) => current.map((item) => item.id === id ? saved : item));
+      return true;
+    } catch (err: unknown) {
+      const apiError = err as { status?: number; message?: string };
+      toast({
+        title: "تعذّر تحديث العقد",
+        description: apiError.status === 401 ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى." : apiError.message || "تعذّر تحديث العقد على الخادم",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const deleteContract = async (id: string) => {
+    try {
+      await api.del(`/contracts/${id}`);
+      setContracts((current) => current.filter((item) => item.id !== id));
+      return true;
+    } catch (err: unknown) {
+      const apiError = err as { status?: number; message?: string };
+      toast({
+        title: "تعذّر حذف العقد",
+        description: apiError.status === 401 ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى." : apiError.message || "تعذّر حذف العقد على الخادم",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const updateAiLeadStatus = (id: string, status: AiLead["status"]) => {
     setAiLeads(p => p.map(x => x.id === id ? { ...x, status } : x));
     persist(api.patch(`/ai/leads/${id}`, { status }));
@@ -821,7 +945,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   return (
     <DataContext.Provider value={{
       ready, fetching, reload,
-       regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, customerPropertyRequests, activityLogs, settings,
+       regions, propertyTypes, properties, users, inquiries, finishingRequests, propertyRequests, aiLeads, customerPropertyRequests, contracts, activityLogs, settings,
       visitorStats,
       trackPropertyView, refreshVisitorStats,
       updateSettings,
@@ -834,6 +958,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addFinishingRequest, updateFinishingRequestStatus, deleteFinishingRequest,
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
       addCustomerPropertyRequest, updateCustomerPropertyRequest, deleteCustomerPropertyRequest,
+      addContract, updateContract, deleteContract,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
       addAd, updateAd, deleteAd, reorderAds, trackAdView, trackAdClick,
     }}>

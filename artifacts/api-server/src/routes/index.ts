@@ -19,6 +19,8 @@ import activityLogsRouter from "./activityLogs";
 import visitorsRouter from "./visitors";
 import finishingGalleryRouter from "./finishingGallery";
 import aboutPageRouter from "./aboutPage";
+import storageRouter from "./storage";
+import contractsRouter from "./contracts";
 
 const router: IRouter = Router();
 
@@ -42,5 +44,7 @@ router.use(activityLogsRouter);
 router.use(visitorsRouter);
 router.use(finishingGalleryRouter);
 router.use(aboutPageRouter);
+  router.use(storageRouter);
+  router.use(contractsRouter);
 
 export default router;
