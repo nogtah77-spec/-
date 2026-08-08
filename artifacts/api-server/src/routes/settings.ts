@@ -15,6 +15,9 @@ router.get("/settings", async (_req, res): Promise<void> => {
   } as Record<string, unknown>;
   // Exclude large gallery blobs from app startup payload — served via /api/finishing-gallery
   delete data.finishingGallery;
+  // Region hero images have a dedicated /api/regions response. Keeping them
+  // out of the general settings payload avoids sending large Data URLs twice.
+  delete data.regionHeroImages;
   // Never expose stored third-party API credentials to public callers
   delete data.bannerServices;
   res.json(data);
@@ -34,6 +37,9 @@ router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
     allowCustomerImageDownloads: body.allowCustomerImageDownloads ?? true,
     allowStaffImageDownloads: body.allowStaffImageDownloads ?? true,
     finishingGallery: existing.finishingGallery,
+    // Region hero images may be stored here when production has not yet
+    // received the optional regions.hero_image column.
+    regionHeroImages: existing.regionHeroImages,
     // Service API keys are managed via /api/smart-banners/services; never let a
     // general settings save overwrite or erase them.
     bannerServices: existing.bannerServices,

@@ -239,10 +239,10 @@ interface DataContextType {
   trackPropertyView: (id: string) => void;
   refreshVisitorStats: () => Promise<void>;
   updateSettings: (s: Partial<SiteSettings>) => void;
-  addRegion: (name: string, heroImage?: string) => void;
-  updateRegion: (id: string, name: string, heroImage?: string) => void;
-  deleteRegion: (id: string) => void;
-  toggleRegion: (id: string) => void;
+  addRegion: (name: string, heroImage?: string) => Promise<boolean>;
+  updateRegion: (id: string, name: string, heroImage?: string) => Promise<boolean>;
+  deleteRegion: (id: string) => Promise<boolean>;
+  toggleRegion: (id: string) => Promise<boolean>;
   addPropertyType: (name: string) => void;
   updatePropertyType: (id: string, name: string) => void;
   deletePropertyType: (id: string) => void;
@@ -496,24 +496,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addRegion = (name: string, heroImage = "") => {
+  const addRegion = async (name: string, heroImage = "") => {
     const region: Region = { id: genId(), name, active: true, heroImage };
     setRegions(p => [...p, region]);
-    persist(api.post("/regions", region));
+    return persist(api.post("/regions", region));
   };
-  const updateRegion = (id: string, name: string, heroImage?: string) => {
+  const updateRegion = async (id: string, name: string, heroImage?: string) => {
     setRegions(p => p.map(r => r.id === id ? { ...r, name, ...(heroImage !== undefined ? { heroImage } : {}) } : r));
-    persist(api.patch(`/regions/${id}`, { name, ...(heroImage !== undefined ? { heroImage } : {}) }));
+    return persist(api.patch(`/regions/${id}`, { name, ...(heroImage !== undefined ? { heroImage } : {}) }));
   };
-  const deleteRegion = (id: string) => {
+  const deleteRegion = async (id: string) => {
     setRegions(p => p.filter(r => r.id !== id));
-    persist(api.del(`/regions/${id}`));
+    return persist(api.del(`/regions/${id}`));
   };
-  const toggleRegion = (id: string) => {
+  const toggleRegion = async (id: string) => {
     const current = regions.find(r => r.id === id);
     const active = !(current?.active ?? true);
     setRegions(p => p.map(r => r.id === id ? { ...r, active } : r));
-    persist(api.patch(`/regions/${id}`, { active }));
+    return persist(api.patch(`/regions/${id}`, { active }));
   };
 
   const addPropertyType = (name: string) => {

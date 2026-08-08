@@ -17,36 +17,51 @@ export default function Regions() {
   const [deleteTarget, setDeleteTarget] = useState<Region | null>(null);
   const [newName, setNewName] = useState("");
   const [heroImage, setHeroImage] = useState("");
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) return;
-    addRegion(newName.trim(), heroImage.trim());
-    setNewName("");
-    setHeroImage("");
-    setShowAddDialog(false);
-    toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+    setSaving(true);
+    try {
+      const saved = await addRegion(newName.trim(), heroImage.trim());
+      if (!saved) return;
+      setNewName("");
+      setHeroImage("");
+      setShowAddDialog(false);
+      toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editTarget || !newName.trim()) return;
-    updateRegion(editTarget.id, newName.trim(), heroImage.trim());
-    setEditTarget(null);
-    setNewName("");
-    setHeroImage("");
-    toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+    setSaving(true);
+    try {
+      const saved = await updateRegion(editTarget.id, newName.trim(), heroImage.trim());
+      if (!saved) return;
+      setEditTarget(null);
+      setNewName("");
+      setHeroImage("");
+      toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    deleteRegion(deleteTarget.id);
+    const deleted = await deleteRegion(deleteTarget.id);
+    if (!deleted) return;
     setDeleteTarget(null);
     toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
   };
 
-  const handleToggle = (id: string) => {
-    toggleRegion(id);
+  const handleToggle = async (id: string) => {
+    const toggled = await toggleRegion(id);
+    if (!toggled) return;
     toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
   };
 
@@ -218,7 +233,7 @@ export default function Regions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>إلغاء</Button>
-            <Button onClick={handleAdd}>حفظ</Button>
+             <Button onClick={handleAdd} disabled={saving}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -238,7 +253,7 @@ export default function Regions() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>
-            <Button onClick={handleEdit}>حفظ</Button>
+             <Button onClick={handleEdit} disabled={saving}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
