@@ -320,8 +320,11 @@ export function PropertyCarousel({
 
   useEffect(() => {
     pausedRef.current = false;
-    scheduleAutoPlay();
+    // Wait until the initial middle copy has been positioned so the first
+    // timed movement always has a real card target.
+    const frame = requestAnimationFrame(() => scheduleAutoPlay());
     return () => {
+      cancelAnimationFrame(frame);
       stopAutoPlay();
       stopMotion();
       if (resumeTimerRef.current !== null) {
