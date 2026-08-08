@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const statusLabels: Record<PropertyStatus, string> = {
   active: "نشط",
@@ -122,18 +123,18 @@ export default function Properties() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">إدارة العقارات</h1>
-            <p className="text-muted-foreground mt-1">عرض وإدارة جميع العقارات في المنصة</p>
-          </div>
-          <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Link href="/admin/properties/new">
-              <Plus className="ml-2 h-4 w-4" />
-              إضافة عقار جديد
-            </Link>
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="إدارة العقارات"
+          subtitle="عرض وإدارة جميع العقارات في المنصة"
+          actions={
+            <Button asChild className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]">
+              <Link href="/admin/properties/new">
+                <Plus className="h-4 w-4" />
+                إضافة عقار جديد
+              </Link>
+            </Button>
+          }
+        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">

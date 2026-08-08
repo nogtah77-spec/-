@@ -9,6 +9,7 @@ import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { AiLead } from "@/context/DataContext";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const statusColors: Record<AiLead["status"], string> = {
   new: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
@@ -28,13 +29,12 @@ export default function AiLeads() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-accent" />
-            عملاء المستشار الذكي
-          </h1>
-          <p className="text-muted-foreground mt-1">العملاء المحتملون الذين جمعهم المستشار الذكي من المحادثات</p>
-        </div>
+        <AdminPageHeader
+          title="عملاء المستشار الذكي"
+          subtitle="العملاء المحتملون الذين جمعهم المستشار الذكي من المحادثات"
+          eyebrow="الذكاء وخدمة العملاء"
+          icon={Sparkles}
+        />
 
         <div className="flex gap-3 text-sm">
           {Object.entries(statusLabels).map(([k, v]) => {

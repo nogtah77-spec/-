@@ -7,6 +7,7 @@ import { Wrench, Trash2, Phone } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { FinishingRequest } from "@/context/DataContext";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const statusColors: Record<FinishingRequest["status"], string> = {
   new: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
@@ -22,10 +23,12 @@ export default function FinishingRequests() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">طلبات خدمات التشطيبات</h1>
-          <p className="text-muted-foreground mt-1">الطلبات الواردة من صفحة خدمات التشطيبات</p>
-        </div>
+        <AdminPageHeader
+          title="طلبات خدمات التشطيبات"
+          subtitle="متابعة الطلبات الواردة من صفحة خدمات التشطيبات"
+          eyebrow="خدمات التشطيبات"
+          icon={Wrench}
+        />
 
         <div className="flex gap-3 text-sm">
           {Object.entries(statusLabels).map(([k, v]) => {

@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 interface GalleryImage { id: string; url: string; title: string }
 interface GalleryVideo { id: string; url: string; title: string }
@@ -122,19 +123,18 @@ export default function FinishingGallery() {
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-4xl">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">معرض أعمال التشطيبات</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {config.images.length} صورة · {config.videos.length} فيديو
-            </p>
-          </div>
-          <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90 gap-2">
-            <Save className="h-4 w-4" />
-            {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="معرض أعمال التشطيبات"
+          subtitle={`${config.images.length} صورة · ${config.videos.length} فيديو`}
+          eyebrow="المحتوى المرئي"
+          icon={ImageIcon}
+          actions={
+            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]">
+              <Save className="h-4 w-4" />
+              {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
+            </Button>
+          }
+        />
 
         {/* Interval Setting */}
         <Card className="card-luxury border-none">

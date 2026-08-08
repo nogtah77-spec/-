@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Database, Download, Upload, RefreshCw, CheckCircle2 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const KEYS = ["alamoudi_regions","alamoudi_property_types","alamoudi_properties","alamoudi_users","alamoudi_inquiries","alamoudi_finishing_requests","alamoudi_property_requests","alamoudi_settings","alamoudi_favorites","alamoudi_compare"];
 
@@ -67,10 +68,12 @@ export default function Backup() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">النسخ الاحتياطي</h1>
-          <p className="text-muted-foreground mt-1">تصدير واستيراد واستعادة بيانات المنصة</p>
-        </div>
+        <AdminPageHeader
+          title="النسخ الاحتياطي"
+          subtitle="تصدير واستيراد واستعادة بيانات المنصة"
+          eyebrow="حماية البيانات"
+          icon={Database}
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">

@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange, CalendarClock } from "lucide-react";
+import { Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange, CalendarClock, LineChart } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { RollingNumber } from "@/components/ui/RollingNumber";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   ResponsiveContainer,
   BarChart,
@@ -105,10 +106,12 @@ export default function Analytics() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">التحليلات والتقارير</h1>
-          <p className="text-muted-foreground mt-1">إحصائيات تفصيلية لأداء العقارات والاهتمام بها</p>
-        </div>
+        <AdminPageHeader
+          title="التحليلات والتقارير"
+          subtitle="إحصائيات تفصيلية لأداء العقارات والاهتمام بها"
+          eyebrow="البيانات والأداء"
+          icon={LineChart}
+        />
 
         <div className="space-y-3">
           <h2 className="text-lg font-semibold text-foreground">إحصائيات الزوار</h2>

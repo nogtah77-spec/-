@@ -7,6 +7,7 @@ import { Download, Search, Activity } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { ActivityItem } from "@/components/admin/ActivityItem";
 import { RecentPropertiesPanel } from "@/components/admin/RecentPropertiesPanel";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function ActivityLogs() {
   const { activityLogs, properties, regions, propertyTypes } = useData();
@@ -40,16 +41,23 @@ export default function ActivityLogs() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">سجلات النشاط</h1>
-            <p className="text-muted-foreground mt-1">تتبع التغييرات والإجراءات المتخذة في النظام</p>
-          </div>
-          <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
-            <Download className="ml-2 h-4 w-4" />
-            تصدير السجل
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="سجلات النشاط"
+          subtitle="تتبع التغييرات والإجراءات المتخذة في النظام"
+          eyebrow="المراجعة والمتابعة"
+          icon={Activity}
+          actions={
+            <Button
+              variant="outline"
+              className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+              onClick={exportCsv}
+              disabled={filtered.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              تصدير السجل
+            </Button>
+          }
+        />
 
         <RecentPropertiesPanel
           properties={properties}

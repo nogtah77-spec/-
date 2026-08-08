@@ -7,6 +7,7 @@ import { MessageSquare, Trash2, Phone, Mail } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Inquiry } from "@/context/DataContext";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const statusColors: Record<Inquiry["status"], string> = {
   new: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
@@ -22,10 +23,12 @@ export default function Inquiries() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">استفسارات العملاء</h1>
-          <p className="text-muted-foreground mt-1">إدارة الاستفسارات الواردة من عملاء صفحة الاستشارة العقارية</p>
-        </div>
+        <AdminPageHeader
+          title="استفسارات العملاء"
+          subtitle="متابعة الرسائل الواردة من عملاء الاستشارة العقارية"
+          eyebrow="التواصل مع العملاء"
+          icon={MessageSquare}
+        />
 
         <div className="flex gap-3 text-sm">
           {Object.entries(statusLabels).map(([k, v]) => {

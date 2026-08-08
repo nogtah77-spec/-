@@ -44,6 +44,7 @@ import {
 } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const requestTypes = ["شقة", "فيلا", "قصر", "تاون هاوس", "دوبلكس", "أرض", "محل تجاري", "مكتب إداري", "عيادة طبية", "مصنع/مخزن", "أخرى"];
 const transactionTypes = ["شراء", "إيجار", "استثمار / شراكة"];
@@ -262,28 +263,32 @@ export default function CustomerRequests() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-7xl space-y-6" dir="rtl">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-accent">
-              <ClipboardList className="h-4 w-4" />
-              <span>إدارة احتياجات العملاء</span>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground md:text-3xl">الطلبات العقارية للعملاء</h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-              سجل طلب العميل بالتفصيل، سواء كان العقار متوفرًا حاليًا أو يحتاج إلى بحث وتوفير من فريق العمل.
-            </p>
-          </div>
-          <div className="flex gap-2 self-start sm:self-auto">
-            <Button variant="outline" className="gap-2" onClick={() => void reload()} disabled={fetching}>
-              <RefreshCw className={fetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-              تحديث
-            </Button>
-            <Button className="gap-2" onClick={openCreate}>
-              <Plus className="h-4 w-4" />
-              إضافة طلب عقاري
-            </Button>
-          </div>
-        </div>
+        <AdminPageHeader
+          title="الطلبات العقارية للعملاء"
+          subtitle="تنظيم احتياجات العملاء ومتابعتها حتى إتمام التواصل"
+          eyebrow="إدارة احتياجات العملاء"
+          icon={ClipboardList}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+                onClick={() => void reload()}
+                disabled={fetching}
+              >
+                <RefreshCw className={fetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                تحديث
+              </Button>
+              <Button
+                className="h-10 gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]"
+                onClick={openCreate}
+              >
+                <Plus className="h-4 w-4" />
+                إضافة طلب عقاري
+              </Button>
+            </>
+          }
+        />
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[

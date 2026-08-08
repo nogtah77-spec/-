@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Plus, X, Download, Edit2, Trash2, Search, BookUser, MapPin, FileText } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function Sources() {
   const { properties, propertyTypes, regions, updateProperty } = useData();
@@ -109,21 +110,22 @@ export default function Sources() {
   return (
     <AdminLayout>
       <div className="p-6 max-w-5xl mx-auto space-y-6" dir="rtl">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <BookUser className="h-6 w-6 text-accent" />
-              مصادر العقارات
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              بيانات التواصل مع الملاك والسماسرة — خاصة بالإدارة فقط
-            </p>
-          </div>
-          <Button variant="outline" onClick={exportCSV} className="gap-2">
-            <Download className="h-4 w-4" />
-            تصدير CSV
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="مصادر العقارات"
+          subtitle="بيانات التواصل مع الملاك والسماسرة — خاصة بالإدارة فقط"
+          eyebrow="دليل المصادر"
+          icon={BookUser}
+          actions={
+            <Button
+              variant="outline"
+              className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+              onClick={exportCSV}
+            >
+              <Download className="h-4 w-4" />
+              تصدير CSV
+            </Button>
+          }
+        />
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span><span className="font-semibold text-foreground">{sourcedProps.length}</span> مصدر مسجّل</span>

@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon, Upload, X } from "lucide-react";
+import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon, Upload, X, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function Regions() {
   const { regions, addRegion, updateRegion, deleteRegion, toggleRegion } = useData();
@@ -154,16 +155,18 @@ export default function Regions() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">إدارة المناطق</h1>
-            <p className="text-muted-foreground mt-1">تحديد وإدارة المناطق والمدن التي تغطيها المنصة</p>
-          </div>
-          <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => { setNewName(""); setShowAddDialog(true); }}>
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة منطقة
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="إدارة المناطق"
+          subtitle="تحديد وإدارة المناطق والمدن التي تغطيها المنصة"
+          eyebrow="نطاق التغطية"
+          icon={MapPin}
+          actions={
+            <Button className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]" onClick={() => { setNewName(""); setShowAddDialog(true); }}>
+              <Plus className="h-4 w-4" />
+              إضافة منطقة
+            </Button>
+          }
+        />
 
         <div className="border rounded-md bg-card overflow-hidden">
           <Table>

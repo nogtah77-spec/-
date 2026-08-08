@@ -16,6 +16,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   Plus, Pencil, Trash2, Eye, GripVertical,
   ChevronDown, ChevronUp, Settings2, CheckCircle2,
@@ -918,26 +919,29 @@ export default function SmartBanners() {
     <AdminLayout>
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6" dir="rtl">
 
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <LayoutTemplate className="w-5 h-5 text-accent" />
-              البانر الذكي
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              أنشئ وادر بانرات ديناميكية احترافية
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSettingsOpen(true)}>
-              <Settings2 className="w-4 h-4" /> إعدادات الخدمات
-            </Button>
-            <Button size="sm" className="gap-1.5 bg-accent text-white hover:bg-accent/90" onClick={() => { setEditBanner(null); setCreateOpen(true); }}>
-              <Plus className="w-4 h-4" /> إضافة بانر جديد
-            </Button>
-          </div>
-        </div>
+        <AdminPageHeader
+          title="البانر الذكي"
+          subtitle="أنشئ وأدر بانرات ديناميكية احترافية"
+          eyebrow="المحتوى التفاعلي"
+          icon={LayoutTemplate}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings2 className="h-4 w-4" /> إعدادات الخدمات
+              </Button>
+              <Button
+                className="h-10 gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]"
+                onClick={() => { setEditBanner(null); setCreateOpen(true); }}
+              >
+                <Plus className="h-4 w-4" /> إضافة بانر جديد
+              </Button>
+            </>
+          }
+        />
 
         {/* Banner types quick legend */}
         <div className="flex flex-wrap gap-1.5">

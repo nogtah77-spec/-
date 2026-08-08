@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   type AdTemplate,
   type AdSlotType,
@@ -972,30 +973,29 @@ export default function Ads() {
     <AdminLayout>
       <div className="space-y-6" dir="rtl">
 
-        {/* ─── رأس الصفحة ─── */}
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">إدارة الإعلانات</h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              {ads.length} إعلان — {ads.filter(a => getAdStatus(a) === "active").length} نشط
-            </p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => { setAddType("secondary"); setShowAdd(true); }}
-            >
-              <Plus className="h-4 w-4" /> إضافة إعلان ثانوي
-            </Button>
-            <Button
-              className="gap-2 bg-accent text-white hover:bg-accent/90"
-              onClick={() => { setAddType("premium"); setShowAdd(true); }}
-            >
-              <Plus className="h-4 w-4" /> إضافة إعلان مميز
-            </Button>
-          </div>
-        </div>
+        <AdminPageHeader
+          title="إدارة الإعلانات"
+          subtitle={`${ads.length} إعلان — ${ads.filter(a => getAdStatus(a) === "active").length} نشط`}
+          eyebrow="الترويج والظهور"
+          icon={LayoutTemplate}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+                onClick={() => { setAddType("secondary"); setShowAdd(true); }}
+              >
+                <Plus className="h-4 w-4" /> إضافة إعلان ثانوي
+              </Button>
+              <Button
+                className="h-10 gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]"
+                onClick={() => { setAddType("premium"); setShowAdd(true); }}
+              >
+                <Plus className="h-4 w-4" /> إضافة إعلان مميز
+              </Button>
+            </>
+          }
+        />
 
         {/* ─── بطاقات الإحصائيات ─── */}
         <div className="grid grid-cols-3 gap-3">

@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function Roles() {
   const { toast } = useToast();
@@ -54,16 +55,18 @@ export default function Roles() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">الأدوار والصلاحيات</h1>
-            <p className="text-muted-foreground mt-1">تحديد مستويات الوصول وصلاحيات كل دور</p>
-          </div>
-          <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={savePerm}>
-            <Save className="ml-2 h-4 w-4" />
-            حفظ التغييرات
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="الأدوار والصلاحيات"
+          subtitle="تحديد مستويات الوصول وصلاحيات كل دور"
+          eyebrow="الأمان والتحكم"
+          icon={ShieldCheck}
+          actions={
+            <Button className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]" onClick={savePerm}>
+              <Save className="h-4 w-4" />
+              حفظ التغييرات
+            </Button>
+          }
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {roles.map((role) => (

@@ -11,6 +11,7 @@ import { Plus, Search, Users as UsersIcon, Pencil, Trash2, Eye, EyeOff } from "l
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useData, User } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const roleLabels = { admin: "مدير النظام", agent: "مستشار عقاري", customer: "عميل" };
 
@@ -95,16 +96,18 @@ export default function Users() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">إدارة المستخدمين</h1>
-            <p className="text-muted-foreground mt-1">عرض وإدارة حسابات المستخدمين وصلاحياتهم</p>
-          </div>
-          <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={openAdd}>
-            <Plus className="ml-2 h-4 w-4" />
-            مستخدم جديد
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="إدارة المستخدمين"
+          subtitle="عرض وإدارة حسابات المستخدمين وصلاحياتهم"
+          eyebrow="فريق العمل والوصول"
+          icon={UsersIcon}
+          actions={
+            <Button className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]" onClick={openAdd}>
+              <Plus className="h-4 w-4" />
+              مستخدم جديد
+            </Button>
+          }
+        />
 
         <div className="relative max-w-md">
           <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />

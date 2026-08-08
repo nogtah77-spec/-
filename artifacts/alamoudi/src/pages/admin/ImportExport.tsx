@@ -9,6 +9,7 @@ import { UploadCloud, Download, CheckCircle2, AlertCircle, Eye, X, ArrowRight } 
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import {
   parseWorkbookBytes,
   parseDelimitedText,
@@ -237,10 +238,12 @@ export default function ImportExport() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">الاستيراد والتصدير</h1>
-          <p className="text-muted-foreground mt-1 text-sm">استيراد وتصدير بيانات المنصة بصيغة CSV</p>
-        </div>
+        <AdminPageHeader
+          title="الاستيراد والتصدير"
+          subtitle="نقل بيانات المنصة بصيغة CSV أو Excel بسهولة"
+          eyebrow="إدارة البيانات"
+          icon={UploadCloud}
+        />
 
         {/* Import Preview Step */}
         {pending && (

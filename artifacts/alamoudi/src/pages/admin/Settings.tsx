@@ -33,6 +33,7 @@ import {
   SunMoon,
   Palette,
   LockKeyhole,
+  Settings2,
 } from "lucide-react";
 import {
   WhatsAppIcon,
@@ -44,6 +45,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = {
   thumbnail: "",
@@ -290,12 +292,12 @@ export default function Settings() {
   return (
     <AdminLayout>
       <div className="space-y-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">إعدادات المنصة</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            إدارة إعدادات الموقع وبيانات التواصل
-          </p>
-        </div>
+        <AdminPageHeader
+          title="إعدادات المنصة"
+          subtitle="إدارة إعدادات الموقع وبيانات التواصل"
+          eyebrow="التخصيص والإدارة"
+          icon={Settings2}
+        />
 
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-3 lg:w-auto lg:grid-cols-6">

@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, Eye, EyeOff, Plus } from "lucide-react";
+import { Home, Pencil, Trash2, Eye, EyeOff, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function PropertyTypes() {
   const { propertyTypes, addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType } = useData();
@@ -54,16 +55,18 @@ export default function PropertyTypes() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">أنواع العقارات</h1>
-            <p className="text-muted-foreground mt-1">إدارة تصنيفات وأنواع العقارات المتاحة</p>
-          </div>
-          <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => { setNewName(""); setShowAddDialog(true); }}>
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة نوع
-          </Button>
-        </div>
+        <AdminPageHeader
+          title="أنواع العقارات"
+          subtitle="إدارة التصنيفات والأنواع المتاحة في المنصة"
+          eyebrow="تصنيف المحتوى"
+          icon={Home}
+          actions={
+            <Button className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]" onClick={() => { setNewName(""); setShowAddDialog(true); }}>
+              <Plus className="h-4 w-4" />
+              إضافة نوع
+            </Button>
+          }
+        />
 
         <div className="border rounded-md bg-card overflow-hidden">
           <Table>

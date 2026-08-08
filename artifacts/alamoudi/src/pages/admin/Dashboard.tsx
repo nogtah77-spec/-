@@ -6,6 +6,7 @@ import { useData } from "@/context/DataContext";
 import { ActivityItem } from "@/components/admin/ActivityItem";
 import { Link } from "wouter";
 import { RecentPropertiesPanel } from "@/components/admin/RecentPropertiesPanel";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function Dashboard() {
   const { properties, regions, users, activityLogs, customerPropertyRequests, propertyTypes } = useData();
@@ -31,10 +32,12 @@ export default function Dashboard() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">لوحة التحكم</h1>
-          <p className="text-muted-foreground mt-1">نظرة عامة على أداء المنصة</p>
-        </div>
+        <AdminPageHeader
+          title="لوحة التحكم"
+          subtitle="نظرة عامة على أداء المنصة والعقارات والطلبات"
+          eyebrow="مركز المتابعة"
+          icon={Activity}
+        />
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
