@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,12 +76,16 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loginBackgroundFileRef = useRef<HTMLInputElement>(null);
+  const loginFormDirtyRef = useRef(false);
   const [newVideo, setNewVideo] =
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [editVideo, setEditVideo] =
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const thumbRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+  const markLoginFormDirty = () => {
+    loginFormDirtyRef.current = true;
+  };
 
   const avatarRef = useRef<HTMLInputElement>(null);
 
@@ -154,8 +158,36 @@ export default function Settings() {
 
   const set =
     (key: keyof SiteSettings) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      if (
+        key === "loginBackgroundEnabled" ||
+        key === "loginBackgroundImageUrl" ||
+        key === "loginOverlayColor" ||
+        key === "loginOverlayOpacity" ||
+        key === "loginGradientOpacity"
+      ) {
+        loginFormDirtyRef.current = true;
+      }
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
+    };
+
+  useEffect(() => {
+    if (loginFormDirtyRef.current) return;
+    setForm((prev) => ({
+      ...prev,
+      loginBackgroundEnabled: settings.loginBackgroundEnabled,
+      loginBackgroundImageUrl: settings.loginBackgroundImageUrl,
+      loginOverlayColor: settings.loginOverlayColor,
+      loginOverlayOpacity: settings.loginOverlayOpacity,
+      loginGradientOpacity: settings.loginGradientOpacity,
+    }));
+  }, [
+    settings.loginBackgroundEnabled,
+    settings.loginBackgroundImageUrl,
+    settings.loginOverlayColor,
+    settings.loginOverlayOpacity,
+    settings.loginGradientOpacity,
+  ]);
 
   const handleHeroFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,6 +230,7 @@ export default function Settings() {
     }
     const reader = new FileReader();
     reader.onload = (event) => {
+      loginFormDirtyRef.current = true;
       setForm((prev) => ({
         ...prev,
         loginBackgroundImageUrl: String(event.target?.result ?? ""),
@@ -236,7 +269,9 @@ export default function Settings() {
     setSaving(true);
     await new Promise((r) => setTimeout(r, 400));
     try {
-      updateSettings(form);
+      const saved = await updateSettings(form);
+      if (!saved) throw new Error("settings save failed");
+      loginFormDirtyRef.current = false;
       toast({
         title: "تم الحفظ بنجاح ✓",
         description: "تم تحديث إعدادات المنصة.",
@@ -954,9 +989,10 @@ export default function Settings() {
                     <Switch
                       id="loginBackgroundEnabled"
                       checked={Boolean(form.loginBackgroundEnabled)}
-                      onCheckedChange={(checked) =>
-                        setForm((prev) => ({ ...prev, loginBackgroundEnabled: checked }))
-                      }
+                      onCheckedChange={(checked) => {
+                        markLoginFormDirty();
+                        setForm((prev) => ({ ...prev, loginBackgroundEnabled: checked }));
+                      }}
                     />
                   </div>
 
@@ -1007,14 +1043,20 @@ export default function Settings() {
                           aria-label="اختيار لون طبقة صفحة تسجيل الدخول"
                           type="color"
                           value={/^#[0-9a-f]{6}$/i.test(loginOverlayColor) ? loginOverlayColor : "#10202D"}
-                          onChange={(event) => setForm((prev) => ({ ...prev, loginOverlayColor: event.target.value }))}
+                          onChange={(event) => {
+                            markLoginFormDirty();
+                            setForm((prev) => ({ ...prev, loginOverlayColor: event.target.value }));
+                          }}
                           className="h-10 w-12 cursor-pointer rounded-md border border-border bg-background p-1"
                         />
                         <Input
                           aria-label="رمز لون طبقة صفحة تسجيل الدخول"
                           dir="ltr"
                           value={loginOverlayColor}
-                          onChange={(event) => setForm((prev) => ({ ...prev, loginOverlayColor: event.target.value }))}
+                          onChange={(event) => {
+                            markLoginFormDirty();
+                            setForm((prev) => ({ ...prev, loginOverlayColor: event.target.value }));
+                          }}
                           className="w-28 text-center font-mono text-xs"
                           placeholder="#10202D"
                         />
@@ -1025,14 +1067,34 @@ export default function Settings() {
                         <Label>شفافية الطبقة الأساسية</Label>
                         <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">{loginOverlayOpacity}%</span>
                       </div>
-                      <Slider dir="ltr" value={[loginOverlayOpacity]} min={0} max={100} step={1} onValueChange={(value) => setForm((prev) => ({ ...prev, loginOverlayOpacity: value[0] }))} />
+                      <Slider
+                        dir="ltr"
+                        value={[loginOverlayOpacity]}
+                        min={0}
+                        max={100}
+                        step={1}
+                        onValueChange={(value) => {
+                          markLoginFormDirty();
+                          setForm((prev) => ({ ...prev, loginOverlayOpacity: value[0] }));
+                        }}
+                      />
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-3">
                         <Label>قوة التدرّج السفلي</Label>
                         <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">{loginGradientOpacity}%</span>
                       </div>
-                      <Slider dir="ltr" value={[loginGradientOpacity]} min={0} max={100} step={1} onValueChange={(value) => setForm((prev) => ({ ...prev, loginGradientOpacity: value[0] }))} />
+                      <Slider
+                        dir="ltr"
+                        value={[loginGradientOpacity]}
+                        min={0}
+                        max={100}
+                        step={1}
+                        onValueChange={(value) => {
+                          markLoginFormDirty();
+                          setForm((prev) => ({ ...prev, loginGradientOpacity: value[0] }));
+                        }}
+                      />
                     </div>
                   </div>
 

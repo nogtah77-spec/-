@@ -260,7 +260,7 @@ interface DataContextType {
   settings: SiteSettings;
   trackPropertyView: (id: string) => void;
   refreshVisitorStats: () => Promise<void>;
-  updateSettings: (s: Partial<SiteSettings>) => void;
+  updateSettings: (s: Partial<SiteSettings>) => Promise<boolean>;
   addRegion: (name: string, heroImage?: string) => Promise<boolean>;
   updateRegion: (id: string, name: string, heroImage?: string) => Promise<boolean>;
   deleteRegion: (id: string) => Promise<boolean>;
@@ -516,17 +516,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateSettings = (s: Partial<SiteSettings>) => {
-    setSettings(prev => {
-      const next = { ...prev, ...s };
-      writeCache({
-        regions,
-        types: propertyTypes,
-        properties,
-        settings: next,
-      });
-      persist(api.put("/settings", next));
-      return next;
+    const next = { ...settings, ...s };
+    setSettings(next);
+    writeCache({
+      regions,
+      types: propertyTypes,
+      properties,
+      settings: next,
     });
+    return persist(api.put("/settings", next));
   };
 
   const addRegion = async (name: string, heroImage = "") => {
