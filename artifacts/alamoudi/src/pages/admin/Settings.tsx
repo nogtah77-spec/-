@@ -31,6 +31,7 @@ import {
   Sun,
   Moon,
   SunMoon,
+  Palette,
 } from "lucide-react";
 import {
   WhatsAppIcon,
@@ -48,6 +49,15 @@ const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = {
   title: "",
   videoUrl: "",
 };
+
+const REGION_OVERLAY_PRESETS = [
+  { label: "أسود", value: "#000000", swatch: "bg-black" },
+  { label: "أبيض", value: "#ffffff", swatch: "bg-white" },
+  { label: "فحمي", value: "#1f2937", swatch: "bg-slate-800" },
+  { label: "كحلي", value: "#0f172a", swatch: "bg-slate-950" },
+  { label: "بني دافئ", value: "#4a3524", swatch: "bg-[#4a3524]" },
+  { label: "أخضر داكن", value: "#18352f", swatch: "bg-[#18352f]" },
+] as const;
 
 export default function Settings() {
   const {
@@ -163,6 +173,16 @@ export default function Settings() {
     };
     reader.readAsDataURL(file);
   };
+
+  const regionOverlayColor = form.regionHeroOverlayColor || "#000000";
+  const regionOverlayOpacity = Math.min(
+    100,
+    Math.max(0, Number(form.regionHeroOverlayOpacity ?? 25)),
+  );
+  const regionGradientOpacity = Math.min(
+    100,
+    Math.max(0, Number(form.regionHeroGradientOpacity ?? 60)),
+  );
 
   const handleSave = async () => {
     setSaving(true);
@@ -462,6 +482,187 @@ export default function Settings() {
                   >
                     <Save className="h-4 w-4" />
                     {saving ? "جاري الحفظ..." : "حفظ النص"}
+                  </Button>
+                </CardFooter>
+              </Card>
+
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Palette className="h-4 w-4 text-accent" />
+                    طبقة أغلفة المناطق
+                  </CardTitle>
+                  <CardDescription>
+                    تحكم كامل في لون ووضوح الطبقة التي تظهر فوق صور أغلفة المدن،
+                    وتظهر النتيجة نفسها في كل صفحات المناطق.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <Label>لون الطبقة</Label>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          الأسود مناسب للصور الساطعة، والأبيض مناسب للصور الداكنة.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2" dir="ltr">
+                        <input
+                          aria-label="اختيار لون طبقة أغلفة المناطق"
+                          type="color"
+                          value={/^#[0-9a-f]{6}$/i.test(regionOverlayColor) ? regionOverlayColor : "#000000"}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              regionHeroOverlayColor: event.target.value,
+                            }))
+                          }
+                          className="h-10 w-12 cursor-pointer rounded-md border border-border bg-background p-1"
+                        />
+                        <Input
+                          aria-label="رمز لون طبقة أغلفة المناطق"
+                          dir="ltr"
+                          value={regionOverlayColor}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              regionHeroOverlayColor: event.target.value,
+                            }))
+                          }
+                          className="w-28 text-center font-mono text-xs"
+                          placeholder="#000000"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {REGION_OVERLAY_PRESETS.map((preset) => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() =>
+                            setForm((prev) => ({
+                              ...prev,
+                              regionHeroOverlayColor: preset.value,
+                            }))
+                          }
+                          className={`flex items-center gap-2 rounded-md border px-3 py-2 text-right text-xs transition-colors ${
+                            regionOverlayColor.toLowerCase() === preset.value
+                              ? "border-accent bg-accent/10 text-foreground"
+                              : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          <span className={`h-4 w-4 shrink-0 rounded-full border border-black/20 ${preset.swatch}`} />
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <Label>شفافية الطبقة الأساسية</Label>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          0% شفافة تمامًا — 100% تغطية كاملة للصورة.
+                        </p>
+                      </div>
+                      <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">
+                        {regionOverlayOpacity}%
+                      </span>
+                    </div>
+                    <Slider
+                      dir="ltr"
+                      value={[regionOverlayOpacity]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={(value) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          regionHeroOverlayOpacity: value[0],
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <Label>قوة التدرّج السفلي</Label>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          يضيف وضوحًا إضافيًا لاسم المنطقة أسفل الصورة.
+                        </p>
+                      </div>
+                      <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">
+                        {regionGradientOpacity}%
+                      </span>
+                    </div>
+                    <Slider
+                      dir="ltr"
+                      value={[regionGradientOpacity]}
+                      min={0}
+                      max={100}
+                      step={1}
+                      onValueChange={(value) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          regionHeroGradientOpacity: value[0],
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2 border-t border-border pt-4">
+                    <div className="flex items-center justify-between">
+                      <Label>معاينة مباشرة</Label>
+                      <span className="text-xs text-muted-foreground">لا يتم الحفظ حتى تضغط زر الحفظ</span>
+                    </div>
+                    <div className="relative h-40 overflow-hidden rounded-xl border border-border bg-muted">
+                      <img
+                        src={form.heroImageUrl || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1200&q=80"}
+                        alt="معاينة طبقة غلاف المنطقة"
+                        className="h-full w-full object-cover"
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={{ backgroundColor: `rgba(0, 0, 0, 0)` }}
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundColor: (() => {
+                            const normalized = regionOverlayColor.replace(/^#/, "");
+                            const safe = /^[0-9a-f]{6}$/i.test(normalized) ? normalized : "000000";
+                            return `#${safe}`;
+                          })(),
+                          opacity: regionOverlayOpacity / 100,
+                        }}
+                      />
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{
+                          background: (() => {
+                            const normalized = regionOverlayColor.replace(/^#/, "");
+                            const safe = /^[0-9a-f]{6}$/i.test(normalized) ? normalized : "000000";
+                            return `linear-gradient(to top, #${safe}${Math.round((regionGradientOpacity / 100) * 255).toString(16).padStart(2, "0")} 0%, #${safe}${Math.round((regionGradientOpacity / 400) * 255).toString(16).padStart(2, "0")} 52%, transparent 100%)`;
+                          })(),
+                        }}
+                      >
+                        <span className="text-center text-sm font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
+                          اسم المنطقة يظهر بهذا الشكل
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {saving ? "جاري الحفظ..." : "حفظ طبقة أغلفة المناطق"}
                   </Button>
                 </CardFooter>
               </Card>

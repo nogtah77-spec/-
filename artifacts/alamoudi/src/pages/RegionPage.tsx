@@ -6,6 +6,24 @@ import { Button } from "@/components/ui/button";
 import { useData } from "@/context/DataContext";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
+
+function clampPercent(value: number | undefined, fallback: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.min(100, Math.max(0, number)) : fallback;
+}
+
+function hexToRgba(hex: string | undefined, opacity: number): string {
+  const normalized = (hex ?? "").trim().replace(/^#/, "");
+  const match = normalized.match(/^([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  const safeHex = match?.[1] ?? "000000";
+  const fullHex = safeHex.length === 3
+    ? safeHex.split("").map((part) => part + part).join("")
+    : safeHex;
+  const red = parseInt(fullHex.slice(0, 2), 16);
+  const green = parseInt(fullHex.slice(2, 4), 16);
+  const blue = parseInt(fullHex.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${Math.min(100, Math.max(0, opacity)) / 100})`;
+}
 import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
 import {
   DEFAULT_PROPERTY_FILTERS,
@@ -17,7 +35,7 @@ import {
 
 export default function RegionPage({ params }: { params: { regionId: string } }) {
   const { regionId } = params;
-  const { properties, regions, propertyTypes } = useData();
+  const { properties, regions, propertyTypes, settings } = useData();
 
   const region = regions.find(r => r.id === regionId);
   const getInitialCardSize = () => {
@@ -69,6 +87,10 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     setAppliedFilters(reset);
   };
 
+  const overlayColor = settings.regionHeroOverlayColor || "#000000";
+  const overlayOpacity = clampPercent(settings.regionHeroOverlayOpacity, 25);
+  const gradientOpacity = clampPercent(settings.regionHeroGradientOpacity, 60);
+
   /* ── Not found ── */
   if (!region) {
     return (
@@ -105,8 +127,16 @@ export default function RegionPage({ params }: { params: { regionId: string } })
           ) : (
             <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
           )}
-          <div className="absolute inset-0 bg-black/25" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: hexToRgba(overlayColor, overlayOpacity) }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to top, ${hexToRgba(overlayColor, gradientOpacity)} 0%, ${hexToRgba(overlayColor, gradientOpacity * 0.25)} 52%, transparent 100%)`,
+            }}
+          />
           <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
             <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
               <h1 className="font-sans text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl md:text-5xl">

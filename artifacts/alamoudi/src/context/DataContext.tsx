@@ -174,6 +174,12 @@ export interface SiteSettings {
   mapsUrl: string;
   heroImageUrl: string;
   heroOverlayOpacity: number;
+  /** Shared overlay color for region cover heroes. */
+  regionHeroOverlayColor: string;
+  /** Opacity of the solid overlay over region cover images, 0-100. */
+  regionHeroOverlayOpacity: number;
+  /** Strength of the bottom-to-top gradient over region cover images, 0-100. */
+  regionHeroGradientOpacity: number;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
   /** Seconds to wait after each card movement before starting the next one. */
@@ -205,6 +211,9 @@ const DEFAULT_SETTINGS: SiteSettings = {
   mapsUrl: "https://maps.google.com",
   heroImageUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
   heroOverlayOpacity: 85,
+  regionHeroOverlayColor: "#000000",
+  regionHeroOverlayOpacity: 25,
+  regionHeroGradientOpacity: 60,
   tiktokVideos: [],
   ads: [],
   carouselAutoPlayDelay: 3.5,
