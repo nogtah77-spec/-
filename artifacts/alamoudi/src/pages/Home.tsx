@@ -512,7 +512,7 @@ export default function Home() {
                 ) : (
                   <div className={gridClass}>
                     {featuredProps.map((p) => (
-                      <PropertyCard key={p.id} property={p} size="compact" />
+                      <PropertyCard key={p.id} property={p} size={filters.cardSize} layout={filters.viewMode} />
                     ))}
                   </div>
                 )}
@@ -539,13 +539,15 @@ export default function Home() {
                         key={i}
                         className="flex-shrink-0 w-[82vw] sm:w-[46vw] md:w-[268px] lg:w-[280px]"
                       >
-                        <PropertyCard isLoading size="compact" />
+                        <PropertyCard isLoading size={filters.cardSize} />
                       </div>
                     ))}
                   </div>
                 ) : (
                   <PropertyCarousel
                     properties={latestProps}
+                    size={filters.cardSize}
+                    layout={filters.viewMode}
                     autoPlay
                     autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
@@ -595,6 +597,8 @@ export default function Home() {
                         </div>
                         <PropertyCarousel
                           properties={items.slice(0, 8)}
+                           size={filters.cardSize}
+                           layout={filters.viewMode}
                           autoPlay
                           autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                           motionSpeed={settings.carouselMotionSpeed}

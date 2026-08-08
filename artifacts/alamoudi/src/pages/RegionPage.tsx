@@ -131,30 +131,38 @@ export default function RegionPage({ params }: { params: { regionId: string } })
         <section className="py-6 sm:py-8 md:py-10">
           <div className="container px-3 sm:px-6">
 
-            {/* ── Result heading ── */}
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-7">
-              <div>
-                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                  عقارات {region.name}
-                  <span className="mr-2 text-sm font-normal text-muted-foreground">
-                    ({filtered.length})
-                  </span>
-                </h2>
-                <div className="mt-2 h-0.5 w-12 rounded-full bg-accent" />
+            <div className="mb-5 sm:mb-7">
+              {/* عنوان النتائج في بطاقة مستقلة عن لوحة الفلاتر */}
+              <div className="rounded-xl border border-border/80 bg-card px-4 py-4 shadow-sm sm:px-6 sm:py-5">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <p className="mb-1 text-xs font-medium tracking-wide text-accent">استكشف عقارات المدينة</p>
+                    <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                      عقارات {region.name}
+                      <span className="mr-2 text-sm font-normal text-muted-foreground">
+                        ({filtered.length})
+                      </span>
+                    </h2>
+                    <div className="mt-2 h-0.5 w-12 rounded-full bg-accent" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">استخدم الفلاتر للوصول إلى العقار المناسب</p>
+                </div>
               </div>
             </div>
 
-            <PropertyFilterPanel
-              filters={filters}
-              regions={regions}
-              propertyTypes={propertyTypes}
-              fixedRegionId={regionId}
-              cityName={region.name}
-              resultCount={filtered.length}
-              onChange={(next) => setFilters({ ...next, regionId })}
-              onApply={applyFilters}
-              onReset={resetFilters}
-            />
+            <div className="mb-7 sm:mb-9">
+              <PropertyFilterPanel
+                filters={filters}
+                regions={regions}
+                propertyTypes={propertyTypes}
+                fixedRegionId={regionId}
+                cityName={region.name}
+                resultCount={filtered.length}
+                onChange={(next) => setFilters({ ...next, regionId })}
+                onApply={applyFilters}
+                onReset={resetFilters}
+              />
+            </div>
 
             {/* ── Results ── */}
             {filtered.length === 0 ? (

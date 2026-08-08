@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface PropertyCarouselProps {
   properties: any[];
   size?: CardSize;
+  layout?: "grid" | "list";
   className?: string;
   autoPlay?: boolean;
   /** Waiting time between the end of one movement and the next movement, in ms. */
@@ -18,6 +19,7 @@ interface PropertyCarouselProps {
 export function PropertyCarousel({
   properties,
   size = "compact",
+  layout = "grid",
   className,
   autoPlay = false,
   autoPlayDelay = 3500,
@@ -363,7 +365,7 @@ export function PropertyCarousel({
               key={`${property.id}-${index}`}
               className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
             >
-              <PropertyCard property={property} size={size} />
+              <PropertyCard property={property} size={size} layout={layout} />
             </div>
           ))}
         </div>
