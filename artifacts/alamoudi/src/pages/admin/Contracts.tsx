@@ -791,7 +791,7 @@ export default function Contracts() {
               </div>
               <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">إدارة العقود</h1>
               <p className="mt-2 max-w-2xl text-sm leading-7 text-white/70">
-                سجل موحّد للإيجارات والبيوع والدفعات المستحقة، يحفظ تفاصيل كل معاملة وسياقها القانوني في مكان واحد.
+                إدارة العقود والدفعات العقارية في مكان واحد.
               </p>
               <div className="mt-5 flex items-center gap-2 text-[11px] text-white/55">
                 <ClipboardCheck className="h-3.5 w-3.5 text-[#D6B77F]" />
