@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
@@ -134,110 +134,78 @@ export function PropertyCard({
       <Card
         onClick={goToDetails}
         className={cn(
-          "flex flex-row overflow-hidden group cursor-pointer card-luxury transition-all duration-200",
+          "flex flex-row overflow-hidden group cursor-pointer card-luxury rounded-2xl transition-all duration-300",
           emphasized
-            ? "h-40 border-accent/30 bg-card shadow-[0_8px_24px_rgba(0,0,0,0.14)] hover:-translate-y-1 hover:border-accent/60"
-            : "h-32 border-border shadow-sm hover:-translate-y-0.5",
+            ? "h-40 border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60"
+            : "h-32 border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]",
         )}
       >
-        {/* ── صورة العقار — أكبر بنسبة ~14% ── */}
-        <div className={cn("relative flex-shrink-0 bg-muted overflow-hidden", emphasized ? "w-28 sm:w-40" : "w-32")}>
+        <div className={cn("relative flex-shrink-0 overflow-hidden bg-muted", emphasized ? "w-32 sm:w-40" : "w-32")}>
           {showVideoCover
             ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
             : coverImg
               ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" className="w-full h-full object-cover" />
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
-          <div className="absolute top-2 right-2">
-            <Badge className="bg-accent text-white border-none text-[10px] px-1.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
+          <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-1">
+            <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+            {property.typeName && (
+              <Badge className="max-w-[58%] truncate rounded-full border border-white/20 bg-black/60 px-2 py-0.5 text-[10px] font-bold text-amber-100 backdrop-blur-sm">
+                {property.typeName}
+              </Badge>
+            )}
           </div>
-          {propHasVideo && (
-            <div className="absolute bottom-2 left-2">
-              <span className="bg-black/65 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-sm"><Play className="h-2.5 w-2.5 fill-white" />فيديو</span>
-            </div>
-          )}
+          <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
+            {propHasVideo && (
+              <span className="flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
+                <Play className="h-2.5 w-2.5 fill-white" />فيديو
+              </span>
+            )}
+            {property.featured && <Badge className="rounded-full border-none bg-yellow-500 px-2 py-0.5 text-[9px] text-white">مميز</Badge>}
+            {isNew() && <Badge className="rounded-full border-none bg-emerald-500 px-2 py-0.5 text-[9px] text-white">جديد</Badge>}
+          </div>
         </div>
 
-        {/* ── محتوى البطاقة ── */}
-        <div className={cn("flex-1 flex flex-col justify-between min-w-0", emphasized ? "px-5 py-4" : "px-3.5 py-3")}>
-          {/* صف العنوان */}
+        <div className={cn("flex min-w-0 flex-1 flex-col justify-between", emphasized ? "px-4 py-3.5" : "px-3.5 py-3")}>
           <div className="min-w-0">
-            <div className="flex items-start justify-between gap-1.5 mb-1">
-              <div className="min-w-0 flex items-baseline gap-1.5">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5">
                 <h3 dir="ltr" className={cn(
-                  "font-bold font-mono tracking-wide text-foreground line-clamp-1 group-hover:text-accent transition-colors",
+                  "truncate font-bold font-mono tracking-[0.12em] text-foreground group-hover:text-accent transition-colors",
                   emphasized ? "text-lg" : "text-sm",
                 )}>{property.code}</h3>
                 <span className={cn(
-                  "text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0",
-                  emphasized ? "text-[10px]" : "text-[9px]",
+                  "shrink-0 rounded bg-foreground/5 px-1 py-0.5 font-bold tracking-widest text-muted-foreground uppercase",
+                  emphasized ? "text-[9px]" : "text-[8px]",
                 )}>CODE</span>
               </div>
               {property.typeName && (
-                <span className={cn(
-                  "flex-shrink-0 font-bold tracking-wide text-accent bg-accent/10 border border-accent/25 rounded-sm",
-                  emphasized ? "text-[11px] px-2 py-1" : "text-[9px] px-1.5 py-0.5",
-                )}>
+                <span className="hidden shrink-0 rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent sm:inline-flex">
                   {property.typeName}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground line-clamp-1">
-              {[property.regionName, property.subArea].filter(Boolean).join(" - ")}
+            <p className="flex items-center gap-1 text-[10px] text-muted-foreground line-clamp-1">
+              <MapPin className="h-3 w-3 shrink-0 text-accent" />
+              {[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}
             </p>
             {property.finishing && (
-              <p
-                dir="rtl"
-                className={cn(
-                  "font-medium line-clamp-1",
-                  emphasized
-                    ? "mt-2 inline-flex rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] text-accent"
-                    : "mt-0.5 text-[10px] text-accent/80",
-                )}
-              >
+              <p dir="rtl" className="mt-1 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
                 {property.finishing}
               </p>
             )}
           </div>
 
-          {/* صف السعر والتفاصيل */}
-          <div className="mt-1">
-            {!emphasized && (
-              <div dir="ltr" className="flex items-baseline gap-2.5">
-                <span className="text-base font-bold text-accent leading-tight">{property.price.toLocaleString("en-US")}</span>
-                <span className="text-[10px] font-semibold tracking-widest text-muted-foreground">EGP</span>
-              </div>
-            )}
-            <div dir={emphasized ? "ltr" : undefined} className={cn(
-              "flex items-center",
-              emphasized ? "justify-between gap-2" : "mt-1.5 gap-3",
-            )}>
-              {emphasized && (
-                <div dir="ltr" className="flex shrink-0 items-baseline gap-1">
-                  <span className="text-base font-bold leading-tight text-accent sm:text-xl">{property.price.toLocaleString("en-US")}</span>
-                  <span className="text-[10px] font-semibold tracking-widest text-muted-foreground sm:text-xs">EGP</span>
-                </div>
-              )}
-              <div
-                dir={emphasized ? "rtl" : undefined}
-                className={cn(
-                  "flex min-w-0 items-center text-muted-foreground",
-                  emphasized ? "justify-end gap-1.5 text-[10px] sm:gap-3 sm:text-xs" : "gap-3 text-[10px]",
-                )}
-              >
-                {property.beds > 0 && <span title={`${property.beds} غرف`} className="flex shrink-0 items-center gap-0.5"><Bed className={emphasized ? "h-3 w-3 text-accent sm:h-3.5 sm:w-3.5" : "h-3 w-3"} /><span>{property.beds}</span><span className="hidden sm:inline">غرف</span></span>}
-                {property.baths > 0 && <span title={`${property.baths} حمام`} className="flex shrink-0 items-center gap-0.5"><Bath className={emphasized ? "h-3 w-3 text-accent sm:h-3.5 sm:w-3.5" : "h-3 w-3"} /><span>{property.baths}</span><span className="hidden sm:inline">حمام</span></span>}
-                <span title={`${property.area} متر مربع`} className="flex shrink-0 items-center gap-0.5"><Square className={emphasized ? "h-3 w-3 text-accent sm:h-3.5 sm:w-3.5" : "h-3 w-3"} /><span>{property.area}</span><span className="hidden sm:inline">م²</span></span>
-              </div>
+          <div className="mt-1.5 flex items-end justify-between gap-2">
+            <div dir="ltr" className="flex min-w-0 items-baseline gap-1">
+              <span className={cn("truncate font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{property.price.toLocaleString("en-US")}</span>
+              <span className="shrink-0 text-[9px] font-bold tracking-widest text-muted-foreground">EGP</span>
             </div>
-            {emphasized && highlightedDetails.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {highlightedDetails.map((detail) => (
-                  <span key={detail} className="max-w-[48%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
-                    {detail}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="flex shrink-0 items-center gap-2 text-[9px] font-semibold text-muted-foreground">
+              {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3 text-accent" />{property.beds}</span>}
+              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3 w-3 text-accent" />{property.baths}</span>}
+              <span className="flex items-center gap-0.5"><Square className="h-3 w-3 text-accent" />{property.area}</span>
+            </div>
           </div>
         </div>
       </Card>
@@ -245,22 +213,22 @@ export function PropertyCard({
   }
 
   const imageHeight = emphasized
-    ? size === "large" ? "h-64" : size === "medium" ? "h-48" : "h-40"
-    : size === "large" ? "h-52" : size === "medium" ? "h-36" : "h-32";
+    ? size === "large" ? "aspect-[1.55] min-h-64" : size === "medium" ? "aspect-[1.55] min-h-48" : "aspect-[1.55] min-h-40"
+    : size === "large" ? "aspect-[1.55] min-h-52" : size === "medium" ? "aspect-[1.55] min-h-36" : "aspect-[1.55] min-h-32";
   const listMode = layout === "list";
 
   return (
     <Card onClick={goToDetails} className={cn(
-      "overflow-hidden group cursor-pointer card-luxury h-full transition-all duration-300",
+      "overflow-hidden group cursor-pointer card-luxury h-full rounded-[1.25rem] transition-all duration-300",
       emphasized
-        ? "border-accent/30 shadow-[0_10px_30px_rgba(0,0,0,0.14)] hover:-translate-y-1 hover:border-accent/60"
-        : "border-border shadow-sm hover:-translate-y-1",
+        ? "border-accent/30 shadow-[0_14px_36px_rgba(16,32,45,0.16)] hover:-translate-y-1.5 hover:border-accent/60"
+        : "border-card-border shadow-[0_8px_24px_rgba(16,32,45,0.09)] hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(16,32,45,0.14)]",
       listMode
         ? "flex flex-row flex-wrap sm:flex-nowrap"
         : "flex flex-col",
     )}>
       <div className={cn(
-        "relative overflow-hidden bg-muted flex-shrink-0",
+         "relative overflow-hidden bg-muted flex-shrink-0",
         listMode ? "w-32 min-h-[160px] sm:w-48 md:w-56" : imageHeight,
         listMode && "sm:min-h-0 sm:self-stretch",
       )}>
@@ -274,36 +242,63 @@ export function PropertyCard({
         }
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
-        <div className="absolute top-3 right-3 z-20 flex flex-wrap gap-1.5 max-w-[65%]">
-          <Badge className="bg-black/60 text-amber-200 border border-amber-300/30 backdrop-blur-sm shadow shadow-black/30 text-[11px] px-2.5 py-0.5 font-bold tracking-wide">{property.typeName || "عقار"}</Badge>
-          <Badge className="bg-accent text-white border-none text-[11px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+         <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+           <div className="flex flex-wrap gap-1.5 max-w-[68%]">
+             <Badge className="rounded-full bg-black/60 text-amber-100 border border-white/20 backdrop-blur-sm shadow shadow-black/30 text-[11px] px-2.5 py-0.5 font-bold tracking-wide">{property.typeName || "عقار"}</Badge>
+             <Badge className="rounded-full bg-accent text-white border-none text-[11px] px-2.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+           </div>
+           <div className="flex shrink-0 gap-1.5">
+             <Button
+               variant="outline"
+               size="icon"
+               className={cn(
+                 "h-8 w-8 rounded-lg border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur hover:border-accent hover:bg-white hover:text-accent",
+                 isFavorite(property.id) && "border-red-200 bg-red-50 text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600",
+               )}
+               onClick={handleFavorite}
+               title="المفضلة"
+             >
+               <Heart className={cn("h-3.5 w-3.5", isFavorite(property.id) && "fill-current")} />
+             </Button>
+             <Button
+               variant="outline"
+               size="icon"
+               className="h-8 w-8 rounded-lg border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur hover:border-accent hover:bg-white hover:text-accent"
+               onClick={handleShare}
+               title="مشاركة"
+             >
+               <Share2 className="h-3.5 w-3.5" />
+             </Button>
+           </div>
         </div>
 
-        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
+         <div className="absolute bottom-3 left-3 z-20 flex flex-wrap justify-end gap-1.5 max-w-[68%]">
           {propHasVideo && (
-            <span className="bg-black/65 text-white backdrop-blur-sm text-[10px] px-2 py-0.5 rounded flex items-center gap-1 shadow">
+             <span className="rounded-full bg-black/65 text-white backdrop-blur-sm text-[10px] px-2.5 py-1 flex items-center gap-1 shadow">
               <Play className="h-2.5 w-2.5 fill-white flex-shrink-0" />فيديو
             </span>
           )}
-          {property.featured && <Badge className="bg-yellow-500 text-white border-none text-[10px] px-1.5 py-0.5">مميز</Badge>}
-          {isNew() && <Badge className="bg-emerald-500 text-white border-none text-[10px] px-1.5 py-0.5">جديد</Badge>}
-          {property.status === "reserved" && <Badge className="bg-amber-500 text-white border-none text-[10px] px-1.5 py-0.5">محجوز</Badge>}
+           {property.featured && <Badge className="rounded-full bg-yellow-500 text-white border-none text-[10px] px-2.5 py-1">مميز</Badge>}
+           {isNew() && <Badge className="rounded-full bg-emerald-500 text-white border-none text-[10px] px-2.5 py-1">جديد</Badge>}
+           {property.status === "reserved" && <Badge className="rounded-full bg-amber-500 text-white border-none text-[10px] px-2.5 py-1">محجوز</Badge>}
         </div>
 
         <div className="absolute bottom-3 right-3 z-20">
           {property.regionName && (
-            <span className="text-white/95 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs">{property.regionName}</span>
+             <span className="flex items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm">
+               <MapPin className="h-3 w-3 text-accent" />{property.regionName}
+             </span>
           )}
         </div>
 
         <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5">
           {imageCount > 0 && (
-            <span className="text-white/90 bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded text-xs flex items-center gap-1">
+             <span className="text-white/90 bg-black/45 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs flex items-center gap-1">
               <Camera className="h-3 w-3" />{imageCount}
             </span>
           )}
           {property.externalUrl && (
-            <span className="text-white/90 bg-black/40 backdrop-blur-sm px-1.5 py-0.5 rounded text-xs flex items-center gap-1" title="رابط خارجي">
+             <span className="text-white/90 bg-black/45 backdrop-blur-sm px-2 py-1 rounded-full text-xs flex items-center gap-1" title="رابط خارجي">
               <ExternalLink className="h-3 w-3" />
             </span>
           )}
@@ -314,39 +309,43 @@ export function PropertyCard({
         "flex-1 flex flex-col min-w-0",
         listMode ? "p-3 sm:p-4" : emphasized ? "p-5 sm:p-6" : size === "large" ? "p-5" : "p-3 sm:p-4",
       )}>
-        <div className={cn("flex items-baseline gap-2", emphasized ? "mb-2" : "mb-3")}>
-          <h3 dir="ltr" className={cn(
-            "font-bold font-mono tracking-widest text-foreground group-hover:text-accent transition-colors",
-            emphasized ? "text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
-          )}>
-            {property.code}
-          </h3>
-          <span className={cn(
-            "text-muted-foreground font-semibold tracking-widest uppercase flex-shrink-0",
-            emphasized ? "text-xs" : "text-[10px]",
-          )}>CODE</span>
-        </div>
-        {emphasized && (
-          <>
-            <p className="text-sm text-muted-foreground line-clamp-1">
-              {[property.regionName, property.subArea].filter(Boolean).join(" - ")}
+        <div className={cn("flex items-start justify-between gap-3", emphasized ? "mb-3" : "mb-4")}>
+          <div className="min-w-0">
+            <div className="mb-2 flex items-center gap-2">
+              <h3 dir="ltr" className={cn(
+                "font-bold font-mono tracking-[0.16em] text-foreground group-hover:text-accent transition-colors",
+                emphasized ? "text-2xl" : size === "large" ? "text-lg" : size === "medium" ? "text-base" : "text-sm",
+              )}>
+                {property.code}
+              </h3>
+              <span className={cn(
+                "rounded bg-foreground/5 px-1.5 py-0.5 text-muted-foreground font-bold tracking-widest uppercase flex-shrink-0",
+                emphasized ? "text-[10px]" : "text-[9px]",
+              )}>CODE</span>
+            </div>
+            <p className={cn("flex items-center gap-1.5 text-muted-foreground line-clamp-1", emphasized ? "text-sm" : "text-xs")}>
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
+              {[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}
             </p>
-            {property.finishing && (
-              <p dir="rtl" className="mt-2 inline-flex max-w-full self-start rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent line-clamp-1">
-                {property.finishing}
-              </p>
-            )}
-          </>
-        )}
-        {!emphasized && <div dir="ltr" className={cn(
-          "flex items-baseline gap-2.5 font-bold text-accent",
-          size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
-        )}>
-          <span>{property.price.toLocaleString("en-US")}</span>
-          <span className="text-xs font-semibold tracking-widest text-muted-foreground">EGP</span>
-        </div>}
+          </div>
+          <div dir="ltr" className="shrink-0 text-left">
+            <div className={cn(
+              "font-extrabold leading-none text-accent",
+              emphasized ? "text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
+            )}>{property.price.toLocaleString("en-US")}</div>
+            <div className="mt-1 text-[10px] font-bold tracking-[0.18em] text-muted-foreground">EGP</div>
+          </div>
+        </div>
         <div className="mt-auto">
-          {((!emphasized && (property.finishing || property.view)) || (emphasized && (property.view || highlightedDetails.length > 0))) && (
+          <div className={cn(
+            "grid grid-cols-3 divide-x divide-x-reverse divide-border rounded-xl border border-border bg-muted/30",
+            emphasized ? "py-3" : "py-2.5",
+          )}>
+            {property.beds > 0 && <span className="flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground"><Bed className="h-4 w-4 text-accent" />{property.beds} غرف</span>}
+            {property.baths > 0 && <span className="flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground"><Bath className="h-4 w-4 text-accent" />{property.baths} حمام</span>}
+            <span className="flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground"><Square className="h-4 w-4 text-accent" />{property.area} م²</span>
+          </div>
+          {((property.finishing || property.view) || highlightedDetails.length > 0) && (
             <div className={cn("flex flex-wrap items-center gap-1.5", emphasized ? "pt-4" : "pt-3")}>
               {emphasized
                 ? highlightedDetails.map((detail) => (
@@ -355,28 +354,12 @@ export function PropertyCard({
                     </span>
                   ))
                 : <>
-                    {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span dir="rtl" className="text-[12px] font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-sm line-clamp-1">{property.finishing}</span>}
-                    {property.view && <span className="text-[12px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded-sm line-clamp-1 max-w-[55%]">{property.view}</span>}
+                    {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span dir="rtl" className="rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent line-clamp-1">{property.finishing}</span>}
+                    {property.view && <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground line-clamp-1 max-w-[55%]">{property.view}</span>}
                   </>
               }
             </div>
           )}
-          <div dir={emphasized ? "ltr" : undefined} className={cn(
-            "flex justify-between items-center text-muted-foreground border-t border-border",
-            emphasized ? "mt-4 pt-4 text-sm" : size === "medium" ? "mt-3 pt-3 text-[13px]" : "mt-4 pt-4 text-[13px]",
-          )}>
-            {emphasized && (
-              <div dir="ltr" className="flex items-baseline gap-1.5 font-bold text-accent">
-                <span className="text-2xl leading-tight">{property.price.toLocaleString("en-US")}</span>
-                <span className="text-sm font-semibold tracking-widest text-muted-foreground">EGP</span>
-              </div>
-            )}
-            <div dir={emphasized ? "rtl" : undefined} className="flex items-center gap-3">
-              {property.beds > 0 && <span className="flex items-center gap-1.5 font-medium"><Bed className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.beds} غرف</span>}
-              {property.baths > 0 && <span className="flex items-center gap-1.5 font-medium"><Bath className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.baths} حمام</span>}
-              <span className="flex items-center gap-1.5 font-medium"><Square className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.area} م²</span>
-            </div>
-          </div>
         </div>
       </CardContent>
 
@@ -386,33 +369,26 @@ export function PropertyCard({
           ? "w-full border-t border-border p-3 sm:w-48 sm:border-t-0 sm:border-r sm:p-3 md:w-56"
           : emphasized ? "p-5 sm:p-6 pt-0" : size === "large" ? "p-5 pt-0" : "p-3 sm:p-4 pt-0",
       )}>
-        <div className="flex gap-1.5 w-full">
-          <Button onClick={(e) => { e.stopPropagation(); goToDetails(); }} className="flex-1 h-8 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium">
-            التفاصيل
+         <Button onClick={(e) => { e.stopPropagation(); goToDetails(); }} className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold shadow-sm">
+             عرض تفاصيل العقار
+         </Button>
+         <div className="flex gap-1.5 w-full">
+           <Button variant="outline" size="sm" className="flex-1 h-9 rounded-lg text-green-600 dark:text-green-400 border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-400 dark:hover:border-green-700 text-xs gap-1 transition-colors" onClick={handleWhatsApp}>
+             <WhatsAppIcon className="h-3.5 w-3.5" />واتساب
           </Button>
-          <Button variant="outline" size="icon" className="h-8 w-8 border-border" onClick={handleShare} title="مشاركة"><Share2 className="h-3.5 w-3.5" /></Button>
-          <Button variant="outline" size="icon"
-            className={cn("h-8 w-8 border-border", isFavorite(property.id) ? "text-red-500 border-red-200" : "")}
-            onClick={handleFavorite} title="المفضلة">
-            <Heart className={cn("h-3.5 w-3.5", isFavorite(property.id) ? "fill-red-500" : "")} />
+           <Button variant="outline" size="sm" className="flex-1 h-9 rounded-lg text-blue-600 dark:text-blue-400 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-700 text-xs gap-1 transition-colors" onClick={handleCall}>
+             <Phone className="h-3.5 w-3.5" />اتصال
           </Button>
-          <Button variant="outline" size="icon"
-            className={cn("h-8 w-8 border-border", isInCompare(property.id) ? "text-accent border-accent/30" : "")}
-            onClick={handleCompare} title="مقارنة">
-            <Scale className="h-3.5 w-3.5" />
+           <Button variant="outline" size="icon" className="h-9 w-10 rounded-lg text-muted-foreground border-border hover:text-accent" onClick={handleCopy} title="نسخ الكود">
+             <Copy className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <div className="flex gap-1.5 w-full">
-          <Button variant="outline" size="sm" className="flex-1 h-7 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-400 dark:hover:border-green-700 text-xs gap-1 transition-colors" onClick={handleWhatsApp}>
-            <WhatsAppIcon className="h-3 w-3" />واتساب
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 h-7 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-700 text-xs gap-1 transition-colors" onClick={handleCall}>
-            <Phone className="h-3 w-3" />اتصال
-          </Button>
-          <Button variant="outline" size="sm" className="h-7 text-muted-foreground border-border hover:text-accent text-xs gap-1 px-2" onClick={handleCopy} title="نسخ الكود">
-            <Copy className="h-3 w-3" />
-          </Button>
-        </div>
+         <Button variant="outline" size="icon"
+           className={cn("h-9 w-full rounded-lg border-accent/30 text-accent hover:bg-accent/10", isInCompare(property.id) && "bg-accent/10")}
+           onClick={handleCompare} title="مقارنة">
+           <Scale className="h-3.5 w-3.5" />
+           <span className="mr-1 text-xs font-semibold">مقارنة العقار</span>
+         </Button>
         <a
           href={getTiktokUrl(settings)}
           target="_blank"
