@@ -3,3 +3,4 @@
 - [بناء واجهة المعاينة والنشر](build-deployment.md) — إعدادات Vite لا يجب أن تفرض متغيرات تشغيل أثناء بناء الإنتاج.
 - [توافق مخطط Supabase الإنتاجي](supabase-production-schema.md) — قد تتأخر أعمدة الإنتاج عن مخطط Drizzle المحلي؛ يجب فحص المخطط قبل نقل البيانات.
 - [صلاحية GitHub للـWorkflows](github-actions-connection-scope.md) — اتصال OAuth يفتقد `workflow`، لكن اعتماد GitHub مستقل قد يملك النطاق ويصلح لمسار رفع منفصل.
+- [حماية روابط Vercel](vercel-preview-protection.md) — روابط Deployment قد تعيد SSO بدل API التطبيق؛ يجب التفريق بين حماية Vercel وخطأ الخادم.
