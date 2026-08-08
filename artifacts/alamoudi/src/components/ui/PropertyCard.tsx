@@ -83,6 +83,11 @@ export function PropertyCard({
     property.parking ? `موقف: ${property.parking}` : "",
     property.additionalFeatures || "",
   ].filter(Boolean).slice(0, 2);
+  const detailTextClass = detailsScale === "city" ? "text-base" : "text-sm";
+  const detailIconClass = detailsScale === "city" ? "h-5 w-5" : "h-[18px] w-[18px]";
+  const detailItemClass = detailsScale === "city"
+    ? "rounded-md border border-accent/25 bg-accent/10 px-1.5 py-1"
+    : "rounded-md border border-accent/20 bg-accent/5 px-1 py-0.5";
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -172,19 +177,19 @@ export function PropertyCard({
           </div>
         </div>
 
-        <div className={cn("flex min-w-0 flex-1 flex-col justify-between pb-1", emphasized ? "px-4 pb-1 pt-3.5" : "px-3.5 pb-1 pt-3")}>
+        <div className={cn("flex min-w-0 flex-1 flex-col justify-between pb-1", emphasized ? "px-4 pb-1 pt-2.5" : "px-3.5 pb-1 pt-2.5")}>
           <div className="min-w-0">
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <div dir="ltr" className={cn(
-                "inline-flex min-w-0 items-center justify-center gap-1 rounded-md border border-accent/45 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-1.5 py-0.5 text-center shadow-[0_3px_10px_rgba(180,152,107,0.14),inset_0_1px_0_rgba(255,255,255,0.08)]",
+                "relative -top-0.5 inline-flex min-w-0 items-center justify-center gap-1 rounded-md border border-accent/45 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-1.5 py-0.5 text-center shadow-[0_3px_10px_rgba(180,152,107,0.14),inset_0_1px_0_rgba(255,255,255,0.08)]",
                 emphasized ? "sm:px-2 sm:py-1" : "",
               )}>
                 <span className={cn(
-                  "inline-flex min-w-[2.8rem] shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 py-0.5 text-center font-black tracking-[0.14em] text-accent uppercase leading-none",
-                  emphasized ? "text-[8px]" : "text-[7px]",
+                  "inline-flex h-5 min-w-[3.25rem] shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 text-center font-black tracking-[0.12em] text-accent uppercase leading-none",
+                  emphasized ? "text-[10px]" : "text-[9px]",
                 )}>CODE</span>
                 <h3 className={cn(
-                  "truncate text-center font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
+                  "flex h-5 items-center truncate text-center font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
                   emphasized ? "text-base" : "text-xs",
                 )}>{property.code}</h3>
               </div>
@@ -202,13 +207,13 @@ export function PropertyCard({
 
           <div className="mt-auto flex flex-nowrap items-end justify-between gap-3 whitespace-nowrap pt-2">
             <div dir="ltr" className="flex min-w-0 items-baseline gap-1">
-              <span className={cn("truncate font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
+              <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
               <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
             </div>
-            <div className={cn("flex shrink-0 items-center gap-2.5 font-semibold text-foreground/85", detailsScale === "city" ? "text-xs" : "text-[11px]")}>
-              {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className={cn(detailsScale === "city" ? "h-4 w-4" : "h-3.5 w-3.5", "text-accent")} />{property.beds}</span>}
-              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className={cn(detailsScale === "city" ? "h-4 w-4" : "h-3.5 w-3.5", "text-accent")} />{property.baths}</span>}
-              <span className="flex items-center gap-0.5"><Square className={cn(detailsScale === "city" ? "h-4 w-4" : "h-3.5 w-3.5", "text-accent")} />{property.area}</span>
+            <div className={cn("flex shrink-0 items-center gap-2.5 font-bold text-foreground/90", detailTextClass)}>
+              {property.beds > 0 && <span className={cn("flex items-center gap-1", detailItemClass)}><Bed className={cn(detailIconClass, "text-accent")} />{property.beds}</span>}
+              {property.baths > 0 && <span className={cn("flex items-center gap-1", detailItemClass)}><Bath className={cn(detailIconClass, "text-accent")} />{property.baths}</span>}
+              <span className={cn("flex items-center gap-1", detailItemClass)}><Square className={cn(detailIconClass, "text-accent")} />{property.area}</span>
             </div>
           </div>
         </div>
@@ -320,22 +325,22 @@ export function PropertyCard({
 
       <CardContent className={cn(
         "flex-1 flex flex-col min-w-0",
-        listMode ? "p-3 sm:p-4" : emphasized ? "p-5 sm:p-6" : size === "large" ? "p-5" : "p-3 sm:p-4",
+        listMode ? "px-3 pb-1 pt-2 sm:px-4" : emphasized ? "px-5 pb-1 pt-3 sm:px-6 sm:pt-4" : size === "large" ? "px-5 pb-1 pt-3" : "px-3 pb-1 pt-2.5 sm:px-4",
         "pb-1",
       )}>
         <div className={cn("min-w-0", emphasized ? "mb-3" : "mb-4")}>
           <div className="min-w-0">
              <div className="mb-2 flex items-center gap-2">
               <div dir="ltr" className={cn(
-                "inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-accent/50 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-2 py-1 text-center shadow-[0_5px_16px_rgba(180,152,107,0.16),inset_0_1px_0_rgba(255,255,255,0.1)]",
+                "relative -top-0.5 inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-accent/50 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-2 py-1 text-center shadow-[0_5px_16px_rgba(180,152,107,0.16),inset_0_1px_0_rgba(255,255,255,0.1)]",
                 emphasized ? "sm:px-2.5 sm:py-1.5" : "",
               )}>
                 <span className={cn(
-                  "inline-flex min-w-[3.2rem] shrink-0 items-center justify-center rounded bg-accent/20 px-1 py-0.5 text-center font-black tracking-[0.16em] text-accent uppercase leading-none",
-                  emphasized ? "text-[9px]" : "text-[8px]",
+                  "inline-flex h-6 min-w-[3.75rem] shrink-0 items-center justify-center rounded bg-accent/20 px-1 text-center font-black tracking-[0.12em] text-accent uppercase leading-none",
+                  emphasized ? "text-[11px]" : "text-[10px]",
                 )}>CODE</span>
                 <h3 className={cn(
-                  "truncate text-center font-black font-mono tracking-[0.14em] text-accent group-hover:text-foreground transition-colors",
+                  "flex h-6 items-center truncate text-center font-black font-mono tracking-[0.14em] text-accent group-hover:text-foreground transition-colors",
                   emphasized ? "text-xl" : size === "large" ? "text-base" : size === "medium" ? "text-sm" : "text-xs",
                 )}>
                   {property.code}
@@ -366,13 +371,13 @@ export function PropertyCard({
           )}
           <div className="flex flex-nowrap items-center justify-between gap-3 whitespace-nowrap border-t border-border/70 pt-3">
             <div dir="ltr" className="flex min-w-0 items-baseline gap-1">
-              <span className={cn("truncate font-extrabold leading-none text-accent", emphasized ? "text-xl sm:text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base")}>{formatNumber(property.price)}</span>
+              <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-none text-accent", emphasized ? "text-xl sm:text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base")}>{formatNumber(property.price)}</span>
               <span className="shrink-0 text-[10px] font-bold tracking-[0.16em] text-foreground/75">EGP</span>
             </div>
-            <div className={cn("flex shrink-0 items-center gap-2.5 font-semibold text-foreground/85", detailsScale === "city" ? "text-sm" : "text-[11px]")}>
-              {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className={cn(detailsScale === "city" ? "h-5 w-5" : "h-4 w-4", "text-accent")} />{property.beds}</span>}
-              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className={cn(detailsScale === "city" ? "h-5 w-5" : "h-4 w-4", "text-accent")} />{property.baths}</span>}
-              <span className="flex items-center gap-0.5"><Square className={cn(detailsScale === "city" ? "h-5 w-5" : "h-4 w-4", "text-accent")} />{property.area}</span>
+            <div className={cn("flex shrink-0 items-center gap-2.5 font-bold text-foreground/90", detailTextClass)}>
+              {property.beds > 0 && <span className={cn("flex items-center gap-1", detailItemClass)}><Bed className={cn(detailIconClass, "text-accent")} />{property.beds}</span>}
+              {property.baths > 0 && <span className={cn("flex items-center gap-1", detailItemClass)}><Bath className={cn(detailIconClass, "text-accent")} />{property.baths}</span>}
+              <span className={cn("flex items-center gap-1", detailItemClass)}><Square className={cn(detailIconClass, "text-accent")} />{property.area}</span>
             </div>
           </div>
         </div>
