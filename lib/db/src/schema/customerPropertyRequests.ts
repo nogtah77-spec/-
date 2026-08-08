@@ -25,6 +25,8 @@ export const customerPropertyRequestsTable = pgTable("customer_property_requests
   notes: text("notes").notNull().default(""),
   source: text("source").notNull().default(""),
   followUpDate: text("follow_up_date").notNull().default(""),
+  assignedStaffId: text("assigned_staff_id").notNull().default(""),
+  viewingDate: text("viewing_date").notNull().default(""),
   status: text("status").notNull().default("new"),
   createdAt: text("created_at").notNull(),
 });

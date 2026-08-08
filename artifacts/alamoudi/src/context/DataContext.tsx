@@ -140,6 +140,8 @@ export interface CustomerPropertyRequest {
   notes: string;
   source: string;
   followUpDate: string;
+  assignedStaffId: string;
+  viewingDate: string;
   status: CustomerPropertyRequestStatus;
   createdAt: string;
 }

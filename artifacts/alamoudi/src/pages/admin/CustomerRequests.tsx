@@ -79,6 +79,8 @@ const emptyForm: RequestForm = {
   notes: "",
   source: "",
   followUpDate: "",
+  assignedStaffId: "",
+  viewingDate: "",
 };
 
 function formatDate(value: string) {
@@ -86,6 +88,20 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime())
     ? "تاريخ غير معروف"
     : date.toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatDateTime(value: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value
+    : date.toLocaleString("ar-EG", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 }
 
 function cleanPhone(value: string) {
@@ -153,9 +169,44 @@ function FormSelect({
   );
 }
 
+function RangeInput({
+  label,
+  min,
+  max,
+  onMinChange,
+  onMaxChange,
+  minPlaceholder,
+  maxPlaceholder,
+  suffix,
+}: {
+  label: string;
+  min: string;
+  max: string;
+  onMinChange: (value: string) => void;
+  onMaxChange: (value: string) => void;
+  minPlaceholder: string;
+  maxPlaceholder: string;
+  suffix?: string;
+}) {
+  return (
+    <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-2">
+      <div className="flex items-center justify-between gap-3">
+        <Label className="font-semibold">{label}</Label>
+        {suffix && <span className="text-[11px] text-muted-foreground">{suffix}</span>}
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+        <Input value={min} onChange={(event) => onMinChange(event.target.value)} placeholder={minPlaceholder} aria-label={`${label} من`} />
+        <span className="text-xs font-semibold text-muted-foreground">إلى</span>
+        <Input value={max} onChange={(event) => onMaxChange(event.target.value)} placeholder={maxPlaceholder} aria-label={`${label} إلى`} />
+      </div>
+    </div>
+  );
+}
+
 export default function CustomerRequests() {
   const {
     customerPropertyRequests,
+    users,
     addCustomerPropertyRequest,
     updateCustomerPropertyRequest,
     deleteCustomerPropertyRequest,
@@ -171,6 +222,10 @@ export default function CustomerRequests() {
   const [editing, setEditing] = useState<CustomerPropertyRequest | null>(null);
   const [form, setForm] = useState<RequestForm>(emptyForm);
   const [isSaving, setIsSaving] = useState(false);
+  const staffUsers = useMemo(
+    () => users.filter((user) => user.role === "admin" || user.role === "agent"),
+    [users],
+  );
 
   const counts = useMemo(() => ({
     all: customerPropertyRequests.length,
@@ -192,6 +247,7 @@ export default function CustomerRequests() {
           item.requestType,
           item.transactionType,
           item.preferredAreas,
+          item.assignedStaffId,
           item.details,
           item.requiredFeatures,
         ].join(" ").toLocaleLowerCase("ar");
@@ -365,6 +421,16 @@ export default function CustomerRequests() {
                           {[item.preferredAreas, item.bedrooms && `${item.bedrooms} غرف`, item.bathrooms && `${item.bathrooms} حمام`, item.budgetMax && `حتى ${item.budgetMax}`].filter(Boolean).map((tag) => (
                             <span key={tag} className="rounded-md bg-muted px-2 py-1 text-[11px] text-muted-foreground">{tag}</span>
                           ))}
+                          {item.assignedStaffId && (
+                            <span className="rounded-md bg-primary/10 px-2 py-1 text-[11px] text-primary">
+                              المسؤول: {users.find((user) => user.id === item.assignedStaffId)?.name || "موظف محدد"}
+                            </span>
+                          )}
+                          {item.viewingDate && (
+                            <span className="rounded-md bg-accent/10 px-2 py-1 text-[11px] text-accent">
+                              المعاينة: {formatDateTime(item.viewingDate)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -408,6 +474,24 @@ export default function CustomerRequests() {
                 <FormInput label="البريد الإلكتروني" value={form.email} onChange={(value) => updateForm("email", value)} placeholder="name@example.com" type="email" />
                 <FormInput label="مصدر العميل" value={form.source} onChange={(value) => updateForm("source", value)} placeholder="معرفة شخصية، إعلان، واتساب..." />
                 <FormInput label="موعد المتابعة" value={form.followUpDate} onChange={(value) => updateForm("followUpDate", value)} type="date" />
+                <div className="space-y-2">
+                  <Label>الموظف المسؤول</Label>
+                  <Select
+                    value={form.assignedStaffId || "__unassigned"}
+                    onValueChange={(value) => updateForm("assignedStaffId", value === "__unassigned" ? "" : value)}
+                  >
+                    <SelectTrigger><SelectValue placeholder="اختر الموظف المسؤول" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__unassigned">غير محدد حاليًا</SelectItem>
+                      {staffUsers.map((user) => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name || user.username || user.email} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <FormInput label="موعد المعاينة" value={form.viewingDate} onChange={(value) => updateForm("viewingDate", value)} type="datetime-local" />
               </div>
             </section>
 
@@ -418,12 +502,28 @@ export default function CustomerRequests() {
                 <FormSelect label="الغرض" value={form.transactionType} onChange={(value) => updateForm("transactionType", value)} options={transactionTypes} placeholder="شراء أم إيجار؟" />
                 <FormInput label="المناطق المفضلة" value={form.preferredAreas} onChange={(value) => updateForm("preferredAreas", value)} placeholder="مثال: التجمع، العاصمة، الشيخ زايد" />
                 <FormSelect label="التشطيب المطلوب" value={form.finishing} onChange={(value) => updateForm("finishing", value)} options={["بدون تشطيب", "نصف تشطيب", "تشطيب كامل", "فاخر", "لا يهم"]} placeholder="اختر مستوى التشطيب" />
-                <FormInput label="الميزانية من" value={form.budgetMin} onChange={(value) => updateForm("budgetMin", value)} placeholder="مثال: 3,000,000 جنيه" />
-                <FormInput label="الميزانية إلى" value={form.budgetMax} onChange={(value) => updateForm("budgetMax", value)} placeholder="مثال: 5,000,000 جنيه" />
+                <RangeInput
+                  label="الميزانية"
+                  min={form.budgetMin}
+                  max={form.budgetMax}
+                  onMinChange={(value) => updateForm("budgetMin", value)}
+                  onMaxChange={(value) => updateForm("budgetMax", value)}
+                  minPlaceholder="من: 3,000,000"
+                  maxPlaceholder="إلى: 5,000,000"
+                  suffix="بالجنيه"
+                />
                 <FormInput label="عدد الغرف" value={form.bedrooms} onChange={(value) => updateForm("bedrooms", value)} placeholder="مثال: 3" />
                 <FormInput label="عدد الحمامات" value={form.bathrooms} onChange={(value) => updateForm("bathrooms", value)} placeholder="مثال: 2" />
-                <FormInput label="المساحة من (م²)" value={form.areaMin} onChange={(value) => updateForm("areaMin", value)} placeholder="مثال: 150" />
-                <FormInput label="المساحة إلى (م²)" value={form.areaMax} onChange={(value) => updateForm("areaMax", value)} placeholder="مثال: 220" />
+                <RangeInput
+                  label="المساحة"
+                  min={form.areaMin}
+                  max={form.areaMax}
+                  onMinChange={(value) => updateForm("areaMin", value)}
+                  onMaxChange={(value) => updateForm("areaMax", value)}
+                  minPlaceholder="من: 150"
+                  maxPlaceholder="إلى: 220"
+                  suffix="م²"
+                />
                 <FormSelect label="مفروش؟" value={form.furnished} onChange={(value) => updateForm("furnished", value)} options={["مفروش", "غير مفروش", "لا يهم"]} placeholder="اختر" />
                 <FormInput label="طريقة السداد" value={form.paymentMethod} onChange={(value) => updateForm("paymentMethod", value)} placeholder="كاش، تقسيط، مقدم..." />
               </div>
@@ -483,6 +583,8 @@ export default function CustomerRequests() {
                   {renderDetail("طريقة السداد", selected.paymentMethod)}
                   {renderDetail("مصدر العميل", selected.source)}
                   {renderDetail("موعد المتابعة", selected.followUpDate, CalendarDays)}
+                  {renderDetail("الموظف المسؤول", users.find((user) => user.id === selected.assignedStaffId)?.name || selected.assignedStaffId, UserRound)}
+                  {renderDetail("موعد المعاينة", formatDateTime(selected.viewingDate), CalendarDays)}
                 </div>
                 {renderDetail("المميزات والشروط المهمة", selected.requiredFeatures)}
                 {renderDetail("تفاصيل طلب العميل", selected.details, FileText)}

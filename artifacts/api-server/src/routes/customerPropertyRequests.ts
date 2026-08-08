@@ -30,6 +30,8 @@ const editableFields = [
   "notes",
   "source",
   "followUpDate",
+  "assignedStaffId",
+  "viewingDate",
 ] as const;
 
 const textFields = Object.fromEntries(editableFields.map((field) => [field, z.string().optional()])) as Record<
