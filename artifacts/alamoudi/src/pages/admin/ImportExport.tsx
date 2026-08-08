@@ -10,6 +10,7 @@ import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { formatNumber } from "@/lib/utils";
 import {
   parseWorkbookBytes,
   parseDelimitedText,
@@ -365,7 +366,7 @@ export default function ImportExport() {
                             <TableCell className="text-muted-foreground">
                               {row.subArea || "—"}
                             </TableCell>
-                            <TableCell>{row.price ? row.price.toLocaleString("en-US") : "—"}</TableCell>
+                            <TableCell>{row.price ? formatNumber(row.price) : "—"}</TableCell>
                             <TableCell>{row.area ? `${row.area}م²` : "—"}</TableCell>
                             <TableCell>
                               {row.code && existingCodes.has(row.code) ? (

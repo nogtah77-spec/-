@@ -11,7 +11,7 @@ import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber, toNumericString } from "@/lib/utils";
 import { SEED_SOURCES } from "@/data/seedSources";
 
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
@@ -137,7 +137,7 @@ export default function PropertyForm() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>السعر (EGP)</Label>
-                    <Input type="number" value={form.price || ""} onChange={e => set("price", Number(e.target.value))} placeholder="0" />
+                    <Input type="text" inputMode="decimal" dir="ltr" value={form.price ? formatNumber(form.price) : ""} onChange={e => set("price", Number(toNumericString(e.target.value)) || 0)} placeholder="0" />
                   </div>
                   <div className="space-y-2">
                     <Label>المساحة (م²)</Label>

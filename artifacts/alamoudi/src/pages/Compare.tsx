@@ -5,7 +5,7 @@ import { Scale, X, Bed, Bath, Square, MapPin, Layers, Check, Minus } from "lucid
 import { Link } from "wouter";
 import { useData } from "@/context/DataContext";
 import { useUserPrefs } from "@/context/UserPrefsContext";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 
 const categoryLabels: Record<string, string> = {
   sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
@@ -29,7 +29,7 @@ export default function Compare() {
   }).filter(Boolean);
 
   const rows = [
-    { label: "السعر", key: "price", format: (v: any) => v ? `${Number(v).toLocaleString("en-US")} EGP` : "—" },
+    { label: "السعر", key: "price", format: (v: any) => v ? `${formatNumber(v)} EGP` : "—" },
     { label: "المنطقة", key: "regionName", format: (v: any) => v || "—" },
     { label: "نوع العقار", key: "typeName", format: (v: any) => v || "—" },
     { label: "فئة العقار", key: "category", format: (v: any) => categoryLabels[v] || "—" },
@@ -91,7 +91,7 @@ export default function Compare() {
                             }
                           </div>
                           <span className="inline-block font-mono text-[11px] font-semibold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded tracking-wide">{p.code}</span>
-                          <p className="text-accent font-bold text-sm mt-1">{Number(p.price).toLocaleString("en-US")} EGP</p>
+                           <p className="text-accent font-bold text-sm mt-1">{formatNumber(p.price)} EGP</p>
                         </div>
                       </th>
                     ))}

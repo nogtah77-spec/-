@@ -10,7 +10,7 @@ import { getTiktokUrl, getTiktokName } from "@/lib/socials";
 import { normalizePhoneForWa } from "@/lib/phone";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -175,7 +175,7 @@ export function PropertyCard({
                   emphasized ? "text-lg" : "text-sm",
                 )}>{property.code}</h3>
                 <span className={cn(
-                  "shrink-0 rounded bg-foreground/5 px-1 py-0.5 font-bold tracking-widest text-muted-foreground uppercase",
+                  "inline-flex shrink-0 items-center justify-center rounded bg-foreground/5 px-1 py-0.5 font-bold tracking-widest text-muted-foreground uppercase leading-none",
                   emphasized ? "text-[9px]" : "text-[8px]",
                 )}>CODE</span>
               </div>
@@ -198,8 +198,8 @@ export function PropertyCard({
 
           <div className="mt-1.5 flex items-end justify-between gap-2">
             <div dir="ltr" className="flex min-w-0 items-baseline gap-1">
-              <span className={cn("truncate font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{property.price.toLocaleString("en-US")}</span>
-              <span className="shrink-0 text-[9px] font-bold tracking-widest text-muted-foreground">EGP</span>
+              <span className={cn("truncate font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
+              <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/70">EGP</span>
             </div>
             <div className="flex shrink-0 items-center gap-2 text-[9px] font-semibold text-muted-foreground">
               {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3 text-accent" />{property.beds}</span>}
@@ -319,11 +319,11 @@ export function PropertyCard({
                 {property.code}
               </h3>
               <span className={cn(
-                "rounded bg-foreground/5 px-1.5 py-0.5 text-muted-foreground font-bold tracking-widest uppercase flex-shrink-0",
+                "inline-flex shrink-0 items-center justify-center rounded bg-foreground/5 px-1.5 py-0.5 text-muted-foreground font-bold tracking-widest uppercase leading-none",
                 emphasized ? "text-[10px]" : "text-[9px]",
               )}>CODE</span>
             </div>
-            <p className={cn("flex items-center gap-1.5 text-muted-foreground line-clamp-1", emphasized ? "text-sm" : "text-xs")}>
+            <p className={cn("flex items-center gap-1.5 text-foreground/75 line-clamp-1", emphasized ? "text-sm" : "text-xs")}>
               <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
               {[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}
             </p>
@@ -332,18 +332,18 @@ export function PropertyCard({
             <div className={cn(
               "font-extrabold leading-none text-accent",
               emphasized ? "text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
-            )}>{property.price.toLocaleString("en-US")}</div>
-            <div className="mt-1 text-[10px] font-bold tracking-[0.18em] text-muted-foreground">EGP</div>
+            )}>{formatNumber(property.price)}</div>
+            <div className="mt-1 text-[10px] font-bold tracking-[0.18em] text-foreground/70">EGP</div>
           </div>
         </div>
         <div className="mt-auto">
           <div className={cn(
-            "grid grid-cols-3 divide-x divide-x-reverse divide-border rounded-xl border border-border bg-muted/30",
+            "grid grid-cols-3 divide-x divide-x-reverse divide-border rounded-xl border border-border bg-muted/30 text-foreground/80",
             emphasized ? "py-3" : "py-2.5",
           )}>
-            {property.beds > 0 && <span className="flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground"><Bed className="h-4 w-4 text-accent" />{property.beds} غرف</span>}
-            {property.baths > 0 && <span className="flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground"><Bath className="h-4 w-4 text-accent" />{property.baths} حمام</span>}
-            <span className="flex flex-col items-center gap-1 text-xs font-semibold text-muted-foreground"><Square className="h-4 w-4 text-accent" />{property.area} م²</span>
+            {property.beds > 0 && <span className="flex flex-col items-center gap-1 text-xs font-semibold"><Bed className="h-4 w-4 text-accent" />{property.beds} غرف</span>}
+            {property.baths > 0 && <span className="flex flex-col items-center gap-1 text-xs font-semibold"><Bath className="h-4 w-4 text-accent" />{property.baths} حمام</span>}
+            <span className="flex flex-col items-center gap-1 text-xs font-semibold"><Square className="h-4 w-4 text-accent" />{property.area} م²</span>
           </div>
           {((property.finishing || property.view) || highlightedDetails.length > 0) && (
             <div className={cn("flex flex-wrap items-center gap-1.5", emphasized ? "pt-4" : "pt-3")}>

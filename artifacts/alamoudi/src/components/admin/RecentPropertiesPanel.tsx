@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Property, PropertyType, Region } from "@/context/DataContext";
+import { formatMoneyText } from "@/lib/utils";
 
 type RangePreset = "7" | "14" | "30" | "custom";
 
@@ -179,7 +180,7 @@ export function RecentPropertiesPanel({
                       <span className="truncate text-sm text-muted-foreground">{property.title}</span>
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
-                      {[region, type, property.price ? `${property.price.toLocaleString("ar-EG")} جنيه` : ""].filter(Boolean).join(" · ") || "تفاصيل العقار قيد الإضافة"}
+                      {[region, type, property.price ? formatMoneyText(property.price, "جنيه") : ""].filter(Boolean).join(" · ") || "تفاصيل العقار قيد الإضافة"}
                     </p>
                   </div>
                   <div className="hidden shrink-0 text-left text-[11px] text-muted-foreground sm:block">

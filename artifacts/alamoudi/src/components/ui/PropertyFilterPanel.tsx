@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { formatNumericInput } from "@/lib/utils";
 import { FINISHING_OPTIONS } from "@/lib/finishingOptions";
 import {
   CATEGORY_OPTIONS,
@@ -168,11 +169,11 @@ export function PropertyFilterPanel({
             <div className="grid grid-cols-2 gap-2">
               <label className="min-w-0">
                 <span className="sr-only">السعر من</span>
-                <Input className="h-9 px-2 text-sm" type="number" min="0" value={filters.minPrice} onChange={(e) => update({ minPrice: e.target.value })} placeholder="من" aria-label="السعر من" />
+                <Input className="h-9 px-2 text-sm" type="text" inputMode="decimal" dir="ltr" value={formatNumericInput(filters.minPrice)} onChange={(e) => update({ minPrice: formatNumericInput(e.target.value) })} placeholder="من" aria-label="السعر من" />
               </label>
               <label className="min-w-0">
                 <span className="sr-only">السعر إلى</span>
-                <Input className="h-9 px-2 text-sm" type="number" min="0" value={filters.maxPrice} onChange={(e) => update({ maxPrice: e.target.value })} placeholder="إلى" aria-label="السعر إلى" />
+                <Input className="h-9 px-2 text-sm" type="text" inputMode="decimal" dir="ltr" value={formatNumericInput(filters.maxPrice)} onChange={(e) => update({ maxPrice: formatNumericInput(e.target.value) })} placeholder="إلى" aria-label="السعر إلى" />
               </label>
             </div>
           </fieldset>

@@ -9,7 +9,6 @@ import { DataProvider, useData } from "@/context/DataContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { UserPrefsProvider } from "@/context/UserPrefsContext";
 import { AIChatProvider } from "@/context/AIChatContext";
-import { AIChatWidget } from "@/components/ai/AIChatWidget";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
 import { api } from "@/lib/api";
 import { getVisitorId } from "@/lib/visitorTracking";
@@ -52,6 +51,7 @@ const AdAnalytics     = lazy(() => import("@/pages/admin/AdAnalytics"));
 const SmartBanners    = lazy(() => import("@/pages/admin/SmartBanners"));
 const Sources              = lazy(() => import("@/pages/admin/Sources"));
 const FinishingGallery     = lazy(() => import("@/pages/admin/FinishingGallery"));
+const AIChatWidget = lazy(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
 
 const queryClient = new QueryClient();
 
@@ -292,7 +292,11 @@ function App() {
                     </AppReadyGate>
                     <ScrollToTopButton />
                     <StaffLiveBubble />
-                    {AI_ASSISTANT_ENABLED && <AIChatWidget />}
+                    {AI_ASSISTANT_ENABLED && (
+                      <Suspense fallback={null}>
+                        <AIChatWidget />
+                      </Suspense>
+                    )}
                   </WouterRouter>
                   <Toaster />
                 </AIChatProvider>

@@ -15,6 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { formatNumber } from "@/lib/utils";
 
 const statusLabels: Record<PropertyStatus, string> = {
   active: "نشط",
@@ -235,7 +236,7 @@ export default function Properties() {
                   </TableCell>
                   <TableCell>{propertyTypes.find(t => t.id === property.typeId)?.name}</TableCell>
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
-                  <TableCell>{property.price.toLocaleString("en-US")} EGP</TableCell>
+                  <TableCell>{formatNumber(property.price)} EGP</TableCell>
                   <TableCell>
                     <Select
                       value={property.status}

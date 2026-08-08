@@ -13,6 +13,7 @@ import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { Link } from "wouter";
+import { formatNumericInput, toNumericString } from "@/lib/utils";
 
 interface FormState {
   ownerName: string;
@@ -55,8 +56,8 @@ function validate(form: FormState): Partial<Record<keyof FormState, string>> {
   if (!form.regionId) errors.regionId = "المنطقة مطلوبة";
   if (!form.propertyTypeId) errors.propertyTypeId = "نوع العقار مطلوب";
   if (!form.listingType) errors.listingType = "نوع الإعلان مطلوب";
-  if (!form.area.trim() || isNaN(Number(form.area))) errors.area = "المساحة مطلوبة";
-  if (!form.price.trim() || isNaN(Number(form.price))) errors.price = "السعر مطلوب";
+  if (!form.area.trim() || isNaN(Number(toNumericString(form.area)))) errors.area = "المساحة مطلوبة";
+  if (!form.price.trim() || isNaN(Number(toNumericString(form.price)))) errors.price = "السعر مطلوب";
   return errors;
 }
 
@@ -123,8 +124,10 @@ export default function AddProperty() {
     }
     setLoading(true);
     try {
-      await api.post("/property-requests", {
+       await api.post("/property-requests", {
         ...form,
+         area: toNumericString(form.area),
+         price: toNumericString(form.price),
         images,
         id: genId(),
         status: "new",
@@ -274,7 +277,10 @@ export default function AddProperty() {
                   </div>
                   <div className="space-y-1.5 md:col-span-2" data-error={errors.price}>
                     <Label htmlFor="price" className="text-sm">السعر (EGP) <span className="text-destructive">*</span></Label>
-                    <Input id="price" type="number" value={form.price} onChange={set("price")} placeholder="2500000" className={errors.price ? "border-destructive" : ""} />
+                    <Input id="price" type="text" inputMode="decimal" dir="ltr" value={form.price} onChange={e => {
+                      setForm(p => ({ ...p, price: formatNumericInput(e.target.value) }));
+                      setErrors(p => ({ ...p, price: undefined }));
+                    }} placeholder="2,500,000" className={`text-right ${errors.price ? "border-destructive" : ""}`} />
                     {errors.price && <p className="text-xs text-destructive">{errors.price}</p>}
                   </div>
                 </div>

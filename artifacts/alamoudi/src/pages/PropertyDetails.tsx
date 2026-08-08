@@ -18,6 +18,7 @@ import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { formatNumber } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -253,7 +254,7 @@ export default function PropertyDetails() {
               )}
             </div>
             <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
-              <div className="text-3xl font-bold text-accent">{property.price.toLocaleString("en-US")} <span className="text-base font-normal text-muted-foreground">EGP</span></div>
+              <div className="text-3xl font-bold text-accent">{formatNumber(property.price)} <span className="text-base font-normal text-foreground/70">EGP</span></div>
               <div className="flex flex-wrap gap-2">
                 {isStaff && (
                   <Button

@@ -64,6 +64,7 @@ import {
 } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { formatNumericInput, toNumericString } from "@/lib/utils";
 
 const typeLabels: Record<ContractType, string> = {
   rent: "إيجار",
@@ -188,6 +189,7 @@ function Field({
   type = "text",
   required = false,
   dir,
+  numeric = false,
 }: {
   label: string;
   value: string;
@@ -196,6 +198,7 @@ function Field({
   type?: string;
   required?: boolean;
   dir?: "ltr" | "rtl";
+  numeric?: boolean;
 }) {
   return (
     <div className="space-y-1.5">
@@ -208,7 +211,8 @@ function Field({
         value={value}
         dir={dir}
         placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
+        inputMode={numeric ? "decimal" : undefined}
+        onChange={(event) => onChange(numeric ? formatNumericInput(event.target.value) : event.target.value)}
       />
     </div>
   );
@@ -421,7 +425,19 @@ function ContractFormDialog({
   const submit = async () => {
     if (!form.partyOneName.trim() && !form.partyTwoName.trim()) return;
     setSaving(true);
-    await onSave(form, editing);
+    const normalizedForm: ContractForm = {
+      ...form,
+      totalAmount: toNumericString(form.totalAmount),
+      paidAmount: toNumericString(form.paidAmount),
+      remainingAmount: toNumericString(form.remainingAmount),
+      insuranceAmount: toNumericString(form.insuranceAmount),
+      depositAmount: toNumericString(form.depositAmount),
+      installments: form.installments.map((installment) => ({
+        ...installment,
+        amount: toNumericString(installment.amount),
+      })),
+    };
+    await onSave(normalizedForm, editing);
     setSaving(false);
   };
 
@@ -535,12 +551,12 @@ function ContractFormDialog({
               <div className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-3">
                 <Label className="text-xs font-semibold text-muted-foreground">القيمة المالية</Label>
                 <div className="grid gap-4 sm:grid-cols-4">
-                  <Field label="إجمالي القيمة" value={form.totalAmount} dir="ltr" onChange={(value) => setValue("totalAmount", value)} placeholder="0.00" />
-                  <Field label="المدفوع" value={form.paidAmount} dir="ltr" onChange={(value) => setValue("paidAmount", value)} placeholder="0.00" />
-                  <Field label="المتبقي" value={form.remainingAmount} dir="ltr" onChange={(value) => setValue("remainingAmount", value)} placeholder="0.00" />
+                  <Field label="إجمالي القيمة" value={form.totalAmount} dir="ltr" numeric onChange={(value) => setValue("totalAmount", value)} placeholder="0" />
+                  <Field label="المدفوع" value={form.paidAmount} dir="ltr" numeric onChange={(value) => setValue("paidAmount", value)} placeholder="0" />
+                  <Field label="المتبقي" value={form.remainingAmount} dir="ltr" numeric onChange={(value) => setValue("remainingAmount", value)} placeholder="0" />
                   <Field label="العملة" value={form.currency} onChange={(value) => setValue("currency", value)} />
-                  {isRentContract(form.contractType) && <Field label="التأمين" value={form.insuranceAmount} dir="ltr" onChange={(value) => setValue("insuranceAmount", value)} placeholder="قيمة التأمين" />}
-                  {form.contractType === "sale" && <Field label="العربون" value={form.depositAmount} dir="ltr" onChange={(value) => setValue("depositAmount", value)} placeholder="قيمة العربون" />}
+                  {isRentContract(form.contractType) && <Field label="التأمين" value={form.insuranceAmount} dir="ltr" numeric onChange={(value) => setValue("insuranceAmount", value)} placeholder="قيمة التأمين" />}
+                  {form.contractType === "sale" && <Field label="العربون" value={form.depositAmount} dir="ltr" numeric onChange={(value) => setValue("depositAmount", value)} placeholder="قيمة العربون" />}
                 </div>
               </div>
               <div className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-3">
@@ -568,7 +584,7 @@ function ContractFormDialog({
                 {form.installments.map((installment, index) => (
                   <div key={installment.id || index} className="grid gap-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:grid-cols-[1fr_1fr_1fr_1fr_auto] sm:items-end">
                     <Field label={`الدفعة ${index + 1}`} type="date" value={installment.dueDate} onChange={(value) => updateInstallment(index, "dueDate", value)} />
-                    <Field label="المبلغ" value={installment.amount} dir="ltr" onChange={(value) => updateInstallment(index, "amount", value)} />
+                    <Field label="المبلغ" value={installment.amount} dir="ltr" numeric onChange={(value) => updateInstallment(index, "amount", value)} />
                     <NativeSelect label="الحالة" value={installment.status} onChange={(value) => updateInstallment(index, "status", value)} options={Object.entries(installmentStatusLabels).map(([value, label]) => ({ value, label }))} />
                     <Field label="ملاحظة" value={installment.notes} onChange={(value) => updateInstallment(index, "notes", value)} />
                     <Button type="button" variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive" onClick={() => removeInstallment(index)} title="حذف الدفعة">

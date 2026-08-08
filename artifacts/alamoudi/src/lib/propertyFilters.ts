@@ -1,4 +1,5 @@
 import type { Property, PropertyType, Region } from "@/context/DataContext";
+import { toNumericString } from "@/lib/utils";
 
 export type ListingCategory = "all" | "sale" | "rent" | "furnished";
 export type PropertySector = "all" | "residential" | "commercial" | "administrative" | "medical";
@@ -77,7 +78,7 @@ const SECTOR_TYPE_GROUPS: Record<Exclude<PropertySector, "all" | "residential">,
 
 const normalise = (value: unknown) => String(value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 const normaliseFinishing = (value: unknown) => normalise(value).replace(/\s+/g, "");
-const numberValue = (value: string) => (value.trim() ? Number(value) : null);
+const numberValue = (value: string) => (value.trim() ? Number(toNumericString(value)) : null);
 const normaliseArabic = (value: unknown) =>
   normalise(value)
     .replace(/[إأآ]/g, "ا")

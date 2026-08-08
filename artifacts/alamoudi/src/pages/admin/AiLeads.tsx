@@ -10,6 +10,7 @@ import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { AiLead } from "@/context/DataContext";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { formatMoneyText } from "@/lib/utils";
 
 const statusColors: Record<AiLead["status"], string> = {
   new: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
@@ -59,7 +60,7 @@ export default function AiLeads() {
                       <div>
                         <h3 className="font-semibold text-foreground">{lead.name || "بدون اسم"}</h3>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {lead.budget && <Badge className="bg-accent/10 text-accent text-xs border-none flex items-center gap-1"><Wallet className="h-3 w-3" />{lead.budget}</Badge>}
+                          {lead.budget && <Badge className="bg-accent/10 text-accent text-xs border-none flex items-center gap-1"><Wallet className="h-3 w-3" />{formatMoneyText(lead.budget)}</Badge>}
                           {lead.preferredLanguage && <Badge variant="outline" className="text-xs flex items-center gap-1"><Languages className="h-3 w-3" />{lead.preferredLanguage}</Badge>}
                         </div>
                       </div>

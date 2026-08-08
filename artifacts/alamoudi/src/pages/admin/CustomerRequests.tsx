@@ -45,6 +45,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { formatMoneyText, formatNumericInput, toNumericString } from "@/lib/utils";
 
 const requestTypes = ["شقة", "فيلا", "قصر", "تاون هاوس", "دوبلكس", "أرض", "محل تجاري", "مكتب إداري", "عيادة طبية", "مصنع/مخزن", "أخرى"];
 const transactionTypes = ["شراء", "إيجار", "استثمار / شراكة"];
@@ -110,8 +111,10 @@ function cleanPhone(value: string) {
 
 function displayRange(min: string, max: string, suffix = "") {
   if (!min && !max) return "غير محددة";
-  if (min && max) return `${min} - ${max}${suffix}`;
-  return `${min || max}${suffix} ${min ? "فأكثر" : "كحد أقصى"}`;
+  const formattedMin = formatMoneyText(min);
+  const formattedMax = formatMoneyText(max);
+  if (min && max) return `${formattedMin} - ${formattedMax}${suffix}`;
+  return `${formattedMin || formattedMax}${suffix} ${min ? "فأكثر" : "كحد أقصى"}`;
 }
 
 function requestTitle(item: CustomerPropertyRequest) {
@@ -183,6 +186,7 @@ function RangeInput({
   minPlaceholder,
   maxPlaceholder,
   suffix,
+  numeric = false,
 }: {
   label: string;
   min: string;
@@ -192,6 +196,7 @@ function RangeInput({
   minPlaceholder: string;
   maxPlaceholder: string;
   suffix?: string;
+  numeric?: boolean;
 }) {
   return (
     <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-2">
@@ -200,9 +205,9 @@ function RangeInput({
         {suffix && <span className="text-[11px] text-muted-foreground">{suffix}</span>}
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-        <Input value={min} onChange={(event) => onMinChange(event.target.value)} placeholder={minPlaceholder} aria-label={`${label} من`} />
+        <Input value={numeric ? formatNumericInput(min) : min} inputMode={numeric ? "decimal" : undefined} dir={numeric ? "ltr" : undefined} onChange={(event) => onMinChange(numeric ? formatNumericInput(event.target.value) : event.target.value)} placeholder={minPlaceholder} aria-label={`${label} من`} />
         <span className="text-xs font-semibold text-muted-foreground">إلى</span>
-        <Input value={max} onChange={(event) => onMaxChange(event.target.value)} placeholder={maxPlaceholder} aria-label={`${label} إلى`} />
+        <Input value={numeric ? formatNumericInput(max) : max} inputMode={numeric ? "decimal" : undefined} dir={numeric ? "ltr" : undefined} onChange={(event) => onMaxChange(numeric ? formatNumericInput(event.target.value) : event.target.value)} placeholder={maxPlaceholder} aria-label={`${label} إلى`} />
       </div>
     </div>
   );
@@ -423,7 +428,7 @@ export default function CustomerRequests() {
                           {item.details || item.requiredFeatures || "لم تتم إضافة وصف تفصيلي بعد."}
                         </p>
                         <div className="mt-3 flex flex-wrap gap-1.5">
-                          {[item.preferredAreas, item.bedrooms && `${item.bedrooms} غرف`, item.bathrooms && `${item.bathrooms} حمام`, item.budgetMax && `حتى ${item.budgetMax}`].filter(Boolean).map((tag) => (
+                           {[item.preferredAreas, item.bedrooms && `${item.bedrooms} غرف`, item.bathrooms && `${item.bathrooms} حمام`, item.budgetMax && `حتى ${formatMoneyText(item.budgetMax)}`].filter(Boolean).map((tag) => (
                             <span key={tag} className="rounded-md bg-muted px-2 py-1 text-[11px] text-muted-foreground">{tag}</span>
                           ))}
                           {item.assignedStaffId && (
@@ -519,6 +524,7 @@ export default function CustomerRequests() {
                   minPlaceholder="من: 3,000,000"
                   maxPlaceholder="إلى: 5,000,000"
                   suffix="بالجنيه"
+                   numeric
                 />
                 <FormInput label="عدد الغرف" value={form.bedrooms} onChange={(value) => updateForm("bedrooms", value)} placeholder="مثال: 3" />
                 <FormInput label="عدد الحمامات" value={form.bathrooms} onChange={(value) => updateForm("bathrooms", value)} placeholder="مثال: 2" />

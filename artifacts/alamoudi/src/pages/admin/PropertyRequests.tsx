@@ -9,6 +9,7 @@ import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import type { PropertyRequest } from "@/context/DataContext";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { formatMoneyText } from "@/lib/utils";
 
 const statusColors: Record<PropertyRequest["status"], string> = {
   new: "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400",
@@ -59,7 +60,7 @@ export default function PropertyRequests() {
                           {ptype && <Badge variant="outline" className="text-xs">{ptype.name}</Badge>}
                           {req.listingType && <Badge variant="outline" className="text-xs">{req.listingType}</Badge>}
                           {req.area && <Badge variant="outline" className="text-xs">{req.area} م²</Badge>}
-                          {req.price && <Badge className="bg-accent/10 text-accent text-xs border-none">{req.price} EGP</Badge>}
+                          {req.price && <Badge className="bg-accent/10 text-accent text-xs border-none">{formatMoneyText(req.price, "EGP")}</Badge>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
