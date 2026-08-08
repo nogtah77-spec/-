@@ -61,9 +61,9 @@ export default function Login() {
       )}
       {hasBackground && (
         <>
-          <div className="absolute inset-0" style={{ backgroundColor: overlay }} />
+          <div className="login-background-overlay absolute inset-0" style={{ backgroundColor: overlay }} />
           <div
-            className="absolute inset-0"
+            className="login-background-gradient absolute inset-0"
             style={{
               background: `linear-gradient(to top, ${gradient} 0%, ${hexToRgba(overlayColor, 18)} 45%, transparent 100%)`,
             }}
