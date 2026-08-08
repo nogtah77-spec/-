@@ -148,10 +148,13 @@ export function PropertyCard({
               ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" className="w-full h-full object-cover" />
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
-          <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-1">
-              <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
-            </div>
+          <div className="absolute left-2 top-2 z-20 flex max-w-[78%] flex-wrap items-center gap-1">
+            <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
+            {property.typeName && (
+              <span className="inline-flex max-w-[52%] truncate rounded-full border border-accent/40 bg-black/45 px-2 py-0.5 text-[9px] font-bold text-accent backdrop-blur-sm">
+                {property.typeName}
+              </span>
+            )}
           </div>
           <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
             {propHasVideo && (
@@ -166,48 +169,41 @@ export function PropertyCard({
 
         <div className={cn("flex min-w-0 flex-1 flex-col justify-between", emphasized ? "px-4 py-3.5" : "px-3.5 py-3")}>
           <div className="min-w-0">
-            <div className="mb-1 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <div dir="ltr" className={cn(
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div dir="ltr" className={cn(
                 "inline-flex min-w-0 items-center gap-1 rounded-md border border-accent/45 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-1.5 py-0.5 shadow-[0_3px_10px_rgba(180,152,107,0.14),inset_0_1px_0_rgba(255,255,255,0.08)]",
                 emphasized ? "sm:px-2 sm:py-1" : "",
-                )}>
-                  <span className={cn(
-                    "inline-flex shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 py-0.5 font-black tracking-[0.14em] text-accent uppercase leading-none",
-                    emphasized ? "text-[8px]" : "text-[7px]",
-                  )}>CODE</span>
-                  <h3 className={cn(
-                    "truncate font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
-                    emphasized ? "text-base" : "text-xs",
-                  )}>{property.code}</h3>
-                </div>
-                {property.typeName && (
-                  <span className="relative -top-0.5 -left-1 inline-flex max-w-[42%] shrink-0 truncate rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent">
-                    {property.typeName}
-                  </span>
-                )}
+              )}>
+                <span className={cn(
+                  "inline-flex shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 py-0.5 font-black tracking-[0.14em] text-accent uppercase leading-none",
+                  emphasized ? "text-[8px]" : "text-[7px]",
+                )}>CODE</span>
+                <h3 className={cn(
+                  "truncate font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
+                  emphasized ? "text-base" : "text-xs",
+                )}>{property.code}</h3>
               </div>
             </div>
-            <p className="flex items-center gap-1 text-[10px] text-muted-foreground line-clamp-1">
+            <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-foreground/80 line-clamp-1">
               <MapPin className="h-3 w-3 shrink-0 text-accent" />
               {[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}
             </p>
             {property.finishing && (
-              <p dir="rtl" className="mt-3 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
+              <p dir="rtl" className="mt-3 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
                 {property.finishing}
               </p>
             )}
           </div>
 
-          <div className="mt-2 flex flex-nowrap items-end justify-between gap-3 whitespace-nowrap">
+          <div className="mt-auto flex flex-nowrap items-end justify-between gap-3 whitespace-nowrap pt-2">
             <div dir="ltr" className="flex min-w-0 items-baseline gap-1">
               <span className={cn("truncate font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
-              <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/70">EGP</span>
+              <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
             </div>
-            <div className="flex shrink-0 items-center gap-2 text-[9px] font-semibold text-muted-foreground">
-              {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3 w-3 text-accent" />{property.beds}</span>}
-              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3 w-3 text-accent" />{property.baths}</span>}
-              <span className="flex items-center gap-0.5"><Square className="h-3 w-3 text-accent" />{property.area}</span>
+            <div className="flex shrink-0 items-center gap-2.5 text-[10px] font-semibold text-foreground/80">
+              {property.beds > 0 && <span className="flex items-center gap-0.5"><Bed className="h-3.5 w-3.5 text-accent" />{property.beds}</span>}
+              {property.baths > 0 && <span className="flex items-center gap-0.5"><Bath className="h-3.5 w-3.5 text-accent" />{property.baths}</span>}
+              <span className="flex items-center gap-0.5"><Square className="h-3.5 w-3.5 text-accent" />{property.area}</span>
             </div>
           </div>
         </div>
