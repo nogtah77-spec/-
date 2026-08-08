@@ -205,6 +205,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                     size={filters.cardSize}
                     layout={filters.viewMode}
                     emphasized
+                    detailsScale="city"
                   />
                 ))}
               </div>

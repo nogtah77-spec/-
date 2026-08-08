@@ -361,6 +361,7 @@ export default function Home() {
                       size={filters.cardSize}
                       layout={filters.viewMode}
                       emphasized
+                      detailsScale="home"
                     />
                   ))}
                 </div>
@@ -514,7 +515,7 @@ export default function Home() {
                 ) : (
                   <div className={gridClass}>
                     {featuredProps.map((p) => (
-                      <PropertyCard key={p.id} property={p} size={filters.cardSize} layout={filters.viewMode} />
+                      <PropertyCard key={p.id} property={p} size={filters.cardSize} layout={filters.viewMode} detailsScale="home" />
                     ))}
                   </div>
                 )}
@@ -551,6 +552,7 @@ export default function Home() {
                     size={filters.cardSize}
                     layout={filters.viewMode}
                     emphasized
+                     detailsScale="home"
                     autoPlay
                     autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
@@ -603,6 +605,7 @@ export default function Home() {
                            size={filters.cardSize}
                            layout={filters.viewMode}
                            emphasized
+                           detailsScale="home"
                           autoPlay
                           autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                           motionSpeed={settings.carouselMotionSpeed}
