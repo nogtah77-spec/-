@@ -239,7 +239,7 @@ interface DataContextType {
   trackPropertyView: (id: string) => void;
   refreshVisitorStats: () => Promise<void>;
   updateSettings: (s: Partial<SiteSettings>) => void;
-  addRegion: (name: string) => void;
+  addRegion: (name: string, heroImage?: string) => void;
   updateRegion: (id: string, name: string, heroImage?: string) => void;
   deleteRegion: (id: string) => void;
   toggleRegion: (id: string) => void;
@@ -496,8 +496,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addRegion = (name: string) => {
-    const region: Region = { id: genId(), name, active: true };
+  const addRegion = (name: string, heroImage = "") => {
+    const region: Region = { id: genId(), name, active: true, heroImage };
     setRegions(p => [...p, region]);
     persist(api.post("/regions", region));
   };

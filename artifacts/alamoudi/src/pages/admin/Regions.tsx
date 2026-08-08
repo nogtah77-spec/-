@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { useData, Region } from "@/context/DataContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon } from "lucide-react";
+import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Regions() {
@@ -17,12 +17,14 @@ export default function Regions() {
   const [deleteTarget, setDeleteTarget] = useState<Region | null>(null);
   const [newName, setNewName] = useState("");
   const [heroImage, setHeroImage] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleAdd = () => {
     if (!newName.trim()) return;
-    addRegion(newName.trim());
+    addRegion(newName.trim(), heroImage.trim());
     setNewName("");
+    setHeroImage("");
     setShowAddDialog(false);
     toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
   };
@@ -53,6 +55,67 @@ export default function Regions() {
     setNewName(r.name);
     setHeroImage(r.heroImage ?? "");
   };
+
+  const handleHeroFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "ملف غير صالح", description: "اختر ملف صورة فقط.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast({ title: "الصورة كبيرة جدًا", description: "يجب ألا يتجاوز حجم الصورة 4 ميجابايت.", variant: "destructive" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setHeroImage(String(reader.result ?? ""));
+    reader.onerror = () => toast({ title: "تعذر قراءة الصورة", description: "حاول اختيار الصورة مرة أخرى.", variant: "destructive" });
+    reader.readAsDataURL(file);
+  };
+
+  const clearHeroImage = () => setHeroImage("");
+
+  const renderHeroEditor = () => (
+    <div className="space-y-3">
+      <Label>صورة غلاف المدينة</Label>
+      {heroImage ? (
+        <div className="relative h-32 overflow-hidden rounded-lg border bg-muted">
+          <img src={heroImage} alt="معاينة غلاف المدينة" className="h-full w-full object-cover" />
+          <Button
+            type="button"
+            size="icon"
+            variant="destructive"
+            className="absolute left-2 top-2 h-8 w-8"
+            onClick={clearHeroImage}
+            aria-label="إزالة صورة الغلاف"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed bg-muted/40 text-xs text-muted-foreground">
+          لا توجد صورة غلاف
+        </div>
+      )}
+      <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleHeroFile} className="hidden" />
+      <Button type="button" variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}>
+        <Upload className="h-4 w-4" />
+        {heroImage.startsWith("data:") ? "تغيير الصورة المرفوعة" : "رفع صورة من الجهاز"}
+      </Button>
+      <p className="text-[11px] text-muted-foreground">PNG أو JPG أو WEBP — بحد أقصى 4 ميجابايت.</p>
+      <div className="space-y-2">
+        <Label htmlFor="regionHeroUrl">أو رابط صورة الغلاف</Label>
+        <Input
+          id="regionHeroUrl"
+          value={heroImage.startsWith("data:") ? "" : heroImage}
+          onChange={(event) => setHeroImage(event.target.value)}
+          placeholder="/city-heroes/city.jpg أو https://..."
+          dir="ltr"
+        />
+      </div>
+    </div>
+  );
 
   return (
     <AdminLayout>
@@ -132,9 +195,7 @@ export default function Regions() {
               <Label>اسم المنطقة</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="مثال: التجمع الخامس" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              يمكن إضافة صورة الغلاف من نافذة التعديل بعد إنشاء المنطقة.
-            </p>
+            {renderHeroEditor()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>إلغاء</Button>
@@ -154,15 +215,7 @@ export default function Regions() {
               <Label>اسم المنطقة</Label>
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label>رابط صورة غلاف المدينة</Label>
-              <Input
-                value={heroImage}
-                onChange={(e) => setHeroImage(e.target.value)}
-                placeholder="/city-heroes/city.jpg أو رابط صورة"
-                dir="ltr"
-              />
-            </div>
+            {renderHeroEditor()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>
