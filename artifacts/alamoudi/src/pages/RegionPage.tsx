@@ -10,6 +10,7 @@ import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
 import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
+  hasActivePropertyFilters,
   PROPERTY_CARD_SIZE_KEY,
   type PropertyFilterState,
 } from "@/lib/propertyFilters";
@@ -158,6 +159,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                 fixedRegionId={regionId}
                 cityName={region.name}
                 resultCount={filtered.length}
+                showMatched={hasActivePropertyFilters({ ...appliedFilters, regionId: "" })}
                 onChange={(next) => setFilters({ ...next, regionId })}
                 onApply={applyFilters}
                 onReset={resetFilters}

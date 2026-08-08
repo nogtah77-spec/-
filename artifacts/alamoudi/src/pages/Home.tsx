@@ -315,7 +315,8 @@ export default function Home() {
             onChange={setFilters}
             onApply={applyFilters}
             onReset={clearFilters}
-            resultCount={isFiltering ? filterResults.length : undefined}
+            resultCount={filterResults.length}
+            showMatched={isFiltering}
           />
         </div>
 

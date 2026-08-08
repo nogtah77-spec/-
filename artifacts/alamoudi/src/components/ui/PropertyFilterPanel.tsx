@@ -22,6 +22,7 @@ interface PropertyFilterPanelProps {
   onReset: () => void;
   resultCount?: number;
   cityName?: string;
+  showMatched?: boolean;
 }
 
 function Chip({
@@ -59,6 +60,7 @@ export function PropertyFilterPanel({
   onReset,
   resultCount,
   cityName,
+  showMatched = false,
 }: PropertyFilterPanelProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const update = (patch: Partial<PropertyFilterState>, applyImmediately = false) => {
@@ -223,7 +225,7 @@ export function PropertyFilterPanel({
               placeholder="مثال: جراج، أمن، جيم، مسبح، حديقة..."
             />
             <span className="block text-[11px] font-normal text-muted-foreground">
-              يبحث داخل موقف السيارة والوصف والموقع وباقي بيانات العقار.
+              يبحث في الموقف والوصف والموقع وباقي البيانات.
             </span>
           </label>
           <div className="flex items-end gap-2">
@@ -271,7 +273,11 @@ export function PropertyFilterPanel({
           </button>
         </div>
       </div>
-      {resultCount !== undefined && <p className="mt-2 text-xs text-muted-foreground">{resultCount} عقار مطابق{cityName ? ` في ${cityName}` : ""}</p>}
+      {resultCount !== undefined && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {resultCount} عقارًا{showMatched ? " مطابقًا" : ""}{cityName ? ` في ${cityName}` : ""}
+        </p>
+      )}
     </section>
   );
 }
