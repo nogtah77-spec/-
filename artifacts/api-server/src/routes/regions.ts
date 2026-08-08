@@ -16,12 +16,19 @@ function isMissingColumnError(error: unknown): boolean {
 }
 
 router.get("/regions", async (_req, res): Promise<void> => {
-  // Keep reads compatible with the production schema, which may not yet have
-  // the optional hero_image column present in development.
-  const result = await pool.query(
-    `SELECT id, name, active, ''::text AS "heroImage" FROM regions`,
-  );
-  res.json(result.rows);
+  try {
+    // Keep reads compatible with the production schema, which may not yet
+    // have the optional hero_image column present in development.
+    const result = await pool.query(
+      `SELECT id, name, active, ''::text AS "heroImage" FROM regions`,
+    );
+    res.json(result.rows);
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code ?? "unknown")
+      : "unknown";
+    res.status(503).json({ error: "regions_read_failed", code });
+  }
 });
 
 router.post("/regions", requireStaff, async (req, res): Promise<void> => {

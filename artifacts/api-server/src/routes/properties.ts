@@ -78,14 +78,21 @@ function isStaffReq(req: Request): boolean {
 }
 
 router.get("/properties", async (req, res): Promise<void> => {
-  // Read through the legacy-compatible projection. Production may still have
-  // an older properties schema until its next schema migration is applied.
-  const rows = await selectLegacyProperties(!isStaffReq(req));
-  if (isStaffReq(req)) {
-    res.json(rows);
-    return;
+  try {
+    // Read through the legacy-compatible projection. Production may still
+    // have an older properties schema until its next schema migration.
+    const rows = await selectLegacyProperties(!isStaffReq(req));
+    if (isStaffReq(req)) {
+      res.json(rows);
+      return;
+    }
+    res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest));
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error
+      ? String((error as { code?: unknown }).code ?? "unknown")
+      : "unknown";
+    res.status(503).json({ error: "properties_read_failed", code });
   }
-  res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest));
 });
 
 router.post("/properties/:id/view", async (req, res): Promise<void> => {
