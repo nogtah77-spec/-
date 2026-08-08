@@ -26,21 +26,23 @@ export function PropertyCarousel({
 }: PropertyCarouselProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+  const [trackOffset, setTrackOffset] = useState(0);
+  const [transitionEnabled, setTransitionEnabled] = useState(false);
+  const [transitionDuration, setTransitionDuration] = useState(0);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
+
   const autoPlayTimerRef = useRef<number | null>(null);
   const resumeTimerRef = useRef<number | null>(null);
-  const motionRef = useRef<number | null>(null);
+  const motionTimerRef = useRef<number | null>(null);
+  const motionFrameRef = useRef<number | null>(null);
   const currentIndexRef = useRef(0);
+  const trackOffsetRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const autoPlayEnabledRef = useRef(autoPlay);
   const pausedRef = useRef(false);
   const safeMotionSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
   const propertyCount = properties.length;
-
-  // Three copies keep enough real card content around the viewport to make
-  // the loop visually seamless. The cards themselves are still the original
-  // property cards; only the rendered sequence is duplicated for looping.
   const trackProperties = infinite
     ? [...properties, ...properties, ...properties]
     : properties;
@@ -58,153 +60,137 @@ export function PropertyCarousel({
   }, []);
 
   const stopMotion = useCallback(() => {
-    if (motionRef.current !== null) {
-      cancelAnimationFrame(motionRef.current);
-      motionRef.current = null;
+    if (motionFrameRef.current !== null) {
+      cancelAnimationFrame(motionFrameRef.current);
+      motionFrameRef.current = null;
+    }
+    if (motionTimerRef.current !== null) {
+      window.clearTimeout(motionTimerRef.current);
+      motionTimerRef.current = null;
     }
     isAnimatingRef.current = false;
+    setTransitionEnabled(false);
+    setTransitionDuration(0);
   }, []);
 
   const getOffsetForIndex = useCallback((index: number) => {
-    const track = trackRef.current;
-    const item = track?.children[index] as HTMLElement | undefined;
+    const item = trackRef.current?.children[index] as HTMLElement | undefined;
     return item?.offsetLeft ?? 0;
   }, []);
 
-  const jumpToIndex = useCallback(
-    (index: number) => {
-      const viewport = viewportRef.current;
-      if (!viewport) return;
-      viewport.scrollLeft = getOffsetForIndex(index);
+  const setTrackPosition = useCallback(
+    (index: number, animated: boolean) => {
+      const nextOffset = getOffsetForIndex(index);
+      trackOffsetRef.current = nextOffset;
       currentIndexRef.current = index;
+      setTransitionEnabled(animated);
+      setTrackOffset(nextOffset);
     },
     [getOffsetForIndex],
   );
 
   const updateArrows = useCallback(() => {
-    const hasMultipleProperties = propertyCount > 1;
-    if (!infinite) {
-      const viewport = viewportRef.current;
-      setCanPrev(hasMultipleProperties && !!viewport && viewport.scrollLeft > 4);
-      setCanNext(
-        hasMultipleProperties &&
-          !!viewport &&
-          viewport.scrollLeft < viewport.scrollWidth - viewport.clientWidth - 4,
-      );
-      return;
-    }
-    setCanPrev(hasMultipleProperties);
-    setCanNext(hasMultipleProperties);
-  }, [infinite, propertyCount]);
+    const active = propertyCount > 1;
+    setCanPrev(active);
+    setCanNext(active);
+  }, [propertyCount]);
 
-  const nearestIndex = useCallback(() => {
-    const viewport = viewportRef.current;
-    const track = trackRef.current;
-    if (!viewport || !track || track.children.length === 0) return currentIndexRef.current;
-
-    let closest = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
-    Array.from(track.children).forEach((child, index) => {
-      const distance = Math.abs((child as HTMLElement).offsetLeft - viewport.scrollLeft);
-      if (distance < closestDistance) {
-        closest = index;
-        closestDistance = distance;
-      }
-    });
-    return closest;
-  }, []);
-
-  const normaliseLoopPosition = useCallback(
+  const normaliseIndex = useCallback(
     (index: number) => {
       if (!infinite || propertyCount < 2) return index;
       if (index < middleStart) {
-        const equivalent = middleStart + ((index % propertyCount) + propertyCount) % propertyCount;
-        jumpToIndex(equivalent);
-        return equivalent;
+        return middleStart + ((index % propertyCount) + propertyCount) % propertyCount;
       }
       if (index >= middleStart + propertyCount) {
-        const equivalent = middleStart + (index % propertyCount);
-        jumpToIndex(equivalent);
-        return equivalent;
+        return middleStart + (index % propertyCount);
       }
       return index;
     },
-    [infinite, jumpToIndex, middleStart, propertyCount],
+    [infinite, middleStart, propertyCount],
+  );
+
+  const finishMovement = useCallback(
+    (targetIndex: number, onComplete?: () => void) => {
+      motionTimerRef.current = null;
+      isAnimatingRef.current = false;
+
+      const normalisedIndex = normaliseIndex(targetIndex);
+      if (normalisedIndex !== targetIndex) {
+        // The third copy is identical to the first copy. Disable the
+        // transition for this invisible bookkeeping jump, so the user sees
+        // one continuous card-to-card loop instead of a snap.
+        const normalisedOffset = getOffsetForIndex(normalisedIndex);
+        setTransitionEnabled(false);
+        setTransitionDuration(0);
+        trackOffsetRef.current = normalisedOffset;
+        currentIndexRef.current = normalisedIndex;
+        setTrackOffset(normalisedOffset);
+      } else {
+        currentIndexRef.current = targetIndex;
+      }
+
+      updateArrows();
+      onComplete?.();
+    },
+    [getOffsetForIndex, normaliseIndex, updateArrows],
   );
 
   const animateToIndex = useCallback(
     (requestedIndex: number, onComplete?: () => void) => {
-      const viewport = viewportRef.current;
-      if (!viewport || trackProperties.length < 2) {
+      if (trackProperties.length < 2 || !trackRef.current) {
         onComplete?.();
         return;
       }
 
-      let targetIndex = requestedIndex;
-      if (!infinite) {
-        targetIndex = Math.min(propertyCount - 1, Math.max(0, requestedIndex));
-      } else {
-        targetIndex = Math.min(trackProperties.length - 1, Math.max(0, requestedIndex));
-      }
+      const targetIndex = infinite
+        ? Math.min(trackProperties.length - 1, Math.max(0, requestedIndex))
+        : Math.min(propertyCount - 1, Math.max(0, requestedIndex));
+      const startOffset = trackOffsetRef.current;
+      const targetOffset = getOffsetForIndex(targetIndex);
+      const distance = Math.abs(targetOffset - startOffset);
 
-      stopMotion();
-      const start = viewport.scrollLeft;
-      const end = getOffsetForIndex(targetIndex);
-      const distance = Math.abs(end - start);
       if (distance < 1) {
-        currentIndexRef.current = targetIndex;
-        const normalised = normaliseLoopPosition(targetIndex);
-        currentIndexRef.current = normalised;
-        updateArrows();
-        onComplete?.();
+        finishMovement(targetIndex, onComplete);
         return;
       }
 
-      // One card movement has a natural duration. The admin speed multiplier
-      // changes only this duration; the autoplay wait remains independent.
+      if (motionTimerRef.current !== null) {
+        window.clearTimeout(motionTimerRef.current);
+      }
+
+      // This duration controls the visible slide only. It never changes the
+      // independent waiting time before the next automatic movement.
       const duration = Math.max(
         260,
         Math.min(2600, (distance / (640 * safeMotionSpeed)) * 1000),
       );
-      const startedAt = performance.now();
+
       isAnimatingRef.current = true;
+      setTransitionDuration(duration);
+      setTransitionEnabled(true);
 
-      const finish = () => {
-        motionRef.current = null;
-        isAnimatingRef.current = false;
-        currentIndexRef.current = targetIndex;
-        const normalised = normaliseLoopPosition(targetIndex);
-        currentIndexRef.current = normalised;
-        updateArrows();
-        onComplete?.();
-      };
-
-      const tick = (now: number) => {
-        const progress = Math.min(1, (now - startedAt) / duration);
-        const eased =
-          progress < 0.5
-            ? 4 * progress * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-        viewport.scrollLeft = start + (end - start) * eased;
-
-        if (progress < 1) {
-          motionRef.current = requestAnimationFrame(tick);
-        } else {
-          finish();
-        }
-      };
-
-      motionRef.current = requestAnimationFrame(tick);
+      // First render the transition property while the track is still at its
+      // current position. On the next frame change the transform. If both
+      // happen in one render, browsers can apply the new transform instantly
+      // because the transition did not exist in the previous style snapshot.
+      motionFrameRef.current = requestAnimationFrame(() => {
+        motionFrameRef.current = null;
+        if (!isAnimatingRef.current) return;
+        trackOffsetRef.current = targetOffset;
+        setTrackOffset(targetOffset);
+        motionTimerRef.current = window.setTimeout(
+          () => finishMovement(targetIndex, onComplete),
+          duration + 45,
+        );
+      });
     },
     [
+      finishMovement,
       getOffsetForIndex,
       infinite,
-      normaliseLoopPosition,
       propertyCount,
       safeMotionSpeed,
-      stopMotion,
       trackProperties.length,
-      updateArrows,
     ],
   );
 
@@ -220,57 +206,49 @@ export function PropertyCarousel({
 
     autoPlayTimerRef.current = window.setTimeout(() => {
       if (pausedRef.current || !autoPlayEnabledRef.current) return;
-      const nextIndex = currentIndexRef.current + 1;
-      animateToIndex(nextIndex, scheduleAutoPlay);
+      animateToIndex(currentIndexRef.current + 1, scheduleAutoPlay);
     }, Math.max(250, autoPlayDelay));
   }, [animateToIndex, autoPlayDelay, propertyCount, stopAutoPlay]);
 
   const scroll = useCallback(
     (direction: "prev" | "next") => {
-      if (propertyCount < 2) return;
+      if (propertyCount < 2 || isAnimatingRef.current) return;
       stopAutoPlay();
-      stopMotion();
 
-      let current = currentIndexRef.current;
-      if (!isAnimatingRef.current) {
-        current = nearestIndex();
-      }
-
+      let currentIndex = currentIndexRef.current;
       if (infinite) {
-        if (current < middleStart || current >= middleStart + propertyCount) {
-          current = normaliseLoopPosition(current);
-        }
+        currentIndex = normaliseIndex(currentIndex);
       }
 
-      const nextIndex = current + (direction === "next" ? 1 : -1);
-      animateToIndex(nextIndex, () => {
-        if (!pausedRef.current && autoPlayEnabledRef.current) {
-          scheduleAutoPlay();
-        }
-      });
+      animateToIndex(
+        currentIndex + (direction === "next" ? 1 : -1),
+        () => {
+          if (!pausedRef.current && autoPlayEnabledRef.current) {
+            scheduleAutoPlay();
+          }
+        },
+      );
     },
     [
       animateToIndex,
       infinite,
-      middleStart,
-      nearestIndex,
-      normaliseLoopPosition,
+      normaliseIndex,
       propertyCount,
       scheduleAutoPlay,
       stopAutoPlay,
-      stopMotion,
     ],
   );
 
   const pauseForInteraction = useCallback(() => {
     pausedRef.current = true;
+    // Keep an already-started visual movement running to completion. Only
+    // the next automatic movement is paused, matching the original behavior.
     stopAutoPlay();
-    stopMotion();
     if (resumeTimerRef.current !== null) {
       window.clearTimeout(resumeTimerRef.current);
       resumeTimerRef.current = null;
     }
-  }, [stopAutoPlay, stopMotion]);
+  }, [stopAutoPlay]);
 
   const resumeAfterInteraction = useCallback(
     (delay = 1000) => {
@@ -288,51 +266,52 @@ export function PropertyCarousel({
   );
 
   useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport || propertyCount === 0) return;
-
+    if (propertyCount === 0) return;
     const frame = requestAnimationFrame(() => {
-      jumpToIndex(infinite ? middleStart : 0);
+      setTrackPosition(infinite ? middleStart : 0, false);
       updateArrows();
     });
-
     return () => cancelAnimationFrame(frame);
-  }, [infinite, jumpToIndex, middleStart, propertyCount, updateArrows]);
+  }, [
+    infinite,
+    middleStart,
+    propertyCount,
+    setTrackPosition,
+    updateArrows,
+  ]);
 
   useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const onScroll = () => {
-      updateArrows();
-      if (!isAnimatingRef.current) {
-        currentIndexRef.current = nearestIndex();
-      }
-    };
-
-    viewport.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", updateArrows, { passive: true });
-    return () => {
-      viewport.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", updateArrows);
-    };
-  }, [nearestIndex, updateArrows]);
-
-  useEffect(() => {
-    pausedRef.current = false;
-    // Wait until the initial middle copy has been positioned so the first
-    // timed movement always has a real card target.
     const frame = requestAnimationFrame(() => scheduleAutoPlay());
     return () => {
       cancelAnimationFrame(frame);
       stopAutoPlay();
-      stopMotion();
+      if (motionTimerRef.current !== null) {
+        window.clearTimeout(motionTimerRef.current);
+        motionTimerRef.current = null;
+      }
+      if (motionFrameRef.current !== null) {
+        cancelAnimationFrame(motionFrameRef.current);
+        motionFrameRef.current = null;
+      }
       if (resumeTimerRef.current !== null) {
         window.clearTimeout(resumeTimerRef.current);
         resumeTimerRef.current = null;
       }
     };
-  }, [scheduleAutoPlay, stopAutoPlay, stopMotion]);
+  }, [scheduleAutoPlay, stopAutoPlay]);
+
+  useEffect(() => {
+    const onResize = () => {
+      const index = normaliseIndex(currentIndexRef.current);
+      const offset = getOffsetForIndex(index);
+      trackOffsetRef.current = offset;
+      setTransitionEnabled(false);
+      setTransitionDuration(0);
+      setTrackOffset(offset);
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, [getOffsetForIndex, normaliseIndex]);
 
   useEffect(() => {
     return () => stopMotion();
@@ -342,7 +321,7 @@ export function PropertyCarousel({
 
   return (
     <div
-      className={cn("relative", className)}
+      className={cn("relative overflow-hidden", className)}
       onMouseEnter={pauseForInteraction}
       onMouseLeave={() => resumeAfterInteraction(1000)}
       onTouchStart={pauseForInteraction}
@@ -365,15 +344,24 @@ export function PropertyCarousel({
       <div
         ref={viewportRef}
         dir="ltr"
-        className="overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ scrollSnapType: "x mandatory", scrollBehavior: "auto" }}
+        className="overflow-hidden pb-2"
+        style={{ touchAction: "pan-y" }}
       >
-        <div ref={trackRef} className="flex gap-4 w-max">
+        <div
+          ref={trackRef}
+          className="flex gap-4 w-max"
+          style={{
+            transform: `translate3d(${-trackOffset}px, 0, 0)`,
+            transition: transitionEnabled
+              ? `transform ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`
+              : "none",
+            willChange: "transform",
+          }}
+        >
           {trackProperties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
               className="flex-shrink-0 w-[88vw] sm:w-[54vw] md:w-[380px] lg:w-[400px]"
-              style={{ scrollSnapAlign: "start" }}
             >
               <PropertyCard property={property} size={size} />
             </div>
