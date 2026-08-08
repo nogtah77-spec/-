@@ -104,10 +104,10 @@ export function AdminSidebar() {
             aria-label={section.title}
           >
             {section.title && (
-              <div className="mb-1.5 flex items-center gap-2 px-3 text-[10px] font-bold tracking-wide text-sidebar-foreground/50">
-                <span className="h-px flex-1 bg-sidebar-border/60" />
+              <div className="mb-2 flex items-center gap-2 px-3 text-xs font-bold leading-6 tracking-wide text-sidebar-foreground/80">
+                <span className="h-px flex-1 bg-sidebar-border/80" />
                 <span className="shrink-0">{section.title}</span>
-                <span className="h-px flex-1 bg-sidebar-border/60" />
+                <span className="h-px flex-1 bg-sidebar-border/80" />
               </div>
             )}
             <div className="space-y-0.5">
