@@ -264,7 +264,7 @@ export default function CustomerRequests() {
     <AdminLayout>
       <div className="mx-auto max-w-7xl space-y-6" dir="rtl">
         <AdminPageHeader
-          title="الطلبات العقارية للعملاء"
+          title="طلبات العملاء"
           subtitle="تنظيم احتياجات العملاء ومتابعتها حتى إتمام التواصل"
           eyebrow="إدارة احتياجات العملاء"
           icon={ClipboardList}
@@ -327,7 +327,7 @@ export default function CustomerRequests() {
 
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-foreground">سجل الطلبات العقارية</h2>
+            <h2 className="text-lg font-bold text-foreground">سجل طلبات العملاء</h2>
             <p className="mt-1 text-xs text-muted-foreground">{filteredRequests.length} طلب ظاهر في العرض الحالي</p>
           </div>
           <span className="hidden text-xs text-muted-foreground sm:block">الاستفسارات والتشطيبات لها صفحات مستقلة</span>

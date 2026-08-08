@@ -17,7 +17,7 @@ const sidebarItems = [
   { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck },
   { separator: true },
   { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser },
-  { href: "/admin/requests", label: "الطلبات العقارية للعملاء", icon: Inbox, badge: "customerPropertyRequests" },
+  { href: "/admin/requests", label: "طلبات العملاء", icon: Inbox, badge: "customerPropertyRequests" },
   { href: "/admin/inquiries", label: "استفسارات العملاء", icon: MessageSquare, badge: "inquiries" },
   { href: "/admin/property-requests", label: "طلبات إضافة عقار", icon: ClipboardList, badge: "propertyRequests" },
   { href: "/admin/finishing-requests", label: "طلبات التشطيبات", icon: Wrench, badge: "finishingRequests" },

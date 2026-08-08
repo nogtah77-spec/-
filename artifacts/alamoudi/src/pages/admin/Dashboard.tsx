@@ -63,7 +63,7 @@ export default function Dashboard() {
           <Card className="card-luxury">
             <CardHeader className="flex flex-row items-start justify-between gap-3">
               <div>
-                <CardTitle>الطلبات العقارية للعملاء</CardTitle>
+                <CardTitle>طلبات العملاء</CardTitle>
                 <p className="mt-1 text-xs text-muted-foreground">احتياجات عقارية جديدة تنتظر متابعة فريق العمل</p>
               </div>
               <Inbox className="h-5 w-5 text-accent" />
