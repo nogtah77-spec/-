@@ -142,7 +142,7 @@ export function PropertyCard({
         )}
       >
         {/* ── صورة العقار — أكبر بنسبة ~14% ── */}
-        <div className={cn("relative flex-shrink-0 bg-muted overflow-hidden", emphasized ? "w-40" : "w-32")}>
+        <div className={cn("relative flex-shrink-0 bg-muted overflow-hidden", emphasized ? "w-28 sm:w-40" : "w-32")}>
           {showVideoCover
             ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
             : coverImg
@@ -182,11 +182,10 @@ export function PropertyCard({
                 </span>
               )}
             </div>
-            <p className={cn("text-muted-foreground line-clamp-1", emphasized ? "mt-1 text-sm" : "text-[11px]")}>
-              {[property.regionName, property.subArea].filter(Boolean).join(" - ")}
-            </p>
-            {emphasized && property.title && (
-              <p className="mt-1 text-xs text-foreground/75 line-clamp-1">{property.title}</p>
+            {!emphasized && (
+              <p className="text-[11px] text-muted-foreground line-clamp-1">
+                {[property.regionName, property.subArea].filter(Boolean).join(" - ")}
+              </p>
             )}
             {!emphasized && property.finishing && (
               <p dir="rtl" className="text-[10px] text-accent/80 font-medium mt-0.5 line-clamp-1">{property.finishing}</p>
@@ -195,14 +194,33 @@ export function PropertyCard({
 
           {/* صف السعر والتفاصيل */}
           <div className="mt-1">
-            <div dir="ltr" className="flex items-baseline gap-2.5">
-              <span className={cn("font-bold text-accent leading-tight", emphasized ? "text-xl" : "text-base")}>{property.price.toLocaleString("en-US")}</span>
-              <span className={cn("font-semibold tracking-widest text-muted-foreground", emphasized ? "text-xs" : "text-[10px]")}>EGP</span>
-            </div>
-            <div className={cn("flex items-center gap-3 mt-1.5 text-muted-foreground", emphasized ? "text-xs" : "text-[10px]")}>
-              {property.beds > 0 && <span className="flex items-center gap-1"><Bed className={emphasized ? "h-3.5 w-3.5 text-accent" : "h-3 w-3"} />{property.beds} غرف</span>}
-              {property.baths > 0 && <span className="flex items-center gap-1"><Bath className={emphasized ? "h-3.5 w-3.5 text-accent" : "h-3 w-3"} />{property.baths} حمام</span>}
-              <span className="flex items-center gap-1"><Square className={emphasized ? "h-3.5 w-3.5 text-accent" : "h-3 w-3"} />{property.area} م²</span>
+            {!emphasized && (
+              <div dir="ltr" className="flex items-baseline gap-2.5">
+                <span className="text-base font-bold text-accent leading-tight">{property.price.toLocaleString("en-US")}</span>
+                <span className="text-[10px] font-semibold tracking-widest text-muted-foreground">EGP</span>
+              </div>
+            )}
+            <div className={cn(
+              "flex items-center",
+              emphasized ? "justify-between gap-2" : "mt-1.5 gap-3",
+            )}>
+              <div
+                dir={emphasized ? "ltr" : undefined}
+                className={cn(
+                  "flex min-w-0 items-center text-muted-foreground",
+                  emphasized ? "gap-1.5 text-[10px] sm:gap-3 sm:text-xs" : "gap-3 text-[10px]",
+                )}
+              >
+                {property.beds > 0 && <span title={`${property.beds} غرف`} className="flex shrink-0 items-center gap-0.5"><Bed className={emphasized ? "h-3 w-3 text-accent sm:h-3.5 sm:w-3.5" : "h-3 w-3"} /><span>{property.beds}</span><span className="hidden sm:inline">غرف</span></span>}
+                {property.baths > 0 && <span title={`${property.baths} حمام`} className="flex shrink-0 items-center gap-0.5"><Bath className={emphasized ? "h-3 w-3 text-accent sm:h-3.5 sm:w-3.5" : "h-3 w-3"} /><span>{property.baths}</span><span className="hidden sm:inline">حمام</span></span>}
+                <span title={`${property.area} متر مربع`} className="flex shrink-0 items-center gap-0.5"><Square className={emphasized ? "h-3 w-3 text-accent sm:h-3.5 sm:w-3.5" : "h-3 w-3"} /><span>{property.area}</span><span className="hidden sm:inline">م²</span></span>
+              </div>
+              {emphasized && (
+                <div dir="ltr" className="flex shrink-0 items-baseline gap-1">
+                  <span className="text-base font-bold leading-tight text-accent sm:text-xl">{property.price.toLocaleString("en-US")}</span>
+                  <span className="text-[10px] font-semibold tracking-widest text-muted-foreground sm:text-xs">EGP</span>
+                </div>
+              )}
             </div>
             {emphasized && highlightedDetails.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -301,16 +319,13 @@ export function PropertyCard({
             emphasized ? "text-xs" : "text-[10px]",
           )}>CODE</span>
         </div>
-        <div dir="ltr" className={cn(
+        {!emphasized && <div dir="ltr" className={cn(
           "flex items-baseline gap-2.5 font-bold text-accent",
-          emphasized ? "text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
+          size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base",
         )}>
           <span>{property.price.toLocaleString("en-US")}</span>
-          <span className={cn("font-semibold tracking-widest text-muted-foreground", emphasized ? "text-sm" : "text-xs")}>EGP</span>
-        </div>
-        {emphasized && property.title && (
-          <p className="mt-2 text-sm leading-6 text-foreground/80 line-clamp-2">{property.title}</p>
-        )}
+          <span className="text-xs font-semibold tracking-widest text-muted-foreground">EGP</span>
+        </div>}
         <div className="mt-auto">
           {(property.finishing || property.view || (emphasized && highlightedDetails.length > 0)) && (
             <div className={cn("flex flex-wrap items-center gap-1.5", emphasized ? "pt-4" : "pt-3")}>
@@ -327,10 +342,16 @@ export function PropertyCard({
               }
             </div>
           )}
-          <div className={cn(
+          <div dir={emphasized ? "ltr" : undefined} className={cn(
             "flex justify-between items-center text-muted-foreground border-t border-border",
             emphasized ? "mt-4 pt-4 text-sm" : size === "medium" ? "mt-3 pt-3 text-[13px]" : "mt-4 pt-4 text-[13px]",
           )}>
+            {emphasized && (
+              <div className="flex items-baseline gap-1.5 font-bold text-accent">
+                <span className="text-2xl leading-tight">{property.price.toLocaleString("en-US")}</span>
+                <span className="text-sm font-semibold tracking-widest text-muted-foreground">EGP</span>
+              </div>
+            )}
             {property.beds > 0 && <span className="flex items-center gap-1.5 font-medium"><Bed className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.beds} غرف</span>}
             {property.baths > 0 && <span className="flex items-center gap-1.5 font-medium"><Bath className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.baths} حمام</span>}
             <span className="flex items-center gap-1.5 font-medium"><Square className={emphasized ? "h-4 w-4 text-accent" : "h-3.5 w-3.5"} />{property.area} م²</span>
