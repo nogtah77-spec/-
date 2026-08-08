@@ -22,6 +22,7 @@
 
 - `pnpm --filter @workspace/alamoudi run dev` — تشغيل واجهة المنصة.
 - `pnpm --filter @workspace/api-server run dev` — تشغيل خادم الواجهة البرمجية.
+- تشغيل خادم التطوير يزامن مخطط قاعدة البيانات أولًا، بينما أمر البناء يجمّع الخادم فقط ولا يغيّر قاعدة البيانات.
 - `pnpm --filter @workspace/alamoudi run typecheck` — فحص TypeScript للواجهة.
 - `pnpm run typecheck` — فحص TypeScript لجميع الحزم.
 - `pnpm --filter @workspace/alamoudi run build` — بناء الواجهة.
