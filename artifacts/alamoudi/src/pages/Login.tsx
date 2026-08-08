@@ -46,8 +46,19 @@ export default function Login() {
     <main dir="rtl" className="login-shell relative min-h-[100dvh] overflow-hidden text-[#fffaf0]">
       <div
         className={`login-backdrop absolute inset-0 bg-cover bg-center bg-no-repeat ${hasBackground ? "" : "login-default-backdrop"}`}
-        style={hasBackground ? { backgroundImage: `url("${settings.loginBackgroundImageUrl}")` } : undefined}
       />
+      {hasBackground && (
+        <img
+          src={settings.loginBackgroundImageUrl}
+          alt=""
+          aria-hidden="true"
+          loading="eager"
+          decoding="sync"
+          fetchPriority="high"
+          className="login-backdrop absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300"
+          style={{ opacity: 1 }}
+        />
+      )}
       {hasBackground && (
         <>
           <div className="absolute inset-0" style={{ backgroundColor: overlay }} />

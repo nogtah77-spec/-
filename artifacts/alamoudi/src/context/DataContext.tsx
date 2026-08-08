@@ -359,7 +359,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
-  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<SiteSettings>(() => {
+    const cached = readCache();
+    return cached?.settings
+      ? { ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [], ads: cached.settings.ads ?? [] }
+      : DEFAULT_SETTINGS;
+  });
 
   const reload = useCallback(async () => {
     const [
@@ -513,6 +518,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateSettings = (s: Partial<SiteSettings>) => {
     setSettings(prev => {
       const next = { ...prev, ...s };
+      writeCache({
+        regions,
+        types: propertyTypes,
+        properties,
+        settings: next,
+      });
       persist(api.put("/settings", next));
       return next;
     });

@@ -218,7 +218,9 @@ function Router() {
 
 function AppReadyGate({ children }: { children: React.ReactNode }) {
   const { ready } = useData();
-  if (!ready) {
+  const [location] = useLocation();
+  const isLoginRoute = location.endsWith("/login");
+  if (!ready && !isLoginRoute) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-background">
         <div className="flex flex-col items-center gap-3 animate-in fade-in duration-500">
@@ -277,17 +279,17 @@ function App() {
                   <VisitorTracker />
                   {/* SwipeMenuHandler disabled — keep component, skip render */}
                   {/* <SwipeMenuHandler /> */}
-                  <AppReadyGate>
-                    <ErrorBoundary>
-                      <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                    <AppReadyGate>
+                      <ErrorBoundary>
                         <ScrollToTop />
                         <Router />
-                        <ScrollToTopButton />
-                        <StaffLiveBubble />
-                        {AI_ASSISTANT_ENABLED && <AIChatWidget />}
-                      </WouterRouter>
-                    </ErrorBoundary>
-                  </AppReadyGate>
+                      </ErrorBoundary>
+                    </AppReadyGate>
+                    <ScrollToTopButton />
+                    <StaffLiveBubble />
+                    {AI_ASSISTANT_ENABLED && <AIChatWidget />}
+                  </WouterRouter>
                   <Toaster />
                 </AIChatProvider>
               </TooltipProvider>
