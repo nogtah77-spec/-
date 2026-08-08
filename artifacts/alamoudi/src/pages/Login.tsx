@@ -73,7 +73,7 @@ export default function Login() {
           <div className="mb-8 text-center">
             <Link href="/" className="inline-flex flex-col items-center" data-testid="link-login-brand">
               <span className="login-brand-name text-[#fffaf0]">العمودي</span>
-              <span className="mt-5 border-t border-[#d8bd87]/55 pt-3 text-[0.82rem] font-semibold tracking-[0.14em] text-[#e0c58f]">
+              <span className="login-brand-subtitle mt-5 border-t border-[#d8bd87]/55 pt-3 text-[0.82rem] font-semibold tracking-[0.14em] text-[#e0c58f]">
                 للتسويق العقاري
               </span>
             </Link>
