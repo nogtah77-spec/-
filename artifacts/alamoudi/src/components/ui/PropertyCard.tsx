@@ -149,11 +149,6 @@ export function PropertyCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
           <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-1">
             <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
-            {property.typeName && (
-              <Badge className="max-w-[58%] truncate rounded-full border border-white/20 bg-black/60 px-2 py-0.5 text-[10px] font-bold text-amber-100 backdrop-blur-sm">
-                {property.typeName}
-              </Badge>
-            )}
           </div>
           <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
             {propHasVideo && (
@@ -180,7 +175,7 @@ export function PropertyCard({
                 )}>CODE</span>
               </div>
               {property.typeName && (
-                <span className="hidden shrink-0 rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent sm:inline-flex">
+                <span className="inline-flex max-w-[42%] shrink-0 truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent">
                   {property.typeName}
                 </span>
               )}
@@ -243,8 +238,7 @@ export function PropertyCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
 
          <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-           <div className="flex flex-wrap gap-1.5 max-w-[68%]">
-             <Badge className="rounded-full bg-black/60 text-amber-100 border border-white/20 backdrop-blur-sm shadow shadow-black/30 text-[11px] px-2.5 py-0.5 font-bold tracking-wide">{property.typeName || "عقار"}</Badge>
+            <div className="flex flex-wrap gap-1.5 max-w-[68%]">
              <Badge className="rounded-full bg-accent text-white border-none text-[11px] px-2.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
            </div>
            <div className="flex shrink-0 gap-1.5">
