@@ -178,6 +178,10 @@ export interface SiteSettings {
   carouselAutoPlayDelay: number;
   /** Movement speed multiplier: 1 is the natural speed. */
   carouselMotionSpeed: number;
+  /** Allow visitors/customers to download property images. */
+  allowCustomerImageDownloads: boolean;
+  /** Allow authenticated staff members to download property images. */
+  allowStaffImageDownloads: boolean;
   themeMode?: "light" | "dark" | "user";
 }
 
@@ -203,6 +207,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   ads: [],
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
+  allowCustomerImageDownloads: true,
+  allowStaffImageDownloads: true,
   themeMode: "user",
 };
 

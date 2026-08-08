@@ -66,6 +66,8 @@ const DEFAULT_SETTINGS = {
   tiktokVideos: [],
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
+  allowCustomerImageDownloads: true,
+  allowStaffImageDownloads: true,
 };
 
 async function ensureSessionTable(): Promise<void> {

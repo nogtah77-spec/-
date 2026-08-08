@@ -1191,6 +1191,63 @@ export default function Settings() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle>تحميل صور العقارات</CardTitle>
+                  <CardDescription>
+                    تحكم في ظهور أزرار تحميل الصور داخل تفاصيل العقار. لا يؤثر هذا القسم على الفيديوهات أو روابط الفيديو الحالية.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium">السماح للعملاء والزوار</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        يسمح للزائر أو حساب العميل بتحميل صورة منفردة أو كل صور العقار.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.allowCustomerImageDownloads ?? true}
+                      onCheckedChange={(checked) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          allowCustomerImageDownloads: checked,
+                        }))
+                      }
+                      aria-label="السماح للعملاء والزوار بتحميل الصور"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-4 border-t pt-5">
+                    <div>
+                      <p className="text-sm font-medium">السماح للموظفين</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        يسمح للمديرين والموظفين المسجلين بتحميل صور العقارات.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.allowStaffImageDownloads ?? true}
+                      onCheckedChange={(checked) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          allowStaffImageDownloads: checked,
+                        }))
+                      }
+                      aria-label="السماح للموظفين بتحميل الصور"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {saving ? "جاري الحفظ..." : "حفظ إعدادات التحميل"}
+                  </Button>
+                </CardFooter>
+              </Card>
             </div>
           </TabsContent>
           <TabsContent value="carousel" className="mt-6">

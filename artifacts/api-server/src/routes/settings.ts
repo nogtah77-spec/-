@@ -7,7 +7,12 @@ const router: IRouter = Router();
 
 router.get("/settings", async (_req, res): Promise<void> => {
   const [row] = await db.select().from(settingsTable).limit(1);
-  const data = { ...(row?.data ?? {}) } as Record<string, unknown>;
+  const data = {
+    ...(row?.data ?? {}),
+    // Backward-compatible defaults for settings added after the initial seed.
+    allowCustomerImageDownloads: (row?.data as Record<string, unknown> | undefined)?.allowCustomerImageDownloads ?? true,
+    allowStaffImageDownloads: (row?.data as Record<string, unknown> | undefined)?.allowStaffImageDownloads ?? true,
+  } as Record<string, unknown>;
   // Exclude large gallery blobs from app startup payload — served via /api/finishing-gallery
   delete data.finishingGallery;
   // Never expose stored third-party API credentials to public callers
@@ -26,6 +31,8 @@ router.put("/settings", requireAdmin, async (req, res): Promise<void> => {
   const existing = (row?.data ?? {}) as Record<string, unknown>;
   const merged = {
     ...body,
+    allowCustomerImageDownloads: body.allowCustomerImageDownloads ?? true,
+    allowStaffImageDownloads: body.allowStaffImageDownloads ?? true,
     finishingGallery: existing.finishingGallery,
     // Service API keys are managed via /api/smart-banners/services; never let a
     // general settings save overwrite or erase them.

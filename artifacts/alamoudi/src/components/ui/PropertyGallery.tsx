@@ -1,15 +1,28 @@
 import { useState, useRef, useCallback } from "react";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronRight, ChevronLeft, Download, Images, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PropertyGalleryProps {
   images: string[];
   title?: string;
   onClickImage?: (index: number) => void;
+  allowDownload?: boolean;
+  downloadAllPending?: boolean;
+  onDownloadImage?: (index: number) => void;
+  onDownloadAll?: () => void;
   className?: string;
 }
 
-export function PropertyGallery({ images, title, onClickImage, className }: PropertyGalleryProps) {
+export function PropertyGallery({
+  images,
+  title,
+  onClickImage,
+  allowDownload = false,
+  downloadAllPending = false,
+  onDownloadImage,
+  onDownloadAll,
+  className,
+}: PropertyGalleryProps) {
   const [current, setCurrent] = useState(0);
   const dragRef = useRef<{ startX: number; startY: number; dragging: boolean; moved: boolean }>({
     startX: 0, startY: 0, dragging: false, moved: false,
@@ -164,6 +177,36 @@ export function PropertyGallery({ images, title, onClickImage, className }: Prop
               />
             </button>
           ))}
+        </div>
+      )}
+
+      {allowDownload && (
+        <div className="flex flex-wrap items-center justify-end gap-2 p-2 border-t border-white/10 bg-black/15">
+          <button
+            type="button"
+            onClick={() => onDownloadImage?.(current)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5 text-xs text-white/90 transition-colors hover:bg-white/20"
+            aria-label="تحميل الصورة الحالية"
+          >
+            <Download className="h-3.5 w-3.5" />
+            تحميل الصورة
+          </button>
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={onDownloadAll}
+              disabled={downloadAllPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-70"
+              aria-label="تحميل جميع صور العقار"
+            >
+              {downloadAllPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Images className="h-3.5 w-3.5" />
+              )}
+              {downloadAllPending ? "جاري التجهيز..." : "تحميل كل الصور"}
+            </button>
+          )}
         </div>
       )}
     </div>

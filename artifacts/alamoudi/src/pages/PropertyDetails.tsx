@@ -21,6 +21,7 @@ import { useData } from "@/context/DataContext";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
 
 
 const categoryLabels: Record<string, string> = {
@@ -38,7 +39,7 @@ export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const { properties, propertyTypes, regions, settings, trackPropertyView, fetching } = useData();
-  const { isStaff } = useAuth();
+  const { isStaff, currentUser } = useAuth();
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
@@ -47,6 +48,7 @@ export default function PropertyDetails() {
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
+  const [downloadAllPending, setDownloadAllPending] = useState(false);
   const lbTouch = useRef<{ x: number; y: number } | null>(null);
 
   const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
@@ -117,6 +119,42 @@ export default function PropertyDetails() {
   const handleCopy = () => {
     navigator.clipboard.writeText(property.code);
     toast({ title: "تم نسخ الكود", description: property.code });
+  };
+
+  const canDownloadImages = currentUser?.role === "admin"
+    || (isStaff
+      ? settings.allowStaffImageDownloads
+      : settings.allowCustomerImageDownloads);
+
+  const handleDownloadImage = async (index: number) => {
+    const imageUrl = images[index];
+    if (!imageUrl) return;
+    await downloadImage(imageUrl, `${property.code}-image-${index + 1}`);
+    toast({ title: "تم بدء تحميل الصورة" });
+  };
+
+  const handleDownloadAllImages = async () => {
+    if (downloadAllPending || images.length < 2) return;
+    setDownloadAllPending(true);
+    try {
+      const result = await downloadImagesAsZip(images, `${property.code}-images`);
+      if (result.downloaded === 0) {
+        toast({
+          title: "تعذر تحميل الصور",
+          description: "لم يسمح مصدر الصور بالتحميل من المتصفح.",
+          variant: "destructive",
+        });
+      } else if (result.failed > 0) {
+        toast({
+          title: "تم تحميل بعض الصور",
+          description: `تمت إضافة ${result.downloaded} صورة، وتعذر الوصول إلى ${result.failed} صورة خارجية.`,
+        });
+      } else {
+        toast({ title: "تم تجهيز ملف صور العقار" });
+      }
+    } finally {
+      setDownloadAllPending(false);
+    }
   };
 
   const propHasVideo = hasVideo(property.videoUrl);
@@ -292,6 +330,10 @@ export default function PropertyDetails() {
               images={images}
               title={property.title}
               onClickImage={(i) => setLightboxIdx(i)}
+              allowDownload={canDownloadImages}
+              downloadAllPending={downloadAllPending}
+              onDownloadImage={handleDownloadImage}
+              onDownloadAll={handleDownloadAllImages}
               className="mb-10"
             />
           ) : showDetailVideoCover || showDetailVideoPoster ? (
