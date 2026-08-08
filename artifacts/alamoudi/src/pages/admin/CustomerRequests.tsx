@@ -118,6 +118,11 @@ function requestTitle(item: CustomerPropertyRequest) {
   return [item.transactionType, item.requestType].filter(Boolean).join(" ") || "طلب عقاري";
 }
 
+function staffLabel(user: { name: string; username?: string; email: string }) {
+  const accountName = user.username ? `@${user.username}` : user.email;
+  return user.name ? `${accountName} — ${user.name}` : accountName;
+}
+
 function FormInput({
   label,
   value,
@@ -423,7 +428,10 @@ export default function CustomerRequests() {
                           ))}
                           {item.assignedStaffId && (
                             <span className="rounded-md bg-primary/10 px-2 py-1 text-[11px] text-primary">
-                              المسؤول: {users.find((user) => user.id === item.assignedStaffId)?.name || "موظف محدد"}
+                              المسؤول: {(() => {
+                                const user = users.find((candidate) => candidate.id === item.assignedStaffId);
+                                return user ? staffLabel(user) : "موظف محدد";
+                              })()}
                             </span>
                           )}
                           {item.viewingDate && (
@@ -485,7 +493,7 @@ export default function CustomerRequests() {
                       <SelectItem value="__unassigned">غير محدد حاليًا</SelectItem>
                       {staffUsers.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
-                          {user.name || user.username || user.email} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
+                          {staffLabel(user)} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -583,7 +591,10 @@ export default function CustomerRequests() {
                   {renderDetail("طريقة السداد", selected.paymentMethod)}
                   {renderDetail("مصدر العميل", selected.source)}
                   {renderDetail("موعد المتابعة", selected.followUpDate, CalendarDays)}
-                  {renderDetail("الموظف المسؤول", users.find((user) => user.id === selected.assignedStaffId)?.name || selected.assignedStaffId, UserRound)}
+                  {renderDetail("الموظف المسؤول", (() => {
+                    const user = users.find((candidate) => candidate.id === selected.assignedStaffId);
+                    return user ? `${staffLabel(user)} · ${user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}` : selected.assignedStaffId;
+                  })(), UserRound)}
                   {renderDetail("موعد المعاينة", formatDateTime(selected.viewingDate), CalendarDays)}
                 </div>
                 {renderDetail("المميزات والشروط المهمة", selected.requiredFeatures)}

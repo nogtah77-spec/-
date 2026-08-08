@@ -178,6 +178,7 @@ export interface Contract {
   propertyType: string;
   propertyRegion: string;
   propertyAddress: string;
+  assignedStaffId: string;
   partyOneRole: string;
   partyOneName: string;
   partyOnePhone: string;

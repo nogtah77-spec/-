@@ -116,6 +116,7 @@ const emptyForm: ContractForm = {
   propertyType: "",
   propertyRegion: "",
   propertyAddress: "",
+  assignedStaffId: "",
   partyOneRole: "المؤجر / البائع",
   partyOneName: "",
   partyOnePhone: "",
@@ -174,6 +175,11 @@ function cleanPhone(value: string) {
   return value.replace(/[^\d+]/g, "");
 }
 
+function staffLabel(user: { name: string; username?: string; email: string }) {
+  const accountName = user.username ? `@${user.username}` : user.email;
+  return user.name ? `${accountName} — ${user.name}` : accountName;
+}
+
 function Field({
   label,
   value,
@@ -204,6 +210,31 @@ function Field({
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
+    </div>
+  );
+}
+
+function DateRangeField({
+  label,
+  start,
+  end,
+  onStartChange,
+  onEndChange,
+}: {
+  label: string;
+  start: string;
+  end: string;
+  onStartChange: (value: string) => void;
+  onEndChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-2">
+      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+        <Field label="من" type="date" value={start} onChange={onStartChange} />
+        <span className="mb-3 text-xs font-semibold text-muted-foreground">إلى</span>
+        <Field label="إلى" type="date" value={end} onChange={onEndChange} />
+      </div>
     </div>
   );
 }
@@ -259,6 +290,7 @@ function ContractFormDialog({
   properties,
   regions,
   propertyTypes,
+  users,
   onSave,
 }: {
   open: boolean;
@@ -267,12 +299,14 @@ function ContractFormDialog({
   properties: ReturnType<typeof useData>["properties"];
   regions: ReturnType<typeof useData>["regions"];
   propertyTypes: ReturnType<typeof useData>["propertyTypes"];
+  users: ReturnType<typeof useData>["users"];
   onSave: (form: ContractForm, editing: Contract | null) => Promise<void>;
 }) {
   const [form, setForm] = useState<ContractForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
+  const staffUsers = users.filter((user) => user.role === "admin" || user.role === "agent");
 
   const setValue = <K extends keyof ContractForm>(key: K, value: ContractForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -410,10 +444,20 @@ function ContractFormDialog({
         <div className="space-y-7 px-5 py-6 sm:px-7">
           <section className="space-y-4">
             <SectionHeading icon={FileCheck2} title="هوية العقد" detail="بيانات مرجعية للبحث والمراجعة" />
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-4">
               <Field label="رقم العقد" value={form.contractNumber} dir="ltr" onChange={(value) => setValue("contractNumber", value)} placeholder="يُولّد تلقائيًا عند تركه فارغًا" />
               <NativeSelect label="نوع العقد" value={form.contractType} onChange={(value) => handleContractTypeChange(value as ContractType)} options={Object.entries(typeLabels).map(([value, label]) => ({ value, label }))} />
               <NativeSelect label="الحالة" value={form.status} onChange={(value) => setValue("status", value as ContractStatus)} options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} />
+              <NativeSelect
+                label="الموظف المسؤول"
+                value={form.assignedStaffId}
+                onChange={(value) => setValue("assignedStaffId", value)}
+                placeholder="غير محدد حاليًا"
+                options={staffUsers.map((user) => ({
+                  value: user.id,
+                  label: `${staffLabel(user)} · ${user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}`,
+                }))}
+              />
             </div>
           </section>
 
@@ -473,20 +517,40 @@ function ContractFormDialog({
             <SectionHeading icon={CalendarDays} title="التواريخ والقيمة" detail="تواريخ مرجعية ومعلومات مالية قابلة للتدقيق" />
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="تاريخ التوقيع" type="date" value={form.signingDate} onChange={(value) => setValue("signingDate", value)} />
-              <Field label="بداية العقد" type="date" value={form.startDate} onChange={(value) => setValue("startDate", value)} />
-              <Field label="نهاية العقد" type="date" value={form.endDate} onChange={(value) => setValue("endDate", value)} />
-              <Field label="تاريخ التسليم" type="date" value={form.handoverDate} onChange={(value) => setValue("handoverDate", value)} />
-              <Field label="تاريخ التجديد / المراجعة" type="date" value={form.renewalDate} onChange={(value) => setValue("renewalDate", value)} />
-              <Field label="مهلة الإخطار" value={form.noticePeriod} onChange={(value) => setValue("noticePeriod", value)} placeholder="مثال: 60 يومًا" />
-              <Field label="إجمالي القيمة" value={form.totalAmount} dir="ltr" onChange={(value) => setValue("totalAmount", value)} placeholder="0.00" />
-              <Field label="المدفوع" value={form.paidAmount} dir="ltr" onChange={(value) => setValue("paidAmount", value)} placeholder="0.00" />
-              <Field label="المتبقي" value={form.remainingAmount} dir="ltr" onChange={(value) => setValue("remainingAmount", value)} placeholder="0.00" />
-              {isRentContract(form.contractType) && <Field label="التأمين" value={form.insuranceAmount} dir="ltr" onChange={(value) => setValue("insuranceAmount", value)} placeholder="قيمة التأمين" />}
-              {form.contractType === "sale" && <Field label="العربون" value={form.depositAmount} dir="ltr" onChange={(value) => setValue("depositAmount", value)} placeholder="قيمة العربون" />}
-              <Field label="العملة" value={form.currency} onChange={(value) => setValue("currency", value)} />
-              <Field label="طريقة السداد" value={form.paymentMethod} onChange={(value) => setValue("paymentMethod", value)} placeholder="تحويل، نقدي، شيك..." />
-              <Field label="دورية السداد" value={form.paymentFrequency} onChange={(value) => setValue("paymentFrequency", value)} placeholder="شهري، ربع سنوي..." />
-              <Field label="موعد الدفعة القادمة" type="date" value={form.nextPaymentDate} onChange={(value) => setValue("nextPaymentDate", value)} />
+              <DateRangeField
+                label="مدة العقد"
+                start={form.startDate}
+                end={form.endDate}
+                onStartChange={(value) => setValue("startDate", value)}
+                onEndChange={(value) => setValue("endDate", value)}
+              />
+              <div className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-3">
+                <Label className="text-xs font-semibold text-muted-foreground">التواريخ الإجرائية</Label>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="تاريخ التسليم" type="date" value={form.handoverDate} onChange={(value) => setValue("handoverDate", value)} />
+                  <Field label="التجديد / المراجعة" type="date" value={form.renewalDate} onChange={(value) => setValue("renewalDate", value)} />
+                  <Field label="مهلة الإخطار" value={form.noticePeriod} onChange={(value) => setValue("noticePeriod", value)} placeholder="مثال: 60 يومًا" />
+                </div>
+              </div>
+              <div className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-3">
+                <Label className="text-xs font-semibold text-muted-foreground">القيمة المالية</Label>
+                <div className="grid gap-4 sm:grid-cols-4">
+                  <Field label="إجمالي القيمة" value={form.totalAmount} dir="ltr" onChange={(value) => setValue("totalAmount", value)} placeholder="0.00" />
+                  <Field label="المدفوع" value={form.paidAmount} dir="ltr" onChange={(value) => setValue("paidAmount", value)} placeholder="0.00" />
+                  <Field label="المتبقي" value={form.remainingAmount} dir="ltr" onChange={(value) => setValue("remainingAmount", value)} placeholder="0.00" />
+                  <Field label="العملة" value={form.currency} onChange={(value) => setValue("currency", value)} />
+                  {isRentContract(form.contractType) && <Field label="التأمين" value={form.insuranceAmount} dir="ltr" onChange={(value) => setValue("insuranceAmount", value)} placeholder="قيمة التأمين" />}
+                  {form.contractType === "sale" && <Field label="العربون" value={form.depositAmount} dir="ltr" onChange={(value) => setValue("depositAmount", value)} placeholder="قيمة العربون" />}
+                </div>
+              </div>
+              <div className="space-y-3 rounded-xl border border-border/80 bg-muted/20 p-3 sm:col-span-3">
+                <Label className="text-xs font-semibold text-muted-foreground">خطة السداد</Label>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Field label="طريقة السداد" value={form.paymentMethod} onChange={(value) => setValue("paymentMethod", value)} placeholder="تحويل، نقدي، شيك..." />
+                  <Field label="دورية السداد" value={form.paymentFrequency} onChange={(value) => setValue("paymentFrequency", value)} placeholder="شهري، ربع سنوي..." />
+                  <Field label="موعد الدفعة القادمة" type="date" value={form.nextPaymentDate} onChange={(value) => setValue("nextPaymentDate", value)} />
+                </div>
+              </div>
             </div>
           </section>
 
@@ -604,8 +668,21 @@ function objectUrl(objectPath: string) {
   return objectPath.startsWith("/objects/") ? `/api/storage${objectPath}` : objectPath;
 }
 
-function ContractDetailDialog({ contract, onOpenChange, onEdit, onDelete }: { contract: Contract | null; onOpenChange: (open: boolean) => void; onEdit: (contract: Contract) => void; onDelete: (contract: Contract) => void }) {
+function ContractDetailDialog({
+  contract,
+  users,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: {
+  contract: Contract | null;
+  users: ReturnType<typeof useData>["users"];
+  onOpenChange: (open: boolean) => void;
+  onEdit: (contract: Contract) => void;
+  onDelete: (contract: Contract) => void;
+}) {
   if (!contract) return null;
+  const assignedStaff = users.find((user) => user.id === contract.assignedStaffId);
   return (
     <Dialog open={!!contract} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto" dir="rtl">
@@ -629,6 +706,12 @@ function ContractDetailDialog({ contract, onOpenChange, onEdit, onDelete }: { co
           <section className="space-y-3">
             <SectionHeading icon={Landmark} title="ملخص مالي وزمني" />
             <div className="grid gap-3 sm:grid-cols-2">
+              {contract.assignedStaffId && (
+                <DetailItem
+                  label="الموظف المسؤول"
+                  value={assignedStaff ? `${staffLabel(assignedStaff)} · ${assignedStaff.role === "admin" ? "مدير النظام" : "مستشار عقاري"}` : contract.assignedStaffId}
+                />
+              )}
               <DetailItem label="القيمة الإجمالية" value={formatAmount(contract.totalAmount, contract.currency)} />
               <DetailItem label="المدفوع / المتبقي" value={`${formatAmount(contract.paidAmount, contract.currency)} / ${formatAmount(contract.remainingAmount, contract.currency)}`} />
               {isRentContract(contract.contractType) && <DetailItem label="التأمين" value={formatAmount(contract.insuranceAmount, contract.currency)} />}
@@ -696,7 +779,8 @@ function ContractDetailDialog({ contract, onOpenChange, onEdit, onDelete }: { co
 }
 
 export default function Contracts() {
-  const { contracts, properties, regions, propertyTypes, fetching, reload, addContract, updateContract, deleteContract } = useData();
+  const { contracts, properties, regions, propertyTypes, users, fetching, reload, addContract, updateContract, deleteContract } = useData();
+  const staffUsers = useMemo(() => users.filter((user) => user.role === "admin" || user.role === "agent"), [users]);
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ContractStatus>("all");
@@ -879,7 +963,13 @@ export default function Contracts() {
                     <span className="block truncate text-sm font-semibold">{contract.propertyTitle || "عقد غير مرتبط بعقار"}</span>
                     <span className="mt-1 block truncate text-[11px] text-muted-foreground">{[contract.propertyCode, contract.propertyRegion].filter(Boolean).join(" · ") || "لا توجد نسخة عقار"}</span>
                   </button>
-                  <div className="min-w-0 text-xs"><p className="truncate font-semibold">{contract.partyTwoName || "غير محدد"}</p><p className="mt-1 truncate text-muted-foreground">{contract.partyOneName || "غير محدد"}</p></div>
+                  <div className="min-w-0 text-xs">
+                    <p className="truncate font-semibold">{contract.partyTwoName || "غير محدد"}</p>
+                    <p className="mt-1 truncate text-muted-foreground">{contract.partyOneName || "غير محدد"}</p>
+                    {contract.assignedStaffId && <p className="mt-1 truncate text-[10px] text-accent">
+                      المسؤول: {staffUsers.find((user) => user.id === contract.assignedStaffId) ? staffLabel(staffUsers.find((user) => user.id === contract.assignedStaffId)!) : contract.assignedStaffId}
+                    </p>}
+                  </div>
                   <div className="text-xs"><p className="font-semibold">{shortAmount(contract.totalAmount)} <span className="font-normal text-muted-foreground">{contract.currency}</span></p><p className="mt-1 text-muted-foreground">متبقي {shortAmount(contract.remainingAmount)}</p></div>
                   <NativeSelect label="" value={contract.status} onChange={(value) => void changeStatus(contract, value as ContractStatus)} options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} />
                   <div className="flex items-center justify-end gap-1">
@@ -905,7 +995,16 @@ export default function Contracts() {
                     </div>
                     <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
                       <div className="rounded-lg bg-muted/35 p-2.5"><p className="text-[10px] text-muted-foreground">الطرف الثاني</p><p className="mt-1 truncate font-semibold">{contract.partyTwoName || "غير محدد"}</p></div>
-                      <div className="rounded-lg bg-muted/35 p-2.5"><p className="text-[10px] text-muted-foreground">المتبقي</p><p className="mt-1 font-semibold">{shortAmount(contract.remainingAmount)} {contract.currency}</p></div>
+                      <div className="rounded-lg bg-muted/35 p-2.5">
+                        <p className="text-[10px] text-muted-foreground">المتبقي</p>
+                        <p className="mt-1 font-semibold">{shortAmount(contract.remainingAmount)} {contract.currency}</p>
+                      </div>
+                      {contract.assignedStaffId && <div className="col-span-2 rounded-lg bg-primary/5 p-2.5">
+                        <p className="text-[10px] text-muted-foreground">الموظف المسؤول</p>
+                        <p className="mt-1 truncate font-semibold text-primary">
+                          {staffUsers.find((user) => user.id === contract.assignedStaffId) ? staffLabel(staffUsers.find((user) => user.id === contract.assignedStaffId)!) : contract.assignedStaffId}
+                        </p>
+                      </div>}
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
                       <NativeSelect label="" value={contract.status} onChange={(value) => void changeStatus(contract, value as ContractStatus)} options={Object.entries(statusLabels).map(([value, label]) => ({ value, label }))} />
@@ -922,8 +1021,8 @@ export default function Contracts() {
         )}
       </div>
 
-      <ContractFormDialog open={formOpen} onOpenChange={setFormOpen} editing={editing} properties={properties} regions={regions} propertyTypes={propertyTypes} onSave={saveContract} />
-      <ContractDetailDialog contract={selected} onOpenChange={(open) => !open && setSelected(null)} onEdit={openEdit} onDelete={(contract) => setDeleteTarget(contract)} />
+      <ContractFormDialog open={formOpen} onOpenChange={setFormOpen} editing={editing} properties={properties} regions={regions} propertyTypes={propertyTypes} users={users} onSave={saveContract} />
+      <ContractDetailDialog users={users} contract={selected} onOpenChange={(open) => !open && setSelected(null)} onEdit={openEdit} onDelete={(contract) => setDeleteTarget(contract)} />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent dir="rtl">

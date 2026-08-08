@@ -19,6 +19,7 @@ const fields = {
   propertyType: z.string().optional(),
   propertyRegion: z.string().optional(),
   propertyAddress: z.string().optional(),
+  assignedStaffId: z.string().optional(),
   partyOneRole: z.string().optional(),
   partyOneName: z.string().optional(),
   partyOnePhone: z.string().optional(),

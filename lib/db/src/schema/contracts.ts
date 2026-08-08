@@ -33,6 +33,7 @@ export const contractsTable = pgTable("contracts", {
   propertyType: text("property_type").notNull().default(""),
   propertyRegion: text("property_region").notNull().default(""),
   propertyAddress: text("property_address").notNull().default(""),
+  assignedStaffId: text("assigned_staff_id").notNull().default(""),
   partyOneRole: text("party_one_role").notNull().default(""),
   partyOneName: text("party_one_name").notNull().default(""),
   partyOnePhone: text("party_one_phone").notNull().default(""),
