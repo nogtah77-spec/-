@@ -365,7 +365,7 @@ export function PropertyCarousel({
           {trackProperties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 w-[98vw] sm:w-[62vw] md:w-[440px] lg:w-[440px]"
+              className="flex-shrink-0 w-[100vw] sm:w-[64vw] md:w-[450px] lg:w-[450px]"
             >
               <PropertyCard property={property} size={size} layout={layout} emphasized={emphasized} />
             </div>

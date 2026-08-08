@@ -151,11 +151,6 @@ export function PropertyCard({
           <div className="absolute inset-x-2 top-2 flex items-start justify-between gap-1">
             <div className="flex min-w-0 flex-wrap items-center gap-1">
               <Badge className="rounded-full bg-accent text-white border-none text-[10px] px-2 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
-              {property.typeName && (
-                <span className="inline-flex max-w-[58%] truncate rounded-full border border-accent/45 bg-black/45 px-2 py-0.5 text-[9px] font-bold text-accent backdrop-blur-sm">
-                  {property.typeName}
-                </span>
-              )}
             </div>
           </div>
           <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
@@ -172,18 +167,25 @@ export function PropertyCard({
         <div className={cn("flex min-w-0 flex-1 flex-col justify-between", emphasized ? "px-4 py-3.5" : "px-3.5 py-3")}>
           <div className="min-w-0">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <div dir="ltr" className={cn(
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <div dir="ltr" className={cn(
                 "inline-flex min-w-0 items-center gap-1 rounded-md border border-accent/45 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-1.5 py-0.5 shadow-[0_3px_10px_rgba(180,152,107,0.14),inset_0_1px_0_rgba(255,255,255,0.08)]",
                 emphasized ? "sm:px-2 sm:py-1" : "",
-              )}>
-                <span className={cn(
-                  "inline-flex shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 py-0.5 font-black tracking-[0.14em] text-accent uppercase leading-none",
-                  emphasized ? "text-[8px]" : "text-[7px]",
-                )}>CODE</span>
-                <h3 className={cn(
-                  "truncate font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
-                  emphasized ? "text-base" : "text-xs",
-                )}>{property.code}</h3>
+                )}>
+                  <span className={cn(
+                    "inline-flex shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 py-0.5 font-black tracking-[0.14em] text-accent uppercase leading-none",
+                    emphasized ? "text-[8px]" : "text-[7px]",
+                  )}>CODE</span>
+                  <h3 className={cn(
+                    "truncate font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
+                    emphasized ? "text-base" : "text-xs",
+                  )}>{property.code}</h3>
+                </div>
+                {property.typeName && (
+                  <span className="relative -top-0.5 -left-1 inline-flex max-w-[42%] shrink-0 truncate rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent">
+                    {property.typeName}
+                  </span>
+                )}
               </div>
             </div>
             <p className="flex items-center gap-1 text-[10px] text-muted-foreground line-clamp-1">
@@ -191,7 +193,7 @@ export function PropertyCard({
               {[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}
             </p>
             {property.finishing && (
-              <p dir="rtl" className="mt-2 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
+              <p dir="rtl" className="mt-3 inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[9px] font-semibold text-accent">
                 {property.finishing}
               </p>
             )}
@@ -246,11 +248,6 @@ export function PropertyCard({
          <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
             <div className="flex max-w-[68%] flex-wrap items-center gap-1.5">
               <Badge className="rounded-full bg-accent text-white border-none text-[11px] px-2.5 py-0.5">{categoryLabels[property.category] || "للبيع"}</Badge>
-              {property.typeName && (
-                <span className="inline-flex max-w-[55%] truncate rounded-full border border-accent/45 bg-black/45 px-2.5 py-0.5 text-[10px] font-bold text-accent backdrop-blur-sm">
-                  {property.typeName}
-                </span>
-              )}
            </div>
            <div className="flex shrink-0 gap-1.5">
              <Button
@@ -316,7 +313,7 @@ export function PropertyCard({
       )}>
         <div className={cn("flex items-start justify-between gap-3", emphasized ? "mb-3" : "mb-4")}>
           <div className="min-w-0">
-             <div className="mb-2 flex items-center gap-2">
+             <div className="mb-2 flex items-center justify-between gap-2">
               <div dir="ltr" className={cn(
                 "inline-flex min-w-0 items-center gap-1.5 rounded-lg border border-accent/50 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-2 py-1 shadow-[0_5px_16px_rgba(180,152,107,0.16),inset_0_1px_0_rgba(255,255,255,0.1)]",
                 emphasized ? "sm:px-2.5 sm:py-1.5" : "",
@@ -332,6 +329,11 @@ export function PropertyCard({
                   {property.code}
                 </h3>
              </div>
+              {property.typeName && (
+                <span className="relative -top-1 -left-1 inline-flex max-w-[44%] shrink-0 truncate rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 text-[9px] font-bold text-accent">
+                  {property.typeName}
+                </span>
+              )}
             </div>
             <p className={cn("flex items-center gap-1.5 text-foreground/75 line-clamp-1", emphasized ? "text-sm" : "text-xs")}>
               <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
