@@ -50,6 +50,14 @@ async function setRegionHeroImage(id: string, heroImage: string | undefined): Pr
     .onConflictDoUpdate({ target: settingsTable.id, set: { data } });
 }
 
+async function clearLegacyRegionHeroImage(id: string): Promise<void> {
+  try {
+    await setRegionHeroImage(id, undefined);
+  } catch {
+    // A cleanup failure must not undo a successful write to regions.hero_image.
+  }
+}
+
 router.get("/regions", async (_req, res): Promise<void> => {
   try {
     let rows: Array<{ id: string; name: string; active: boolean; heroImage: string }>;
@@ -103,8 +111,7 @@ router.post("/regions", requireStaff, async (req, res): Promise<void> => {
     row = { ...row, heroImage: heroImage ?? "" };
   }
   if (!usedLegacySchema && heroImage !== undefined) {
-    // If the optional column exists again, remove any stale legacy fallback.
-    await setRegionHeroImage(row.id, undefined);
+    await clearLegacyRegionHeroImage(row.id);
   }
   await logActivity({
     action: "created",
@@ -169,8 +176,7 @@ router.patch("/regions/:id", requireStaff, async (req, res): Promise<void> => {
     }
   }
   if (!usedLegacySchema && heroImage !== undefined) {
-    // Keep a previous legacy fallback from resurfacing after an explicit edit.
-    await setRegionHeroImage(id, undefined);
+    await clearLegacyRegionHeroImage(id);
   }
   if (!row) {
     res.status(404).json({ error: "not found" });
