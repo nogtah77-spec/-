@@ -266,6 +266,20 @@
   }
 }
 
+/* Login surface: the backdrop itself stays still while the panel enters softly. */
+.login-shell > .relative {
+  animation: login-panel-in 520ms cubic-bezier(.22,.75,.25,1) both;
+}
+
+@keyframes login-panel-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-shell > .relative { animation: none; }
+}
+
 @media (max-width: 640px) {
   /* Keep horizontal card strips touch-friendly without allowing the page to
      acquire an accidental horizontal scrollbar. */

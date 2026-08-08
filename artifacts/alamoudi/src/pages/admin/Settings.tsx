@@ -32,6 +32,7 @@ import {
   Moon,
   SunMoon,
   Palette,
+  LockKeyhole,
 } from "lucide-react";
 import {
   WhatsAppIcon,
@@ -74,6 +75,7 @@ export default function Settings() {
   const [form, setForm] = useState<SiteSettings>({ ...settings });
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const loginBackgroundFileRef = useRef<HTMLInputElement>(null);
   const [newVideo, setNewVideo] =
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
@@ -174,6 +176,43 @@ export default function Settings() {
     reader.readAsDataURL(file);
   };
 
+  const handleLoginBackgroundFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "ملف غير صالح",
+        description: "اختر ملف صورة فقط.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast({
+        title: "الصورة كبيرة جدًا",
+        description: "يجب ألا يتجاوز حجم الصورة 4 ميجابايت.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setForm((prev) => ({
+        ...prev,
+        loginBackgroundImageUrl: String(event.target?.result ?? ""),
+        loginBackgroundEnabled: true,
+      }));
+    };
+    reader.onerror = () =>
+      toast({
+        title: "تعذر قراءة الصورة",
+        description: "حاول اختيار الصورة مرة أخرى.",
+        variant: "destructive",
+      });
+    reader.readAsDataURL(file);
+  };
+
   const regionOverlayColor = form.regionHeroOverlayColor || "#000000";
   const regionOverlayOpacity = Math.min(
     100,
@@ -183,6 +222,15 @@ export default function Settings() {
     100,
     Math.max(0, Number(form.regionHeroGradientOpacity ?? 60)),
   );
+  const loginOverlayColor = form.loginOverlayColor || "#10202D";
+  const loginOverlayOpacity = Math.min(100, Math.max(0, Number(form.loginOverlayOpacity ?? 72)));
+  const loginGradientOpacity = Math.min(100, Math.max(0, Number(form.loginGradientOpacity ?? 58)));
+
+  const colorToRgba = (value: string, opacity: number) => {
+    const normalized = value.replace(/^#/, "");
+    const safe = /^[0-9a-f]{6}$/i.test(normalized) ? normalized : "10202D";
+    return `rgba(${parseInt(safe.slice(0, 2), 16)}, ${parseInt(safe.slice(2, 4), 16)}, ${parseInt(safe.slice(4, 6), 16)}, ${opacity / 100})`;
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -882,6 +930,137 @@ export default function Settings() {
                       استعادة الصورة الافتراضية
                     </Button>
                   )}
+                </CardFooter>
+              </Card>
+
+              <Card className="card-luxury">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LockKeyhole className="h-4 w-4 text-accent" />
+                    خلفية صفحة تسجيل الدخول
+                  </CardTitle>
+                  <CardDescription>
+                    استخدم صورة مستقلة خلف نموذج الدخول، مع طبقة حماية تحافظ على وضوح الحقول والنصوص.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/30 p-4">
+                    <div>
+                      <Label htmlFor="loginBackgroundEnabled">تفعيل صورة الخلفية</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        عند التعطيل، تظهر خلفية المنصة الهادئة المتوافقة مع الهوية.
+                      </p>
+                    </div>
+                    <Switch
+                      id="loginBackgroundEnabled"
+                      checked={Boolean(form.loginBackgroundEnabled)}
+                      onCheckedChange={(checked) =>
+                        setForm((prev) => ({ ...prev, loginBackgroundEnabled: checked }))
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="loginBackgroundImageUrl">صورة خلفية الدخول</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <input
+                        ref={loginBackgroundFileRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleLoginBackgroundFile}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="shrink-0 gap-2"
+                        onClick={() => loginBackgroundFileRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4" />
+                        رفع صورة
+                      </Button>
+                      <Input
+                        id="loginBackgroundImageUrl"
+                        dir="ltr"
+                        className="text-xs"
+                        value={form.loginBackgroundImageUrl?.startsWith("data:") ? "" : form.loginBackgroundImageUrl ?? ""}
+                        onChange={set("loginBackgroundImageUrl")}
+                        placeholder="https://example.com/login-background.jpg"
+                      />
+                    </div>
+                    {form.loginBackgroundImageUrl?.startsWith("data:") && (
+                      <p className="text-xs text-accent">تم اختيار صورة من الجهاز — اضغط حفظ الإعدادات لتثبيتها.</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      PNG أو JPG أو WEBP حتى 4 ميجابايت، أو استخدم رابطًا مباشرًا. يفضّل اختيار صورة أفقية هادئة.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4 border-t border-border pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <Label>لون الطبقة</Label>
+                        <p className="mt-1 text-xs text-muted-foreground">لون موحّد يرفع التباين ويحمي قابلية القراءة.</p>
+                      </div>
+                      <div className="flex items-center gap-2" dir="ltr">
+                        <input
+                          aria-label="اختيار لون طبقة صفحة تسجيل الدخول"
+                          type="color"
+                          value={/^#[0-9a-f]{6}$/i.test(loginOverlayColor) ? loginOverlayColor : "#10202D"}
+                          onChange={(event) => setForm((prev) => ({ ...prev, loginOverlayColor: event.target.value }))}
+                          className="h-10 w-12 cursor-pointer rounded-md border border-border bg-background p-1"
+                        />
+                        <Input
+                          aria-label="رمز لون طبقة صفحة تسجيل الدخول"
+                          dir="ltr"
+                          value={loginOverlayColor}
+                          onChange={(event) => setForm((prev) => ({ ...prev, loginOverlayColor: event.target.value }))}
+                          className="w-28 text-center font-mono text-xs"
+                          placeholder="#10202D"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label>شفافية الطبقة الأساسية</Label>
+                        <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">{loginOverlayOpacity}%</span>
+                      </div>
+                      <Slider dir="ltr" value={[loginOverlayOpacity]} min={0} max={100} step={1} onValueChange={(value) => setForm((prev) => ({ ...prev, loginOverlayOpacity: value[0] }))} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label>قوة التدرّج السفلي</Label>
+                        <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">{loginGradientOpacity}%</span>
+                      </div>
+                      <Slider dir="ltr" value={[loginGradientOpacity]} min={0} max={100} step={1} onValueChange={(value) => setForm((prev) => ({ ...prev, loginGradientOpacity: value[0] }))} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 border-t border-border pt-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label>معاينة مباشرة</Label>
+                      <span className="text-xs text-muted-foreground">لا يتم الحفظ حتى تضغط زر الحفظ</span>
+                    </div>
+                    <div
+                      className="relative h-48 overflow-hidden rounded-xl border border-border bg-[#10202d] bg-cover bg-center"
+                      style={{ backgroundImage: form.loginBackgroundImageUrl ? `url("${form.loginBackgroundImageUrl}")` : undefined }}
+                    >
+                      <div className="absolute inset-0" style={{ backgroundColor: colorToRgba(loginOverlayColor, loginOverlayOpacity) }} />
+                      <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${colorToRgba(loginOverlayColor, loginGradientOpacity)} 0%, ${colorToRgba(loginOverlayColor, 14)} 52%, transparent 100%)` }} />
+                      <div className="relative flex h-full items-end p-5">
+                        <div className="text-right text-white">
+                          <div className="text-lg font-bold">العمودي</div>
+                          <div className="mt-1 text-[10px] tracking-[0.18em] text-[#d8bd87]">للتسويق العقاري</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t pt-4">
+                  <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90 gap-2">
+                    <Save className="h-4 w-4" />
+                    {saving ? "جاري الحفظ..." : "حفظ إعدادات تسجيل الدخول"}
+                  </Button>
                 </CardFooter>
               </Card>
             </div>

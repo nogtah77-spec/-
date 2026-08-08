@@ -174,6 +174,14 @@ export interface SiteSettings {
   mapsUrl: string;
   heroImageUrl: string;
   heroOverlayOpacity: number;
+  /** Optional full-bleed image used only on the staff login screen. */
+  loginBackgroundEnabled: boolean;
+  loginBackgroundImageUrl: string;
+  /** Login backdrop overlay color and opacity, 0-100. */
+  loginOverlayColor: string;
+  loginOverlayOpacity: number;
+  /** Bottom-to-top contrast gradient strength, 0-100. */
+  loginGradientOpacity: number;
   /** Shared overlay color for region cover heroes. */
   regionHeroOverlayColor: string;
   /** Opacity of the solid overlay over region cover images, 0-100. */
@@ -211,6 +219,11 @@ const DEFAULT_SETTINGS: SiteSettings = {
   mapsUrl: "https://maps.google.com",
   heroImageUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=1920&q=80",
   heroOverlayOpacity: 85,
+  loginBackgroundEnabled: false,
+  loginBackgroundImageUrl: "",
+  loginOverlayColor: "#10202D",
+  loginOverlayOpacity: 72,
+  loginGradientOpacity: 58,
   regionHeroOverlayColor: "#000000",
   regionHeroOverlayOpacity: 25,
   regionHeroGradientOpacity: 60,
