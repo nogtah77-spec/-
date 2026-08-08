@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local diagnostic screenshot; not part of the application.
+/attached_assets/لقطة_شاشة_2026-08-08_115154_1786179135624.png
