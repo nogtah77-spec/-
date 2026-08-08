@@ -47,9 +47,6 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     } catch {}
   }, [filters.cardSize]);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
-  // The supplied Shorouk reference is a finished hero screenshot and already
-  // contains its title and breadcrumb. Other city images remain dynamic.
-  const heroContainsPageHeading = region?.id === "shorouk" && !!region?.heroImage;
   const resolve = useCallback((p: any) => ({
     ...p,
     typeName:   propertyTypes.find(t => t.id === p.typeId)?.name,
@@ -97,10 +94,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
-        {/* The hero is intentionally compact: it fills the same visual band
-            between the navigation edge and the first filter controls in the
-            reference, while scaling continuously across viewports. */}
-        <section className="relative isolate h-[clamp(150px,17.4vw,224px)] w-full overflow-hidden bg-primary">
+        <section className="relative isolate h-[clamp(220px,25vw,320px)] w-full overflow-hidden bg-primary">
           {region.heroImage && !heroImageFailed ? (
             <img
               src={region.heroImage}
@@ -113,23 +107,21 @@ export default function RegionPage({ params }: { params: { regionId: string } })
           )}
           <div className="absolute inset-0 bg-black/25" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/15 to-transparent" />
-          {!heroContainsPageHeading && (
-            <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
-              <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
-                <h1 className="font-sans text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl md:text-5xl">
-                  {region.name}
-                </h1>
-                <nav aria-label="التنقل" className="mt-5 flex items-center justify-center gap-2.5 text-xs font-semibold text-white/95 sm:mt-7 sm:gap-3 sm:text-sm">
-                  <Link href="/" className="transition-colors hover:text-accent">الرئيسية</Link>
-                  <ChevronRight className="h-4 w-4 rotate-180 text-white/75" />
-                  <span className="text-white">{region.name}</span>
-                </nav>
-              </div>
+          <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
+            <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
+              <h1 className="font-sans text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl md:text-5xl">
+                {region.name}
+              </h1>
+              <nav aria-label="التنقل" className="mt-5 flex items-center justify-center gap-2.5 text-xs font-semibold text-white/95 sm:mt-7 sm:gap-3 sm:text-sm">
+                <Link href="/" className="transition-colors hover:text-accent">الرئيسية</Link>
+                <ChevronRight className="h-4 w-4 rotate-180 text-white/75" />
+                <span className="text-white">{region.name}</span>
+              </nav>
             </div>
-          )}
+          </div>
         </section>
 
-        <section className="py-6 sm:py-8 md:py-10">
+        <section className="py-3 sm:py-4 md:py-5">
           <div className="container px-3 sm:px-6">
 
             <div className="mb-5 sm:mb-7">
@@ -140,9 +132,6 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                     <p className="mb-1 text-xs font-medium tracking-wide text-accent">استكشف عقارات المدينة</p>
                     <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                       عقارات {region.name}
-                      <span className="mr-2 text-sm font-normal text-muted-foreground">
-                        ({filtered.length})
-                      </span>
                     </h2>
                     <div className="mt-2 h-0.5 w-12 rounded-full bg-accent" />
                   </div>
