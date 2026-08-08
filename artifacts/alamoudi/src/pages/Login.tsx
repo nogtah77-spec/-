@@ -72,7 +72,7 @@ export default function Login() {
         <section className="login-card w-full max-w-[438px] rounded-[30px] px-5 py-7 sm:px-9 sm:py-9">
           <div className="mb-8 text-center">
             <Link href="/" className="inline-flex flex-col items-center" data-testid="link-login-brand">
-              <span className="font-serif text-[2.45rem] font-semibold leading-none tracking-[-0.06em] text-[#fffaf0]">
+              <span className="login-brand-name text-[#fffaf0]">
                 العمودي
               </span>
               <span className="mt-3 border-t border-[#d8bd87]/55 pt-2 text-[0.68rem] font-medium tracking-[0.24em] text-[#e0c58f]">
