@@ -338,14 +338,13 @@
 }
 
 @media (max-width: 640px) {
-  /* Keep the uploaded scene readable through the same dark glass panel used
-     on desktop; the outer veil is lighter only on small screens. */
+  /* Keep the uploaded scene readable around the shared desktop/mobile glass. */
   .login-background-overlay {
-    opacity: 0.34;
+    opacity: 0.24;
   }
 
   .login-background-gradient {
-    opacity: 0.42;
+    opacity: 0.28;
   }
 
   .login-brand-subtitle {
