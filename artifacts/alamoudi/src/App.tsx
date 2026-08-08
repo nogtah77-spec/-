@@ -41,6 +41,7 @@ const Analytics = lazy(() => import("@/pages/admin/Analytics"));
 const ActivityLogs = lazy(() => import("@/pages/admin/ActivityLogs"));
 const ImportExport = lazy(() => import("@/pages/admin/ImportExport"));
 const Inquiries = lazy(() => import("@/pages/admin/Inquiries"));
+const CustomerRequests = lazy(() => import("@/pages/admin/CustomerRequests"));
 const PropertyRequests = lazy(() => import("@/pages/admin/PropertyRequests"));
 const FinishingRequests = lazy(() => import("@/pages/admin/FinishingRequests"));
 const AiLeads = lazy(() => import("@/pages/admin/AiLeads"));
@@ -201,6 +202,7 @@ function Router() {
       <Route path="/admin/activity-logs">{() => <Protected component={ActivityLogs} />}</Route>
       <Route path="/admin/import-export">{() => <Protected component={ImportExport} />}</Route>
       <Route path="/admin/inquiries">{() => <Protected component={Inquiries} />}</Route>
+      <Route path="/admin/requests">{() => <Protected component={CustomerRequests} />}</Route>
       <Route path="/admin/property-requests">{() => <Protected component={PropertyRequests} />}</Route>
       <Route path="/admin/finishing-requests">{() => <Protected component={FinishingRequests} />}</Route>
       <Route path="/admin/ai-leads">{() => <Protected component={AiLeads} />}</Route>
