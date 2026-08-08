@@ -44,6 +44,7 @@ export function PropertyCard({
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [thumbFailed, setThumbFailed] = useState(false);
+  const compactHomeCard = size === "compact" && layout === "list" && detailsScale === "home";
 
   useEffect(() => { setThumbFailed(false); }, [property?.id]);
 
@@ -145,8 +146,8 @@ export function PropertyCard({
         className={cn(
           "relative flex flex-col overflow-hidden group cursor-pointer card-luxury rounded-2xl transition-all duration-300",
           emphasized
-            ? "min-h-[220px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60"
-            : "min-h-[200px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]",
+            ? compactHomeCard ? "min-h-[212px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60" : "min-h-[220px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60"
+            : compactHomeCard ? "min-h-[192px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]" : "min-h-[200px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]",
         )}
       >
         <div dir="ltr" className="pointer-events-none absolute inset-x-2 top-2 z-30 flex items-start justify-between gap-1">
@@ -195,18 +196,18 @@ export function PropertyCard({
                 )}>{property.code}</h3>
               </div>
             </div>
-            <p className="mt-3 flex min-w-0 flex-nowrap items-center gap-1 whitespace-nowrap text-[11px] font-medium text-foreground/85">
+            <p className={cn("flex min-w-0 flex-nowrap items-center gap-1 whitespace-nowrap text-[11px] font-medium text-foreground/85", compactHomeCard ? "mt-2.5" : "mt-3")}>
               <MapPin className="h-3 w-3 shrink-0 text-accent" />
               <span className="min-w-0 truncate">{[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}</span>
             </p>
             {property.finishing && (
-              <p dir="rtl" className="mt-4 inline-flex max-w-[72%] translate-y-0.5 truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
+              <p dir="rtl" className={cn("inline-flex max-w-[72%] translate-y-0.5 truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent", compactHomeCard ? "mt-3" : "mt-4")}>
                 {property.finishing}
               </p>
             )}
           </div>
 
-          <div className="mt-auto space-y-1.5 pt-2">
+          <div className={cn("mt-auto", compactHomeCard ? "space-y-1 pt-1.5" : "space-y-1.5 pt-2")}>
             <div dir="ltr" className="flex items-center justify-end gap-1 border-t border-border/70 pt-2">
               <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
               <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
