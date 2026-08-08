@@ -162,38 +162,48 @@ export function PropertyFilterPanel({
       </div>
 
       {advancedOpen && (
-        <div className="mt-4 grid grid-cols-1 gap-3 border-t border-border pt-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="space-y-1.5 text-xs font-medium">
-            <span>السعر من</span>
-            <Input type="number" min="0" value={filters.minPrice} onChange={(e) => update({ minPrice: e.target.value })} placeholder="من" />
-          </label>
-          <label className="space-y-1.5 text-xs font-medium">
-            <span>السعر إلى</span>
-            <Input type="number" min="0" value={filters.maxPrice} onChange={(e) => update({ maxPrice: e.target.value })} placeholder="إلى" />
-          </label>
-          <label className="space-y-1.5 text-xs font-medium">
-            <span>المساحة من</span>
-            <Input type="number" min="0" value={filters.minArea} onChange={(e) => update({ minArea: e.target.value })} placeholder="م²" />
-          </label>
-          <label className="space-y-1.5 text-xs font-medium">
-            <span>المساحة إلى</span>
-            <Input type="number" min="0" value={filters.maxArea} onChange={(e) => update({ maxArea: e.target.value })} placeholder="م²" />
-          </label>
+        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-4 sm:gap-3 lg:grid-cols-4">
+          <fieldset className="col-span-2 min-w-0 space-y-1.5 text-xs font-medium sm:col-span-1">
+            <legend>السعر</legend>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="min-w-0">
+                <span className="sr-only">السعر من</span>
+                <Input className="h-9 px-2 text-sm" type="number" min="0" value={filters.minPrice} onChange={(e) => update({ minPrice: e.target.value })} placeholder="من" aria-label="السعر من" />
+              </label>
+              <label className="min-w-0">
+                <span className="sr-only">السعر إلى</span>
+                <Input className="h-9 px-2 text-sm" type="number" min="0" value={filters.maxPrice} onChange={(e) => update({ maxPrice: e.target.value })} placeholder="إلى" aria-label="السعر إلى" />
+              </label>
+            </div>
+          </fieldset>
+          <fieldset className="col-span-2 min-w-0 space-y-1.5 text-xs font-medium sm:col-span-1">
+            <legend>المساحة</legend>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="min-w-0">
+                <span className="sr-only">المساحة من</span>
+                <Input className="h-9 px-2 text-sm" type="number" min="0" value={filters.minArea} onChange={(e) => update({ minArea: e.target.value })} placeholder="من" aria-label="المساحة من" />
+              </label>
+              <label className="min-w-0">
+                <span className="sr-only">المساحة إلى</span>
+                <Input className="h-9 px-2 text-sm" type="number" min="0" value={filters.maxArea} onChange={(e) => update({ maxArea: e.target.value })} placeholder="إلى" aria-label="المساحة إلى" />
+              </label>
+            </div>
+          </fieldset>
           <label className="space-y-1.5 text-xs font-medium">
             <span>عدد الغرف (حد أدنى)</span>
-            <Input type="number" min="0" value={filters.beds} onChange={(e) => update({ beds: e.target.value })} placeholder="الغرف" />
+            <Input className="h-9 text-sm" type="number" min="0" value={filters.beds} onChange={(e) => update({ beds: e.target.value })} placeholder="الغرف" />
           </label>
           <label className="space-y-1.5 text-xs font-medium">
             <span>عدد الحمامات (حد أدنى)</span>
-            <Input type="number" min="0" value={filters.baths} onChange={(e) => update({ baths: e.target.value })} placeholder="الحمامات" />
+            <Input className="h-9 text-sm" type="number" min="0" value={filters.baths} onChange={(e) => update({ baths: e.target.value })} placeholder="الحمامات" />
           </label>
           <label className="space-y-1.5 text-xs font-medium">
             <span>الموقع داخل المدينة</span>
-            <Input value={filters.location} onChange={(e) => update({ location: e.target.value })} placeholder="الحي أو الكمباوند" />
+            <Input className="h-9 text-sm" value={filters.location} onChange={(e) => update({ location: e.target.value })} placeholder="الحي أو الكمباوند" />
           </label>
           <label className="space-y-1.5 text-xs font-medium">
             <span>الدور</span>
-            <Input value={filters.floor} onChange={(e) => update({ floor: e.target.value })} placeholder="رقم الدور" />
+            <Input className="h-9 text-sm" value={filters.floor} onChange={(e) => update({ floor: e.target.value })} placeholder="رقم الدور" />
           </label>
           <label className="space-y-1.5 text-xs font-medium">
             <span>المصعد</span>
@@ -217,7 +227,7 @@ export function PropertyFilterPanel({
               </SelectContent>
             </Select>
           </label>
-          <label className="space-y-1.5 text-xs font-medium sm:col-span-2 lg:col-span-2">
+          <label className="col-span-2 space-y-1.5 text-xs font-medium sm:col-span-2 lg:col-span-2">
             <span>المميزات الإضافية</span>
             <Input
               value={filters.additionalFeatures}
@@ -228,7 +238,7 @@ export function PropertyFilterPanel({
               يبحث في الموقف والوصف والموقع وباقي البيانات.
             </span>
           </label>
-          <div className="flex items-end gap-2">
+          <div className="col-span-2 flex items-end gap-2 sm:col-span-1">
             <Button type="button" className="h-9 flex-1 gap-1.5 bg-accent text-white hover:bg-accent/90" onClick={() => onApply(filters)}>
               <Search className="h-4 w-4" /> تطبيق الفلاتر
             </Button>
