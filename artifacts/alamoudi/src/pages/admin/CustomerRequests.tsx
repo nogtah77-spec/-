@@ -57,6 +57,11 @@ const statusMeta: Record<CustomerPropertyRequestStatus, { label: string; classNa
   closed: { label: "مغلق", className: "bg-slate-500/10 text-slate-700 dark:text-slate-300" },
 };
 
+const statusOptionClass = (value: CustomerPropertyRequestStatus) =>
+  value === "new"
+    ? "text-red-700 dark:text-red-300 focus:bg-background focus:text-red-700 dark:focus:text-red-300 data-[state=checked]:text-red-700 dark:data-[state=checked]:text-red-300 data-[highlighted]:bg-red-500/10 data-[highlighted]:text-black hover:text-black"
+    : undefined;
+
 type RequestForm = Omit<CustomerPropertyRequest, "id" | "createdAt" | "status">;
 
 const emptyForm: RequestForm = {
@@ -388,7 +393,7 @@ export default function CustomerRequests() {
               <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="كل الحالات" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">كل الحالات</SelectItem>
-                {statusValues.map((value) => <SelectItem key={value} value={value}>{statusMeta[value].label}</SelectItem>)}
+                {statusValues.map((value) => <SelectItem key={value} value={value} className={statusOptionClass(value)}>{statusMeta[value].label}</SelectItem>)}
               </SelectContent>
             </Select>
           </CardContent>
@@ -459,7 +464,7 @@ export default function CustomerRequests() {
                       <div className="flex items-center gap-2">
                         <Select value={item.status} onValueChange={(value: CustomerPropertyRequestStatus) => void updateStatus(item, value)}>
                           <SelectTrigger className="h-8 flex-1 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>{statusValues.map((value) => <SelectItem key={value} value={value}>{statusMeta[value].label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{statusValues.map((value) => <SelectItem key={value} value={value} className={statusOptionClass(value)}>{statusMeta[value].label}</SelectItem>)}</SelectContent>
                         </Select>
                         <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelected(item)} title="عرض التفاصيل"><ArrowLeft className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => openEdit(item)} title="تعديل الطلب"><Edit3 className="h-4 w-4" /></Button>
@@ -613,7 +618,7 @@ export default function CustomerRequests() {
                   <p className="text-xs font-semibold text-muted-foreground">تحديث الحالة</p>
                   <Select value={selected.status} onValueChange={(value: CustomerPropertyRequestStatus) => void updateStatus(selected, value)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{statusValues.map((value) => <SelectItem key={value} value={value}>{statusMeta[value].label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{statusValues.map((value) => <SelectItem key={value} value={value} className={statusOptionClass(value)}>{statusMeta[value].label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
                 <Button variant="outline" className="w-full gap-2 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(selected)}><Trash2 className="h-4 w-4" />حذف الطلب</Button>
