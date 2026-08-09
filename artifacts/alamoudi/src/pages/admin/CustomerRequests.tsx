@@ -49,11 +49,12 @@ import { formatMoneyText, formatNumericInput, toNumericString } from "@/lib/util
 
 const requestTypes = ["شقة", "فيلا", "قصر", "تاون هاوس", "دوبلكس", "أرض", "محل تجاري", "مكتب إداري", "عيادة طبية", "مصنع/مخزن", "أخرى"];
 const transactionTypes = ["شراء", "إيجار", "استثمار / شراكة"];
-const statusValues: CustomerPropertyRequestStatus[] = ["new", "reviewed", "replied"];
+const statusValues: CustomerPropertyRequestStatus[] = ["new", "reviewed", "replied", "closed"];
 const statusMeta: Record<CustomerPropertyRequestStatus, { label: string; className: string }> = {
-  new: { label: "جديد", className: "bg-red-500/10 text-red-700 dark:text-red-300" },
+  new: { label: "جديد — لم تتم المتابعة", className: "bg-red-500/10 text-red-700 dark:text-red-300" },
   reviewed: { label: "قيد المتابعة", className: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
   replied: { label: "تم التواصل", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  closed: { label: "مغلق", className: "bg-slate-500/10 text-slate-700 dark:text-slate-300" },
 };
 
 type RequestForm = Omit<CustomerPropertyRequest, "id" | "createdAt" | "status">;
@@ -242,6 +243,7 @@ export default function CustomerRequests() {
     new: customerPropertyRequests.filter((item) => item.status === "new").length,
     reviewed: customerPropertyRequests.filter((item) => item.status === "reviewed").length,
     replied: customerPropertyRequests.filter((item) => item.status === "replied").length,
+    closed: customerPropertyRequests.filter((item) => item.status === "closed").length,
   }), [customerPropertyRequests]);
 
   const filteredRequests = useMemo(() => {
@@ -356,12 +358,13 @@ export default function CustomerRequests() {
           }
         />
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
           {[
             { label: "إجمالي الطلبات", value: counts.all, icon: ClipboardList, className: "text-accent" },
-            { label: "طلبات جديدة", value: counts.new, icon: CheckCircle2, className: "text-red-600" },
+            { label: "جديد — لم تتم المتابعة", value: counts.new, icon: CheckCircle2, className: "text-red-600" },
             { label: "قيد المتابعة", value: counts.reviewed, icon: RefreshCw, className: "text-amber-600" },
             { label: "تم التواصل", value: counts.replied, icon: CheckCircle2, className: "text-emerald-600" },
+            { label: "مغلق", value: counts.closed, icon: CheckCircle2, className: "text-slate-600" },
           ].map((stat) => (
             <Card key={stat.label} className="card-luxury">
               <CardContent className="flex items-center justify-between p-4 sm:p-5">

@@ -115,7 +115,7 @@ export interface AiLead {
   createdAt: string;
 }
 
-export type CustomerPropertyRequestStatus = "new" | "reviewed" | "replied";
+export type CustomerPropertyRequestStatus = "new" | "reviewed" | "replied" | "closed";
 
 export interface CustomerPropertyRequest {
   id: string;

@@ -14,14 +14,16 @@ export default function Dashboard() {
   const newRequests = customerPropertyRequests.filter((request) => request.status === "new").length;
   const reviewedRequests = customerPropertyRequests.filter((request) => request.status === "reviewed").length;
   const repliedRequests = customerPropertyRequests.filter((request) => request.status === "replied").length;
+  const closedRequests = customerPropertyRequests.filter((request) => request.status === "closed").length;
   const latestCustomerRequests = [...customerPropertyRequests]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 3);
 
   const requestStatusMeta = {
-    new: { label: "جديد", className: "bg-red-500/10 text-red-700 dark:text-red-300" },
+    new: { label: "جديد — لم تتم المتابعة", className: "bg-red-500/10 text-red-700 dark:text-red-300" },
     reviewed: { label: "قيد المتابعة", className: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
     replied: { label: "تم التواصل", className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+    closed: { label: "مغلق", className: "bg-slate-500/10 text-slate-700 dark:text-slate-300" },
   } as const;
   
   const totalProperties = properties.length;
@@ -80,7 +82,7 @@ export default function Dashboard() {
                 <div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Inbox className="h-4 w-4 text-accent" />
-                    طلبات جديدة تحتاج متابعة
+                    طلبات جديدة لم تتم متابعتها
                   </div>
                   <p className="mt-1 text-3xl font-bold text-foreground">{newRequests}</p>
                 </div>
@@ -88,11 +90,12 @@ export default function Dashboard() {
                   فتح الطلبات <ArrowLeft className="h-3.5 w-3.5" />
                 </Link>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+              <div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4">
                 {[
-                  { label: "جديد", value: newRequests, className: "text-red-600 dark:text-red-300" },
+                  { label: "جديد — لم تتم المتابعة", value: newRequests, className: "text-red-600 dark:text-red-300" },
                   { label: "قيد المتابعة", value: reviewedRequests, className: "text-amber-600 dark:text-amber-300" },
                   { label: "تم التواصل", value: repliedRequests, className: "text-emerald-600 dark:text-emerald-300" },
+                  { label: "مغلق", value: closedRequests, className: "text-slate-600 dark:text-slate-300" },
                 ].map((item) => (
                   <div key={item.label} className="rounded-lg border border-border/70 bg-background/40 p-3">
                     <p className="text-muted-foreground">{item.label}</p>

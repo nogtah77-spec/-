@@ -51,7 +51,7 @@ const requestBodySchema = z.object(textFields)
 
 const updateBodySchema = z.object({
   ...textFields,
-  status: z.enum(["new", "reviewed", "replied"]).optional(),
+  status: z.enum(["new", "reviewed", "replied", "closed"]).optional(),
 });
 
 router.get("/customer-property-requests", requireStaff, async (_req, res): Promise<void> => {
