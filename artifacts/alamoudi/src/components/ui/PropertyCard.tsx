@@ -45,6 +45,7 @@ export function PropertyCard({
   const [, navigate] = useLocation();
   const [thumbFailed, setThumbFailed] = useState(false);
   const compactHomeCard = size === "compact" && layout === "list" && detailsScale === "home";
+  const compactCityCard = size === "compact" && layout === "list" && detailsScale === "city";
 
   useEffect(() => { setThumbFailed(false); }, [property?.id]);
 
@@ -146,8 +147,8 @@ export function PropertyCard({
         className={cn(
           "relative flex flex-col overflow-hidden group cursor-pointer card-luxury rounded-2xl transition-all duration-300",
           emphasized
-            ? compactHomeCard ? "min-h-[196px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60" : "min-h-[220px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60"
-            : compactHomeCard ? "min-h-[180px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]" : "min-h-[200px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]",
+            ? compactHomeCard ? "min-h-[196px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60" : compactCityCard ? "min-h-[208px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60" : "min-h-[220px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60"
+            : compactHomeCard ? "min-h-[180px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]" : compactCityCard ? "min-h-[188px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]" : "min-h-[200px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]",
         )}
       >
         <div dir="ltr" className="pointer-events-none absolute inset-x-2 top-2 z-30 flex items-start justify-between gap-1">
