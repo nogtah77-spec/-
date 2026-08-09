@@ -17,7 +17,7 @@ import { SEED_SOURCES } from "@/data/seedSources";
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 
 export default function PropertyForm() {
-  const { regions, propertyTypes, addProperty, updateProperty, properties } = useData();
+  const { regions, propertyTypes, users, addProperty, updateProperty, properties } = useData();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const params = useParams<{ id?: string }>();
@@ -58,6 +58,7 @@ export default function PropertyForm() {
     sourceEmail: existing?.sourceEmail ?? "",
     sourceLocation: existing?.sourceLocation ?? "",
     sourceNotes: existing?.sourceNotes ?? "",
+    assignedStaffId: existing?.assignedStaffId ?? "",
     coverPriority: existing?.coverPriority ?? "image",
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
@@ -117,6 +118,11 @@ export default function PropertyForm() {
   };
 
   const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm(p => ({ ...p, [k]: v }));
+  const staffUsers = users.filter(user => user.role === "admin" || user.role === "agent");
+  const staffLabel = (user: typeof staffUsers[number]) => {
+    const accountName = user.username ? `@${user.username}` : user.email;
+    return user.name ? `${accountName} — ${user.name}` : accountName;
+  };
 
   return (
     <AdminLayout>
@@ -397,10 +403,10 @@ export default function PropertyForm() {
                   <p className="text-xs text-muted-foreground">يظهر للمدير فقط</p>
                 </div>
                 <div className="border-t pt-4 space-y-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">بيانات المصدر / التواصل</p>
+                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">بيانات المالك / التواصل</p>
                   <div className="space-y-2">
-                    <Label className="text-sm">اسم المصدر</Label>
-                    <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="بروكر / مالك / اسم المصدر..." />
+                     <Label className="text-sm">اسم المالك</Label>
+                     <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="اسم مالك العقار..." />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm flex items-center gap-1.5">
@@ -480,6 +486,24 @@ export default function PropertyForm() {
                       onChange={e => set("sourceNotes", e.target.value)}
                     />
                   </div>
+                   <div className="space-y-2">
+                     <Label className="text-sm">الموظف المسؤول</Label>
+                     <Select
+                       value={form.assignedStaffId || "__unassigned"}
+                       onValueChange={value => set("assignedStaffId", value === "__unassigned" ? "" : value)}
+                     >
+                       <SelectTrigger><SelectValue placeholder="اختر الموظف المسؤول" /></SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="__unassigned">غير محدد</SelectItem>
+                         {staffUsers.map(user => (
+                           <SelectItem key={user.id} value={user.id}>
+                             {staffLabel(user)} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                     <p className="text-xs text-muted-foreground">يظهر هذا الاختيار للإدارة فقط.</p>
+                   </div>
                   <p className="text-xs text-muted-foreground">خاص بالإدارة — لا يظهر للزوّار</p>
                 </div>
               </CardContent>

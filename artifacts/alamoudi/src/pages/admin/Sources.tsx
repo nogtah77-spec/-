@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, Plus, X, Download, Edit2, Trash2, Search, BookUser, MapPin, FileText } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 export default function Sources() {
-  const { properties, propertyTypes, regions, updateProperty } = useData();
+  const { properties, propertyTypes, regions, users, updateProperty } = useData();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [editTarget, setEditTarget] = useState<string | null>(null);
@@ -21,7 +22,17 @@ export default function Sources() {
     sourceEmail: string;
     sourceLocation: string;
     sourceNotes: string;
-  }>({ source: "", sourcePhones: [""], sourceEmail: "", sourceLocation: "", sourceNotes: "" });
+    assignedStaffId: string;
+  }>({ source: "", sourcePhones: [""], sourceEmail: "", sourceLocation: "", sourceNotes: "", assignedStaffId: "" });
+
+  const staffUsers = useMemo(
+    () => users.filter(user => user.role === "admin" || user.role === "agent"),
+    [users],
+  );
+  const staffLabel = (user: typeof staffUsers[number]) => {
+    const accountName = user.username ? `@${user.username}` : user.email;
+    return user.name ? `${accountName} — ${user.name}` : accountName;
+  };
 
   const sourcedProps = useMemo(() =>
     properties.filter(p =>
@@ -29,7 +40,8 @@ export default function Sources() {
       p.sourcePhones?.some(ph => ph.trim()) ||
       p.sourceEmail?.trim() ||
       p.sourceLocation?.trim() ||
-      p.sourceNotes?.trim()
+      p.sourceNotes?.trim() ||
+      p.assignedStaffId?.trim()
     ),
     [properties]
   );
@@ -42,9 +54,10 @@ export default function Sources() {
       p.source?.toLowerCase().includes(q) ||
       p.sourceEmail?.toLowerCase().includes(q) ||
       p.sourceNotes?.toLowerCase().includes(q) ||
+      staffUsers.some(user => user.id === p.assignedStaffId && staffLabel(user).toLowerCase().includes(q)) ||
       p.sourcePhones?.some(ph => ph.includes(q))
     );
-  }, [sourcedProps, search]);
+  }, [sourcedProps, search, staffUsers]);
 
   const openEdit = (id: string) => {
     const p = properties.find(x => x.id === id);
@@ -55,30 +68,34 @@ export default function Sources() {
       sourceEmail: p.sourceEmail ?? "",
       sourceLocation: p.sourceLocation ?? "",
       sourceNotes: p.sourceNotes ?? "",
+      assignedStaffId: p.assignedStaffId ?? "",
     });
     setEditTarget(id);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editTarget) return;
-    updateProperty(editTarget, {
+    const saved = await updateProperty(editTarget, {
       source: editForm.source,
       sourcePhones: editForm.sourcePhones.filter(ph => ph.trim()),
       sourceEmail: editForm.sourceEmail,
       sourceLocation: editForm.sourceLocation,
       sourceNotes: editForm.sourceNotes,
+      assignedStaffId: editForm.assignedStaffId,
     });
-    toast({ title: "تم حفظ بيانات المصدر ✓" });
+    if (!saved) return;
+    toast({ title: "تم حفظ بيانات المالك ✓" });
     setEditTarget(null);
   };
 
-  const clearSource = (id: string) => {
-    updateProperty(id, { source: "", sourcePhones: [], sourceEmail: "", sourceLocation: "", sourceNotes: "" });
-    toast({ title: "تم مسح بيانات المصدر" });
+  const clearSource = async (id: string) => {
+    const cleared = await updateProperty(id, { source: "", sourcePhones: [], sourceEmail: "", sourceLocation: "", sourceNotes: "", assignedStaffId: "" });
+    if (!cleared) return;
+    toast({ title: "تم مسح بيانات المالك" });
   };
 
   const exportCSV = () => {
-    const rows = [["كود العقار", "المصدر", "أرقام التواصل", "البريد الإلكتروني", "رابط الموقع", "ملاحظات", "نوع العقار", "المنطقة"]];
+    const rows = [["كود العقار", "اسم المالك", "أرقام التواصل", "البريد الإلكتروني", "رابط الموقع", "ملاحظات", "الموظف المسؤول", "نوع العقار", "المنطقة"]];
     sourcedProps.forEach(p => {
       const type = propertyTypes.find(t => t.id === p.typeId)?.name ?? "";
       const region = regions.find(r => r.id === p.regionId)?.name ?? "";
@@ -89,6 +106,7 @@ export default function Sources() {
         p.sourceEmail ?? "",
         p.sourceLocation ?? "",
         p.sourceNotes ?? "",
+        p.assignedStaffId ? (staffUsers.find(user => user.id === p.assignedStaffId) ? staffLabel(staffUsers.find(user => user.id === p.assignedStaffId)!) : p.assignedStaffId) : "",
         type,
         region,
       ]);
@@ -128,7 +146,7 @@ export default function Sources() {
         />
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span><span className="font-semibold text-foreground">{sourcedProps.length}</span> مصدر مسجّل</span>
+          <span><span className="font-semibold text-foreground">{sourcedProps.length}</span> مالك مسجّل</span>
           {search && <span>— <span className="font-semibold text-foreground">{filtered.length}</span> نتيجة</span>}
         </div>
 
@@ -136,7 +154,7 @@ export default function Sources() {
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
             className="pr-9"
-            placeholder="ابحث بالكود أو اسم المصدر أو رقم الهاتف أو البريد أو الملاحظات..."
+            placeholder="ابحث بالكود أو اسم المالك أو الموظف أو الهاتف أو البريد..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -155,11 +173,12 @@ export default function Sources() {
                 <thead className="bg-muted/50 border-b">
                   <tr className="text-right">
                     <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الكود</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">المصدر</th>
+                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">اسم المالك</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">أرقام التواصل</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">البريد</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الموقع</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">ملاحظات</th>
+                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الموظف المسؤول</th>
                     <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الإجراءات</th>
                   </tr>
                 </thead>
@@ -209,6 +228,16 @@ export default function Sources() {
                             <p className="text-xs text-muted-foreground line-clamp-2">{p.sourceNotes}</p>
                           ) : <span className="text-muted-foreground text-xs">—</span>}
                         </td>
+                        <td className="px-4 py-3 min-w-[180px]">
+                          {p.assignedStaffId ? (
+                            (() => {
+                              const user = staffUsers.find(candidate => candidate.id === p.assignedStaffId);
+                              return user
+                                ? <span className="text-xs">{staffLabel(user)}<span className="block text-muted-foreground">{user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}</span></span>
+                                : <span className="text-xs text-muted-foreground">{p.assignedStaffId}</span>;
+                            })()
+                          ) : <span className="text-muted-foreground text-xs">غير محدد</span>}
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
                             <button onClick={() => openEdit(p.id)}
@@ -236,13 +265,13 @@ export default function Sources() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BookUser className="h-5 w-5 text-accent" />
-              تعديل بيانات المصدر
+               تعديل بيانات المالك
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm">اسم المصدر</Label>
-              <Input placeholder="مثال: أحمد السيد / بروكر / مالك مباشر..."
+               <Label className="text-sm">اسم المالك</Label>
+               <Input placeholder="مثال: أحمد السيد / مالك مباشر..."
                 value={editForm.source} onChange={e => setEditForm(f => ({ ...f, source: e.target.value }))} />
             </div>
 
@@ -286,6 +315,23 @@ export default function Sources() {
               <Label className="text-sm flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" />ملاحظات</Label>
               <Textarea rows={3} placeholder="تفاصيل إضافية عن المصدر..."
                 value={editForm.sourceNotes} onChange={e => setEditForm(f => ({ ...f, sourceNotes: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">الموظف المسؤول</Label>
+              <Select
+                value={editForm.assignedStaffId || "__unassigned"}
+                onValueChange={value => setEditForm(f => ({ ...f, assignedStaffId: value === "__unassigned" ? "" : value }))}
+              >
+                <SelectTrigger><SelectValue placeholder="اختر الموظف المسؤول" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__unassigned">غير محدد</SelectItem>
+                  {staffUsers.map(user => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {staffLabel(user)} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter className="gap-2">

@@ -14,6 +14,10 @@ the application schema but were missing from the production database:
 - `properties.parking`
 - `properties.additional_features`
 
+`20260809030000_add_property_assigned_staff.sql` adds the optional
+`properties.assigned_staff_id` relationship used by the administrative
+“الموظف المسؤول” field on properties and property sources.
+
 The migration uses `IF NOT EXISTS`, empty-string defaults, and a null cleanup
 before enforcing `NOT NULL`, so it is safe to apply to the current production
 data without changing non-null values.

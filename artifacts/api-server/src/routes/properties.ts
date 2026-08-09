@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { eq, sql, inArray } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, pool, propertiesTable, insertPropertySchema } from "@workspace/db";
@@ -8,6 +8,47 @@ import { logActivity, actorFromReq } from "../lib/activityLog";
 const router: IRouter = Router();
 
 const LEGACY_PROPERTY_SELECT = `
+  id,
+  code,
+  title,
+  description,
+  price,
+  area,
+  beds,
+  baths,
+  floors,
+  floor,
+  finishing,
+  view,
+  type_id AS "typeId",
+  region_id AS "regionId",
+  category,
+  status,
+  featured,
+  agent_type AS "agentType",
+  images,
+  video_url AS "videoUrl",
+  external_url AS "externalUrl",
+  maps_url AS "mapsUrl",
+  created_at AS "createdAt",
+  unit_type AS "unitType",
+  sub_area AS "subArea",
+  layout,
+  master,
+  elevator,
+  floor_text AS "floorText",
+  location,
+  source,
+  source_phones AS "sourcePhones",
+  source_email AS "sourceEmail",
+  source_location AS "sourceLocation",
+  source_notes AS "sourceNotes",
+  assigned_staff_id AS "assignedStaffId",
+  views,
+  cover_priority AS "coverPriority"
+`;
+
+const LEGACY_PROPERTY_SELECT_WITHOUT_STAFF = `
   id,
   code,
   title,
@@ -56,13 +97,31 @@ function isMissingColumnError(error: unknown): boolean {
   );
 }
 
+function hasAssignedStaffId(data: Record<string, unknown>): boolean {
+  return Object.prototype.hasOwnProperty.call(data, "assignedStaffId");
+}
+
+function assignedStaffMigrationRequired(res: Response): void {
+  res.status(503).json({
+    error: "property_assigned_staff_migration_required",
+    message: "يجب تطبيق migration الخاصة بالموظف المسؤول قبل حفظ هذا الاختيار.",
+  });
+}
+
 async function selectLegacyProperties(activeOnly: boolean): Promise<Array<Record<string, unknown>>> {
   const where = activeOnly ? ` WHERE status = 'active'` : "";
-  const result = await pool.query(`SELECT ${LEGACY_PROPERTY_SELECT} FROM properties${where}`);
+  let result;
+  try {
+    result = await pool.query(`SELECT ${LEGACY_PROPERTY_SELECT} FROM properties${where}`);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    result = await pool.query(`SELECT ${LEGACY_PROPERTY_SELECT_WITHOUT_STAFF} FROM properties${where}`);
+  }
   return result.rows.map((row) => ({
     ...row,
     parking: "",
     additionalFeatures: "",
+    assignedStaffId: row.assignedStaffId ?? "",
   }));
 }
 
@@ -86,7 +145,7 @@ router.get("/properties", async (req, res): Promise<void> => {
       res.json(rows);
       return;
     }
-    res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, ...rest }) => rest));
+    res.json(rows.map(({ source: _s, agentType: _a, sourcePhones: _sp, sourceEmail: _se, sourceLocation: _sl, sourceNotes: _sn, assignedStaffId: _as, ...rest }) => rest));
   } catch (error) {
     const code = typeof error === "object" && error !== null && "code" in error
       ? String((error as { code?: unknown }).code ?? "unknown")
@@ -110,7 +169,18 @@ router.post("/properties", requireStaff, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db.insert(propertiesTable).values(parsed.data).returning();
+  let row;
+  try {
+    [row] = await db.insert(propertiesTable).values(parsed.data).returning();
+  } catch (error) {
+    if (!isMissingColumnError(error) || !hasAssignedStaffId(parsed.data)) throw error;
+    if (String(parsed.data.assignedStaffId ?? "").trim()) {
+      assignedStaffMigrationRequired(res);
+      return;
+    }
+    const { assignedStaffId: _assignedStaffId, ...legacyData } = parsed.data;
+    [row] = await db.insert(propertiesTable).values(legacyData).returning();
+  }
   await logActivity({
     action: "created",
     entityType: "property",
@@ -136,13 +206,36 @@ router.post("/properties/import", requireStaff, async (req, res): Promise<void> 
       .limit(1);
     if (existing.length > 0) {
       const { id: _ignore, ...rest } = item;
-      await db
-        .update(propertiesTable)
-        .set(rest)
-        .where(eq(propertiesTable.id, existing[0].id));
+      try {
+        await db
+          .update(propertiesTable)
+          .set(rest)
+          .where(eq(propertiesTable.id, existing[0].id));
+      } catch (error) {
+        if (!isMissingColumnError(error) || !hasAssignedStaffId(rest)) throw error;
+        if (String(rest.assignedStaffId ?? "").trim()) {
+          assignedStaffMigrationRequired(res);
+          return;
+        }
+        const { assignedStaffId: _assignedStaffId, ...legacyRest } = rest;
+        await db
+          .update(propertiesTable)
+          .set(legacyRest)
+          .where(eq(propertiesTable.id, existing[0].id));
+      }
       updated++;
     } else {
-      await db.insert(propertiesTable).values(item);
+      try {
+        await db.insert(propertiesTable).values(item);
+      } catch (error) {
+        if (!isMissingColumnError(error) || !hasAssignedStaffId(item)) throw error;
+        if (String(item.assignedStaffId ?? "").trim()) {
+          assignedStaffMigrationRequired(res);
+          return;
+        }
+        const { assignedStaffId: _assignedStaffId, ...legacyItem } = item;
+        await db.insert(propertiesTable).values(legacyItem);
+      }
       added++;
     }
   }
@@ -162,11 +255,26 @@ router.patch("/properties/:id", requireStaff, async (req, res): Promise<void> =>
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const [row] = await db
-    .update(propertiesTable)
-    .set(parsed.data)
-    .where(eq(propertiesTable.id, id))
-    .returning();
+  let row;
+  try {
+    [row] = await db
+      .update(propertiesTable)
+      .set(parsed.data)
+      .where(eq(propertiesTable.id, id))
+      .returning();
+  } catch (error) {
+    if (!isMissingColumnError(error) || !hasAssignedStaffId(parsed.data)) throw error;
+    if (String(parsed.data.assignedStaffId ?? "").trim()) {
+      assignedStaffMigrationRequired(res);
+      return;
+    }
+    const { assignedStaffId: _assignedStaffId, ...legacyData } = parsed.data;
+    [row] = await db
+      .update(propertiesTable)
+      .set(legacyData)
+      .where(eq(propertiesTable.id, id))
+      .returning();
+  }
   if (!row) {
     res.status(404).json({ error: "not found" });
     return;

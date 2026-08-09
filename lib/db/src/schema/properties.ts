@@ -47,6 +47,7 @@ export const propertiesTable = pgTable("properties", {
   sourceEmail: text("source_email").notNull().default(""),
   sourceLocation: text("source_location").notNull().default(""),
   sourceNotes: text("source_notes").notNull().default(""),
+  assignedStaffId: text("assigned_staff_id").notNull().default(""),
   views: integer("views").notNull().default(0),
   coverPriority: text("cover_priority").notNull().default("image"),
 });

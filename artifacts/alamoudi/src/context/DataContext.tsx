@@ -46,6 +46,7 @@ export interface Property {
   sourceEmail?: string;
   sourceLocation?: string;
   sourceNotes?: string;
+  assignedStaffId?: string;
   views?: number;
   coverPriority?: "image" | "video";
 }
