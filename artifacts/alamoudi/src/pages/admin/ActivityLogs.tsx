@@ -145,37 +145,37 @@ export default function ActivityLogs() {
           eyebrow="المراجعة والمتابعة"
           icon={Activity}
           actions={
-            <>
+            <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:items-center">
               <Button
                 variant="outline"
-                className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+                className="h-10 min-w-0 w-full gap-1.5 border-white/25 bg-white/10 px-2 text-[11px] text-white hover:border-white/40 hover:bg-white/15 hover:text-white sm:w-auto sm:gap-2 sm:px-4 sm:text-sm"
                 onClick={() => void refreshLogs()}
                 disabled={refreshing}
               >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                تحديث
+                <RefreshCw className={`h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 ${refreshing ? "animate-spin" : ""}`} />
+                <span className="truncate">تحديث</span>
               </Button>
               <Button
                 variant="outline"
-                className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+                className="h-10 min-w-0 w-full gap-1.5 border-white/25 bg-white/10 px-2 text-[11px] text-white hover:border-white/40 hover:bg-white/15 hover:text-white sm:w-auto sm:gap-2 sm:px-4 sm:text-sm"
                 onClick={exportCsv}
                 disabled={filtered.length === 0}
               >
-                <Download className="h-4 w-4" />
-                تصدير السجل
+                <Download className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                <span className="truncate">تصدير السجل</span>
               </Button>
               {canClearLogs && (
                 <Button
                   variant="outline"
-                  className="h-10 gap-2 border-red-300/40 bg-red-500/15 text-red-100 hover:border-red-200/60 hover:bg-red-500/25 hover:text-white"
+                  className="h-10 min-w-0 w-full gap-1.5 border-red-300/40 bg-red-500/15 px-2 text-[11px] text-red-100 hover:border-red-200/60 hover:bg-red-500/25 hover:text-white sm:w-auto sm:gap-2 sm:px-4 sm:text-sm"
                   onClick={() => setClearDialogOpen(true)}
                   disabled={activityLogs.length === 0}
                 >
-                  <Trash2 className="h-4 w-4" />
-                  تصفير السجلات
+                  <Trash2 className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
+                  <span className="truncate">تصفير السجلات</span>
                 </Button>
               )}
-            </>
+            </div>
           }
         />
 
