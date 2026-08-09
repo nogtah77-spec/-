@@ -14,12 +14,13 @@ function buildSupabaseUrl(): string | undefined {
 
 const dbUrl =
   process.env.DATABASE_URL ??
+  process.env.SUPABASE_PRODUCTION_DB_URL ??
   process.env.SUPABASE_DATABASE_URL ??
   buildSupabaseUrl();
 
 if (!dbUrl) {
   throw new Error(
-    "No database URL found. Set DATABASE_URL, SUPABASE_DATABASE_URL, or SUPABASE_DB_PASSWORD + SUPABASE_URL.",
+    "No database URL found. Set DATABASE_URL, SUPABASE_PRODUCTION_DB_URL, SUPABASE_DATABASE_URL, or SUPABASE_DB_PASSWORD + SUPABASE_URL.",
   );
 }
 

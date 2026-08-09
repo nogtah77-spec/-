@@ -60,7 +60,7 @@ artifacts/api-server/dist/app.mjs
 يحتاج تشغيل الواجهة البرمجية في بيئة الإنتاج إلى متغيرات الاتصال وقيم الحماية
 الموجودة في إعدادات البيئة، وأهمها:
 
-- `DATABASE_URL` أو رابط قاعدة بيانات مكافئ.
+- `DATABASE_URL` أو `SUPABASE_PRODUCTION_DB_URL` أو رابط قاعدة بيانات مكافئ.
 - `SESSION_SECRET`.
 - `ADMIN_PASSWORD` إذا كانت قاعدة البيانات لا تحتوي حساب إدارة بعد.
 - مفاتيح مزود الذكاء الاصطناعي فقط إذا كانت ميزاته مفعلة.
@@ -71,8 +71,9 @@ artifacts/api-server/dist/app.mjs
 
 إذا كان النشر يتم من GitHub إلى Vercel، فلن تنتقل قاعدة بيانات Replit
 التطويرية أو مستخدموها إلى Vercel تلقائيًا. في هذا المشروع يستخدم تشغيل Vercel
-اتصال Supabase عند توفر `SUPABASE_URL` و`SUPABASE_DB_PASSWORD`، ثم يستخدم
-`SUPABASE_DATABASE_URL` أو `DATABASE_URL` كبديل. يجب أن يشير أحد هذه الاتصالات
+اتصال Supabase عند توفر `SUPABASE_PRODUCTION_DB_URL`، أو عند توفر
+`SUPABASE_URL` و`SUPABASE_DB_PASSWORD`، ثم يستخدم `SUPABASE_DATABASE_URL`
+أو `DATABASE_URL` كبديل. يجب أن يشير أحد هذه الاتصالات
 إلى قاعدة البيانات التي يستخدمها تطبيق Vercel، وأن تحتوي على الجداول المطلوبة،
 ومنها `users` و`session`.
 

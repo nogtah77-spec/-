@@ -37,7 +37,16 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       res.status(400).json({ error: "يرجى إدخال اسم المستخدم وكلمة المرور" });
       return;
     }
-    const rows = await db.select().from(usersTable).where(
+    const rows = await db.select({
+      id: usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      username: usersTable.username,
+      passwordHash: usersTable.passwordHash,
+      role: usersTable.role,
+      active: usersTable.active,
+      joinedAt: usersTable.joinedAt,
+    }).from(usersTable).where(
       or(
         sql`lower(${usersTable.username}) = ${identifier}`,
         sql`lower(${usersTable.email}) = ${identifier}`,
@@ -73,7 +82,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         res.status(500).json({ error: "تعذّر حفظ جلسة الدخول. تحقق من اتصال قاعدة البيانات وجدول session." });
         return;
       }
-      res.json(publicUser(user));
+    res.json(publicUser({ ...user, canClearActivityLogs: false }));
     });
   } catch (err) {
     logger.error({ err }, "Login request failed");
@@ -100,7 +109,15 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     res.json(null);
     return;
   }
-  const rows = await db.select().from(usersTable).where(
+  const rows = await db.select({
+    id: usersTable.id,
+    name: usersTable.name,
+    email: usersTable.email,
+    username: usersTable.username,
+    role: usersTable.role,
+    active: usersTable.active,
+    joinedAt: usersTable.joinedAt,
+  }).from(usersTable).where(
     and(
       eq(usersTable.id, req.session.userId as string),
       eq(usersTable.active, true),
@@ -111,7 +128,7 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     res.json(null);
     return;
   }
-  res.json(publicUser(user));
+  res.json(publicUser({ ...user, canClearActivityLogs: false }));
 });
 
 export default router;

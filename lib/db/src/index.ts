@@ -21,7 +21,8 @@ function buildSupabaseUrl(): string | undefined {
 
 const connectionString =
   process.env.VERCEL === "1" || process.env.VERCEL_ENV
-    ? buildSupabaseUrl() ??
+    ? process.env.SUPABASE_PRODUCTION_DB_URL ??
+      buildSupabaseUrl() ??
       process.env.SUPABASE_DATABASE_URL ??
       process.env.DATABASE_URL
     : process.env.DATABASE_URL ??
