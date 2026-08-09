@@ -25,6 +25,7 @@ export default function Users() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editTarget, setEditTarget] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -44,7 +45,7 @@ export default function Users() {
     u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name || !form.email) {
       toast({ title: "خطأ", description: "يرجى إدخال الاسم والبريد الإلكتروني", variant: "destructive" });
       return;
@@ -53,17 +54,23 @@ export default function Users() {
       toast({ title: "خطأ", description: "حسابات الإدارة والموظفين تتطلب اسم مستخدم وكلمة مرور", variant: "destructive" });
       return;
     }
-    addUser({
-      name: form.name,
-      email: form.email,
-      role: form.role,
-      username: isStaffRole ? form.username.trim() : undefined,
-      password: isStaffRole ? form.password : undefined,
-      canClearActivityLogs: form.role === "agent" ? form.canClearActivityLogs : false,
-      active: true,
-    });
-    setShowAddDialog(false);
-    toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم بنجاح" });
+    setIsSubmitting(true);
+    try {
+      const saved = await addUser({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        role: form.role,
+        username: isStaffRole ? form.username.trim() : undefined,
+        password: isStaffRole ? form.password : undefined,
+        canClearActivityLogs: form.role === "agent" ? form.canClearActivityLogs : false,
+        active: true,
+      });
+      if (!saved) return;
+      setShowAddDialog(false);
+      toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم وحفظه على الخادم" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEdit = async () => {
@@ -257,7 +264,9 @@ export default function Users() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>إلغاء</Button>
-            <Button onClick={handleAdd}>إضافة</Button>
+            <Button onClick={handleAdd} disabled={isSubmitting}>
+              {isSubmitting ? "جارٍ الحفظ..." : "إضافة"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

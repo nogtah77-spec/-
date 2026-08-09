@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import { z } from "zod/v4";
 import { db, usersTable } from "@workspace/db";
 import { requireStaff, requireAdmin, hashPassword } from "../lib/auth";
@@ -18,19 +19,25 @@ const publicColumns = {
   joinedAt: usersTable.joinedAt,
 };
 
-const userInputSchema = z.object({
-  id: z.string(),
-  name: z.string().optional(),
-  email: z.string().optional(),
-  username: z.string().optional(),
+const userCreateSchema = z.object({
+  name: z.string().trim().min(1, "الاسم مطلوب"),
+  email: z.string().trim().min(1, "البريد الإلكتروني مطلوب"),
+  username: z.string().trim().optional(),
   password: z.string().optional(),
-  role: z.string().optional(),
-  active: z.boolean().optional(),
-  canClearActivityLogs: z.boolean().optional(),
-  joinedAt: z.string(),
+  role: z.enum(["admin", "agent", "customer"]).default("customer"),
+  active: z.boolean().default(true),
+  canClearActivityLogs: z.boolean().default(false),
 });
 
-const userUpdateSchema = userInputSchema.partial();
+const userUpdateSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  email: z.string().trim().min(1).optional(),
+  username: z.string().trim().optional(),
+  password: z.string().optional(),
+  role: z.enum(["admin", "agent", "customer"]).optional(),
+  active: z.boolean().optional(),
+  canClearActivityLogs: z.boolean().optional(),
+});
 
 // Viewing the user list is staff-level (admin + agent).
 router.get("/users", requireStaff, async (_req, res): Promise<void> => {
@@ -41,20 +48,52 @@ router.get("/users", requireStaff, async (_req, res): Promise<void> => {
 // Creating, editing, and deleting users — including assigning roles — is
 // admin-only. Agents must not be able to escalate privileges or manage accounts.
 router.post("/users", requireAdmin, async (req, res): Promise<void> => {
-  const parsed = userInputSchema.safeParse(req.body);
+  const parsed = userCreateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { password, ...rest } = parsed.data;
-  if (!password) {
+  const {
+    name,
+    email,
+    username: rawUsername,
+    password,
+    role,
+    active,
+    canClearActivityLogs,
+  } = parsed.data;
+  const username = rawUsername ?? "";
+  if ((role === "admin" || role === "agent") && (!username || !password)) {
     res.status(400).json({ error: "كلمة المرور مطلوبة لإنشاء الحساب" });
     return;
   }
-  const passwordHash = await hashPassword(password);
+
+  const duplicateConditions = [sql`lower(${usersTable.email}) = ${email.toLowerCase()}`];
+  if (username) duplicateConditions.push(sql`lower(${usersTable.username}) = ${username.toLowerCase()}`);
+  const [duplicate] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(or(...duplicateConditions))
+    .limit(1);
+  if (duplicate) {
+    res.status(409).json({ error: "البريد الإلكتروني أو اسم المستخدم مستخدم من قبل" });
+    return;
+  }
+
+  const passwordHash = password ? await hashPassword(password) : "";
   const [row] = await db
     .insert(usersTable)
-    .values({ ...rest, passwordHash })
+    .values({
+      id: randomUUID(),
+      name,
+      email,
+      username,
+      passwordHash,
+      role,
+      active,
+      canClearActivityLogs: role === "agent" ? canClearActivityLogs : false,
+      joinedAt: new Date().toISOString(),
+    })
     .returning(publicColumns);
   await logActivity({
     action: "created",
@@ -72,7 +111,7 @@ router.patch("/users/:id", requireAdmin, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { password, id: _ignore, ...rest } = parsed.data;
+  const { password, ...rest } = parsed.data;
   const values: Record<string, unknown> = { ...rest };
   if (password) {
     values.passwordHash = await hashPassword(password);

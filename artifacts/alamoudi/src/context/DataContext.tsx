@@ -377,7 +377,7 @@ interface DataContextType {
   bulkDeleteProperties: (ids: string[]) => void;
   bulkUpdateProperties: (ids: string[], updates: Partial<Property>) => void;
   importProperties: (items: Omit<Property, "id" | "createdAt">[]) => { added: number; updated: number };
-  addUser: (u: Omit<User, "id" | "joinedAt">) => void;
+  addUser: (u: Omit<User, "id" | "joinedAt">) => Promise<boolean>;
   updateUser: (id: string, u: Partial<User>) => Promise<boolean>;
   deleteUser: (id: string) => void;
   toggleUser: (id: string) => void;
@@ -742,10 +742,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return { added, updated };
   };
 
-  const addUser = (u: Omit<User, "id" | "joinedAt">) => {
-    const user: User = { ...u, id: genId(), joinedAt: new Date().toISOString() };
-    setUsers(p => [...p, { ...user, password: undefined }]);
-    persist(api.post("/users", user));
+  const addUser = async (u: Omit<User, "id" | "joinedAt">) => {
+    try {
+      const saved = await api.post<User>("/users", u);
+      setUsers(p => p.some(existing => existing.id === saved.id) ? p : [...p, saved]);
+      return true;
+    } catch (err: unknown) {
+      const apiError = err as { status?: number; message?: string };
+      const message = apiError.status === 401
+        ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم حاول إضافة المستخدم."
+        : apiError.status === 403
+          ? "لا تملك صلاحية إضافة مستخدمين."
+          : apiError.status === 409
+            ? apiError.message || "البريد الإلكتروني أو اسم المستخدم مستخدم من قبل."
+            : apiError.status === 413
+              ? "حجم البيانات كبير جدًا. تحقق من المدخلات ثم حاول مرة أخرى."
+              : apiError.message || "تعذّرت إضافة المستخدم على الخادم.";
+      toast({ title: "تعذّرت إضافة المستخدم", description: message, variant: "destructive" });
+      return false;
+    }
   };
   const updateUser = (id: string, u: Partial<User>) => {
     const { password: _pw, ...rest } = u;
