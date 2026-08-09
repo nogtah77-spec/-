@@ -7,6 +7,19 @@ import { logActivity, actorFromReq } from "../lib/activityLog";
 
 const router: IRouter = Router();
 
+type PropertyWriteRow = {
+  id: string;
+  title: string;
+  code: string;
+  assignedStaffId?: string;
+};
+
+const propertyWriteReturning = {
+  id: propertiesTable.id,
+  title: propertiesTable.title,
+  code: propertiesTable.code,
+} as const;
+
 const LEGACY_PROPERTY_SELECT = `
   id,
   code,
@@ -196,13 +209,17 @@ router.post("/properties", requireStaff, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  let row;
+  let row: PropertyWriteRow | undefined;
   try {
     [row] = await db.insert(propertiesTable).values(parsed.data).returning();
   } catch (error) {
     if (!isMissingColumnError(error)) throw error;
     const legacyData = legacyPropertyData(parsed.data);
-    [row] = await db.insert(propertiesTable).values(legacyData as typeof parsed.data).returning();
+    [row] = await db
+      .insert(propertiesTable)
+      .values(legacyData as typeof parsed.data)
+      .returning(propertyWriteReturning);
+    if (!row) throw new Error("Property insert returned no row");
     row = { ...row, assignedStaffId: parsed.data.assignedStaffId ?? "" };
   }
   await logActivity({
@@ -254,7 +271,10 @@ router.post("/properties/import", requireStaff, async (req, res): Promise<void> 
       } catch (error) {
         if (!isMissingColumnError(error)) throw error;
         const legacyItem = legacyPropertyData(item);
-        await db.insert(propertiesTable).values(legacyItem as typeof item);
+        await db
+          .insert(propertiesTable)
+          .values(legacyItem as typeof item)
+          .returning(propertyWriteReturning);
       }
       added++;
     }
@@ -275,13 +295,13 @@ router.patch("/properties/:id", requireStaff, async (req, res): Promise<void> =>
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  let row;
+  let row: PropertyWriteRow | undefined;
   try {
     [row] = await db
       .update(propertiesTable)
       .set(parsed.data)
       .where(eq(propertiesTable.id, id))
-      .returning();
+      .returning(propertyWriteReturning);
   } catch (error) {
     if (!isMissingColumnError(error)) throw error;
     const [current] = await pool.query(
@@ -293,7 +313,11 @@ router.patch("/properties/:id", requireStaff, async (req, res): Promise<void> =>
       .update(propertiesTable)
       .set(legacyData)
       .where(eq(propertiesTable.id, id))
-      .returning();
+      .returning(propertyWriteReturning);
+    if (!row) {
+      res.status(404).json({ error: "not found" });
+      return;
+    }
     row = { ...row, assignedStaffId: parsed.data.assignedStaffId ?? extractAssignedStaffId(current?.sourceNotes).assignedStaffId };
   }
   if (!row) {
