@@ -7,4 +7,4 @@ The published Supabase database may contain the core tables and records while st
 
 **Why:** A direct Drizzle read failed when production lacked newer property and region columns, even though the tables and authentication database were healthy.
 
-**How to apply:** Before transferring or exposing data, compare the production table shape with the current schema. Use a compatibility projection for reads when appropriate, and handle schema changes through the supported PostgreSQL/publish migration path rather than ad-hoc production DDL.
+**How to apply:** Before transferring or exposing data, compare the production table shape with the current schema. Use a compatibility projection for critical reads such as authentication when appropriate, and handle schema changes through the supported PostgreSQL/publish migration path rather than ad-hoc production DDL. Keep the production connection secret name consistent between Replit and Vercel; a secret that exists only in Replit is not automatically available to Vercel.
