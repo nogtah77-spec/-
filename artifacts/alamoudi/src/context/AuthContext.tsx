@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { useData, User } from "./DataContext";
 import { api, type ApiError } from "@/lib/api";
 
@@ -6,6 +6,7 @@ interface AuthContextType {
   currentUser: User | null;
   isStaff: boolean;
   authReady: boolean;
+  refreshCurrentUser: () => Promise<User | null>;
   login: (identifier: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
 }
@@ -17,13 +18,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
-  useEffect(() => {
-    api
-      .get<User | null>("/auth/me")
-      .then((u) => setCurrentUser(u ?? null))
-      .catch(() => setCurrentUser(null))
-      .finally(() => setAuthReady(true));
+  const refreshCurrentUser = useCallback(async () => {
+    try {
+      const user = await api.get<User | null>("/auth/me");
+      const nextUser = user ?? null;
+      setCurrentUser(nextUser);
+      return nextUser;
+    } catch {
+      setCurrentUser(null);
+      return null;
+    }
   }, []);
+
+  useEffect(() => {
+    refreshCurrentUser()
+      .finally(() => setAuthReady(true));
+  }, [refreshCurrentUser]);
 
   const isStaff = !!currentUser && (currentUser.role === "admin" || currentUser.role === "agent");
 
@@ -48,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, isStaff, authReady, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isStaff, authReady, refreshCurrentUser, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

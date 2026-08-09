@@ -58,6 +58,7 @@ export interface User {
   password?: string;
   role: "admin" | "agent" | "customer";
   active: boolean;
+  canClearActivityLogs: boolean;
   joinedAt: string;
 }
 
@@ -377,7 +378,7 @@ interface DataContextType {
   bulkUpdateProperties: (ids: string[], updates: Partial<Property>) => void;
   importProperties: (items: Omit<Property, "id" | "createdAt">[]) => { added: number; updated: number };
   addUser: (u: Omit<User, "id" | "joinedAt">) => void;
-  updateUser: (id: string, u: Partial<User>) => void;
+  updateUser: (id: string, u: Partial<User>) => Promise<boolean>;
   deleteUser: (id: string) => void;
   toggleUser: (id: string) => void;
   addInquiry: (i: Omit<Inquiry, "id" | "createdAt" | "status">) => void;
@@ -749,7 +750,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateUser = (id: string, u: Partial<User>) => {
     const { password: _pw, ...rest } = u;
     setUsers(p => p.map(x => x.id === id ? { ...x, ...rest } : x));
-    persist(api.patch(`/users/${id}`, u));
+    return persist(api.patch(`/users/${id}`, u));
   };
   const deleteUser = (id: string) => {
     setUsers(p => p.filter(x => x.id !== id));

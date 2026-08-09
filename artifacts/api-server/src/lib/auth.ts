@@ -1,7 +1,8 @@
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import bcrypt from "bcryptjs";
-import { pool } from "@workspace/db";
+import { db, pool, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import type { RequestHandler } from "express";
 
 declare module "express-session" {
@@ -66,6 +67,32 @@ export const requireStaff: RequestHandler = (req, res, next) => {
  *  privileged operations that agents must not access. */
 export const requireAdmin: RequestHandler = (req, res, next) => {
   if (req.session?.userId && req.session.role === "admin") {
+    next();
+    return;
+  }
+  res.status(403).json({ error: "forbidden" });
+};
+
+/** Allows admins and explicitly delegated staff to clear activity logs. */
+export const requireActivityLogClear: RequestHandler = async (req, res, next) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  const [user] = await db
+    .select({
+      role: usersTable.role,
+      active: usersTable.active,
+      canClearActivityLogs: usersTable.canClearActivityLogs,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.session.userId))
+    .limit(1);
+
+  if (
+    user?.active &&
+    (user.role === "admin" || (user.role === "agent" && user.canClearActivityLogs))
+  ) {
     next();
     return;
   }

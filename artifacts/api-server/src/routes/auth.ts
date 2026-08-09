@@ -14,6 +14,7 @@ function publicUser(u: {
   username: string;
   role: string;
   active: boolean;
+  canClearActivityLogs: boolean;
   joinedAt: string;
 }) {
   return {
@@ -23,6 +24,7 @@ function publicUser(u: {
     username: u.username,
     role: u.role,
     active: u.active,
+    canClearActivityLogs: u.role === "admin" || u.canClearActivityLogs,
     joinedAt: u.joinedAt,
   };
 }

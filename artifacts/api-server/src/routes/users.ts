@@ -14,6 +14,7 @@ const publicColumns = {
   username: usersTable.username,
   role: usersTable.role,
   active: usersTable.active,
+  canClearActivityLogs: usersTable.canClearActivityLogs,
   joinedAt: usersTable.joinedAt,
 };
 
@@ -25,6 +26,7 @@ const userInputSchema = z.object({
   password: z.string().optional(),
   role: z.string().optional(),
   active: z.boolean().optional(),
+  canClearActivityLogs: z.boolean().optional(),
   joinedAt: z.string(),
 });
 

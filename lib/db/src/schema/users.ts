@@ -10,6 +10,7 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash").notNull().default(""),
   role: text("role").notNull().default("customer"),
   active: boolean("active").notNull().default(true),
+  canClearActivityLogs: boolean("can_clear_activity_logs").notNull().default(false),
   joinedAt: text("joined_at").notNull(),
 });
 

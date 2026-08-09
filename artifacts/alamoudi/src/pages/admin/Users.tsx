@@ -3,13 +3,15 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Users as UsersIcon, Pencil, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Pencil, Trash2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useData, User } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
@@ -17,13 +19,22 @@ const roleLabels = { admin: "مدير النظام", agent: "مستشار عقا
 
 export default function Users() {
   const { users, addUser, updateUser, deleteUser, toggleUser } = useData();
+  const { currentUser, refreshCurrentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editTarget, setEditTarget] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const { toast } = useToast();
 
-  const [form, setForm] = useState({ name: "", email: "", username: "", role: "customer" as any, password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    username: "",
+    role: "customer" as any,
+    password: "",
+    canClearActivityLogs: false,
+  });
 
   const isStaffRole = form.role === "admin" || form.role === "agent";
 
@@ -48,25 +59,30 @@ export default function Users() {
       role: form.role,
       username: isStaffRole ? form.username.trim() : undefined,
       password: isStaffRole ? form.password : undefined,
+      canClearActivityLogs: form.role === "agent" ? form.canClearActivityLogs : false,
       active: true,
     });
     setShowAddDialog(false);
     toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم بنجاح" });
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editTarget || !form.name || !form.email) return;
     if (isStaffRole && !form.username) {
       toast({ title: "خطأ", description: "حسابات الإدارة والموظفين تتطلب اسم مستخدم", variant: "destructive" });
       return;
     }
-    updateUser(editTarget.id, {
+    const saved = await updateUser(editTarget.id, {
       name: form.name,
       email: form.email,
       role: form.role,
       username: isStaffRole ? form.username.trim() : undefined,
+      canClearActivityLogs: form.role === "agent" ? form.canClearActivityLogs : false,
       ...(form.password ? { password: form.password } : {}),
     });
+    if (saved && editTarget.id === currentUser?.id) {
+      await refreshCurrentUser();
+    }
     setEditTarget(null);
     toast({ title: "تم بنجاح", description: "تم تحديث بيانات المستخدم" });
   };
@@ -84,12 +100,19 @@ export default function Users() {
   };
 
   const openAdd = () => {
-    setForm({ name: "", email: "", username: "", role: "customer", password: "" });
+    setForm({ name: "", email: "", username: "", role: "customer", password: "", canClearActivityLogs: false });
     setShowAddDialog(true);
   };
 
   const openEdit = (u: User) => {
-    setForm({ name: u.name, email: u.email, username: u.username || "", role: u.role, password: "" });
+    setForm({
+      name: u.name,
+      email: u.email,
+      username: u.username || "",
+      role: u.role,
+      password: "",
+      canClearActivityLogs: u.canClearActivityLogs ?? false,
+    });
     setEditTarget(u);
   };
 
@@ -213,6 +236,22 @@ export default function Users() {
                   <Label>كلمة المرور</Label>
                   <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
                 </div>
+                {isAdmin && form.role === "agent" && (
+                  <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
+                    <Checkbox
+                      id="new-user-clear-activity-logs"
+                      checked={form.canClearActivityLogs}
+                      onCheckedChange={(checked) => setForm({ ...form, canClearActivityLogs: checked === true })}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="new-user-clear-activity-logs" className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold">
+                        <ShieldCheck className="h-4 w-4 text-accent" />
+                        السماح بتصفير سجلات النشاط
+                      </Label>
+                      <p className="text-xs leading-5 text-muted-foreground">صلاحية حساسة تمنح الموظف حذف سجل النشاط بالكامل بعد التأكيد.</p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -261,6 +300,22 @@ export default function Users() {
                   <Label>كلمة مرور جديدة <span className="text-muted-foreground font-normal">(اتركها فارغة للإبقاء على الحالية)</span></Label>
                   <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
                 </div>
+                {isAdmin && form.role === "agent" && (
+                  <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
+                    <Checkbox
+                      id="edit-user-clear-activity-logs"
+                      checked={form.canClearActivityLogs}
+                      onCheckedChange={(checked) => setForm({ ...form, canClearActivityLogs: checked === true })}
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="edit-user-clear-activity-logs" className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold">
+                        <ShieldCheck className="h-4 w-4 text-accent" />
+                        السماح بتصفير سجلات النشاط
+                      </Label>
+                      <p className="text-xs leading-5 text-muted-foreground">صلاحية حساسة تمنح الموظف حذف سجل النشاط بالكامل بعد التأكيد.</p>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
