@@ -108,6 +108,18 @@ export function PropertyCarousel({
     return Number.isFinite(x) ? -x : trackOffsetRef.current;
   }, []);
 
+  const freezeMotionAtCurrentPosition = useCallback(() => {
+    const renderedOffset = getRenderedTrackOffset();
+    stopMotion();
+    trackOffsetRef.current = renderedOffset;
+    if (trackRef.current) {
+      trackRef.current.style.transition = "none";
+      trackRef.current.style.transform = `translate3d(${-renderedOffset}px, 0, 0)`;
+    }
+    setTrackOffset(renderedOffset);
+    return renderedOffset;
+  }, [getRenderedTrackOffset, stopMotion]);
+
   const setTrackPosition = useCallback(
     (index: number, animated: boolean) => {
       const nextOffset = getOffsetForIndex(index);
@@ -242,8 +254,11 @@ export function PropertyCarousel({
 
   const scroll = useCallback(
     (direction: "prev" | "next") => {
-      if (propertyCount < 2 || isAnimatingRef.current) return;
+      if (propertyCount < 2) return;
       stopAutoPlay();
+      if (isAnimatingRef.current || motionFrameRef.current !== null) {
+        freezeMotionAtCurrentPosition();
+      }
 
       let currentIndex = currentIndexRef.current;
       if (infinite) {
@@ -264,6 +279,7 @@ export function PropertyCarousel({
       infinite,
       normaliseIndex,
       propertyCount,
+      freezeMotionAtCurrentPosition,
       scheduleAutoPlay,
       stopAutoPlay,
     ],
@@ -299,9 +315,8 @@ export function PropertyCarousel({
     (event: React.TouchEvent<HTMLDivElement>) => {
       if (event.touches.length !== 1) return;
       const touch = event.touches[0];
-      stopMotion();
+      const startOffset = freezeMotionAtCurrentPosition();
       const startIndex = normaliseIndex(currentIndexRef.current);
-      const startOffset = getRenderedTrackOffset();
       trackOffsetRef.current = startOffset;
       currentIndexRef.current = startIndex;
       setTransitionEnabled(false);
@@ -320,11 +335,10 @@ export function PropertyCarousel({
       pauseForInteraction();
     },
     [
-      getRenderedTrackOffset,
+      freezeMotionAtCurrentPosition,
       normaliseIndex,
       pauseForInteraction,
       setTrackOffset,
-      stopMotion,
     ],
   );
 
@@ -355,13 +369,9 @@ export function PropertyCarousel({
       if (!start.horizontal) return;
 
       event.preventDefault();
-      const boundaryResistance =
-        !infinite &&
-        ((start.startIndex === 0 && moveX > 0) ||
-          (start.startIndex === propertyCount - 1 && moveX < 0))
-          ? 0.28
-          : 1;
-      const nextOffset = start.startOffset - moveX * boundaryResistance;
+      // Do not fight the user's finger at the ends. The track follows the
+      // gesture fully, then snaps back to the valid edge on release.
+      const nextOffset = start.startOffset - moveX;
       trackOffsetRef.current = nextOffset;
       setTrackOffset(nextOffset);
       start.lastX = touch.clientX;
