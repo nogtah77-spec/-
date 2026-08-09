@@ -89,7 +89,21 @@ export default function PropertyForm() {
     }
     if (saving) return;
     setSaving(true);
-    const payload = { ...form, title: form.code.trim(), images };
+    const numericValue = (value: unknown) => {
+      const parsed = Number(toNumericString(value));
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const payload = {
+      ...form,
+      title: form.code.trim(),
+      price: numericValue(form.price),
+      area: numericValue(form.area),
+      beds: numericValue(form.beds),
+      baths: numericValue(form.baths),
+      floors: numericValue(form.floors),
+      floor: numericValue(form.floor),
+      images,
+    };
     try {
       const saved = isEdit && params.id
         ? await updateProperty(params.id, payload)

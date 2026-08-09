@@ -45,6 +45,8 @@ export function PropertyCarousel({
   const currentIndexRef = useRef(0);
   const trackOffsetRef = useRef(0);
   const isAnimatingRef = useRef(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const suppressClickRef = useRef(false);
   const autoPlayEnabledRef = useRef(autoPlay);
   const pausedRef = useRef(false);
   const safeMotionSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
@@ -271,6 +273,66 @@ export function PropertyCarousel({
     [scheduleAutoPlay],
   );
 
+  const handleTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      if (event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      suppressClickRef.current = false;
+      pauseForInteraction();
+    },
+    [pauseForInteraction],
+  );
+
+  const handleTouchMove = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      const start = touchStartRef.current;
+      if (!start || event.touches.length !== 1) return;
+      const touch = event.touches[0];
+      const dx = start.x - touch.clientX;
+      const dy = Math.abs(touch.clientY - start.y);
+      if (Math.abs(dx) > 8 && Math.abs(dx) > dy) {
+        event.preventDefault();
+      }
+    },
+    [],
+  );
+
+  const handleTouchEnd = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      const start = touchStartRef.current;
+      touchStartRef.current = null;
+      if (!start) {
+        resumeAfterInteraction(5000);
+        return;
+      }
+
+      const touch = event.changedTouches[0];
+      const dx = start.x - touch.clientX;
+      const dy = Math.abs(touch.clientY - start.y);
+      const isHorizontalSwipe = Math.abs(dx) >= 42 && Math.abs(dx) > dy * 1.15;
+
+      if (isHorizontalSwipe && propertyCount > 1 && !isAnimatingRef.current) {
+        suppressClickRef.current = true;
+        scroll(dx > 0 ? "next" : "prev");
+      }
+      resumeAfterInteraction(5000);
+    },
+    [propertyCount, resumeAfterInteraction, scroll],
+  );
+
+  const handleTouchCancel = useCallback(() => {
+    touchStartRef.current = null;
+    resumeAfterInteraction(5000);
+  }, [resumeAfterInteraction]);
+
+  const handleClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClickRef.current = false;
+  }, []);
+
   useEffect(() => {
     if (propertyCount === 0) return;
     const frame = requestAnimationFrame(() => {
@@ -330,8 +392,6 @@ export function PropertyCarousel({
       className={cn("relative overflow-visible", className)}
       onMouseEnter={pauseForInteraction}
       onMouseLeave={() => resumeAfterInteraction(1000)}
-      onTouchStart={pauseForInteraction}
-      onTouchEnd={() => resumeAfterInteraction(5000)}
     >
       {canPrev && (
         <button
@@ -351,6 +411,11 @@ export function PropertyCarousel({
         ref={viewportRef}
         dir="ltr"
         className="overflow-hidden pb-3 pt-3"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+        onClickCapture={handleClickCapture}
         style={{ touchAction: "pan-y" }}
       >
         <div
@@ -367,7 +432,7 @@ export function PropertyCarousel({
           {trackProperties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 w-[100vw] sm:w-[64vw] md:w-[450px] lg:w-[450px]"
+              className="flex-shrink-0 w-[calc(100vw-3rem)] sm:w-[64vw] md:w-[450px] lg:w-[450px]"
             >
               <PropertyCard property={property} size={size} layout={layout} emphasized={emphasized} detailsScale={detailsScale} />
             </div>
