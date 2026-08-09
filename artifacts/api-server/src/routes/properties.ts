@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { eq, sql, inArray } from "drizzle-orm";
 import { z } from "zod/v4";
 import { db, pool, propertiesTable, insertPropertySchema } from "@workspace/db";
@@ -97,15 +97,40 @@ function isMissingColumnError(error: unknown): boolean {
   );
 }
 
-function hasAssignedStaffId(data: Record<string, unknown>): boolean {
-  return Object.prototype.hasOwnProperty.call(data, "assignedStaffId");
+const ASSIGNED_STAFF_MARKER = /\s*\[assigned_staff_id:([^\]\r\n]+)\]\s*$/;
+
+function extractAssignedStaffId(notes: unknown): { notes: string; assignedStaffId: string } {
+  const value = typeof notes === "string" ? notes : "";
+  const match = value.match(ASSIGNED_STAFF_MARKER);
+  return {
+    notes: match ? value.slice(0, match.index).trimEnd() : value,
+    assignedStaffId: match?.[1]?.trim() ?? "",
+  };
 }
 
-function assignedStaffMigrationRequired(res: Response): void {
-  res.status(503).json({
-    error: "property_assigned_staff_migration_required",
-    message: "يجب تطبيق migration الخاصة بالموظف المسؤول قبل حفظ هذا الاختيار.",
-  });
+function addAssignedStaffMarker(notes: unknown, assignedStaffId: unknown): string {
+  const cleaned = extractAssignedStaffId(notes).notes;
+  const staffId = typeof assignedStaffId === "string" ? assignedStaffId.trim() : "";
+  return staffId ? `${cleaned}${cleaned ? "\n\n" : ""}[assigned_staff_id:${staffId}]` : cleaned;
+}
+
+function legacyPropertyData(
+  data: Record<string, unknown>,
+  existingNotes?: unknown,
+): Record<string, unknown> {
+  const existing = extractAssignedStaffId(existingNotes);
+  const hasAssignedStaff = Object.prototype.hasOwnProperty.call(data, "assignedStaffId");
+  const assignedStaffId = hasAssignedStaff
+    ? data.assignedStaffId
+    : existing.assignedStaffId;
+  const sourceNotes = Object.prototype.hasOwnProperty.call(data, "sourceNotes")
+    ? data.sourceNotes
+    : existing.notes;
+  const { assignedStaffId: _assignedStaffId, ...legacyData } = data;
+  return {
+    ...legacyData,
+    sourceNotes: addAssignedStaffMarker(sourceNotes, assignedStaffId),
+  };
 }
 
 async function selectLegacyProperties(activeOnly: boolean): Promise<Array<Record<string, unknown>>> {
@@ -118,10 +143,12 @@ async function selectLegacyProperties(activeOnly: boolean): Promise<Array<Record
     result = await pool.query(`SELECT ${LEGACY_PROPERTY_SELECT_WITHOUT_STAFF} FROM properties${where}`);
   }
   return result.rows.map((row) => ({
-    ...row,
+    ...(() => {
+      const extracted = extractAssignedStaffId(row.sourceNotes);
+      return { ...row, sourceNotes: extracted.notes, assignedStaffId: row.assignedStaffId ?? extracted.assignedStaffId };
+    })(),
     parking: "",
     additionalFeatures: "",
-    assignedStaffId: row.assignedStaffId ?? "",
   }));
 }
 
@@ -173,13 +200,10 @@ router.post("/properties", requireStaff, async (req, res): Promise<void> => {
   try {
     [row] = await db.insert(propertiesTable).values(parsed.data).returning();
   } catch (error) {
-    if (!isMissingColumnError(error) || !hasAssignedStaffId(parsed.data)) throw error;
-    if (String(parsed.data.assignedStaffId ?? "").trim()) {
-      assignedStaffMigrationRequired(res);
-      return;
-    }
-    const { assignedStaffId: _assignedStaffId, ...legacyData } = parsed.data;
-    [row] = await db.insert(propertiesTable).values(legacyData).returning();
+    if (!isMissingColumnError(error)) throw error;
+    const legacyData = legacyPropertyData(parsed.data);
+    [row] = await db.insert(propertiesTable).values(legacyData as typeof parsed.data).returning();
+    row = { ...row, assignedStaffId: parsed.data.assignedStaffId ?? "" };
   }
   await logActivity({
     action: "created",
@@ -212,12 +236,12 @@ router.post("/properties/import", requireStaff, async (req, res): Promise<void> 
           .set(rest)
           .where(eq(propertiesTable.id, existing[0].id));
       } catch (error) {
-        if (!isMissingColumnError(error) || !hasAssignedStaffId(rest)) throw error;
-        if (String(rest.assignedStaffId ?? "").trim()) {
-          assignedStaffMigrationRequired(res);
-          return;
-        }
-        const { assignedStaffId: _assignedStaffId, ...legacyRest } = rest;
+        if (!isMissingColumnError(error)) throw error;
+        const [current] = await pool.query(
+          `SELECT source_notes AS "sourceNotes" FROM properties WHERE id = $1`,
+          [existing[0].id],
+        ).then(result => result.rows);
+        const legacyRest = legacyPropertyData(rest, current?.sourceNotes);
         await db
           .update(propertiesTable)
           .set(legacyRest)
@@ -228,13 +252,9 @@ router.post("/properties/import", requireStaff, async (req, res): Promise<void> 
       try {
         await db.insert(propertiesTable).values(item);
       } catch (error) {
-        if (!isMissingColumnError(error) || !hasAssignedStaffId(item)) throw error;
-        if (String(item.assignedStaffId ?? "").trim()) {
-          assignedStaffMigrationRequired(res);
-          return;
-        }
-        const { assignedStaffId: _assignedStaffId, ...legacyItem } = item;
-        await db.insert(propertiesTable).values(legacyItem);
+        if (!isMissingColumnError(error)) throw error;
+        const legacyItem = legacyPropertyData(item);
+        await db.insert(propertiesTable).values(legacyItem as typeof item);
       }
       added++;
     }
@@ -263,17 +283,18 @@ router.patch("/properties/:id", requireStaff, async (req, res): Promise<void> =>
       .where(eq(propertiesTable.id, id))
       .returning();
   } catch (error) {
-    if (!isMissingColumnError(error) || !hasAssignedStaffId(parsed.data)) throw error;
-    if (String(parsed.data.assignedStaffId ?? "").trim()) {
-      assignedStaffMigrationRequired(res);
-      return;
-    }
-    const { assignedStaffId: _assignedStaffId, ...legacyData } = parsed.data;
+    if (!isMissingColumnError(error)) throw error;
+    const [current] = await pool.query(
+      `SELECT source_notes AS "sourceNotes" FROM properties WHERE id = $1`,
+      [id],
+    ).then(result => result.rows);
+    const legacyData = legacyPropertyData(parsed.data, current?.sourceNotes);
     [row] = await db
       .update(propertiesTable)
       .set(legacyData)
       .where(eq(propertiesTable.id, id))
       .returning();
+    row = { ...row, assignedStaffId: parsed.data.assignedStaffId ?? extractAssignedStaffId(current?.sourceNotes).assignedStaffId };
   }
   if (!row) {
     res.status(404).json({ error: "not found" });

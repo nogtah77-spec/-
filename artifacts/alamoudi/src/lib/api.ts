@@ -16,7 +16,8 @@ async function request<T>(method: string, path: string, body?: unknown, signal?:
     let msg = `HTTP ${res.status}`;
     try {
       const j = await res.json();
-      if (j?.error) msg = j.error;
+      if (j?.message) msg = j.message;
+      else if (j?.error) msg = j.error;
     } catch {
       /* ignore */
     }
