@@ -19,6 +19,36 @@ const publicColumns = {
   joinedAt: usersTable.joinedAt,
 };
 
+// Older production databases may not have the activity-log permission column
+// yet. Keep user management usable until the Supabase migration is applied.
+const legacyPublicColumns = {
+  id: usersTable.id,
+  name: usersTable.name,
+  email: usersTable.email,
+  username: usersTable.username,
+  role: usersTable.role,
+  active: usersTable.active,
+  joinedAt: usersTable.joinedAt,
+};
+
+function isMissingColumnError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "42703"
+  );
+}
+
+async function selectPublicUsers() {
+  try {
+    return await db.select(publicColumns).from(usersTable);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    return db.select(legacyPublicColumns).from(usersTable);
+  }
+}
+
 const userCreateSchema = z.object({
   name: z.string().trim().min(1, "الاسم مطلوب"),
   email: z.string().trim().min(1, "البريد الإلكتروني مطلوب"),
@@ -41,7 +71,7 @@ const userUpdateSchema = z.object({
 
 // Viewing the user list is staff-level (admin + agent).
 router.get("/users", requireStaff, async (_req, res): Promise<void> => {
-  const rows = await db.select(publicColumns).from(usersTable);
+  const rows = await selectPublicUsers();
   res.json(rows);
 });
 
@@ -81,20 +111,25 @@ router.post("/users", requireAdmin, async (req, res): Promise<void> => {
   }
 
   const passwordHash = password ? await hashPassword(password) : "";
-  const [row] = await db
-    .insert(usersTable)
-    .values({
-      id: randomUUID(),
-      name,
-      email,
-      username,
-      passwordHash,
-      role,
-      active,
-      canClearActivityLogs: role === "agent" ? canClearActivityLogs : false,
-      joinedAt: new Date().toISOString(),
-    })
-    .returning(publicColumns);
+  const values = {
+    id: randomUUID(),
+    name,
+    email,
+    username,
+    passwordHash,
+    role,
+    active,
+    canClearActivityLogs: role === "agent" ? canClearActivityLogs : false,
+    joinedAt: new Date().toISOString(),
+  };
+  let row;
+  try {
+    [row] = await db.insert(usersTable).values(values).returning(publicColumns);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    const { canClearActivityLogs: _legacyPermission, ...legacyValues } = values;
+    [row] = await db.insert(usersTable).values(legacyValues).returning(legacyPublicColumns);
+  }
   await logActivity({
     action: "created",
     entityType: "user",
@@ -116,11 +151,22 @@ router.patch("/users/:id", requireAdmin, async (req, res): Promise<void> => {
   if (password) {
     values.passwordHash = await hashPassword(password);
   }
-  const [row] = await db
-    .update(usersTable)
-    .set(values)
-    .where(eq(usersTable.id, id))
-    .returning(publicColumns);
+  let row;
+  try {
+    [row] = await db
+      .update(usersTable)
+      .set(values)
+      .where(eq(usersTable.id, id))
+      .returning(publicColumns);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    delete values.canClearActivityLogs;
+    [row] = await db
+      .update(usersTable)
+      .set(values)
+      .where(eq(usersTable.id, id))
+      .returning(legacyPublicColumns);
+  }
   if (!row) {
     res.status(404).json({ error: "not found" });
     return;
@@ -136,11 +182,21 @@ router.patch("/users/:id", requireAdmin, async (req, res): Promise<void> => {
 
 router.delete("/users/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const [existing] = await db
-    .select(publicColumns)
-    .from(usersTable)
-    .where(eq(usersTable.id, id))
-    .limit(1);
+  let existing;
+  try {
+    [existing] = await db
+      .select(publicColumns)
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .limit(1);
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    [existing] = await db
+      .select(legacyPublicColumns)
+      .from(usersTable)
+      .where(eq(usersTable.id, id))
+      .limit(1);
+  }
   await db.delete(usersTable).where(eq(usersTable.id, id));
   if (existing) {
     await logActivity({

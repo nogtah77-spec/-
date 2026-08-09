@@ -98,15 +98,37 @@ export const requireActivityLogClear: RequestHandler = async (req, res, next) =>
     res.status(401).json({ error: "unauthorized" });
     return;
   }
-  const [user] = await db
-    .select({
-      role: usersTable.role,
-      active: usersTable.active,
-      canClearActivityLogs: usersTable.canClearActivityLogs,
-    })
-    .from(usersTable)
-    .where(eq(usersTable.id, req.session.userId))
-    .limit(1);
+  let user: {
+    role: string;
+    active: boolean;
+    canClearActivityLogs?: boolean;
+  } | undefined;
+  try {
+    [user] = await db
+      .select({
+        role: usersTable.role,
+        active: usersTable.active,
+        canClearActivityLogs: usersTable.canClearActivityLogs,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, req.session.userId))
+      .limit(1);
+  } catch (error) {
+    const isMissingPermissionColumn =
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "42703";
+    if (!isMissingPermissionColumn) throw error;
+    [user] = await db
+      .select({
+        role: usersTable.role,
+        active: usersTable.active,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, req.session.userId))
+      .limit(1);
+  }
 
   if (
     user?.active &&
