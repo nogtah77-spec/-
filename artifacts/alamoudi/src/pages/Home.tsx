@@ -579,12 +579,12 @@ export default function Home() {
                   <div className="space-y-12">
                     {propertiesByRegion.map(({ id, name, items }) => (
                       <div key={id}>
-                        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                          <div className="flex items-center gap-2.5">
-                            <h3 className="text-lg font-bold text-foreground">
+                        <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-3 mb-5">
+                          <div className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2.5">
+                            <h3 className="min-w-0 truncate text-lg font-bold text-foreground">
                               {name}
                             </h3>
-                            <span className="text-xs text-muted-foreground bg-background border border-border px-2 py-0.5 rounded-sm">
+                            <span className="shrink-0 text-xs text-muted-foreground bg-background border border-border px-2 py-0.5 rounded-sm">
                               {items.length} عقار
                             </span>
                           </div>
@@ -592,10 +592,10 @@ export default function Home() {
                             asChild
                             variant="outline"
                             size="sm"
-                            className="gap-1.5 border-accent/30 text-accent hover:bg-accent/10 rounded-md text-xs h-8"
+                            className="shrink-0 gap-1 border-accent/30 text-accent hover:bg-accent/10 rounded-md whitespace-nowrap text-[11px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
                           >
                             <Link href={`/region/${id}`}>
-                              عرض جميع عقارات {name}
+                              عرض عقارات {name}
                               <ChevronLeft className="h-3.5 w-3.5" />
                             </Link>
                           </Button>
