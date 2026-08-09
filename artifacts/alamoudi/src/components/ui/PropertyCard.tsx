@@ -218,7 +218,7 @@ export function PropertyCard({
           )}>
             {compactHomeCard && (
               <div className="relative min-h-[18px] flex-1" aria-hidden="true">
-                <span className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-border/70" />
+                <span className="pointer-events-none absolute inset-x-0 top-1/2 translate-y-1 border-t border-border/70" />
               </div>
             )}
             <div className={cn(compactHomeCard ? "space-y-1 pt-1" : "space-y-1.5")}>
