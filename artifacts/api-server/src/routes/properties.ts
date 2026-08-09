@@ -14,11 +14,50 @@ type PropertyWriteRow = {
   assignedStaffId?: string;
 };
 
-const propertyWriteReturning = {
-  id: propertiesTable.id,
-  title: propertiesTable.title,
-  code: propertiesTable.code,
-} as const;
+const PROPERTY_COLUMN_MAP: Record<string, string> = {
+  id: "id",
+  code: "code",
+  title: "title",
+  description: "description",
+  price: "price",
+  area: "area",
+  beds: "beds",
+  baths: "baths",
+  floors: "floors",
+  floor: "floor",
+  finishing: "finishing",
+  view: "view",
+  typeId: "type_id",
+  regionId: "region_id",
+  category: "category",
+  status: "status",
+  featured: "featured",
+  agentType: "agent_type",
+  images: "images",
+  videoUrl: "video_url",
+  externalUrl: "external_url",
+  mapsUrl: "maps_url",
+  createdAt: "created_at",
+  unitType: "unit_type",
+  subArea: "sub_area",
+  layout: "layout",
+  master: "master",
+  elevator: "elevator",
+  parking: "parking",
+  additionalFeatures: "additional_features",
+  floorText: "floor_text",
+  location: "location",
+  source: "source",
+  sourcePhones: "source_phones",
+  sourceEmail: "source_email",
+  sourceLocation: "source_location",
+  sourceNotes: "source_notes",
+  assignedStaffId: "assigned_staff_id",
+  views: "views",
+  coverPriority: "cover_priority",
+};
+
+const PROPERTY_RETURNING = "id, title, code";
 
 const LEGACY_PROPERTY_SELECT = `
   id,
@@ -110,6 +149,15 @@ function isMissingColumnError(error: unknown): boolean {
   );
 }
 
+async function getPropertyColumns(): Promise<Set<string>> {
+  const result = await pool.query<{ column_name: string }>(
+    `SELECT column_name
+     FROM information_schema.columns
+     WHERE table_schema = 'public' AND table_name = 'properties'`,
+  );
+  return new Set(result.rows.map((row) => row.column_name));
+}
+
 const ASSIGNED_STAFF_MARKER = /\s*\[assigned_staff_id:([^\]\r\n]+)\]\s*$/;
 
 function extractAssignedStaffId(notes: unknown): { notes: string; assignedStaffId: string } {
@@ -127,23 +175,92 @@ function addAssignedStaffMarker(notes: unknown, assignedStaffId: unknown): strin
   return staffId ? `${cleaned}${cleaned ? "\n\n" : ""}[assigned_staff_id:${staffId}]` : cleaned;
 }
 
-function legacyPropertyData(
+function hasOwn(data: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(data, key);
+}
+
+function buildPropertyWriteData(
   data: Record<string, unknown>,
+  columns: Set<string>,
   existingNotes?: unknown,
 ): Record<string, unknown> {
-  const existing = extractAssignedStaffId(existingNotes);
-  const hasAssignedStaff = Object.prototype.hasOwnProperty.call(data, "assignedStaffId");
-  const assignedStaffId = hasAssignedStaff
-    ? data.assignedStaffId
-    : existing.assignedStaffId;
-  const sourceNotes = Object.prototype.hasOwnProperty.call(data, "sourceNotes")
-    ? data.sourceNotes
-    : existing.notes;
-  const { assignedStaffId: _assignedStaffId, ...legacyData } = data;
-  return {
-    ...legacyData,
-    sourceNotes: addAssignedStaffMarker(sourceNotes, assignedStaffId),
-  };
+  const writeData: Record<string, unknown> = {};
+  for (const [propertyKey, columnName] of Object.entries(PROPERTY_COLUMN_MAP)) {
+    if (hasOwn(data, propertyKey) && columns.has(columnName)) {
+      writeData[columnName] = data[propertyKey];
+    }
+  }
+
+  // Keep the responsible staff assignment working on databases that have not
+  // received assigned_staff_id yet. The migration later moves this marker into
+  // the real column and removes it from source_notes.
+  if (!columns.has("assigned_staff_id") && columns.has("source_notes")) {
+    const existing = extractAssignedStaffId(existingNotes);
+    const assignedStaffId = hasOwn(data, "assignedStaffId")
+      ? data.assignedStaffId
+      : existing.assignedStaffId;
+    const sourceNotes = hasOwn(data, "sourceNotes")
+      ? data.sourceNotes
+      : existing.notes;
+    writeData.source_notes = addAssignedStaffMarker(sourceNotes, assignedStaffId);
+  }
+
+  return writeData;
+}
+
+async function getExistingSourceNotes(id: string, columns: Set<string>): Promise<string> {
+  if (!columns.has("source_notes")) return "";
+  const result = await pool.query<{ sourceNotes: string | null }>(
+    `SELECT source_notes AS "sourceNotes" FROM properties WHERE id = $1`,
+    [id],
+  );
+  return result.rows[0]?.sourceNotes ?? "";
+}
+
+async function insertPropertyCompat(data: Record<string, unknown>): Promise<PropertyWriteRow> {
+  const columns = await getPropertyColumns();
+  const writeData = buildPropertyWriteData(data, columns);
+  const entries = Object.entries(writeData);
+  if (entries.length === 0) throw new Error("No supported property fields to insert");
+
+  const columnNames = entries.map(([column]) => column);
+  const values = entries.map(([, value]) => value);
+  const placeholders = values.map((_, index) => `$${index + 1}`).join(", ");
+  const result = await pool.query<PropertyWriteRow>(
+    `INSERT INTO properties (${columnNames.join(", ")})
+     VALUES (${placeholders})
+     RETURNING ${PROPERTY_RETURNING}`,
+    values,
+  );
+  if (!result.rows[0]) throw new Error("Property insert returned no row");
+  return { ...result.rows[0], assignedStaffId: data.assignedStaffId as string | undefined };
+}
+
+async function updatePropertyCompat(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<PropertyWriteRow | undefined> {
+  const columns = await getPropertyColumns();
+  const existingNotes = !columns.has("assigned_staff_id")
+    ? await getExistingSourceNotes(id, columns)
+    : undefined;
+  const writeData = buildPropertyWriteData(data, columns, existingNotes);
+  const entries = Object.entries(writeData);
+  if (entries.length === 0) throw new Error("No supported property fields to update");
+
+  const values = entries.map(([, value]) => value);
+  const assignments = entries.map(([column], index) => `${column} = $${index + 1}`).join(", ");
+  const result = await pool.query<PropertyWriteRow>(
+    `UPDATE properties
+     SET ${assignments}
+     WHERE id = $${values.length + 1}
+     RETURNING ${PROPERTY_RETURNING}`,
+    [...values, id],
+  );
+  const row = result.rows[0];
+  return row
+    ? { ...row, assignedStaffId: data.assignedStaffId as string | undefined }
+    : undefined;
 }
 
 async function selectLegacyProperties(activeOnly: boolean): Promise<Array<Record<string, unknown>>> {
@@ -209,19 +326,7 @@ router.post("/properties", requireStaff, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  let row: PropertyWriteRow | undefined;
-  try {
-    [row] = await db.insert(propertiesTable).values(parsed.data).returning();
-  } catch (error) {
-    if (!isMissingColumnError(error)) throw error;
-    const legacyData = legacyPropertyData(parsed.data);
-    [row] = await db
-      .insert(propertiesTable)
-      .values(legacyData as typeof parsed.data)
-      .returning(propertyWriteReturning);
-    if (!row) throw new Error("Property insert returned no row");
-    row = { ...row, assignedStaffId: parsed.data.assignedStaffId ?? "" };
-  }
+  const row = await insertPropertyCompat(parsed.data);
   await logActivity({
     action: "created",
     entityType: "property",
@@ -247,35 +352,10 @@ router.post("/properties/import", requireStaff, async (req, res): Promise<void> 
       .limit(1);
     if (existing.length > 0) {
       const { id: _ignore, ...rest } = item;
-      try {
-        await db
-          .update(propertiesTable)
-          .set(rest)
-          .where(eq(propertiesTable.id, existing[0].id));
-      } catch (error) {
-        if (!isMissingColumnError(error)) throw error;
-        const [current] = await pool.query(
-          `SELECT source_notes AS "sourceNotes" FROM properties WHERE id = $1`,
-          [existing[0].id],
-        ).then(result => result.rows);
-        const legacyRest = legacyPropertyData(rest, current?.sourceNotes);
-        await db
-          .update(propertiesTable)
-          .set(legacyRest)
-          .where(eq(propertiesTable.id, existing[0].id));
-      }
+      await updatePropertyCompat(existing[0].id, rest);
       updated++;
     } else {
-      try {
-        await db.insert(propertiesTable).values(item);
-      } catch (error) {
-        if (!isMissingColumnError(error)) throw error;
-        const legacyItem = legacyPropertyData(item);
-        await db
-          .insert(propertiesTable)
-          .values(legacyItem as typeof item)
-          .returning(propertyWriteReturning);
-      }
+      await insertPropertyCompat(item);
       added++;
     }
   }
@@ -295,31 +375,7 @@ router.patch("/properties/:id", requireStaff, async (req, res): Promise<void> =>
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  let row: PropertyWriteRow | undefined;
-  try {
-    [row] = await db
-      .update(propertiesTable)
-      .set(parsed.data)
-      .where(eq(propertiesTable.id, id))
-      .returning(propertyWriteReturning);
-  } catch (error) {
-    if (!isMissingColumnError(error)) throw error;
-    const [current] = await pool.query(
-      `SELECT source_notes AS "sourceNotes" FROM properties WHERE id = $1`,
-      [id],
-    ).then(result => result.rows);
-    const legacyData = legacyPropertyData(parsed.data, current?.sourceNotes);
-    [row] = await db
-      .update(propertiesTable)
-      .set(legacyData)
-      .where(eq(propertiesTable.id, id))
-      .returning(propertyWriteReturning);
-    if (!row) {
-      res.status(404).json({ error: "not found" });
-      return;
-    }
-    row = { ...row, assignedStaffId: parsed.data.assignedStaffId ?? extractAssignedStaffId(current?.sourceNotes).assignedStaffId };
-  }
+  const row = await updatePropertyCompat(id, parsed.data);
   if (!row) {
     res.status(404).json({ error: "not found" });
     return;
