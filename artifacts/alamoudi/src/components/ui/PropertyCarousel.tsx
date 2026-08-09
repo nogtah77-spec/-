@@ -42,10 +42,19 @@ export function PropertyCarousel({
   const resumeTimerRef = useRef<number | null>(null);
   const motionTimerRef = useRef<number | null>(null);
   const motionFrameRef = useRef<number | null>(null);
+  const clickSuppressionTimerRef = useRef<number | null>(null);
   const currentIndexRef = useRef(0);
   const trackOffsetRef = useRef(0);
   const isAnimatingRef = useRef(false);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    startOffset: number;
+    startIndex: number;
+    lastX: number;
+    lastTime: number;
+    horizontal: boolean;
+  } | null>(null);
   const suppressClickRef = useRef(false);
   const autoPlayEnabledRef = useRef(autoPlay);
   const pausedRef = useRef(false);
@@ -84,6 +93,19 @@ export function PropertyCarousel({
   const getOffsetForIndex = useCallback((index: number) => {
     const item = trackRef.current?.children[index] as HTMLElement | undefined;
     return item?.offsetLeft ?? 0;
+  }, []);
+
+  const getRenderedTrackOffset = useCallback(() => {
+    const transform = trackRef.current
+      ? window.getComputedStyle(trackRef.current).transform
+      : "none";
+    if (!transform || transform === "none") return trackOffsetRef.current;
+
+    const values = transform.startsWith("matrix3d(")
+      ? transform.slice(9, -1).split(",")
+      : transform.slice(7, -1).split(",");
+    const x = Number(values[transform.startsWith("matrix3d(") ? 12 : 4]);
+    return Number.isFinite(x) ? -x : trackOffsetRef.current;
   }, []);
 
   const setTrackPosition = useCallback(
@@ -277,11 +299,33 @@ export function PropertyCarousel({
     (event: React.TouchEvent<HTMLDivElement>) => {
       if (event.touches.length !== 1) return;
       const touch = event.touches[0];
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      stopMotion();
+      const startIndex = normaliseIndex(currentIndexRef.current);
+      const startOffset = getRenderedTrackOffset();
+      trackOffsetRef.current = startOffset;
+      currentIndexRef.current = startIndex;
+      setTransitionEnabled(false);
+      setTransitionDuration(0);
+      setTrackOffset(startOffset);
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        startOffset,
+        startIndex,
+        lastX: touch.clientX,
+        lastTime: performance.now(),
+        horizontal: false,
+      };
       suppressClickRef.current = false;
       pauseForInteraction();
     },
-    [pauseForInteraction],
+    [
+      getRenderedTrackOffset,
+      normaliseIndex,
+      pauseForInteraction,
+      setTrackOffset,
+      stopMotion,
+    ],
   );
 
   const handleTouchMove = useCallback(
@@ -289,13 +333,46 @@ export function PropertyCarousel({
       const start = touchStartRef.current;
       if (!start || event.touches.length !== 1) return;
       const touch = event.touches[0];
-      const dx = start.x - touch.clientX;
-      const dy = Math.abs(touch.clientY - start.y);
-      if (Math.abs(dx) > 8 && Math.abs(dx) > dy) {
-        event.preventDefault();
+      const moveX = touch.clientX - start.x;
+      const moveY = touch.clientY - start.y;
+      const distance = Math.hypot(moveX, moveY);
+      if (!start.horizontal && distance > 8) {
+        if (Math.abs(moveX) <= Math.abs(moveY)) {
+          touchStartRef.current = null;
+          resumeAfterInteraction(5000);
+          return;
+        }
+        start.horizontal = true;
+        suppressClickRef.current = true;
+        if (clickSuppressionTimerRef.current !== null) {
+          window.clearTimeout(clickSuppressionTimerRef.current);
+        }
+        clickSuppressionTimerRef.current = window.setTimeout(() => {
+          suppressClickRef.current = false;
+          clickSuppressionTimerRef.current = null;
+        }, 500);
       }
+      if (!start.horizontal) return;
+
+      event.preventDefault();
+      const boundaryResistance =
+        !infinite &&
+        ((start.startIndex === 0 && moveX > 0) ||
+          (start.startIndex === propertyCount - 1 && moveX < 0))
+          ? 0.28
+          : 1;
+      const nextOffset = start.startOffset - moveX * boundaryResistance;
+      trackOffsetRef.current = nextOffset;
+      setTrackOffset(nextOffset);
+      start.lastX = touch.clientX;
+      start.lastTime = performance.now();
     },
-    [],
+    [
+      infinite,
+      propertyCount,
+      resumeAfterInteraction,
+      setTrackOffset,
+    ],
   );
 
   const handleTouchEnd = useCallback(
@@ -308,29 +385,61 @@ export function PropertyCarousel({
       }
 
       const touch = event.changedTouches[0];
-      const dx = start.x - touch.clientX;
-      const dy = Math.abs(touch.clientY - start.y);
-      const isHorizontalSwipe = Math.abs(dx) >= 42 && Math.abs(dx) > dy * 1.15;
-
-      if (isHorizontalSwipe && propertyCount > 1 && !isAnimatingRef.current) {
-        suppressClickRef.current = true;
-        scroll(dx > 0 ? "next" : "prev");
+      if (!touch || !start.horizontal) {
+        resumeAfterInteraction(5000);
+        return;
       }
+
+      const moveX = touch.clientX - start.x;
+      const elapsed = Math.max(1, performance.now() - start.lastTime);
+      const velocity = (touch.clientX - start.lastX) / elapsed;
+      const distance = Math.abs(moveX);
+      const itemWidth = trackRef.current?.children[start.startIndex]
+        ? (trackRef.current.children[start.startIndex] as HTMLElement).offsetWidth
+        : 320;
+      const shouldAdvance =
+        distance > Math.max(48, itemWidth * 0.2) || Math.abs(velocity) > 0.45;
+      const direction = moveX < 0 ? 1 : -1;
+      let targetIndex = start.startIndex + (shouldAdvance ? direction : 0);
+
+      if (!infinite) {
+        targetIndex = Math.max(0, Math.min(propertyCount - 1, targetIndex));
+      }
+
+      animateToIndex(targetIndex, () => {
+        if (!pausedRef.current && autoPlayEnabledRef.current) {
+          scheduleAutoPlay();
+        }
+      });
       resumeAfterInteraction(5000);
     },
-    [propertyCount, resumeAfterInteraction, scroll],
+    [
+      animateToIndex,
+      infinite,
+      propertyCount,
+      resumeAfterInteraction,
+      scheduleAutoPlay,
+    ],
   );
 
   const handleTouchCancel = useCallback(() => {
+    const start = touchStartRef.current;
     touchStartRef.current = null;
+    if (start?.horizontal) {
+      animateToIndex(start.startIndex);
+    }
     resumeAfterInteraction(5000);
-  }, [resumeAfterInteraction]);
+  }, [animateToIndex, resumeAfterInteraction]);
 
   const handleClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     if (!suppressClickRef.current) return;
     event.preventDefault();
     event.stopPropagation();
     suppressClickRef.current = false;
+    if (clickSuppressionTimerRef.current !== null) {
+      window.clearTimeout(clickSuppressionTimerRef.current);
+      clickSuppressionTimerRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
@@ -364,6 +473,10 @@ export function PropertyCarousel({
       if (resumeTimerRef.current !== null) {
         window.clearTimeout(resumeTimerRef.current);
         resumeTimerRef.current = null;
+      }
+      if (clickSuppressionTimerRef.current !== null) {
+        window.clearTimeout(clickSuppressionTimerRef.current);
+        clickSuppressionTimerRef.current = null;
       }
     };
   }, [scheduleAutoPlay, stopAutoPlay]);
