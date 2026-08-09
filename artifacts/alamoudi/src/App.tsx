@@ -55,10 +55,11 @@ const AIChatWidget = lazy(() => import("@/components/ai/AIChatWidget").then((mod
 
 const queryClient = new QueryClient();
 
-function Protected({ component: Component }: { component: ComponentType }) {
-  const { isStaff, authReady } = useAuth();
+function Protected({ component: Component, adminOnly = false }: { component: ComponentType; adminOnly?: boolean }) {
+  const { currentUser, isStaff, authReady } = useAuth();
   if (!authReady) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>;
   if (!isStaff) return <Redirect to="/login" />;
+  if (adminOnly && currentUser?.role !== "admin") return <Redirect to="/admin" />;
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>}>
       <Component />
@@ -201,14 +202,14 @@ function Router() {
       <Route path="/admin/settings">{() => <Protected component={Settings} />}</Route>
       <Route path="/admin/analytics">{() => <Protected component={Analytics} />}</Route>
       <Route path="/admin/activity-logs">{() => <Protected component={ActivityLogs} />}</Route>
-      <Route path="/admin/import-export">{() => <Protected component={ImportExport} />}</Route>
+       <Route path="/admin/import-export">{() => <Protected component={ImportExport} adminOnly />}</Route>
       <Route path="/admin/inquiries">{() => <Protected component={Inquiries} />}</Route>
       <Route path="/admin/requests">{() => <Protected component={CustomerRequests} />}</Route>
       <Route path="/admin/contracts">{() => <Protected component={Contracts} />}</Route>
       <Route path="/admin/property-requests">{() => <Protected component={PropertyRequests} />}</Route>
       <Route path="/admin/finishing-requests">{() => <Protected component={FinishingRequests} />}</Route>
       <Route path="/admin/ai-leads">{() => <Protected component={AiLeads} />}</Route>
-      <Route path="/admin/backup">{() => <Protected component={Backup} />}</Route>
+       <Route path="/admin/backup">{() => <Protected component={Backup} adminOnly />}</Route>
       <Route path="/admin/ads">{() => <Protected component={AdsAdmin} />}</Route>
       <Route path="/admin/ads/:id/analytics">{() => <Protected component={AdAnalytics} />}</Route>
       <Route path="/admin/smart-banners">{() => <Protected component={SmartBanners} />}</Route>

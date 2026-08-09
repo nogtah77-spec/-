@@ -19,6 +19,7 @@ type SidebarItem = {
   label: string;
   icon: typeof LayoutDashboard;
   badge?: SidebarBadge;
+  adminOnly?: boolean;
 };
 
 type SidebarSection = {
@@ -74,14 +75,14 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { href: "/admin/analytics", label: "التحليلات", icon: BarChart3 },
       { href: "/admin/activity-logs", label: "سجلات النشاط", icon: Activity },
-      { href: "/admin/import-export", label: "الاستيراد والتصدير", icon: ArrowDownUp },
-      { href: "/admin/backup", label: "النسخ الاحتياطي", icon: Database },
+      { href: "/admin/import-export", label: "الاستيراد والتصدير", icon: ArrowDownUp, adminOnly: true },
+      { href: "/admin/backup", label: "النسخ الاحتياطي", icon: Database, adminOnly: true },
       { href: "/admin/settings", label: "الإعدادات", icon: Settings },
     ],
   },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
   const [location] = useLocation();
   const { inquiries, propertyRequests, finishingRequests, aiLeads, customerPropertyRequests } = useData();
 
@@ -92,11 +93,17 @@ export function AdminSidebar() {
     finishingRequests: finishingRequests.filter(x => x.status === "new").length,
     aiLeads: aiLeads.filter(x => x.status === "new").length,
   };
+  const visibleSections = sidebarSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.adminOnly || isAdmin),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <div className="flex-1 overflow-y-auto overscroll-contain py-4 [touch-action:pan-y]">
       <nav className="space-y-0.5 px-3">
-        {sidebarSections.map((section, sectionIndex) => (
+        {visibleSections.map((section, sectionIndex) => (
           <div
             key={section.title ?? "home"}
             className={cn(sectionIndex > 0 && "mt-5")}

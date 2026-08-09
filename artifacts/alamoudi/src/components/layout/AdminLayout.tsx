@@ -51,7 +51,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="h-16 px-6 border-b border-sidebar-border flex items-center">
           <SidebarBrand />
         </div>
-        <AdminSidebar />
+        <AdminSidebar isAdmin={currentUser?.role === "admin"} />
       </aside>
 
       {/* Main Content */}
@@ -70,7 +70,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <div className="h-16 px-6 border-b border-sidebar-border flex items-center">
                   <SidebarBrand />
                 </div>
-                <AdminSidebar />
+                <AdminSidebar isAdmin={currentUser?.role === "admin"} />
               </SheetContent>
             </Sheet>
           </div>
