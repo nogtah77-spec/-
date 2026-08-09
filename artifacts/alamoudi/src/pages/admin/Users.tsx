@@ -96,12 +96,28 @@ export default function Users() {
 
   const handleDelete = () => {
     if (!deleteTarget) return;
+    if (deleteTarget.id === currentUser?.id) {
+      toast({
+        title: "لا يمكن حذف حسابك",
+        description: "اترك حسابك الإداري موجودًا حتى لا تفقد الوصول إلى المنصة.",
+        variant: "destructive",
+      });
+      return;
+    }
     deleteUser(deleteTarget.id);
     setDeleteTarget(null);
     toast({ title: "تم بنجاح", description: "تم حذف المستخدم بنجاح" });
   };
 
   const handleToggle = (id: string) => {
+    if (id === currentUser?.id) {
+      toast({
+        title: "لا يمكن تعطيل حسابك",
+        description: "اترك حسابك الإداري نشطًا حتى لا تفقد الوصول إلى المنصة.",
+        variant: "destructive",
+      });
+      return;
+    }
     toggleUser(id);
     toast({ title: "تم بنجاح", description: "تم تحديث حالة المستخدم" });
   };
@@ -178,10 +194,23 @@ export default function Users() {
                       <Button variant="ghost" size="icon" onClick={() => openEdit(user)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleToggle(user.id)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={user.id === currentUser?.id}
+                        title={user.id === currentUser?.id ? "لا يمكن تعطيل حسابك أثناء تسجيل الدخول" : user.active ? "تعطيل الحساب" : "تفعيل الحساب"}
+                        onClick={() => handleToggle(user.id)}
+                      >
                         {user.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950" onClick={() => setDeleteTarget(user)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={user.id === currentUser?.id}
+                        title={user.id === currentUser?.id ? "لا يمكن حذف حسابك أثناء تسجيل الدخول" : "حذف الحساب"}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                        onClick={() => setDeleteTarget(user)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -221,7 +250,11 @@ export default function Users() {
             </div>
             <div className="space-y-2">
               <Label>الدور</Label>
-              <Select value={form.role} onValueChange={(val: any) => setForm({ ...form, role: val })}>
+                <Select
+                  value={form.role}
+                  disabled={editTarget?.id === currentUser?.id}
+                  onValueChange={(val: any) => setForm({ ...form, role: val })}
+                >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

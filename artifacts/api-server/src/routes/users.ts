@@ -151,6 +151,47 @@ router.patch("/users/:id", requireAdmin, async (req, res): Promise<void> => {
   if (password) {
     values.passwordHash = await hashPassword(password);
   }
+
+  const [target] = await db
+    .select({
+      id: usersTable.id,
+      role: usersTable.role,
+      active: usersTable.active,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, id))
+    .limit(1);
+  if (!target) {
+    res.status(404).json({ error: "not found" });
+    return;
+  }
+
+  if (id === req.session.userId && values.active === false) {
+    res.status(409).json({ error: "لا يمكن تعطيل حسابك أثناء تسجيل الدخول" });
+    return;
+  }
+  if (id === req.session.userId && values.role && values.role !== "admin") {
+    res.status(409).json({ error: "لا يمكن تغيير دور حسابك الإداري أثناء تسجيل الدخول" });
+    return;
+  }
+
+  const isRemovingActiveAdmin =
+    target.role === "admin" &&
+    target.active &&
+    (values.active === false || values.role === "agent" || values.role === "customer");
+  if (isRemovingActiveAdmin) {
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(usersTable)
+      .where(
+        sql`${usersTable.role} = 'admin' AND ${usersTable.active} = true AND ${usersTable.id} <> ${id}`,
+      );
+    if (Number(count) === 0) {
+      res.status(409).json({ error: "لا يمكن تعطيل أو تغيير آخر مدير نشط في المنصة" });
+      return;
+    }
+  }
+
   let row;
   try {
     [row] = await db
@@ -182,6 +223,10 @@ router.patch("/users/:id", requireAdmin, async (req, res): Promise<void> => {
 
 router.delete("/users/:id", requireAdmin, async (req, res): Promise<void> => {
   const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  if (id === req.session.userId) {
+    res.status(409).json({ error: "لا يمكن حذف حسابك أثناء تسجيل الدخول" });
+    return;
+  }
   let existing;
   try {
     [existing] = await db
@@ -196,6 +241,18 @@ router.delete("/users/:id", requireAdmin, async (req, res): Promise<void> => {
       .from(usersTable)
       .where(eq(usersTable.id, id))
       .limit(1);
+  }
+  if (existing?.role === "admin" && existing.active) {
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(usersTable)
+      .where(
+        sql`${usersTable.role} = 'admin' AND ${usersTable.active} = true AND ${usersTable.id} <> ${id}`,
+      );
+    if (Number(count) === 0) {
+      res.status(409).json({ error: "لا يمكن حذف آخر مدير نشط في المنصة" });
+      return;
+    }
   }
   await db.delete(usersTable).where(eq(usersTable.id, id));
   if (existing) {
