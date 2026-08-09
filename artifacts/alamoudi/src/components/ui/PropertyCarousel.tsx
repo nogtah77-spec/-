@@ -51,9 +51,8 @@ export function PropertyCarousel({
     y: number;
     startOffset: number;
     startIndex: number;
-    lastX: number;
-    lastTime: number;
-    horizontal: boolean;
+    startedAt: number;
+    axis: "undecided" | "horizontal" | "vertical";
   } | null>(null);
   const suppressClickRef = useRef(false);
   const autoPlayEnabledRef = useRef(autoPlay);
@@ -108,9 +107,34 @@ export function PropertyCarousel({
     return Number.isFinite(x) ? -x : trackOffsetRef.current;
   }, []);
 
+  const getNearestIndexForOffset = useCallback(
+    (offset: number) => {
+      if (!trackRef.current || propertyCount < 1) return 0;
+      const firstIndex = infinite ? middleStart : 0;
+      const lastIndex = infinite
+        ? middleStart + propertyCount - 1
+        : propertyCount - 1;
+      let nearestIndex = firstIndex;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+
+      for (let index = firstIndex; index <= lastIndex; index += 1) {
+        const distance = Math.abs(getOffsetForIndex(index) - offset);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestIndex = index;
+        }
+      }
+
+      return nearestIndex;
+    },
+    [getOffsetForIndex, infinite, middleStart, propertyCount],
+  );
+
   const freezeMotionAtCurrentPosition = useCallback(() => {
     const renderedOffset = getRenderedTrackOffset();
     stopMotion();
+    const nearestIndex = getNearestIndexForOffset(renderedOffset);
+    currentIndexRef.current = nearestIndex;
     trackOffsetRef.current = renderedOffset;
     if (trackRef.current) {
       trackRef.current.style.transition = "none";
@@ -118,7 +142,7 @@ export function PropertyCarousel({
     }
     setTrackOffset(renderedOffset);
     return renderedOffset;
-  }, [getRenderedTrackOffset, stopMotion]);
+  }, [getNearestIndexForOffset, getRenderedTrackOffset, stopMotion]);
 
   const setTrackPosition = useCallback(
     (index: number, animated: boolean) => {
@@ -316,7 +340,7 @@ export function PropertyCarousel({
       if (event.touches.length !== 1) return;
       const touch = event.touches[0];
       const startOffset = freezeMotionAtCurrentPosition();
-      const startIndex = normaliseIndex(currentIndexRef.current);
+      const startIndex = currentIndexRef.current;
       trackOffsetRef.current = startOffset;
       currentIndexRef.current = startIndex;
       setTransitionEnabled(false);
@@ -327,9 +351,8 @@ export function PropertyCarousel({
         y: touch.clientY,
         startOffset,
         startIndex,
-        lastX: touch.clientX,
-        lastTime: performance.now(),
-        horizontal: false,
+        startedAt: performance.now(),
+        axis: "undecided",
       };
       suppressClickRef.current = false;
       pauseForInteraction();
@@ -350,13 +373,12 @@ export function PropertyCarousel({
       const moveX = touch.clientX - start.x;
       const moveY = touch.clientY - start.y;
       const distance = Math.hypot(moveX, moveY);
-      if (!start.horizontal && distance > 8) {
+      if (start.axis === "undecided" && distance > 8) {
         if (Math.abs(moveX) <= Math.abs(moveY)) {
-          touchStartRef.current = null;
-          resumeAfterInteraction(5000);
+          start.axis = "vertical";
           return;
         }
-        start.horizontal = true;
+        start.axis = "horizontal";
         suppressClickRef.current = true;
         if (clickSuppressionTimerRef.current !== null) {
           window.clearTimeout(clickSuppressionTimerRef.current);
@@ -366,7 +388,7 @@ export function PropertyCarousel({
           clickSuppressionTimerRef.current = null;
         }, 500);
       }
-      if (!start.horizontal) return;
+      if (start.axis !== "horizontal") return;
 
       event.preventDefault();
       // Do not fight the user's finger at the ends. The track follows the
@@ -374,12 +396,8 @@ export function PropertyCarousel({
       const nextOffset = start.startOffset - moveX;
       trackOffsetRef.current = nextOffset;
       setTrackOffset(nextOffset);
-      start.lastX = touch.clientX;
-      start.lastTime = performance.now();
     },
     [
-      infinite,
-      propertyCount,
       resumeAfterInteraction,
       setTrackOffset,
     ],
@@ -395,20 +413,22 @@ export function PropertyCarousel({
       }
 
       const touch = event.changedTouches[0];
-      if (!touch || !start.horizontal) {
+      if (!touch || start.axis !== "horizontal") {
+        animateToIndex(start.startIndex);
         resumeAfterInteraction(5000);
         return;
       }
 
       const moveX = touch.clientX - start.x;
-      const elapsed = Math.max(1, performance.now() - start.lastTime);
-      const velocity = (touch.clientX - start.lastX) / elapsed;
+      const elapsed = Math.max(1, performance.now() - start.startedAt);
+      const velocity = moveX / elapsed;
       const distance = Math.abs(moveX);
       const itemWidth = trackRef.current?.children[start.startIndex]
         ? (trackRef.current.children[start.startIndex] as HTMLElement).offsetWidth
         : 320;
+      const swipeThreshold = Math.min(96, Math.max(34, itemWidth * 0.16));
       const shouldAdvance =
-        distance > Math.max(48, itemWidth * 0.2) || Math.abs(velocity) > 0.45;
+        distance >= swipeThreshold || Math.abs(velocity) >= 0.3;
       const direction = moveX < 0 ? 1 : -1;
       let targetIndex = start.startIndex + (shouldAdvance ? direction : 0);
 
@@ -435,7 +455,7 @@ export function PropertyCarousel({
   const handleTouchCancel = useCallback(() => {
     const start = touchStartRef.current;
     touchStartRef.current = null;
-    if (start?.horizontal) {
+    if (start?.axis === "horizontal") {
       animateToIndex(start.startIndex);
     }
     resumeAfterInteraction(5000);
