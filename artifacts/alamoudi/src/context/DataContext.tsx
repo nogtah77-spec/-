@@ -504,12 +504,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (newTypes)    setPropertyTypes(newTypes);
     if (newProps)    setProperties(newProps);
     if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
-    setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
-    setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
-    setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
-    setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
-    setCustomerPropertyRequests(customerPropertyRequestsR.status === "fulfilled" ? customerPropertyRequestsR.value : []);
-    setContracts(contractsR.status === "fulfilled" ? contractsR.value : []);
+    if (usersR.status === "fulfilled") setUsers(usersR.value);
+    if (inquiriesR.status === "fulfilled") setInquiries(inquiriesR.value);
+    if (finishingR.status === "fulfilled") setFinishingRequests(finishingR.value);
+    if (requestsR.status === "fulfilled") setPropertyRequests(requestsR.value);
+    if (customerPropertyRequestsR.status === "fulfilled") setCustomerPropertyRequests(customerPropertyRequestsR.value);
+    if (contractsR.status === "fulfilled") setContracts(contractsR.value);
     if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
     if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
     if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
@@ -617,12 +617,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           api.get<VisitorStats>("/visitors/stats"),
          ]).then(([usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR]) => {
           if (destroyed) return;
-          setUsers(usersR.status           === "fulfilled" ? usersR.value     : []);
-          setInquiries(inquiriesR.status   === "fulfilled" ? inquiriesR.value : []);
-          setFinishingRequests(finishingR.status === "fulfilled" ? finishingR.value : []);
-          setPropertyRequests(requestsR.status  === "fulfilled" ? requestsR.value  : []);
-          setCustomerPropertyRequests(customerPropertyRequestsR.status === "fulfilled" ? customerPropertyRequestsR.value : []);
-           setContracts(contractsR.status === "fulfilled" ? contractsR.value : []);
+           if (usersR.status === "fulfilled") setUsers(usersR.value);
+           if (inquiriesR.status === "fulfilled") setInquiries(inquiriesR.value);
+           if (finishingR.status === "fulfilled") setFinishingRequests(finishingR.value);
+           if (requestsR.status === "fulfilled") setPropertyRequests(requestsR.value);
+           if (customerPropertyRequestsR.status === "fulfilled") setCustomerPropertyRequests(customerPropertyRequestsR.value);
+            if (contractsR.status === "fulfilled") setContracts(contractsR.value);
           if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
           if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
           if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);

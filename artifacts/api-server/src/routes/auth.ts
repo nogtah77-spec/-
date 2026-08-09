@@ -128,6 +128,10 @@ router.get("/auth/me", async (req, res): Promise<void> => {
     res.json(null);
     return;
   }
+  // Keep long-lived sessions compatible with role checks after deployments
+  // or role changes. The current database record is authoritative.
+  req.session.role = user.role;
+  req.session.userName = user.name;
   res.json(publicUser({ ...user, canClearActivityLogs: false }));
 });
 

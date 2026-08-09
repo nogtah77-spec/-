@@ -51,12 +51,30 @@ export async function verifyPassword(pw: string, hash: string): Promise<boolean>
   }
 }
 
-/** Allows both admin and agent roles. */
-export const requireStaff: RequestHandler = (req, res, next) => {
-  if (
-    req.session?.userId &&
-    (req.session.role === "admin" || req.session.role === "agent")
-  ) {
+async function getActiveSessionUser(req: Parameters<RequestHandler>[0]) {
+  if (!req.session?.userId) return null;
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      role: usersTable.role,
+      active: usersTable.active,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.session.userId))
+    .limit(1);
+
+  if (!user?.active || (user.role !== "admin" && user.role !== "agent")) return null;
+
+  // Refresh role data for sessions created before role-based checks were added
+  // or after an administrator changed the user's role.
+  req.session.role = user.role;
+  return user;
+}
+
+/** Allows both admin and agent roles. The role is read from the database so
+ * stale sessions cannot make a valid staff account appear unauthorized. */
+export const requireStaff: RequestHandler = async (req, res, next) => {
+  if (await getActiveSessionUser(req)) {
     next();
     return;
   }
@@ -64,9 +82,10 @@ export const requireStaff: RequestHandler = (req, res, next) => {
 };
 
 /** Restricts to admin role only. Use for user/role management and other
- *  privileged operations that agents must not access. */
-export const requireAdmin: RequestHandler = (req, res, next) => {
-  if (req.session?.userId && req.session.role === "admin") {
+ * privileged operations that agents must not access. */
+export const requireAdmin: RequestHandler = async (req, res, next) => {
+  const user = await getActiveSessionUser(req);
+  if (user?.role === "admin") {
     next();
     return;
   }
