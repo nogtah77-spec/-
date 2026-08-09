@@ -177,7 +177,9 @@ export function RecentPropertiesPanel({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">{property.code || "بدون كود"}</span>
-                      <span className="truncate text-sm text-muted-foreground">{property.title}</span>
+                      {property.title && property.title.trim() !== property.code.trim() && (
+                        <span className="truncate text-sm text-muted-foreground">{property.title}</span>
+                      )}
                     </div>
                     <p className="mt-1 truncate text-xs text-muted-foreground">
                       {[region, type, property.price ? formatMoneyText(property.price, "جنيه") : ""].filter(Boolean).join(" · ") || "تفاصيل العقار قيد الإضافة"}
