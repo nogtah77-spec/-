@@ -110,10 +110,8 @@ export function PropertyCarousel({
   const getNearestIndexForOffset = useCallback(
     (offset: number) => {
       if (!trackRef.current || propertyCount < 1) return 0;
-      const firstIndex = infinite ? middleStart : 0;
-      const lastIndex = infinite
-        ? middleStart + propertyCount - 1
-        : propertyCount - 1;
+      const firstIndex = 0;
+      const lastIndex = trackProperties.length - 1;
       let nearestIndex = firstIndex;
       let nearestDistance = Number.POSITIVE_INFINITY;
 
@@ -127,22 +125,8 @@ export function PropertyCarousel({
 
       return nearestIndex;
     },
-    [getOffsetForIndex, infinite, middleStart, propertyCount],
+    [getOffsetForIndex, propertyCount, trackProperties.length],
   );
-
-  const freezeMotionAtCurrentPosition = useCallback(() => {
-    const renderedOffset = getRenderedTrackOffset();
-    stopMotion();
-    const nearestIndex = getNearestIndexForOffset(renderedOffset);
-    currentIndexRef.current = nearestIndex;
-    trackOffsetRef.current = renderedOffset;
-    if (trackRef.current) {
-      trackRef.current.style.transition = "none";
-      trackRef.current.style.transform = `translate3d(${-renderedOffset}px, 0, 0)`;
-    }
-    setTrackOffset(renderedOffset);
-    return renderedOffset;
-  }, [getNearestIndexForOffset, getRenderedTrackOffset, stopMotion]);
 
   const setTrackPosition = useCallback(
     (index: number, animated: boolean) => {
@@ -174,6 +158,23 @@ export function PropertyCarousel({
     },
     [infinite, middleStart, propertyCount],
   );
+
+  const freezeMotionAtCurrentPosition = useCallback(() => {
+    const renderedOffset = getRenderedTrackOffset();
+    stopMotion();
+    const nearestPhysicalIndex = getNearestIndexForOffset(renderedOffset);
+    // Keep the physical copy that is currently visible while the user is
+    // interacting. Normalising to the middle copy here can jump backwards if
+    // a touch starts during the short transition between duplicated copies.
+    currentIndexRef.current = nearestPhysicalIndex;
+    trackOffsetRef.current = renderedOffset;
+    if (trackRef.current) {
+      trackRef.current.style.transition = "none";
+      trackRef.current.style.transform = `translate3d(${-renderedOffset}px, 0, 0)`;
+    }
+    setTrackOffset(renderedOffset);
+    return renderedOffset;
+  }, [getNearestIndexForOffset, getRenderedTrackOffset, stopMotion]);
 
   const finishMovement = useCallback(
     (targetIndex: number, onComplete?: () => void) => {
@@ -276,10 +277,35 @@ export function PropertyCarousel({
     }, Math.max(250, autoPlayDelay));
   }, [animateToIndex, autoPlayDelay, propertyCount, stopAutoPlay]);
 
+  const pauseForInteraction = useCallback(() => {
+    pausedRef.current = true;
+    stopAutoPlay();
+    if (resumeTimerRef.current !== null) {
+      window.clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
+  }, [stopAutoPlay]);
+
+  const resumeAfterInteraction = useCallback(
+    (delay = 1000) => {
+      pausedRef.current = true;
+      if (resumeTimerRef.current !== null) {
+        window.clearTimeout(resumeTimerRef.current);
+      }
+      resumeTimerRef.current = window.setTimeout(() => {
+        resumeTimerRef.current = null;
+        pausedRef.current = false;
+        if (!autoPlayEnabledRef.current) return;
+        scheduleAutoPlay();
+      }, delay);
+    },
+    [scheduleAutoPlay],
+  );
+
   const scroll = useCallback(
     (direction: "prev" | "next") => {
       if (propertyCount < 2) return;
-      stopAutoPlay();
+      pauseForInteraction();
       if (isAnimatingRef.current || motionFrameRef.current !== null) {
         freezeMotionAtCurrentPosition();
       }
@@ -291,48 +317,19 @@ export function PropertyCarousel({
 
       animateToIndex(
         currentIndex + (direction === "next" ? 1 : -1),
-        () => {
-          if (!pausedRef.current && autoPlayEnabledRef.current) {
-            scheduleAutoPlay();
-          }
-        },
+        undefined,
       );
+      resumeAfterInteraction(5000);
     },
     [
       animateToIndex,
       infinite,
       normaliseIndex,
+      pauseForInteraction,
       propertyCount,
       freezeMotionAtCurrentPosition,
-      scheduleAutoPlay,
-      stopAutoPlay,
+      resumeAfterInteraction,
     ],
-  );
-
-  const pauseForInteraction = useCallback(() => {
-    pausedRef.current = true;
-    // Keep an already-started visual movement running to completion. Only
-    // the next automatic movement is paused, matching the original behavior.
-    stopAutoPlay();
-    if (resumeTimerRef.current !== null) {
-      window.clearTimeout(resumeTimerRef.current);
-      resumeTimerRef.current = null;
-    }
-  }, [stopAutoPlay]);
-
-  const resumeAfterInteraction = useCallback(
-    (delay = 1000) => {
-      pausedRef.current = false;
-      if (!autoPlayEnabledRef.current) return;
-      if (resumeTimerRef.current !== null) {
-        window.clearTimeout(resumeTimerRef.current);
-      }
-      resumeTimerRef.current = window.setTimeout(() => {
-        resumeTimerRef.current = null;
-        scheduleAutoPlay();
-      }, delay);
-    },
-    [scheduleAutoPlay],
   );
 
   const handleTouchStart = useCallback(
