@@ -20,7 +20,7 @@ export function ScrollToTopButton() {
       className={cn(
         "fixed bottom-5 left-4 z-50 h-9 w-9 rounded-full shadow-lg",
         "flex items-center justify-center",
-        "bg-accent text-white",
+        "bg-accent text-accent-foreground",
         "hover:scale-110 active:scale-95",
         "transition-all duration-300",
         visible

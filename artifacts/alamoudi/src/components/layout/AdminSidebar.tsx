@@ -128,7 +128,7 @@ export function AdminSidebar() {
                     <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground opacity-70")} />
                     <span className="flex-1">{item.label}</span>
                     {count > 0 && (
-                      <span className="bg-accent text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                      <span className="bg-accent text-accent-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                         {count}
                       </span>
                     )}

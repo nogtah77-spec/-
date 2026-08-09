@@ -42,7 +42,7 @@
 
 /* ────────────────────────────────────────────────────────────
    Design System — العمودي للتسويق العقاري
-   Midnight Blue #10202D · Antique Brass #B4986B · Soft White #F7F7F7
+   Midnight Blue #10202D · Warm Brass #B99A68 · Warm Ivory #F5F3EE
    Radius: chips=8px | buttons/inputs/dropdowns=12px | cards=16px
    ──────────────────────────────────────────────────────────── */
 @theme inline {
@@ -104,9 +104,9 @@
 
 /* ────────────────────────────────────────────────────────────
    Light mode
-   Background: #F7F7F7 (Soft White) · Cards: #FFFFFF
-   Primary text: #10202D (Midnight Blue) · Accent: #B4986B (Antique Brass)
-   Border: #DDE2E7
+   Background: #F5F3EE (Warm Ivory) · Cards: #FFFDF9
+   Primary text: #10202D (Midnight Blue) · Accent: #B99A68 (Warm Brass)
+   Border: #E1DED6
    ──────────────────────────────────────────────────────────── */
 :root {
   --button-outline: rgba(0,0,0,.12);
@@ -116,54 +116,58 @@
   --elevate-2: rgba(0,0,0,.06);
 
   /* Core palette */
-  --background:  210 14% 97%;          /* #F7F7F7 Soft White */
+  --background:  45 27% 95%;            /* #F5F3EE Warm Ivory */
   --foreground:  207 48% 12%;          /* #10202D Midnight Blue */
-  --border:      210 13% 87%;          /* #DDE2E7 */
+  --border:      42 19% 87%;            /* #E1DED6 */
 
-  --card:        0 0% 100%;            /* #FFFFFF */
+  --card:        45 33% 99%;            /* #FFFDF9 */
   --card-foreground: 207 48% 12%;
-  --card-border: 210 13% 87%;
+  --card-border: 42 19% 87%;
 
   --shadow-luxury:    0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
   --shadow-luxury-lg: 0 4px 16px rgba(0,0,0,0.08);
-  --gradient-hero:    linear-gradient(135deg,#10202D 0%,#1a3245 50%,#10202D 100%);
+  --gradient-hero:    linear-gradient(135deg,#10202D 0%,#173044 52%,#10202D 100%);
 
-  --sidebar: 210 14% 95%;
+  --sidebar: 44 25% 93%;
   --sidebar-foreground: 207 48% 12%;
-  --sidebar-border: 210 13% 87%;
+  --sidebar-border: 42 19% 87%;
   --sidebar-primary: 207 48% 12%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 37 33% 56%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 37 33% 56%;
+  --sidebar-accent: 38 37% 57%;
+  --sidebar-accent-foreground: 207 48% 12%;
+  --sidebar-ring: 38 37% 57%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 207 48% 12%;
-  --popover-border: 210 13% 87%;
+  --popover-border: 42 19% 87%;
 
   --primary: 207 48% 12%;              /* #10202D */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 10% 94%;            /* light gray */
+  --secondary: 42 20% 93%;             /* warm stone */
   --secondary-foreground: 207 48% 12%;
 
-  --muted: 210 10% 94%;
-  --muted-foreground: 30 8% 46%;       /* warm neutral — harmonizes with Antique Brass */
+  --muted: 42 20% 93%;
+  --muted-foreground: 205 12% 44%;     /* blue-gray neutral */
 
-  /* ── Antique Brass accent: #B4986B ── */
-  --accent: 37 33% 56%;                /* #B4986B */
-  --accent-foreground: 0 0% 100%;
+  /* ── Warm Brass accent: #B99A68 ── */
+  --accent: 38 37% 57%;                /* #B99A68 */
+  --accent-foreground: 207 48% 12%;
+
+  --status-success: 155 32% 46%;       /* #4F9A7A */
+  --status-warning: 35 61% 56%;        /* #D49A4A */
+  --status-danger: 0 48% 60%;          /* #C96868 */
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 210 13% 87%;
-  --ring: 37 33% 56%;                  /* Brass focus ring */
+  --input: 42 19% 87%;
+  --ring: 38 37% 57%;                  /* Brass focus ring */
 
   --chart-1: 207 48% 12%;
-  --chart-2: 37 33% 56%;
-  --chart-3: 210 13% 87%;
-  --chart-4: 210 10% 94%;
+  --chart-2: 38 37% 57%;
+  --chart-3: 42 19% 87%;
+  --chart-4: 42 20% 93%;
   --chart-5: 207 15% 50%;
 
   --app-font-sans: 'Cairo','Noto Sans Arabic',sans-serif;
@@ -181,8 +185,8 @@
 
 /* ────────────────────────────────────────────────────────────
    Dark mode
-   Background: #10202D (Midnight Blue) · Cards: #152535
-   Text: #F7F7F7 (Soft White) · Accent: #B4986B (Antique Brass)
+   Background: #10202D (Midnight Blue) · Cards: #173044
+   Text: #F5F3EE (Warm Ivory) · Accent: #B99A68 (Warm Brass)
    Border: rgba(255,255,255,0.08)
    ──────────────────────────────────────────────────────────── */
 .dark {
@@ -196,43 +200,47 @@
   --shadow-luxury-lg: 0 4px 20px rgba(0,0,0,0.60);
 
   --background: 207 48% 12%;           /* #10202D Midnight Blue */
-  --foreground: 0 0% 97%;              /* #F7F7F7 Soft White */
-  --border:     207 35% 18%;           /* subtle dark border */
+  --foreground: 45 27% 95%;             /* #F5F3EE Warm Ivory */
+  --border:     207 34% 24%;           /* #284153 soft navy border */
 
-  --card:           207 43% 15%;       /* #152535 slightly lighter */
-  --card-foreground: 0 0% 97%;
-  --card-border:     207 35% 18%;
+  --card:           207 50% 18%;       /* #173044 secondary navy */
+  --card-foreground: 45 27% 95%;
+  --card-border:     207 34% 24%;
 
-  --sidebar: 207 43% 15%;
-  --sidebar-foreground: 0 0% 97%;
-  --sidebar-border: 207 35% 18%;
-  --sidebar-primary: 0 0% 97%;
+  --sidebar: 207 50% 18%;
+  --sidebar-foreground: 45 27% 95%;
+  --sidebar-border: 207 34% 24%;
+  --sidebar-primary: 38 37% 57%;
   --sidebar-primary-foreground: 207 48% 12%;
-  --sidebar-accent: 37 33% 56%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 37 33% 56%;
+  --sidebar-accent: 38 37% 57%;
+  --sidebar-accent-foreground: 207 48% 12%;
+  --sidebar-ring: 38 37% 57%;
 
-  --popover: 207 43% 15%;
-  --popover-foreground: 0 0% 97%;
-  --popover-border: 207 35% 18%;
+  --popover: 207 50% 18%;
+  --popover-foreground: 45 27% 95%;
+  --popover-border: 207 34% 24%;
 
-  --primary: 0 0% 97%;
+  --primary: 38 37% 57%;
   --primary-foreground: 207 48% 12%;
 
-  --secondary: 207 35% 18%;
-  --secondary-foreground: 0 0% 97%;
+  --secondary: 207 34% 24%;
+  --secondary-foreground: 45 27% 95%;
 
-  --muted: 207 35% 17%;
-  --muted-foreground: 207 12% 65%;     /* muted blue-gray text */
+  --muted: 207 34% 22%;
+  --muted-foreground: 207 18% 70%;     /* muted blue-gray text */
 
-  --accent: 37 33% 56%;                /* #B4986B — same in both modes */
-  --accent-foreground: 0 0% 100%;
+  --accent: 38 37% 57%;                /* #B99A68 — same in both modes */
+  --accent-foreground: 207 48% 12%;
+
+  --status-success: 155 42% 48%;
+  --status-warning: 35 72% 60%;
+  --status-danger: 0 58% 65%;
 
   --destructive: 0 62% 47%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 207 35% 18%;
-  --ring: 37 33% 56%;
+  --input: 207 34% 24%;
+  --ring: 38 37% 57%;
 }
 
 @layer base {
@@ -255,10 +263,10 @@
 
   /* ── Navbar — glass over Soft White / Midnight Blue ── */
   .glass-navbar {
-    background: rgba(247,247,247,0.94);
+    background: rgba(245,243,238,0.94);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid hsl(210 13% 87%);
+    border-bottom: 1px solid hsl(42 19% 87%);
   }
   .dark .glass-navbar {
     background: rgba(16,32,45,0.94);
@@ -269,7 +277,7 @@
 /* Login surface: full-bleed backdrop, with a restrained glass panel reveal. */
 .login-shell {
   isolation: isolate;
-  background: #12252b;
+  background: #10202D;
 }
 
 .login-backdrop {
@@ -281,7 +289,7 @@
   background:
     radial-gradient(circle at 16% 18%, rgba(186, 154, 99, 0.36), transparent 26%),
     radial-gradient(circle at 84% 80%, rgba(35, 101, 99, 0.44), transparent 34%),
-    linear-gradient(122deg, #0e252c 0%, #183b3d 44%, #927653 100%);
+    linear-gradient(122deg, #0D1B27 0%, #173044 44%, #B99A68 100%);
 }
 
 .login-content {
@@ -314,7 +322,7 @@
 .login-field {
   background: rgba(0, 0, 0, 0.24);
   border-color: rgba(255, 247, 229, 0.25);
-  color: #fffaf0;
+  color: #F5F3EE;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 

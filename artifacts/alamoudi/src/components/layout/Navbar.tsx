@@ -149,7 +149,7 @@ export function Navbar() {
             <Button
               asChild
               size="sm"
-              className="bg-accent text-white hover:bg-accent/90 rounded-md px-4 text-sm font-medium"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-md px-4 text-sm font-medium"
               data-testid="button-nav-dashboard"
             >
               <Link href="/admin">لوحة التحكم</Link>

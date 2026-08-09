@@ -128,7 +128,7 @@ export default function Properties() {
           title="إدارة العقارات"
           subtitle="عرض وإدارة جميع العقارات في المنصة"
           actions={
-            <Button asChild className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]">
+            <Button asChild className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]">
               <Link href="/admin/properties/new">
                 <Plus className="h-4 w-4" />
                 إضافة عقار جديد

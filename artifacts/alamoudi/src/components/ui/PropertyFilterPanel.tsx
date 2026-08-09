@@ -42,7 +42,7 @@ function Chip({
       className={cn(
         "h-9 rounded-md border px-3.5 text-sm font-semibold transition-all",
         active
-          ? "border-accent bg-accent text-white shadow-sm"
+          ? "border-accent bg-accent text-accent-foreground shadow-sm"
           : "border-border bg-card text-muted-foreground hover:border-accent/50 hover:text-accent",
       )}
     >
@@ -240,7 +240,7 @@ export function PropertyFilterPanel({
             </span>
           </label>
           <div className="col-span-2 flex items-end gap-2 sm:col-span-1">
-            <Button type="button" className="h-9 flex-1 gap-1.5 bg-accent text-white hover:bg-accent/90" onClick={() => onApply(filters)}>
+            <Button type="button" className="h-9 flex-1 gap-1.5 bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => onApply(filters)}>
               <Search className="h-4 w-4" /> تطبيق الفلاتر
             </Button>
             <Button type="button" variant="outline" className="h-9 gap-1.5" onClick={onReset}>
@@ -268,7 +268,7 @@ export function PropertyFilterPanel({
             type="button"
             aria-label="بطاقات متوسطة"
             title="بطاقات متوسطة"
-            className={cn("rounded p-1.5", filters.cardSize === "medium" && "bg-accent text-white")}
+            className={cn("rounded p-1.5", filters.cardSize === "medium" && "bg-accent text-accent-foreground")}
             onClick={() => update({ viewMode: "grid", cardSize: "medium" })}
           >
             <Grid2X2 className="h-4 w-4" />
@@ -277,7 +277,7 @@ export function PropertyFilterPanel({
             type="button"
             aria-label="بطاقات صغيرة"
             title="بطاقات صغيرة"
-            className={cn("rounded p-1.5", filters.cardSize === "compact" && "bg-accent text-white")}
+            className={cn("rounded p-1.5", filters.cardSize === "compact" && "bg-accent text-accent-foreground")}
             onClick={() => update({ viewMode: "list", cardSize: "compact" })}
           >
             <List className="h-4 w-4" />

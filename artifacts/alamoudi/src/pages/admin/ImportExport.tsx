@@ -391,7 +391,7 @@ export default function ImportExport() {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-1">
                 <Button
-                  className="flex-1 bg-accent text-white hover:bg-accent/90"
+                  className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
                   onClick={confirmImport}
                 >
                   <CheckCircle2 className="h-4 w-4 ml-2" />
@@ -530,7 +530,7 @@ export default function ImportExport() {
                 </div>
               </div>
               <Button
-                className="w-full bg-accent text-white hover:bg-accent/90 gap-2"
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                 onClick={handleExport}
               >
                 <Download className="h-4 w-4" />

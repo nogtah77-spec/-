@@ -92,7 +92,7 @@ export default function PropertyDetails() {
             <Building2 className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-2">العقار غير موجود</h1>
             <p className="text-muted-foreground mb-6">لم يتم العثور على هذا العقار.</p>
-            <Button asChild className="bg-accent text-white hover:bg-accent/90 rounded-full px-8">
+            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
               <Link href="/">العودة للرئيسية</Link>
             </Button>
           </div>
@@ -259,7 +259,7 @@ export default function PropertyDetails() {
                 {isStaff && (
                   <Button
                     onClick={() => navigate(`/admin/properties/${property.id}/edit`)}
-                    className="bg-accent text-white hover:bg-accent/90 gap-1.5"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-1.5"
                     title="تعديل هذا العقار">
                     <Pencil className="h-4 w-4" />تعديل العقار
                   </Button>
@@ -317,7 +317,7 @@ export default function PropertyDetails() {
             {property.videoUrl && (
               <button
                 onClick={() => setVideoModalOpen(true)}
-                className="flex items-center gap-1.5 bg-accent text-white rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+                className="flex items-center gap-1.5 bg-accent text-accent-foreground rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
               >
                 <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
                 <span className="text-xs font-medium">فيديو العقار</span>
@@ -417,7 +417,7 @@ export default function PropertyDetails() {
                   <button
                     onClick={() => setVideoModalOpen(true)}
                     data-testid="link-watch-video"
-                    className="flex items-center gap-1.5 bg-accent text-white rounded-md px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+                    className="flex items-center gap-1.5 bg-accent text-accent-foreground rounded-md px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
                   >
                     <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
                     <span className="text-xs font-medium">فيديو العقار</span>

@@ -20,7 +20,7 @@ export default function Favorites() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F2EC] dark:bg-background py-12">
+      <main className="flex-1 bg-[#F5F3EE] dark:bg-background py-12">
         <div className="container px-3 sm:px-6">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-foreground mb-1">المفضلة</h1>
@@ -36,7 +36,7 @@ export default function Favorites() {
               </div>
               <h2 className="text-lg font-bold text-foreground mb-2">لا توجد عقارات مفضلة</h2>
               <p className="text-sm text-muted-foreground mb-6">تصفح العقارات المتاحة وأضف ما يعجبك بالضغط على أيقونة القلب.</p>
-              <Button asChild className="bg-accent text-white hover:bg-accent/90 rounded-full px-8">
+              <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
                 <Link href="/">تصفح العقارات</Link>
               </Button>
             </div>

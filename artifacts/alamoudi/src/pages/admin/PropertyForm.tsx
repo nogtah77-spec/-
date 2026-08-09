@@ -224,7 +224,7 @@ export default function PropertyForm() {
                     {images.map((img, idx) => (
                       <div key={idx} className="relative rounded-lg overflow-hidden aspect-square bg-muted group">
                         <img src={img} alt="" className="w-full h-full object-cover" />
-                        {idx === 0 && <div className="absolute bottom-0 inset-x-0 bg-accent/80 text-white text-[9px] font-bold text-center py-0.5">رئيسية</div>}
+                        {idx === 0 && <div className="absolute bottom-0 inset-x-0 bg-accent/80 text-accent-foreground text-[9px] font-bold text-center py-0.5">رئيسية</div>}
                         <button type="button" aria-label="حذف الصورة" onClick={() => setImages(p => p.filter((_, i) => i !== idx))}
                           className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center shadow-md ring-2 ring-white/70 hover:bg-destructive/90 active:scale-95 transition">
                           <X className="h-3.5 w-3.5" />
@@ -268,7 +268,7 @@ export default function PropertyForm() {
                       onClick={() => set("coverPriority", "image")}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 transition-colors ${
                         form.coverPriority === "image" || !form.coverPriority
-                          ? "bg-accent text-white font-semibold"
+                          ? "bg-accent text-accent-foreground font-semibold"
                           : "bg-background text-muted-foreground hover:bg-muted"
                       }`}
                     >
@@ -280,7 +280,7 @@ export default function PropertyForm() {
                       onClick={() => set("coverPriority", "video")}
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 border-r border-border transition-colors ${
                         form.coverPriority === "video"
-                          ? "bg-accent text-white font-semibold"
+                          ? "bg-accent text-accent-foreground font-semibold"
                           : "bg-background text-muted-foreground hover:bg-muted"
                       }`}
                     >

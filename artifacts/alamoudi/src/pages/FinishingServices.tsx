@@ -251,7 +251,7 @@ export default function FinishingServices() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F2EC] dark:bg-background">
+      <main className="flex-1 bg-[#F5F3EE] dark:bg-background">
 
         {/* Hero */}
         <div className="bg-card border-b border-border py-12 md:py-16">
@@ -293,7 +293,7 @@ export default function FinishingServices() {
                   </div>
                   <h2 className="text-xl font-bold text-foreground mb-2">تم إرسال طلبك بنجاح</h2>
                   <p className="text-sm text-muted-foreground">سيتواصل معك فريقنا خلال 24 ساعة.</p>
-                  <Button className="mt-6 bg-accent text-white hover:bg-accent/90 rounded-full px-8"
+                  <Button className="mt-6 bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8"
                     onClick={() => { setSubmitted(false); setForm({ name: "", phone: "", location: "", area: "", finishingType: "", description: "" }); }}>
                     إرسال طلب آخر
                   </Button>
@@ -356,7 +356,7 @@ export default function FinishingServices() {
                       </label>
                     </div>
 
-                    <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-white hover:bg-accent/90 font-bold rounded-lg disabled:opacity-50">
+                    <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-bold rounded-lg disabled:opacity-50">
                       {loading ? "جاري الإرسال..." : "إرسال الطلب"}
                     </Button>
                   </form>

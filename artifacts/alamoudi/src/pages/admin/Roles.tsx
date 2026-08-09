@@ -61,7 +61,7 @@ export default function Roles() {
           eyebrow="الأمان والتحكم"
           icon={ShieldCheck}
           actions={
-            <Button className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]" onClick={savePerm}>
+            <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={savePerm}>
               <Save className="h-4 w-4" />
               حفظ التغييرات
             </Button>

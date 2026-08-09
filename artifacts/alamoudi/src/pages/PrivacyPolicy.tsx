@@ -41,7 +41,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F2EC] dark:bg-background">
+      <main className="flex-1 bg-[#F5F3EE] dark:bg-background">
         <div className="bg-card border-b border-border py-12 md:py-16">
           <div className="container px-6 text-center">
             <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center text-accent mx-auto mb-4">

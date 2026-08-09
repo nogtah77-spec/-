@@ -129,7 +129,7 @@ export default function FinishingGallery() {
           eyebrow="المحتوى المرئي"
           icon={ImageIcon}
           actions={
-            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]">
+            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]">
               <Save className="h-4 w-4" />
               {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
             </Button>
@@ -275,7 +275,7 @@ export default function FinishingGallery() {
                   placeholder="مثال: شقة 3 غرف..."
                 />
               </div>
-              <Button onClick={addVideo} className="bg-accent text-white hover:bg-accent/90 gap-1.5 shrink-0">
+              <Button onClick={addVideo} className="bg-accent text-accent-foreground hover:bg-accent/90 gap-1.5 shrink-0">
                 <Plus className="h-4 w-4" />إضافة
               </Button>
             </div>
@@ -330,7 +330,7 @@ export default function FinishingGallery() {
 
         {/* Bottom Save */}
         <div className="flex justify-end pb-4">
-          <Button onClick={handleSave} disabled={saving} size="lg" className="bg-accent text-white hover:bg-accent/90 gap-2 px-8">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2 px-8">
             <Save className="h-4 w-4" />
             {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
           </Button>

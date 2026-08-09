@@ -102,7 +102,7 @@ export default function Users() {
           eyebrow="فريق العمل والوصول"
           icon={UsersIcon}
           actions={
-            <Button className="h-10 gap-2 bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]" onClick={openAdd}>
+            <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={openAdd}>
               <Plus className="h-4 w-4" />
               مستخدم جديد
             </Button>

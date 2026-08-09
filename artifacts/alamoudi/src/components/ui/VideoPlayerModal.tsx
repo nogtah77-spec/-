@@ -98,7 +98,7 @@ function FallbackPlayer({ url }: { url: string }) {
         <p className="font-semibold text-foreground">لا يمكن تشغيل هذا الفيديو داخلياً</p>
         <p className="text-sm text-muted-foreground mt-1">اضغط على الزرار أدناه لمشاهدته في موقعه الأصلي</p>
       </div>
-      <Button asChild className="bg-accent text-white hover:bg-accent/90 gap-2">
+      <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
         <a href={url} target="_blank" rel="noopener noreferrer">
           <ExternalLink className="h-4 w-4" />
           فتح الفيديو

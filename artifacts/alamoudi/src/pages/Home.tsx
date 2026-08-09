@@ -266,7 +266,7 @@ export default function Home() {
               href="/add-property"
               className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
               style={{
-                background: "linear-gradient(135deg, #9A7F59, #B4986B)",
+                background: "linear-gradient(135deg, #A2845A, #B99A68)",
               }}
             >
               <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
@@ -277,7 +277,7 @@ export default function Home() {
               className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
               style={{
                 background: "linear-gradient(135deg, #0d1a24, #10202D)",
-                color: "#F7F7F7",
+                color: "#F5F3EE",
                 border: "1px solid rgba(255,255,255,0.10)",
               }}
             >
@@ -287,11 +287,11 @@ export default function Home() {
             <Link
               href="/consultation"
               className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
-              style={{ border: "1.5px solid #B4986B" }}
+              style={{ border: "1.5px solid #B99A68" }}
             >
               <MessageCircle
                 className="h-4 w-4 sm:h-6 sm:w-6"
-                style={{ color: "#B4986B" }}
+                style={{ color: "#B99A68" }}
               />
               اطرح استفسارك
             </Link>
@@ -380,7 +380,7 @@ export default function Home() {
                     className="absolute inset-0 opacity-[0.04] pointer-events-none"
                     style={{
                       backgroundImage:
-                        "radial-gradient(#B4986B 1px, transparent 1px)",
+                        "radial-gradient(#B99A68 1px, transparent 1px)",
                       backgroundSize: "20px 20px",
                     }}
                   />
@@ -667,7 +667,7 @@ export default function Home() {
                       size="lg"
                       className="h-9 sm:h-11 px-4 sm:px-8 rounded-md font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
                       style={{
-                        background: "linear-gradient(135deg, #9A7F59, #B4986B)",
+                        background: "linear-gradient(135deg, #A2845A, #B99A68)",
                       }}
                     >
                       <Link href="/add-property">

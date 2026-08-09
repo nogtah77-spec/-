@@ -20,7 +20,7 @@ export default function NotFound() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/"
-              className="rounded-full px-7 py-2.5 text-sm font-medium bg-accent text-white hover:bg-accent/90 transition-colors shadow-md"
+              className="rounded-full px-7 py-2.5 text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/90 transition-colors shadow-md"
             >
               العودة للرئيسية
             </Link>

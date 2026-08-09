@@ -46,7 +46,7 @@ export default function Compare() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F2EC] dark:bg-background py-12">
+      <main className="flex-1 bg-[#F5F3EE] dark:bg-background py-12">
         <div className="container px-6">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -67,7 +67,7 @@ export default function Compare() {
               </div>
               <h2 className="text-lg font-bold text-foreground mb-2">قائمة المقارنة فارغة</h2>
               <p className="text-sm text-muted-foreground mb-6">أضف عقارين أو أكثر للمقارنة بين مواصفاتها.</p>
-              <Button asChild className="bg-accent text-white hover:bg-accent/90 rounded-full px-8">
+              <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
                 <Link href="/">تصفح العقارات</Link>
               </Button>
             </div>

@@ -873,15 +873,15 @@ export default function Contracts() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] space-y-6" dir="rtl">
-        <section className="relative isolate overflow-hidden rounded-2xl border border-[#B4986B]/40 bg-[linear-gradient(135deg,#10202D_0%,#172F42_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
+        <section className="relative isolate overflow-hidden rounded-2xl border border-[#B99A68]/40 bg-[linear-gradient(135deg,#10202D_0%,#173044_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
           <div className="relative grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0">
               <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B4986B]/45 bg-[#B4986B]/15 text-[#D6B77F]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B99A68]/45 bg-[#B99A68]/15 text-[#DCC08A]">
                   <ShieldCheck className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="text-[11px] font-bold tracking-[.14em] text-[#D6B77F]">مركز التوثيق والعمليات</p>
+                  <p className="text-[11px] font-bold tracking-[.14em] text-[#DCC08A]">مركز التوثيق والعمليات</p>
                   <p className="mt-0.5 text-[11px] text-white/55">مساحة عمل آمنة لفريق العمودي</p>
                 </div>
               </div>
@@ -890,7 +890,7 @@ export default function Contracts() {
                 إدارة العقود والدفعات العقارية في مكان واحد.
               </p>
               <div className="mt-5 flex items-center gap-2 text-[11px] text-white/55">
-                <ClipboardCheck className="h-3.5 w-3.5 text-[#D6B77F]" />
+                <ClipboardCheck className="h-3.5 w-3.5 text-[#DCC08A]" />
                 <span>كل تعديل يُحفظ مرتبطًا بالسجل الأصلي وقابلًا للمراجعة.</span>
               </div>
             </div>
@@ -908,7 +908,7 @@ export default function Contracts() {
                   تحديث السجل
                 </Button>
                 <Button
-                  className="h-11 justify-center gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] shadow-[0_6px_16px_rgba(180,152,107,.22)] hover:bg-[#C5A978]"
+                  className="h-11 justify-center gap-2 border border-[#DCC08A] bg-[#B99A68] text-[#10202D] shadow-[0_6px_16px_rgba(185,154,104,.22)] hover:bg-[#C9AB78]"
                   onClick={openCreate}
                 >
                   <Plus className="h-4 w-4" />

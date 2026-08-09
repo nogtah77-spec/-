@@ -196,7 +196,7 @@ export function PropertyGallery({
               type="button"
               onClick={onDownloadAll}
               disabled={downloadAllPending}
-              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1.5 text-xs text-white transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1.5 text-xs text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-wait disabled:opacity-70"
               aria-label="تحميل جميع صور العقار"
             >
               {downloadAllPending ? (

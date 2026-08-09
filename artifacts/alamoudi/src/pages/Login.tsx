@@ -43,7 +43,7 @@ export default function Login() {
   const gradient = hexToRgba(overlayColor, settings.loginGradientOpacity ?? 58);
 
   return (
-    <main dir="rtl" className="login-shell relative min-h-[100dvh] overflow-hidden text-[#fffaf0]">
+    <main dir="rtl" className="login-shell relative min-h-[100dvh] overflow-hidden text-[#F5F3EE]">
       <div
         className={`login-backdrop absolute inset-0 bg-cover bg-center bg-no-repeat ${hasBackground ? "" : "login-default-backdrop"}`}
       />
@@ -83,15 +83,15 @@ export default function Login() {
         <section className="login-card w-full max-w-[438px] rounded-[30px] px-5 py-7 sm:px-9 sm:py-9">
           <div className="mb-8 text-center">
             <Link href="/" className="inline-flex flex-col items-center" data-testid="link-login-brand">
-              <span className="login-brand-name text-[#fffaf0]">العمودي</span>
-              <span className="login-brand-subtitle mt-5 border-t border-[#d8bd87]/55 pt-3 text-[0.82rem] font-semibold tracking-[0.14em] text-[#e0c58f]">
+              <span className="login-brand-name text-[#F5F3EE]">العمودي</span>
+              <span className="login-brand-subtitle mt-5 border-t border-[#DCC08A]/55 pt-3 text-[0.82rem] font-semibold tracking-[0.14em] text-[#E6CC98]">
                 للتسويق العقاري
               </span>
             </Link>
           </div>
 
           <div className="mb-7 text-center">
-            <h1 className="text-[1.65rem] font-semibold tracking-tight text-[#fffaf0] sm:text-[1.8rem]">
+            <h1 className="text-[1.65rem] font-semibold tracking-tight text-[#F5F3EE] sm:text-[1.8rem]">
               مرحبًا بعودتك
             </h1>
             <p className="mt-2 text-sm leading-7 text-[#e5e3d9]/75">
@@ -115,7 +115,7 @@ export default function Login() {
                   اسم المستخدم أو البريد الإلكتروني
                 </Label>
                 <div className="relative">
-                  <UserRound className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#e0c58f]/75" />
+                   <UserRound className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
                   <Input
                     id="identifier"
                     type="text"
@@ -137,7 +137,7 @@ export default function Login() {
                   كلمة المرور
                 </Label>
                 <div className="relative">
-                  <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#e0c58f]/75" />
+                 <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
                   <Input
                     id="password"
                     type="password"
@@ -157,14 +157,14 @@ export default function Login() {
             <Button
               type="submit"
               disabled={submitting}
-              className="mt-7 h-12 w-full rounded-2xl border border-[#e5c98e]/70 bg-[#d3ad68] text-sm font-bold text-[#13272c] shadow-[0_12px_26px_rgba(5,19,24,0.2)] hover:bg-[#e2bf7f]"
+               className="mt-7 h-12 w-full rounded-2xl border border-[#E6CC98]/70 bg-[#B99A68] text-sm font-bold text-[#10202D] shadow-[0_12px_26px_rgba(5,19,24,0.2)] hover:bg-[#C9AB78]"
               data-testid="button-login-submit"
             >
               {submitting ? "جارٍ تسجيل الدخول…" : <>تسجيل الدخول <ArrowLeft className="h-4 w-4" /></>}
             </Button>
-            <Link
+              <Link
               href="/"
-              className="mt-6 flex items-center justify-center gap-2 text-xs text-[#e8e5d9]/65 transition-colors hover:text-[#e0c58f]"
+               className="mt-6 flex items-center justify-center gap-2 text-xs text-[#e8e5d9]/65 transition-colors hover:text-[#E6CC98]"
             >
               العودة إلى الصفحة الرئيسية
             </Link>

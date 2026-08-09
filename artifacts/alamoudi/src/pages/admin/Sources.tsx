@@ -290,7 +290,7 @@ export default function Sources() {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>
-            <Button className="bg-accent text-white hover:bg-accent/90" onClick={saveEdit}>حفظ التغييرات</Button>
+            <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={saveEdit}>حفظ التغييرات</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -104,7 +104,7 @@ export function AIChatWidget() {
         <button
           onClick={openChat}
           aria-label="مستشارك الذكي"
-          className="fixed bottom-5 right-5 z-40 group flex items-center gap-2 rounded-full bg-accent text-white shadow-lg shadow-accent/30 pl-4 pr-2.5 py-2.5 hover:scale-105 active:scale-95 transition-transform"
+          className="fixed bottom-5 right-5 z-40 group flex items-center gap-2 rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/30 pl-4 pr-2.5 py-2.5 hover:scale-105 active:scale-95 transition-transform"
         >
           <span className="animate-ai-pulse flex items-center justify-center h-8 w-8 rounded-full bg-white text-accent shadow-sm">
             <span className="text-[13px] font-extrabold tracking-tight leading-none">AI</span>
@@ -200,7 +200,7 @@ export function AIChatWidget() {
                   onClick={submit}
                   disabled={!input.trim() || sending}
                   size="icon"
-                  className="h-10 w-10 rounded-xl bg-accent hover:bg-accent/90 text-white flex-shrink-0"
+                  className="h-10 w-10 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0"
                   aria-label="إرسال"
                 >
                   <Send className="h-4 w-4" />

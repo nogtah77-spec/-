@@ -228,7 +228,7 @@ function AboutEditor({
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 bg-accent text-white hover:bg-accent/90 gap-2"
+            className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
           >
             <Save className="h-4 w-4" />
             {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
@@ -328,7 +328,7 @@ export default function About() {
               تواصل معنا اليوم واطرح استفسارك وسيرد عليك أحد خبرائنا العقاريين.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-white" style={{ background: "linear-gradient(135deg, #9A7F59, #B4986B)" }}>
+              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-[#10202D]" style={{ background: "linear-gradient(135deg, #A2845A, #B99A68)" }}>
                 <Link href="/add-property">أعرض عقارك</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-12 px-8 rounded-full font-bold text-sm border-[#DCD7C9]/40 text-[#DCD7C9] hover:bg-white/10">
@@ -344,7 +344,7 @@ export default function About() {
       {isStaff && (
         <button
           onClick={() => setEditorOpen(true)}
-          className="fixed bottom-6 left-6 z-50 flex items-center gap-2 bg-accent text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-lg hover:bg-accent/90 transition-all hover:scale-105 active:scale-95"
+          className="fixed bottom-6 left-6 z-50 flex items-center gap-2 bg-accent text-accent-foreground text-sm font-bold px-4 py-2.5 rounded-full shadow-lg hover:bg-accent/90 transition-all hover:scale-105 active:scale-95"
         >
           <Pencil className="h-4 w-4" />
           تعديل الصفحة

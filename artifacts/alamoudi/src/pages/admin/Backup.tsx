@@ -103,7 +103,7 @@ export default function Backup() {
                   <CheckCircle2 className="h-4 w-4 text-green-500" />الاستفسارات والطلبات
                 </div>
               </div>
-              <Button className="w-full bg-accent text-white hover:bg-accent/90 gap-2" onClick={handleExport}>
+              <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 gap-2" onClick={handleExport}>
                 <Download className="h-4 w-4" />تصدير نسخة احتياطية
               </Button>
             </CardContent>

@@ -227,7 +227,7 @@ function ServiceSettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
 
         <DialogFooter className="mt-2">
           <Button variant="outline" onClick={onClose}>إلغاء</Button>
-          <Button onClick={save} disabled={saving} className="bg-accent text-white hover:bg-accent/90">
+          <Button onClick={save} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90">
             {saving && <Loader2 className="w-4 h-4 animate-spin ml-2" />} حفظ الإعدادات
           </Button>
         </DialogFooter>
@@ -661,7 +661,7 @@ function BannerDialog({
                     {(["top","bottom"] as const).map(s => (
                       <button key={s} onClick={() => setSlot(s)}
                         className={cn("text-xs px-2.5 py-1 rounded-lg border transition-colors",
-                          slot === s ? "bg-accent text-white border-accent" : "border-border hover:bg-muted")}>
+                          slot === s ? "bg-accent text-accent-foreground border-accent" : "border-border hover:bg-muted")}>
                         {s === "top" ? "⬆ الصندوق العلوي" : "⬇ الصندوق السفلي"}
                       </button>
                     ))}
@@ -695,7 +695,7 @@ function BannerDialog({
                       {(["top","bottom"] as const).map(s => (
                         <button key={s} onClick={() => setSlot(s)}
                           className={cn("text-[10px] px-2 py-1 rounded border transition-colors",
-                            slot === s ? "bg-accent text-white border-accent" : "border-border hover:bg-muted")}>
+                            slot === s ? "bg-accent text-accent-foreground border-accent" : "border-border hover:bg-muted")}>
                           {s === "top" ? "⬆ أعلى" : "⬇ أسفل"}
                         </button>
                       ))}
@@ -755,7 +755,7 @@ function BannerDialog({
 
             <DialogFooter className="flex-shrink-0 border-t pt-3 mt-0">
               <Button variant="outline" onClick={onClose}>إلغاء</Button>
-              <Button onClick={save} disabled={saving} className="bg-accent text-white hover:bg-accent/90">
+              <Button onClick={save} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {saving && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
                 {initial ? "حفظ التعديلات" : "إضافة البانر"}
               </Button>
@@ -934,7 +934,7 @@ export default function SmartBanners() {
                 <Settings2 className="h-4 w-4" /> إعدادات الخدمات
               </Button>
               <Button
-                className="h-10 gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]"
+                className="h-10 gap-2 border border-[#DCC08A] bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]"
                 onClick={() => { setEditBanner(null); setCreateOpen(true); }}
               >
                 <Plus className="h-4 w-4" /> إضافة بانر جديد
@@ -965,7 +965,7 @@ export default function SmartBanners() {
             <LayoutTemplate className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
             <p className="font-semibold text-muted-foreground">لا يوجد بانرات بعد</p>
             <p className="text-sm text-muted-foreground/70 mt-1 mb-4">ابدأ بإضافة بانر ذكي جديد</p>
-            <Button size="sm" className="bg-accent text-white hover:bg-accent/90" onClick={() => { setEditBanner(null); setCreateOpen(true); }}>
+            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => { setEditBanner(null); setCreateOpen(true); }}>
               <Plus className="w-4 h-4 ml-1" /> إضافة أول بانر
             </Button>
           </div>

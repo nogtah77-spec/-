@@ -149,7 +149,7 @@ export default function AddProperty() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center bg-[#F5F2EC] dark:bg-background px-6 py-20">
+        <main className="flex-1 flex items-center justify-center bg-[#F5F3EE] dark:bg-background px-6 py-20">
           <div className="text-center max-w-md">
             <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center text-accent mx-auto mb-6">
               <CheckCircle2 className="h-10 w-10" />
@@ -159,7 +159,7 @@ export default function AddProperty() {
               تم استلام طلبكم بنجاح وسيتم التواصل معكم في أقرب وقت.
             </p>
             <div className="flex flex-wrap gap-3 justify-center">
-              <Button asChild className="bg-accent text-white hover:bg-accent/90 rounded-full px-8">
+              <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
                 <Link href="/">العودة للرئيسية</Link>
               </Button>
               <Button variant="outline" onClick={() => { setForm(EMPTY_FORM); setImages([]); setSubmitted(false); }} className="rounded-full px-8">
@@ -176,7 +176,7 @@ export default function AddProperty() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F2EC] dark:bg-background py-12 md:py-16">
+        <main className="flex-1 bg-[#F5F3EE] dark:bg-background py-12 md:py-16">
         <div className="container px-6 max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">أعرض عقارك لدينا</h1>
@@ -370,7 +370,7 @@ export default function AddProperty() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 pb-4">
-              <Button type="submit" disabled={loading || !agreed} className="flex-1 h-12 bg-accent text-white hover:bg-accent/90 rounded-xl font-bold text-sm disabled:opacity-50">
+              <Button type="submit" disabled={loading || !agreed} className="flex-1 h-12 bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl font-bold text-sm disabled:opacity-50">
                 {loading ? "جاري الإرسال..." : "إرسال الطلب"}
               </Button>
               <Button type="button" variant="outline" asChild className="h-12 rounded-xl text-sm">

@@ -491,7 +491,7 @@ function LivePreview({
                 className={cn(
                   "flex items-center gap-1.5 px-2.5 py-1.5 text-xs transition-colors",
                   device === d.key
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground hover:bg-muted"
                 )}
               >
@@ -811,7 +811,7 @@ function AdDialog({
                       className={cn(
                         "flex-1 flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
                         (form.linkPriority ?? "whatsapp") === opt
-                          ? "border-accent bg-accent text-white font-medium"
+                          ? "border-accent bg-accent text-accent-foreground font-medium"
                           : "border-border bg-background hover:bg-muted text-foreground"
                       )}
                     >
@@ -899,7 +899,7 @@ function AdDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>إلغاء</Button>
           <Button
-            className="bg-accent text-white hover:bg-accent/90"
+            className="bg-accent text-accent-foreground hover:bg-accent/90"
             disabled={!hasAnyImage || (!!form.desktopImageUrl?.trim() && !!desktopErr) || !!dateErr}
             onClick={handleSave}
           >
@@ -988,7 +988,7 @@ export default function Ads() {
                 <Plus className="h-4 w-4" /> إضافة إعلان ثانوي
               </Button>
               <Button
-                className="h-10 gap-2 border border-[#D6B77F] bg-[#B4986B] text-[#10202D] hover:bg-[#C5A978]"
+                className="h-10 gap-2 border border-[#DCC08A] bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]"
                 onClick={() => { setAddType("premium"); setShowAdd(true); }}
               >
                 <Plus className="h-4 w-4" /> إضافة إعلان مميز
@@ -1065,7 +1065,7 @@ export default function Ads() {
               <Button variant="outline" className="gap-2" onClick={() => { setAddType("secondary"); setShowAdd(true); }}>
                 <Plus className="h-4 w-4" /> إضافة إعلان ثانوي
               </Button>
-              <Button className="gap-2 bg-accent text-white hover:bg-accent/90" onClick={() => { setAddType("premium"); setShowAdd(true); }}>
+              <Button className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => { setAddType("premium"); setShowAdd(true); }}>
                 <Plus className="h-4 w-4" /> إضافة إعلان مميز
               </Button>
             </div>

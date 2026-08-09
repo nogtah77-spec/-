@@ -339,7 +339,7 @@ export default function Settings() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-accent text-white hover:bg-accent/90 gap-2"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                 >
                   <Save className="h-4 w-4" />
                   {saving ? "جاري الحفظ..." : "حفظ الإعدادات"}
@@ -518,7 +518,7 @@ export default function Settings() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-accent text-white hover:bg-accent/90 gap-2"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                 >
                   <Save className="h-4 w-4" />
                   {saving ? "جاري الحفظ..." : "حفظ التواصل"}
@@ -563,7 +563,7 @@ export default function Settings() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   >
                     <Save className="h-4 w-4" />
                     {saving ? "جاري الحفظ..." : "حفظ النص"}
@@ -744,7 +744,7 @@ export default function Settings() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   >
                     <Save className="h-4 w-4" />
                     {saving ? "جاري الحفظ..." : "حفظ طبقة أغلفة المناطق"}
@@ -947,7 +947,7 @@ export default function Settings() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   >
                     <Save className="h-4 w-4" />
                     {saving ? "جاري الحفظ..." : "حفظ صورة الغلاف"}
@@ -1114,14 +1114,14 @@ export default function Settings() {
                       <div className="relative flex h-full items-end p-5">
                         <div className="text-right text-white">
                           <div className="text-lg font-bold">العمودي</div>
-                          <div className="mt-1 text-[10px] tracking-[0.18em] text-[#d8bd87]">للتسويق العقاري</div>
+                          <div className="mt-1 text-[10px] tracking-[0.18em] text-[#E6CC98]">للتسويق العقاري</div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </CardContent>
                 <CardFooter className="border-t pt-4">
-                  <Button onClick={handleSave} disabled={saving} className="bg-accent text-white hover:bg-accent/90 gap-2">
+                  <Button onClick={handleSave} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2">
                     <Save className="h-4 w-4" />
                     {saving ? "جاري الحفظ..." : "حفظ إعدادات تسجيل الدخول"}
                   </Button>
@@ -1214,7 +1214,7 @@ export default function Settings() {
                 <CardFooter className="border-t pt-4">
                   <Button
                     onClick={handleSaveAccount}
-                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   >
                     <Save className="h-4 w-4" />
                     حفظ بيانات الحساب
@@ -1309,7 +1309,7 @@ export default function Settings() {
                 <CardFooter className="border-t pt-4">
                   <Button
                     onClick={handleAddVideo}
-                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   >
                     <Plus className="h-4 w-4" />
                     إضافة الفيديو
@@ -1424,7 +1424,7 @@ export default function Settings() {
                                 <Button
                                   size="sm"
                                   onClick={handleSaveEdit}
-                                  className="bg-accent text-white hover:bg-accent/90"
+                                  className="bg-accent text-accent-foreground hover:bg-accent/90"
                                 >
                                   حفظ
                                 </Button>
@@ -1685,7 +1685,7 @@ export default function Settings() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-accent text-white hover:bg-accent/90 gap-2"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                   >
                     <Save className="h-4 w-4" />
                     {saving ? "جاري الحفظ..." : "حفظ إعدادات التحميل"}
@@ -1813,7 +1813,7 @@ export default function Settings() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-accent text-white hover:bg-accent/90 gap-2"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
                 >
                   <Save className="h-4 w-4" />
                   {saving ? "جاري الحفظ..." : "حفظ إعدادات الكاروسيل"}

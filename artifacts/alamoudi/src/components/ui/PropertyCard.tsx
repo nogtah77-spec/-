@@ -156,7 +156,7 @@ export function PropertyCard({
               {property.typeName}
             </span>
           ) : <span />}
-          <Badge className="rounded-full bg-accent text-white border-none text-[11px] px-2.5 py-1 font-extrabold shadow-sm">
+          <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[11px] px-2.5 py-1 font-extrabold shadow-sm">
             {categoryLabels[property.category] || "للبيع"}
           </Badge>
         </div>
@@ -282,7 +282,7 @@ export function PropertyCard({
               {property.typeName}
             </span>
           ) : <span />}
-          <Badge className="rounded-full bg-accent text-white border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
+          <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
             {categoryLabels[property.category] || "للبيع"}
           </Badge>
         </div>
@@ -294,7 +294,7 @@ export function PropertyCard({
               {property.typeName}
             </span>
           ) : <span />}
-          <Badge className="rounded-full bg-accent text-white border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
+          <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
             {categoryLabels[property.category] || "للبيع"}
           </Badge>
         </div>
