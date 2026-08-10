@@ -175,6 +175,28 @@ function serializePropertyJsonValue(
   return JSON.stringify(value);
 }
 
+function normalizeStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+  if (typeof value !== "string" || !value.trim()) return [];
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (Array.isArray(parsed)) return normalizeStringArray(parsed);
+  } catch {
+    // Legacy text columns may contain a plain separator-delimited value.
+  }
+
+  return value
+    .split(/\s*(?:\/|,|،|\r?\n)\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function buildPropertyWriteData(
   data: Record<string, unknown>,
   columns: Set<string>,
@@ -292,6 +314,8 @@ async function selectLegacyProperties(
       if (row[propertyKey] !== undefined)
         normalized[propertyKey] = row[propertyKey];
     }
+    normalized.images = normalizeStringArray(normalized.images);
+    normalized.sourcePhones = normalizeStringArray(normalized.sourcePhones);
     const extracted = extractAssignedStaffId(normalized.sourceNotes);
     normalized.sourceNotes = extracted.notes;
     normalized.assignedStaffId =

@@ -70,6 +70,17 @@ const DEFAULT_SETTINGS = {
   allowStaffImageDownloads: true,
 };
 
+function isMissingColumnError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  if ("code" in error && (error as { code?: string }).code === "42703") {
+    return true;
+  }
+  if ("cause" in error) {
+    return isMissingColumnError((error as { cause?: unknown }).cause);
+  }
+  return false;
+}
+
 async function ensureSessionTable(): Promise<void> {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS "session" (
@@ -89,22 +100,40 @@ export async function seedDatabase(): Promise<void> {
 
   const existingRegions = await db.select({ id: regionsTable.id }).from(regionsTable).limit(1);
   if (existingRegions.length === 0) {
-    await db.insert(regionsTable).values(DEFAULT_REGIONS);
+    try {
+      await db.insert(regionsTable).values(DEFAULT_REGIONS);
+    } catch (error) {
+      if (!isMissingColumnError(error)) throw error;
+      const legacyRegions = DEFAULT_REGIONS.map(({ id, name, active }) => ({
+        id,
+        name,
+        active,
+      }));
+      await db.insert(regionsTable).values(legacyRegions);
+    }
     logger.info("Seeded default regions");
   }
 
   // Add the supplied city hero to an existing database without overwriting
   // any image an administrator may already have chosen.
-  const [shorouk] = await db
-    .select({ heroImage: regionsTable.heroImage })
-    .from(regionsTable)
-    .where(eq(regionsTable.id, "shorouk"))
-    .limit(1);
-  if (shorouk && !shorouk.heroImage) {
-    await db
-      .update(regionsTable)
-      .set({ heroImage: "/city-heroes/shorouk.jpg" })
-      .where(eq(regionsTable.id, "shorouk"));
+  // Older production schemas do not have hero_image. The regions route
+  // already stores/retrieves hero images through settings in that case, so
+  // seeding must not prevent the API from starting.
+  try {
+    const [shorouk] = await db
+      .select({ heroImage: regionsTable.heroImage })
+      .from(regionsTable)
+      .where(eq(regionsTable.id, "shorouk"))
+      .limit(1);
+    if (shorouk && !shorouk.heroImage) {
+      await db
+        .update(regionsTable)
+        .set({ heroImage: "/city-heroes/shorouk.jpg" })
+        .where(eq(regionsTable.id, "shorouk"));
+    }
+  } catch (error) {
+    if (!isMissingColumnError(error)) throw error;
+    logger.info("Skipping region hero image seed for legacy regions schema");
   }
 
   const existingTypes = await db
