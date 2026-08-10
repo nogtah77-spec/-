@@ -1,4 +1,5 @@
 import { Card, CardContent, CardFooter } from "./card";
+import { AspectRatio } from "./aspect-ratio";
 import { Badge } from "./badge";
 import { Button } from "./button";
 import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin } from "lucide-react";
@@ -162,7 +163,10 @@ export function PropertyCard({
           </Badge>
         </div>
         <div className="flex min-h-0 flex-1 flex-row">
-        <div className={cn("relative flex-shrink-0 overflow-hidden bg-muted", emphasized ? "w-32 sm:w-40" : "w-32")}>
+        <AspectRatio
+          ratio={1.05}
+          className={cn("relative overflow-hidden bg-muted flex-shrink-0", emphasized ? "w-32 sm:w-40" : "w-32")}
+        >
           {showVideoCover
             ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
             : coverImg
@@ -178,7 +182,7 @@ export function PropertyCard({
             {property.featured && <Badge className="rounded-full border-none bg-yellow-500 px-2 py-0.5 text-[9px] text-white">مميز</Badge>}
             {isNew() && <Badge className="rounded-full border-none bg-emerald-500 px-2 py-0.5 text-[9px] text-white">جديد</Badge>}
           </div>
-        </div>
+        </AspectRatio>
 
         <div className={cn(
           "flex min-w-0 flex-1 flex-col",
@@ -302,8 +306,7 @@ export function PropertyCard({
       )}
       <div className={cn(
          "relative overflow-hidden bg-muted flex-shrink-0",
-        listMode ? "w-32 min-h-[160px] sm:w-48 md:w-56" : imageHeight,
-        listMode && "sm:min-h-0 sm:self-stretch",
+        listMode ? "w-32 h-[160px] sm:w-48 sm:h-[180px] md:w-56 md:h-[200px] sm:self-start" : imageHeight,
       )}>
         {showVideoCover
           ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
