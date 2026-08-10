@@ -162,23 +162,23 @@ export function PropertyCard({
           </Badge>
         </div>
         <div className="flex min-h-0 flex-1 flex-row">
-          <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", emphasized ? "w-32 sm:w-40 h-44 sm:h-52" : "w-32 h-44")}>
-            {showVideoCover
-              ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
-              : coverImg
-                ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" className="w-full h-full object-cover" />
-                : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
-            <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
-              {propHasVideo && (
-                <span className="flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
-                  <Play className="h-2.5 w-2.5 fill-white" />فيديو
-                </span>
-              )}
-              {property.featured && <Badge className="rounded-full border-none bg-yellow-500 px-2 py-0.5 text-[9px] text-white">مميز</Badge>}
-              {isNew() && <Badge className="rounded-full border-none bg-emerald-500 px-2 py-0.5 text-[9px] text-white">جديد</Badge>}
-            </div>
+        <div className={cn("relative flex-shrink-0 overflow-hidden bg-muted", emphasized ? "w-32 sm:w-40" : "w-32")}>
+          {showVideoCover
+            ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
+            : coverImg
+              ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
+          <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
+            {propHasVideo && (
+              <span className="flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
+                <Play className="h-2.5 w-2.5 fill-white" />فيديو
+              </span>
+            )}
+            {property.featured && <Badge className="rounded-full border-none bg-yellow-500 px-2 py-0.5 text-[9px] text-white">مميز</Badge>}
+            {isNew() && <Badge className="rounded-full border-none bg-emerald-500 px-2 py-0.5 text-[9px] text-white">جديد</Badge>}
           </div>
+        </div>
 
         <div className={cn(
           "flex min-w-0 flex-1 flex-col",
@@ -261,15 +261,9 @@ export function PropertyCard({
     );
   }
 
-  const imageHeightClass = listMode
-    ? "w-32 h-44 sm:w-48 sm:h-52 md:w-56 md:h-56 sm:self-start"
-    : emphasized
-      ? "h-72 sm:h-80"
-      : size === "large"
-        ? "h-64 sm:h-72"
-        : size === "medium"
-          ? "h-52 sm:h-56"
-          : "h-44 sm:h-48";
+  const imageHeight = emphasized
+    ? size === "large" ? "aspect-[1.55] min-h-64" : size === "medium" ? "aspect-[1.55] min-h-48" : "aspect-[1.75] min-h-36"
+    : size === "large" ? "aspect-[1.55] min-h-52" : size === "medium" ? "aspect-[1.55] min-h-36" : "aspect-[1.75] min-h-28";
   const listMode = layout === "list";
 
   return (
@@ -308,7 +302,8 @@ export function PropertyCard({
       )}
       <div className={cn(
          "relative overflow-hidden bg-muted flex-shrink-0",
-        listMode ? imageHeightClass : imageHeightClass,
+        listMode ? "w-32 min-h-[160px] sm:w-48 md:w-56" : imageHeight,
+        listMode && "sm:min-h-0 sm:self-stretch",
       )}>
         {showVideoCover
           ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
