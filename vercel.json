@@ -1,7 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @workspace/alamoudi run build",
   "outputDirectory": "artifacts/alamoudi/dist",
-  "framework": "vite",
   "rewrites": [
     {
       "source": "/(.*)",
