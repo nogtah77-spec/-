@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { SEED_PROPERTIES } from "@/data/seedProperties";
+import { supabaseService } from "@/lib/supabaseService";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -765,6 +766,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
         });
       }
+
+      // Sync with Supabase cloud database
+      supabaseService.seedInitialPropertiesIfEmpty().then(() => {
+        supabaseService.fetchProperties().then(supabaseProps => {
+          if (destroyed) return;
+          if (supabaseProps && supabaseProps.length > 0) {
+            setProperties(mergeWithSeedProperties(supabaseProps));
+            writeCache({
+              regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
+              types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
+              properties: mergeWithSeedProperties(supabaseProps),
+              settings: cached?.settings ?? DEFAULT_SETTINGS,
+            });
+          }
+        });
+      }).catch(() => {});
     });
 
     return () => { destroyed = true; };
@@ -971,6 +988,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return updated;
     });
 
+    supabaseService.saveProperty(property).catch(() => {});
+
     try {
       await api.post("/properties", property);
       return true;
@@ -981,8 +1000,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProperty = async (id: string, p: Partial<Property>) => {
+    let updatedTarget: Property | null = null;
     setProperties(prev => {
-      const updated = prev.map(prop => prop.id === id ? { ...prop, ...p } : prop);
+      const updated = prev.map(prop => {
+        if (prop.id === id) {
+          updatedTarget = { ...prop, ...p };
+          return updatedTarget;
+        }
+        return prop;
+      });
       writeCache({
         regions,
         types: propertyTypes,
@@ -991,6 +1017,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
       return updated;
     });
+
+    if (updatedTarget) {
+      supabaseService.saveProperty(updatedTarget).catch(() => {});
+    }
 
     try {
       await api.patch(`/properties/${id}`, p);
@@ -1012,6 +1042,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
       return updated;
     });
+
+    supabaseService.deleteProperty(id).catch(() => {});
 
     try {
       await api.del(`/properties/${id}`);
