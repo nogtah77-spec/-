@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { SEED_PROPERTIES } from "@/data/seedProperties";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -538,6 +539,9 @@ function readCache(): CachePayload | null {
     const parsed: CachePayload = JSON.parse(raw);
     // نرفض بس الـ cache اللي عمره أكتر من 7 أيام
     if (Date.now() - parsed.ts > CACHE_HARD_TTL) return null;
+    if (!parsed.properties || parsed.properties.length === 0) {
+      parsed.properties = SEED_PROPERTIES;
+    }
     return parsed;
   } catch { return null; }
 }
@@ -558,7 +562,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const cached = readCache();
     return cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES;
   });
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<Property[]>(() => {
+    const cached = readCache();
+    return cached?.properties?.length ? cached.properties : SEED_PROPERTIES;
+  });
   const [users, setUsers] = useState<User[]>(DEFAULT_STAFF_USERS);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
@@ -702,7 +709,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (newTypes && newTypes.length > 0) setPropertyTypes(newTypes);
       else if (!cached?.types?.length) setPropertyTypes(DEFAULT_PROPERTY_TYPES);
 
-      if (newProps) setProperties(newProps);
+      if (newProps && newProps.length > 0) setProperties(newProps);
+      else if (!cached?.properties?.length) setProperties(SEED_PROPERTIES);
+
       if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] });
 
       const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
@@ -713,7 +722,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         writeCache({
           regions: (newRegions && newRegions.length > 0) ? newRegions : (cached?.regions?.length ? cached.regions : DEFAULT_REGIONS),
           types: (newTypes && newTypes.length > 0) ? newTypes : (cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES),
-          properties: newProps ?? cached?.properties ?? [],
+          properties: (newProps && newProps.length > 0) ? newProps : (cached?.properties?.length ? cached.properties : SEED_PROPERTIES),
           settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
         });
         void Promise.allSettled([
