@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Palette,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 
 export const REGION_OVERLAY_PRESETS = [
@@ -52,6 +54,7 @@ export function HeroImageAdjuster({
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number>(1);
   const [position, setPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const positionStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -99,6 +102,7 @@ export function HeroImageAdjuster({
   useEffect(() => {
     setScale(1);
     setPosition({ x: 0, y: 0 });
+    setFitMode("contain");
     setImageLoaded(false);
   }, [imageUrl]);
 
@@ -188,6 +192,18 @@ export function HeroImageAdjuster({
     setPosition({ x: 0, y: 0 });
   };
 
+  const switchToFit = () => {
+    setFitMode("contain");
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const switchToFill = () => {
+    setFitMode("cover");
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
   // Generate & export the cropped canvas image based on current frame
   const applyCrop = useCallback(() => {
     if (!containerRef.current || !imgRef.current || !naturalDimensions.width) return;
@@ -203,6 +219,10 @@ export function HeroImageAdjuster({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Fill background with overlay color / neutral dark
+    ctx.fillStyle = localOverlayColor || "#0f172a";
+    ctx.fillRect(0, 0, targetWidth, targetHeight);
+
     const containerRect = container.getBoundingClientRect();
     const cW = containerRect.width;
     const cH = containerRect.height;
@@ -212,28 +232,35 @@ export function HeroImageAdjuster({
     const nH = naturalDimensions.height;
     const nAspect = nW / nH;
 
-    // Calculate base rendered dimensions inside container before scale & transform
     let baseW: number;
     let baseH: number;
 
-    if (nAspect > cAspect) {
-      // Wider image: fits height to 100%, width overflows horizontally
-      baseH = cH;
-      baseW = cH * nAspect;
+    if (fitMode === "contain") {
+      // Fit whole image inside container without cropping any side
+      if (nAspect > cAspect) {
+        baseW = cW;
+        baseH = cW / nAspect;
+      } else {
+        baseH = cH;
+        baseW = cH * nAspect;
+      }
     } else {
-      // Taller image: fits width to 100%, height overflows vertically
-      baseW = cW;
-      baseH = cW / nAspect;
+      // Cover mode: fill container
+      if (nAspect > cAspect) {
+        baseH = cH;
+        baseW = cH * nAspect;
+      } else {
+        baseW = cW;
+        baseH = cW / nAspect;
+      }
     }
 
     const scaledW = baseW * scale;
     const scaledH = baseH * scale;
 
-    // Center offset inside container
     const offsetX = (cW - scaledW) / 2 + position.x;
     const offsetY = (cH - scaledH) / 2 + position.y;
 
-    // Map screen container coordinates back to high-res canvas (1600 x 600)
     const scaleRatio = targetWidth / cW;
 
     const canvasDrawX = offsetX * scaleRatio;
@@ -249,47 +276,73 @@ export function HeroImageAdjuster({
     } catch {
       onImageAdjusted(imageUrl);
     }
-  }, [aspectRatio, scale, position, onImageAdjusted, imageUrl, naturalDimensions]);
+  }, [aspectRatio, scale, position, onImageAdjusted, imageUrl, naturalDimensions, fitMode, localOverlayColor]);
 
-  // Debounced auto-sync whenever position or scale changes
+  // Debounced auto-sync whenever position, scale, or fitMode changes
   useEffect(() => {
     if (!imageLoaded) return;
     const timer = setTimeout(() => {
       applyCrop();
     }, 200);
     return () => clearTimeout(timer);
-  }, [position, scale, imageLoaded, applyCrop]);
+  }, [position, scale, imageLoaded, applyCrop, fitMode]);
 
   const cleanHex = localOverlayColor.replace(/^#/, "");
   const safeHex = /^[0-9a-f]{6}$/i.test(cleanHex) ? cleanHex : "000000";
 
-  // Determine if image is naturally wider or taller than container
-  const isWider =
-    naturalDimensions.width && naturalDimensions.height
-      ? naturalDimensions.width / naturalDimensions.height > aspectRatio
-      : true;
-
   return (
     <div className="space-y-4 rounded-xl border border-accent/30 bg-muted/20 p-4 shadow-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <Label className="flex items-center gap-1.5 text-xs font-bold text-foreground">
           <Move className="h-4 w-4 text-accent" />
           معاينة وتحريك غلاف المدينة بحرية (Pan & Zoom)
         </Label>
-        <span className="text-[11px] font-medium text-accent">
-          اسحب بالماوس أو الإصبع ✥
-        </span>
+
+        {/* Fit / Fill Mode Toggle Buttons */}
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            size="sm"
+            variant={fitMode === "contain" ? "default" : "outline"}
+            className={`h-7 gap-1 text-[11px] px-2.5 ${
+              fitMode === "contain"
+                ? "bg-accent text-accent-foreground font-bold"
+                : "border-border/70 text-muted-foreground"
+            }`}
+            onClick={switchToFit}
+            title="عرض الصورة كاملة من جميع الجهات بدون أي قص"
+          >
+            <Minimize2 className="h-3 w-3" />
+            الصورة كاملة (Fit)
+          </Button>
+
+          <Button
+            type="button"
+            size="sm"
+            variant={fitMode === "cover" ? "default" : "outline"}
+            className={`h-7 gap-1 text-[11px] px-2.5 ${
+              fitMode === "cover"
+                ? "bg-accent text-accent-foreground font-bold"
+                : "border-border/70 text-muted-foreground"
+            }`}
+            onClick={switchToFill}
+            title="تعبئة الإطار بالكامل"
+          >
+            <Maximize2 className="h-3 w-3" />
+            تعبئة الإطار (Fill)
+          </Button>
+        </div>
       </div>
 
-      {/* ── 1. Interactive Draggable Preview Viewport with Live Natural Overflow ── */}
+      {/* ── 1. Interactive Draggable Preview Viewport ── */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className="relative h-48 sm:h-52 w-full cursor-grab overflow-hidden rounded-xl border-2 border-accent/40 bg-slate-950 active:cursor-grabbing select-none shadow-inner"
+        className="relative h-48 sm:h-56 w-full cursor-grab overflow-hidden rounded-xl border-2 border-accent/40 bg-slate-950 active:cursor-grabbing select-none shadow-inner flex items-center justify-center"
         title="انقر واسحب لتحريك الصورة في أي اتجاه"
       >
-        {/* Moving / Zooming Image with Natural Proportions */}
+        {/* Moving / Zooming Image */}
         <img
           ref={(el) => {
             imgRef.current = el;
@@ -302,12 +355,11 @@ export function HeroImageAdjuster({
             position: "absolute",
             left: "50%",
             top: "50%",
-            width: isWider ? "auto" : "100%",
-            height: isWider ? "100%" : "auto",
-            minWidth: isWider ? "100%" : "auto",
-            minHeight: isWider ? "auto" : "100%",
-            maxWidth: "none",
-            maxHeight: "none",
+            maxWidth: fitMode === "contain" ? "100%" : "none",
+            maxHeight: fitMode === "contain" ? "100%" : "none",
+            width: fitMode === "contain" ? "auto" : undefined,
+            height: fitMode === "contain" ? "auto" : undefined,
+            objectFit: fitMode === "contain" ? "contain" : "cover",
             transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px)) scale(${scale})`,
             transformOrigin: "center center",
             transition: isDragging ? "none" : "transform 0.1s ease-out",
@@ -332,7 +384,7 @@ export function HeroImageAdjuster({
           }}
         />
 
-        {/* Rule of Thirds Guide Grid (Visible while dragging) */}
+        {/* Rule of Thirds Guide Grid */}
         <div className={`pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3 transition-opacity duration-200 ${isDragging ? "opacity-100" : "opacity-25"}`}>
           <div className="border-r border-b border-white/20" />
           <div className="border-r border-b border-white/20" />
@@ -370,7 +422,7 @@ export function HeroImageAdjuster({
             size="icon"
             variant="outline"
             className="h-7 w-7 shrink-0"
-            onClick={() => setScale((s) => Math.max(1, s - 0.1))}
+            onClick={() => setScale((s) => Math.max(0.3, Number((s - 0.1).toFixed(2))))}
             title="تصغير"
           >
             <ZoomOut className="h-3.5 w-3.5" />
@@ -384,7 +436,7 @@ export function HeroImageAdjuster({
             <Slider
               dir="ltr"
               value={[scale]}
-              min={1}
+              min={0.3}
               max={3}
               step={0.05}
               onValueChange={([val]) => setScale(val)}
@@ -397,7 +449,7 @@ export function HeroImageAdjuster({
             size="icon"
             variant="outline"
             className="h-7 w-7 shrink-0"
-            onClick={() => setScale((s) => Math.min(3, s + 0.1))}
+            onClick={() => setScale((s) => Math.min(3, Number((s + 0.1).toFixed(2))))}
             title="تكبير"
           >
             <ZoomIn className="h-3.5 w-3.5" />
@@ -435,7 +487,7 @@ export function HeroImageAdjuster({
         </div>
       </div>
 
-      {/* ── 3. Transferred Region Overlay Controls ── */}
+      {/* ── 3. Region Overlay Controls ── */}
       <div className="space-y-3.5 rounded-lg border border-accent/25 bg-card/80 p-3.5">
         <div className="flex items-center gap-2 border-b border-border/60 pb-2">
           <Palette className="h-4 w-4 text-accent" />

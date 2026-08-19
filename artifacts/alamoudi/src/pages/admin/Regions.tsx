@@ -152,18 +152,6 @@ export default function Regions() {
             }}
             regionName={newName}
           />
-          <div className="flex items-center justify-end">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
-              onClick={clearHeroImage}
-            >
-              <X className="h-3.5 w-3.5" />
-              إزالة الصورة
-            </Button>
-          </div>
         </div>
       ) : (
         <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed bg-muted/30 text-xs text-muted-foreground p-4 text-center">
@@ -181,15 +169,15 @@ export default function Regions() {
           {(rawHeroImage || heroImage).startsWith("data:") ? "استبدال الصورة المرفوعة" : "رفع صورة من جهازك"}
         </Button>
 
-        {editTarget && (rawHeroImage || heroImage) && (
+        {(rawHeroImage || heroImage) && (
           <Button
             type="button"
             variant="outline"
             className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
-            onClick={removeSavedHeroImage}
+            onClick={clearHeroImage}
           >
             <Trash2 className="h-4 w-4" />
-            حذف الغلاف
+            حذف صورة الغلاف
           </Button>
         )}
       </div>
