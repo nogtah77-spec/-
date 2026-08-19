@@ -9,6 +9,7 @@ import {
   Share2,
   FileText,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { Property } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -384,15 +385,17 @@ export function MortgageReportModal({
     </div>
   `;
 
-  // Direct PDF Download via Native SVG ForeignObject Render (100% Joined Arabic text)
+  // 100% Reliable Direct PDF Downloader via Live DOM Capture (html-to-image + jsPDF)
+  // NEVER opens print dialog!
   const handleDirectDownloadPDF = async () => {
     setDownloading(true);
     toast({
-      title: "جارٍ تحميل ملف PDF...",
-      description: "يتم إنشاء وتنزيل الملف مباشرة إلى جهازك",
+      title: "جارٍ تنزيل ملف PDF...",
+      description: "يتم تجهيز وحفظ الملف في مجلد التنزيلات على جهازك",
     });
 
     try {
+      // 1. Ensure jsPDF is loaded
       if (!(window as any).jspdf) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
@@ -403,46 +406,37 @@ export function MortgageReportModal({
         });
       }
 
-      const svgWidth = 800;
-      const svgHeight = 1130;
+      // 2. Ensure html-to-image is loaded
+      if (!(window as any).htmlToImage) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load html-to-image"));
+          document.head.appendChild(script);
+        });
+      }
 
-      const svgContent = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}">
-          <foreignObject width="100%" height="100%">
-            <div xmlns="http://www.w3.org/1999/xhtml" style="width: ${svgWidth}px; background: #ffffff; padding: 10px;">
-              <style>${getReportStyles()}</style>
-              ${getReportBodyHTML()}
-            </div>
-          </foreignObject>
-        </svg>
-      `;
+      const printableElement = document.getElementById("mortgage-report-printable-card");
+      if (!printableElement) {
+        throw new Error("Printable element not found in DOM");
+      }
 
-      const svgBlob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
-      const svgUrl = URL.createObjectURL(svgBlob);
-
-      const img = new Image();
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("SVG rasterization failed"));
-        img.src = svgUrl;
+      // 3. Generate high-resolution PNG directly from the live DOM node with native Arabic text
+      const imgDataUrl = await (window as any).htmlToImage.toPng(printableElement, {
+        quality: 0.98,
+        pixelRatio: 2.2,
+        backgroundColor: "#ffffff",
+        cacheBust: true,
       });
 
-      const canvas = document.createElement("canvas");
-      canvas.width = svgWidth * 2;
-      canvas.height = svgHeight * 2;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Could not create canvas context");
-
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(svgUrl);
-
+      // 4. Create A4 PDF and save directly
       const { jsPDF } = (window as any).jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdfWidth = 210;
+      const pdfHeight = 297;
 
-      pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+      pdf.addImage(imgDataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`تقرير-التمويل-العقاري-${reportId}.pdf`);
 
       toast({
@@ -450,14 +444,18 @@ export function MortgageReportModal({
         description: `تم حفظ الملف باسم: تقرير-التمويل-العقاري-${reportId}.pdf`,
       });
     } catch (err) {
-      console.warn("Direct SVG rasterization failed, opening print-to-pdf:", err);
-      handlePrint();
+      console.error("Direct PDF download failed:", err);
+      toast({
+        title: "حدث خطأ أثناء تنزيل الملف",
+        description: "يرجى المحاولة مرة أخرى أو استخدام زر طباعة التقرير",
+        variant: "destructive",
+      });
     } finally {
       setDownloading(false);
     }
   };
 
-  // Direct Print Handler
+  // Direct Print Handler - ONLY for the Print Button
   const handlePrint = () => {
     const fullHtml = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -570,18 +568,22 @@ export function MortgageReportModal({
             </div>
           </div>
 
-          {/* 2. In-App Report Canvas Preview */}
-          <div className="rounded-xl border border-[#B99A68]/40 bg-card p-4 sm:p-6 shadow-md space-y-5 text-foreground min-w-0">
+          {/* 2. In-App Report Canvas Preview (Live Capture Target) */}
+          <div
+            id="mortgage-report-printable-card"
+            className="rounded-xl border border-[#B99A68]/40 bg-white text-slate-900 p-4 sm:p-6 shadow-md space-y-5 min-w-0"
+            style={{ backgroundColor: "#ffffff", color: "#0f172a" }}
+          >
             {/* Header */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#B99A68] pb-4">
               <div>
-                <h3 className="text-xl sm:text-2xl font-black text-foreground">العمودي للتسويق العقاري</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-[#10202D]">العمودي للتسويق العقاري</h3>
                 <p className="text-xs font-bold text-[#B99A68] mt-0.5">
                   خطة التمويل وجدول سداد الأقساط المعتمدة
                 </p>
               </div>
-              <div className="text-left text-xs text-muted-foreground space-y-1">
-                <div className="inline-block bg-primary text-primary-foreground font-mono font-bold px-2 py-0.5 rounded text-[11px]">
+              <div className="text-left text-xs text-slate-500 space-y-1">
+                <div className="inline-block bg-[#10202D] text-white font-mono font-bold px-2 py-0.5 rounded text-[11px]">
                   {reportId}
                 </div>
                 <div><strong>تاريخ الإصدار:</strong> {issueDate}</div>
@@ -590,34 +592,34 @@ export function MortgageReportModal({
 
             {/* Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
                 <span className="font-bold text-[#B99A68] text-[11px] block">بيانات العميل والخطة</span>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">العميل:</span>
-                  <span className="font-bold">{clientName.trim() || "العميل الكريم"}</span>
+                  <span className="text-slate-500">العميل:</span>
+                  <span className="font-bold text-slate-900">{clientName.trim() || "العميل الكريم"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">البرنامج:</span>
-                  <span className="font-bold">{programName}</span>
+                  <span className="text-slate-500">البرنامج:</span>
+                  <span className="font-bold text-slate-900">{programName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">مدة السداد:</span>
-                  <span className="font-bold">{loanYears} سنوات ({totalMonths} قسطاً)</span>
+                  <span className="text-slate-500">مدة السداد:</span>
+                  <span className="font-bold text-slate-900">{loanYears} سنوات ({totalMonths} قسطاً)</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
                 <span className="font-bold text-[#B99A68] text-[11px] block">بيانات العقار</span>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">كود العقار:</span>
-                  <span className="font-bold">{selectedProperty?.code || "عقار مختار"}</span>
+                  <span className="text-slate-500">كود العقار:</span>
+                  <span className="font-bold text-slate-900">{selectedProperty?.code || "عقار مختار"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">نوع العقار:</span>
-                  <span className="font-bold">{selectedProperty?.title || "وحدة عقارية فاخرة"}</span>
+                  <span className="text-slate-500">نوع العقار:</span>
+                  <span className="font-bold text-slate-900">{selectedProperty?.title || "وحدة عقارية فاخرة"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">سعر العقار:</span>
+                  <span className="text-slate-500">سعر العقار:</span>
                   <span className="font-bold text-[#B99A68]">{propertyPrice.toLocaleString("ar-EG")} ج.م</span>
                 </div>
               </div>
@@ -658,10 +660,10 @@ export function MortgageReportModal({
 
             {/* Annual Breakdown Summary */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-foreground block">جدول الاستهلاك السنوي</span>
-              <div className="border rounded-lg overflow-x-auto text-xs w-full min-w-0">
+              <span className="text-xs font-bold text-slate-900 block">جدول الاستهلاك السنوي</span>
+              <div className="border border-slate-200 rounded-lg overflow-x-auto text-xs w-full min-w-0">
                 <table className="w-full text-right min-w-[480px]">
-                  <thead className="bg-muted/60 text-muted-foreground font-bold">
+                  <thead className="bg-slate-100 text-slate-700 font-bold">
                     <tr>
                       <th className="p-2">السنة</th>
                       <th className="p-2">المسدد سنوياً</th>
@@ -670,19 +672,19 @@ export function MortgageReportModal({
                       <th className="p-2 text-left">الرصيد المتبقي</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-slate-100">
                     {annualSchedule.slice(0, 5).map((row) => (
-                      <tr key={row.year} className="hover:bg-muted/20">
-                        <td className="p-2 font-bold">السنة {row.year}</td>
-                        <td className="p-2 font-bold">{row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
-                        <td className="p-2 text-emerald-600">{row.principalPaid.toLocaleString("ar-EG")} ج.م</td>
-                        <td className="p-2 text-amber-600">{row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("ar-EG")} ج.م` : "0 ج.م"}</td>
-                        <td className="p-2 font-mono text-left">{row.remainingBalance.toLocaleString("ar-EG")} ج.م</td>
+                      <tr key={row.year} className="hover:bg-slate-50">
+                        <td className="p-2 font-bold text-slate-900">السنة {row.year}</td>
+                        <td className="p-2 font-bold text-slate-900">{row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
+                        <td className="p-2 text-emerald-600 font-semibold">{row.principalPaid.toLocaleString("ar-EG")} ج.م</td>
+                        <td className="p-2 text-amber-600 font-semibold">{row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("ar-EG")} ج.م` : "0 ج.م"}</td>
+                        <td className="p-2 font-mono text-left text-slate-600">{row.remainingBalance.toLocaleString("ar-EG")} ج.م</td>
                       </tr>
                     ))}
                     {annualSchedule.length > 5 && (
                       <tr>
-                        <td colSpan={5} className="p-2 text-center text-xs text-muted-foreground bg-muted/10 italic">
+                        <td colSpan={5} className="p-2 text-center text-xs text-slate-500 bg-slate-50 italic">
                           ... متبقي {annualSchedule.length - 5} سنوات مدرجة بالكامل في مستند PDF النهائي
                         </td>
                       </tr>
@@ -690,6 +692,28 @@ export function MortgageReportModal({
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Notes & Signatures */}
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-900">
+              <strong>ملاحظات هامة:</strong> {customNotes}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2 text-center text-xs text-slate-600">
+              <div className="border border-dashed border-slate-300 rounded-lg p-3 min-h-[60px]">
+                <span className="font-bold block mb-4">اعتماد المستشار المالي / المدير التنفيذي</span>
+                <div className="border-t border-slate-400 w-2/3 mx-auto"></div>
+              </div>
+              <div className="border border-dashed border-slate-300 rounded-lg p-3 min-h-[60px]">
+                <span className="font-bold block mb-4">توقيع العميل / استلام نسخة العرض</span>
+                <div className="border-t border-slate-400 w-2/3 mx-auto"></div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-[10px] text-slate-500">
+              <span>العمودي للتسويق العقاري — منصة العقارات الفاخرة</span>
+              <span>الموقع: alamoudi-real-estate.vercel.app</span>
             </div>
           </div>
         </div>
