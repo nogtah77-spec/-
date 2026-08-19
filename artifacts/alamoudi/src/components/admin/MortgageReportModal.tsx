@@ -9,7 +9,6 @@ import {
   Share2,
   FileText,
   Loader2,
-  Sparkles,
 } from "lucide-react";
 import { Property } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -75,7 +74,7 @@ export function MortgageReportModal({
     day: "numeric",
   });
 
-  // Generate printable standalone HTML document with 100% native font rendering & RTL preservation
+  // Standalone Printable Document HTML
   const generatePrintableHTML = (isAutoPrint = false) => {
     return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -105,7 +104,6 @@ export function MortgageReportModal({
       font-size: 12px;
       direction: rtl;
       text-align: right;
-      unicode-bidi: embed;
     }
     .report-container {
       max-width: 820px;
@@ -498,24 +496,90 @@ export function MortgageReportModal({
 </html>`;
   };
 
-  // Direct PDF Export with perfect native Arabic text shaping
-  const handleDownloadPDF = async () => {
+  // Direct PDF Download directly to user's device via high-definition Canvas rasterizer & jsPDF
+  const handleDirectDownloadPDF = async () => {
     setDownloading(true);
     toast({
-      title: "جارٍ فتح مستند PDF الرسمي عالي الدقة...",
-      description: "اختر «حفظ بتنسيق PDF» لحفظ الملف فوراً بجودة فيكتور فائقة وبخطوط عربية متصلة 100%",
+      title: "جارٍ تحميل ملف PDF مباشرة إلى جهازك...",
+      description: "لحظات وسيتم حفظ الملف في مجلد التنزيلات (Downloads)",
     });
 
     try {
-      const htmlContent = generatePrintableHTML(true);
-      const printWindow = window.open("", "_blank", "width=900,height=1000");
-      if (printWindow) {
-        printWindow.document.open();
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
+      // 1. Ensure jsPDF is loaded
+      if (!(window as any).jspdf) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load PDF engine"));
+          document.head.appendChild(script);
+        });
       }
+
+      // 2. Render report in off-screen iframe to get exact browser-rasterized canvas
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0";
+      iframe.style.width = "820px";
+      iframe.style.height = "1200px";
+      iframe.style.border = "none";
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) throw new Error("Could not access iframe document");
+
+      doc.open();
+      doc.write(generatePrintableHTML(false));
+      doc.close();
+
+      // Wait for fonts & DOM to settle
+      await new Promise((r) => setTimeout(r, 600));
+
+      const reportElem = doc.querySelector(".report-container") as HTMLElement;
+      if (!reportElem) throw new Error("Report element not found");
+
+      // Load html2canvas if needed or use native SVG foreignObject drawing
+      if (!(window as any).html2canvas) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load html2canvas"));
+          document.head.appendChild(script);
+        });
+      }
+
+      const canvas = await (window as any).html2canvas(reportElem, {
+        scale: 2.2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      document.body.removeChild(iframe);
+
+      const { jsPDF } = (window as any).jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgData = canvas.toDataURL("image/jpeg", 0.96);
+
+      const pdfWidth = 210;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, Math.min(297, pdfHeight));
+      pdf.save(`تقرير-التمويل-العقاري-${reportId}.pdf`);
+
+      toast({
+        title: "تم حفظ ملف PDF بنجاح في جهازك ✓",
+        description: `اسم الملف: تقرير-التمويل-العقاري-${reportId}.pdf`,
+      });
     } catch (error) {
-      console.error("PDF generation failed:", error);
+      console.error("Direct PDF download failed, opening print view:", error);
+      toast({
+        title: "جاري حفظ التقرير كـ PDF عبر المتصفح...",
+        description: "اضغط حفظ كـ PDF للاحتفاظ بنسخة فورية",
+      });
+      handlePrint();
     } finally {
       setDownloading(false);
     }
@@ -567,7 +631,7 @@ export function MortgageReportModal({
                   معاينة وتخصيص تقرير التمويل الرسمي (PDF Report)
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  قالب طباعة ملكي A4 متوافق 100% مع الخطوط العربية المتصلة وبدون أي تشبيك مقلوب
+                  تقرير دراسة الجدوى والتمويل العقاري الرسمي — جاهز للتحميل والطباعة الفورية
                 </p>
               </div>
             </div>
@@ -747,19 +811,28 @@ export function MortgageReportModal({
             </Button>
 
             <Button
-              onClick={handleDownloadPDF}
+              onClick={handlePrint}
+              variant="outline"
+              className="border-border text-foreground font-bold gap-1.5 text-xs h-10 px-3.5"
+            >
+              <Printer className="h-4 w-4" />
+              طباعة التقرير
+            </Button>
+
+            <Button
+              onClick={handleDirectDownloadPDF}
               disabled={downloading}
               className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 text-xs sm:text-sm h-10 px-5 shadow-md"
             >
               {downloading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  جارٍ التجهيز...
+                  جارٍ تنزيل الملف...
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  تحميل / حفظ ملف PDF
+                  تحميل ملف PDF
                 </>
               )}
             </Button>
