@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Palette,
-  Eye,
 } from "lucide-react";
 
 export const REGION_OVERLAY_PRESETS = [
@@ -58,6 +57,10 @@ export function HeroImageAdjuster({
   const positionStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [naturalDimensions, setNaturalDimensions] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
 
   // Overlay states (local synced with props)
   const [localOverlayColor, setLocalOverlayColor] = useState(overlayColor);
@@ -98,6 +101,16 @@ export function HeroImageAdjuster({
     setPosition({ x: 0, y: 0 });
     setImageLoaded(false);
   }, [imageUrl]);
+
+  // Handle image natural dimensions when loaded
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    setNaturalDimensions({
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+    });
+    setImageLoaded(true);
+  };
 
   // Handle Mouse / Touch Dragging
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -177,12 +190,12 @@ export function HeroImageAdjuster({
 
   // Generate & export the cropped canvas image based on current frame
   const applyCrop = useCallback(() => {
-    if (!containerRef.current || !imgRef.current) return;
+    if (!containerRef.current || !imgRef.current || !naturalDimensions.width) return;
     const container = containerRef.current;
     const img = imgRef.current;
 
     const canvas = document.createElement("canvas");
-    const targetWidth = 1400;
+    const targetWidth = 1600;
     const targetHeight = Math.round(targetWidth / aspectRatio);
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -191,57 +204,70 @@ export function HeroImageAdjuster({
     if (!ctx) return;
 
     const containerRect = container.getBoundingClientRect();
-    const renderedWidth = containerRect.width;
-    const renderedHeight = containerRect.height;
+    const cW = containerRect.width;
+    const cH = containerRect.height;
+    const cAspect = cW / cH;
 
-    // Scale factors from screen preview to high-res canvas
-    const scaleRatio = targetWidth / renderedWidth;
+    const nW = naturalDimensions.width;
+    const nH = naturalDimensions.height;
+    const nAspect = nW / nH;
 
-    // Calculate natural cover dimensions
-    const imgAspect = img.naturalWidth / img.naturalHeight;
-    let baseDrawW = renderedWidth;
-    let baseDrawH = renderedHeight;
+    // Calculate base rendered dimensions inside container before scale & transform
+    let baseW: number;
+    let baseH: number;
 
-    if (imgAspect > aspectRatio) {
-      baseDrawH = renderedHeight;
-      baseDrawW = renderedHeight * imgAspect;
+    if (nAspect > cAspect) {
+      // Wider image: fits height to 100%, width overflows horizontally
+      baseH = cH;
+      baseW = cH * nAspect;
     } else {
-      baseDrawW = renderedWidth;
-      baseDrawH = renderedWidth / imgAspect;
+      // Taller image: fits width to 100%, height overflows vertically
+      baseW = cW;
+      baseH = cW / nAspect;
     }
 
-    const scaledDrawW = baseDrawW * scale;
-    const scaledDrawH = baseDrawH * scale;
+    const scaledW = baseW * scale;
+    const scaledH = baseH * scale;
 
-    const centerOffsetX = (renderedWidth - scaledDrawW) / 2;
-    const centerOffsetY = (renderedHeight - scaledDrawH) / 2;
+    // Center offset inside container
+    const offsetX = (cW - scaledW) / 2 + position.x;
+    const offsetY = (cH - scaledH) / 2 + position.y;
 
-    const finalDrawX = (centerOffsetX + position.x) * scaleRatio;
-    const finalDrawY = (centerOffsetY + position.y) * scaleRatio;
-    const finalDrawW = scaledDrawW * scaleRatio;
-    const finalDrawH = scaledDrawH * scaleRatio;
+    // Map screen container coordinates back to high-res canvas (1600 x 600)
+    const scaleRatio = targetWidth / cW;
 
-    ctx.drawImage(img, finalDrawX, finalDrawY, finalDrawW, finalDrawH);
+    const canvasDrawX = offsetX * scaleRatio;
+    const canvasDrawY = offsetY * scaleRatio;
+    const canvasDrawW = scaledW * scaleRatio;
+    const canvasDrawH = scaledH * scaleRatio;
+
+    ctx.drawImage(img, canvasDrawX, canvasDrawY, canvasDrawW, canvasDrawH);
 
     try {
-      const croppedUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const croppedUrl = canvas.toDataURL("image/jpeg", 0.92);
       onImageAdjusted(croppedUrl);
     } catch {
       onImageAdjusted(imageUrl);
     }
-  }, [aspectRatio, scale, position, onImageAdjusted, imageUrl]);
+  }, [aspectRatio, scale, position, onImageAdjusted, imageUrl, naturalDimensions]);
 
   // Debounced auto-sync whenever position or scale changes
   useEffect(() => {
     if (!imageLoaded) return;
     const timer = setTimeout(() => {
       applyCrop();
-    }, 250);
+    }, 200);
     return () => clearTimeout(timer);
   }, [position, scale, imageLoaded, applyCrop]);
 
   const cleanHex = localOverlayColor.replace(/^#/, "");
   const safeHex = /^[0-9a-f]{6}$/i.test(cleanHex) ? cleanHex : "000000";
+
+  // Determine if image is naturally wider or taller than container
+  const isWider =
+    naturalDimensions.width && naturalDimensions.height
+      ? naturalDimensions.width / naturalDimensions.height > aspectRatio
+      : true;
 
   return (
     <div className="space-y-4 rounded-xl border border-accent/30 bg-muted/20 p-4 shadow-sm">
@@ -255,15 +281,15 @@ export function HeroImageAdjuster({
         </span>
       </div>
 
-      {/* ── 1. Interactive Draggable Preview Viewport with Live Overlay ── */}
+      {/* ── 1. Interactive Draggable Preview Viewport with Live Natural Overflow ── */}
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
-        className="relative h-48 sm:h-52 w-full cursor-grab overflow-hidden rounded-xl border-2 border-accent/40 bg-black active:cursor-grabbing select-none shadow-inner"
+        className="relative h-48 sm:h-52 w-full cursor-grab overflow-hidden rounded-xl border-2 border-accent/40 bg-slate-950 active:cursor-grabbing select-none shadow-inner"
         title="انقر واسحب لتحريك الصورة في أي اتجاه"
       >
-        {/* Moving / Zooming Image */}
+        {/* Moving / Zooming Image with Natural Proportions */}
         <img
           ref={(el) => {
             imgRef.current = el;
@@ -271,13 +297,22 @@ export function HeroImageAdjuster({
           src={imageUrl}
           alt="غلاف المنطقة"
           crossOrigin="anonymous"
-          onLoad={() => setImageLoaded(true)}
+          onLoad={handleImageLoad}
           style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: isWider ? "auto" : "100%",
+            height: isWider ? "100%" : "auto",
+            minWidth: isWider ? "100%" : "auto",
+            minHeight: isWider ? "auto" : "100%",
+            maxWidth: "none",
+            maxHeight: "none",
+            transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px)) scale(${scale})`,
             transformOrigin: "center center",
             transition: isDragging ? "none" : "transform 0.1s ease-out",
           }}
-          className="pointer-events-none h-full w-full object-cover select-none"
+          className="pointer-events-none select-none"
         />
 
         {/* Live Base Color Overlay */}
@@ -323,7 +358,7 @@ export function HeroImageAdjuster({
         {/* Position coordinates pill */}
         <div className="pointer-events-none absolute bottom-2 right-2 rounded-md bg-black/70 px-2 py-0.5 text-[10px] text-white/90 backdrop-blur-sm border border-white/10 flex items-center gap-1">
           <Move className="h-2.5 w-2.5 text-accent" />
-          <span>X: {Math.round(position.x)} | Y: {Math.round(position.y)}</span>
+          <span>الموضع X: {Math.round(position.x)} | Y: {Math.round(position.y)}</span>
         </div>
       </div>
 
