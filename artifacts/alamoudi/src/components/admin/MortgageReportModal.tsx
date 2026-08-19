@@ -8,17 +8,11 @@ import {
   Download,
   Share2,
   FileText,
-  Building2,
-  Calendar,
+  Loader2,
   CheckCircle2,
-  Sparkles,
-  Phone,
-  Mail,
-  Globe,
-  MapPin,
-  X,
 } from "lucide-react";
 import { Property } from "@/context/DataContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnnualRow {
   year: number;
@@ -63,11 +57,13 @@ export function MortgageReportModal({
   annualSchedule,
   selectedProperty,
 }: MortgageReportModalProps) {
+  const { toast } = useToast();
   const [clientName, setClientName] = useState<string>("");
   const [advisorName, setAdvisorName] = useState<string>("إدارة الاستشارات والتمويل العقاري");
   const [customNotes, setCustomNotes] = useState<string>(
-    "هذا التقرير بمثابة عرض مالي استرشادي، وتخضع الشروط النهائية لموافقة الجهة الممولة والتقييم الائتماني."
+    "هذا التقرير بمثابة دراسة مالية استرشادية، وتخضع الشروط النهائية لموافقة الجهة الممولة والتقييم الائتماني."
   );
+  const [downloading, setDownloading] = useState<boolean>(false);
 
   const reportId = React.useMemo(() => {
     return `ALM-MORT-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -80,7 +76,7 @@ export function MortgageReportModal({
   });
 
   // Generate printable standalone HTML document for high-res PDF export & printing
-  const generatePrintableHTML = () => {
+  const generatePrintableHTML = (isAutoPrint = false) => {
     return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -99,14 +95,14 @@ export function MortgageReportModal({
     }
     @page {
       size: A4 portrait;
-      margin: 12mm 15mm;
+      margin: 10mm 12mm;
     }
     body {
       font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
       background-color: #ffffff;
       color: #0f172a;
-      line-height: 1.5;
-      font-size: 13px;
+      line-height: 1.45;
+      font-size: 12.5px;
       direction: rtl;
     }
     .report-container {
@@ -115,7 +111,7 @@ export function MortgageReportModal({
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 24px 28px;
+      padding: 22px 26px;
     }
     @media print {
       body {
@@ -136,24 +132,24 @@ export function MortgageReportModal({
       justify-content: space-between;
       align-items: center;
       border-bottom: 2px solid #b99a68;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
     }
     .brand-title {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 900;
       color: #10202d;
       letter-spacing: -0.5px;
     }
     .brand-subtitle {
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11.5px;
+      font-weight: 700;
       color: #b99a68;
       margin-top: 2px;
     }
     .meta-box {
       text-align: left;
-      font-size: 11px;
+      font-size: 10.5px;
       color: #475569;
     }
     .meta-badge {
@@ -171,13 +167,13 @@ export function MortgageReportModal({
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .info-card {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 10px 12px;
     }
     .info-card-title {
       font-size: 11px;
@@ -190,7 +186,7 @@ export function MortgageReportModal({
       display: flex;
       justify-content: space-between;
       margin-bottom: 4px;
-      font-size: 12px;
+      font-size: 11.5px;
     }
     .info-label {
       color: #64748b;
@@ -204,76 +200,73 @@ export function MortgageReportModal({
       background: linear-gradient(135deg, #10202d 0%, #1a3348 100%);
       color: #ffffff;
       border-radius: 10px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
+      padding: 14px 18px;
+      margin-bottom: 16px;
       border: 1px solid #b99a68;
     }
     .summary-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       color: #d8be92;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       text-align: center;
     }
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      gap: 10px;
       text-align: center;
     }
     .metric-item {
       background: rgba(255, 255, 255, 0.07);
       border: 1px solid rgba(185, 154, 104, 0.3);
       border-radius: 8px;
-      padding: 10px 8px;
+      padding: 8px 6px;
     }
     .metric-label {
-      font-size: 11px;
+      font-size: 10px;
       color: #cbd5e1;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .metric-val {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
       color: #ffffff;
     }
     .metric-val.gold {
       color: #f1dfbc;
-      font-size: 18px;
+      font-size: 16px;
     }
     .metric-sub {
-      font-size: 10px;
+      font-size: 9.5px;
       color: #94a3b8;
       margin-top: 2px;
     }
     /* Table */
     .table-container {
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .section-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       color: #10202d;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      margin-bottom: 6px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11.5px;
+      font-size: 11px;
     }
     th {
       background: #f1f5f9;
       color: #1e293b;
       font-weight: 700;
-      padding: 8px 10px;
+      padding: 6px 8px;
       text-align: right;
       border-bottom: 2px solid #cbd5e1;
     }
     td {
-      padding: 7px 10px;
+      padding: 5.5px 8px;
       border-bottom: 1px solid #f1f5f9;
       color: #334155;
     }
@@ -281,7 +274,6 @@ export function MortgageReportModal({
       background: #fafafa;
     }
     .num {
-      font-family: inherit;
       font-weight: 700;
     }
     .green {
@@ -295,30 +287,30 @@ export function MortgageReportModal({
       background: #fffbeb;
       border: 1px solid #fde68a;
       border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 11px;
+      padding: 8px 12px;
+      font-size: 10.5px;
       color: #92400e;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .signatures {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
-      margin-bottom: 20px;
-      padding-top: 10px;
+      margin-bottom: 16px;
+      padding-top: 6px;
     }
     .sig-box {
       border: 1px dashed #cbd5e1;
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px;
       text-align: center;
-      min-height: 75px;
+      min-height: 65px;
     }
     .sig-title {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       color: #475569;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
     }
     .sig-line {
       border-top: 1px solid #94a3b8;
@@ -328,16 +320,16 @@ export function MortgageReportModal({
     /* Footer */
     .footer {
       border-top: 1px solid #e2e8f0;
-      padding-top: 12px;
+      padding-top: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 10px;
+      font-size: 9.5px;
       color: #64748b;
     }
     .contact-items {
       display: flex;
-      gap: 14px;
+      gap: 12px;
     }
   </style>
 </head>
@@ -405,25 +397,25 @@ export function MortgageReportModal({
       <div class="metrics-grid">
         <div class="metric-item">
           <div class="metric-label">القسط الشهري</div>
-          <div class="metric-val gold">${monthlyInstallment.toLocaleString("ar-EG")} <small style="font-size:10px;">ج.م</small></div>
+          <div class="metric-val gold">${monthlyInstallment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
           <div class="metric-sub">ثابت على ${totalMonths} شهر</div>
         </div>
 
         <div class="metric-item">
           <div class="metric-label">الدفعة الأولى (المقدم)</div>
-          <div class="metric-val">${downPaymentAmount.toLocaleString("ar-EG")} <small style="font-size:10px;">ج.م</small></div>
+          <div class="metric-val">${downPaymentAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
           <div class="metric-sub">بنسبة ${downPaymentPercent}%</div>
         </div>
 
         <div class="metric-item">
           <div class="metric-label">المبلغ الممول</div>
-          <div class="metric-val">${loanAmount.toLocaleString("ar-EG")} <small style="font-size:10px;">ج.م</small></div>
+          <div class="metric-val">${loanAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
           <div class="metric-sub">أصل التمويل العقاري</div>
         </div>
 
         <div class="metric-item">
           <div class="metric-label">إجمالي المبلغ المسدد</div>
-          <div class="metric-val">${totalPayment.toLocaleString("ar-EG")} <small style="font-size:10px;">ج.م</small></div>
+          <div class="metric-val">${totalPayment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
           <div class="metric-sub">${totalInterest > 0 ? `شاملاً ${totalInterest.toLocaleString("ar-EG")} ج.م فوائد` : "بدون أي فوائد إضافية"}</div>
         </div>
       </div>
@@ -488,19 +480,74 @@ export function MortgageReportModal({
     </div>
   </div>
 
-  <script>
+  ${
+    isAutoPrint
+      ? `<script>
     window.onload = function() {
       setTimeout(function() {
         window.print();
       }, 400);
     };
-  </script>
+  </script>`
+      : ""
+  }
 </body>
 </html>`;
   };
 
-  const handlePrintOrDownload = () => {
-    const htmlContent = generatePrintableHTML();
+  // Direct PDF File Download Handler
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    toast({ title: "جارٍ تجهيز وتحميل ملف PDF...", description: "لحظات وسيتم حفظ الملف على جهازك" });
+
+    try {
+      // Check if html2pdf is available on window, if not load dynamically
+      if (!(window as any).html2pdf) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error("Failed to load PDF library"));
+          document.head.appendChild(script);
+        });
+      }
+
+      const rawHTML = generatePrintableHTML(false);
+      const tempContainer = document.createElement("div");
+      tempContainer.style.position = "fixed";
+      tempContainer.style.left = "-9999px";
+      tempContainer.style.top = "0";
+      tempContainer.style.width = "800px";
+      tempContainer.style.background = "#ffffff";
+      tempContainer.innerHTML = rawHTML;
+      document.body.appendChild(tempContainer);
+
+      const target = tempContainer.querySelector(".report-container") || tempContainer;
+
+      const opt = {
+        margin: [6, 8, 6, 8],
+        filename: `تقرير-التمويل-العقاري-${reportId}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      await (window as any).html2pdf().set(opt).from(target).save();
+      document.body.removeChild(tempContainer);
+
+      toast({ title: "تم تحميل ملف الـ PDF بنجاح ✓", description: `تم حفظ الملف باسم: تقرير-التمويل-العقاري-${reportId}.pdf` });
+    } catch (error) {
+      console.error("PDF generation failed, falling back to print dialog:", error);
+      toast({ title: "يتم فتح نافذة الحفظ كـ PDF الآن...", variant: "default" });
+      handlePrint();
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // Direct Print Handler
+  const handlePrint = () => {
+    const htmlContent = generatePrintableHTML(true);
     const printWindow = window.open("", "_blank", "width=900,height=1000");
     if (printWindow) {
       printWindow.document.open();
@@ -509,6 +556,7 @@ export function MortgageReportModal({
     }
   };
 
+  // WhatsApp Share Handler
   const handleShareWhatsApp = () => {
     const text =
       `*تقرير دراسة التمويل والأقساط العقارية* 🏢\n` +
@@ -531,8 +579,8 @@ export function MortgageReportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border-accent/40">
-        <DialogHeader className="p-5 border-b bg-muted/30">
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-0 border-accent/40 w-full min-w-0">
+        <DialogHeader className="p-4 sm:p-5 border-b bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#B99A68]/20 text-[#B99A68] flex items-center justify-center font-bold">
@@ -543,16 +591,16 @@ export function MortgageReportModal({
                   معاينة وتخصيص تقرير التمويل الرسمي (PDF Report)
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  قالب طباعة ملكي جاهز للتصدير كملف PDF عالي الدقة أو الطباعة المباشرة
+                  قالب طباعة ملكي جاهز للتحميل كملف PDF على جهازك أو الطباعة المباشرة
                 </p>
               </div>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="p-5 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 min-w-0">
           {/* 1. Customization Controls */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/40 p-4 rounded-xl border border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-muted/40 p-4 rounded-xl border border-border">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-foreground">اسم العميل (اختياري للتقرير):</Label>
               <Input
@@ -584,12 +632,12 @@ export function MortgageReportModal({
             </div>
           </div>
 
-          {/* 2. Interactive In-App Report Canvas Preview */}
-          <div className="rounded-xl border border-[#B99A68]/40 bg-card p-6 shadow-md space-y-6 text-foreground">
+          {/* 2. In-App Report Canvas Preview */}
+          <div className="rounded-xl border border-[#B99A68]/40 bg-card p-4 sm:p-6 shadow-md space-y-5 text-foreground min-w-0">
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-[#B99A68] pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#B99A68] pb-4">
               <div>
-                <h3 className="text-2xl font-black text-foreground">العمودي للتسويق العقاري</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-foreground">العمودي للتسويق العقاري</h3>
                 <p className="text-xs font-bold text-[#B99A68] mt-0.5">
                   خطة التمويل وجدول سداد الأقساط المعتمدة
                 </p>
@@ -603,8 +651,8 @@ export function MortgageReportModal({
             </div>
 
             {/* Info Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
                 <span className="font-bold text-[#B99A68] text-[11px] block">بيانات العميل والخطة</span>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">العميل:</span>
@@ -620,7 +668,7 @@ export function MortgageReportModal({
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-muted/40 border border-border space-y-2">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border space-y-2">
                 <span className="font-bold text-[#B99A68] text-[11px] block">بيانات العقار</span>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">كود العقار:</span>
@@ -628,7 +676,7 @@ export function MortgageReportModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">نوع العقار:</span>
-                  <span className="font-bold">{selectedProperty?.title || "شقة فاخرة"}</span>
+                  <span className="font-bold">{selectedProperty?.title || "وحدة عقارية فاخرة"}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">سعر العقار:</span>
@@ -638,33 +686,33 @@ export function MortgageReportModal({
             </div>
 
             {/* Golden Summary KPIs */}
-            <div className="rounded-xl bg-gradient-to-r from-[#10202D] via-[#1A3348] to-[#10202D] p-4 text-white border border-[#B99A68]/60">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div className="p-2.5 rounded-lg bg-white/5 border border-[#B99A68]/30">
-                  <span className="text-[11px] text-white/70 block">القسط الشهري</span>
-                  <span className="text-lg font-black text-[#F1DFBC] block mt-0.5">
-                    {monthlyInstallment.toLocaleString("ar-EG")} <small className="text-[10px]">ج.م</small>
+            <div className="rounded-xl bg-gradient-to-r from-[#10202D] via-[#1A3348] to-[#10202D] p-3.5 sm:p-4 text-white border border-[#B99A68]/60">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-[#B99A68]/30">
+                  <span className="text-[10px] sm:text-[11px] text-white/70 block">القسط الشهري</span>
+                  <span className="text-base sm:text-lg font-black text-[#F1DFBC] block mt-0.5">
+                    {monthlyInstallment.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-[11px] text-white/70 block">المقدم ({downPaymentPercent}%)</span>
-                  <span className="text-base font-black text-white block mt-0.5">
-                    {downPaymentAmount.toLocaleString("ar-EG")} <small className="text-[10px]">ج.م</small>
+                <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
+                  <span className="text-[10px] sm:text-[11px] text-white/70 block">المقدم ({downPaymentPercent}%)</span>
+                  <span className="text-sm sm:text-base font-black text-white block mt-0.5">
+                    {downPaymentAmount.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-[11px] text-white/70 block">المبلغ الممول</span>
-                  <span className="text-base font-black text-white block mt-0.5">
-                    {loanAmount.toLocaleString("ar-EG")} <small className="text-[10px]">ج.م</small>
+                <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
+                  <span className="text-[10px] sm:text-[11px] text-white/70 block">المبلغ الممول</span>
+                  <span className="text-sm sm:text-base font-black text-white block mt-0.5">
+                    {loanAmount.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-[11px] text-white/70 block">إجمالي المسدد</span>
-                  <span className="text-base font-black text-white block mt-0.5">
-                    {totalPayment.toLocaleString("ar-EG")} <small className="text-[10px]">ج.م</small>
+                <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
+                  <span className="text-[10px] sm:text-[11px] text-white/70 block">إجمالي المسدد</span>
+                  <span className="text-sm sm:text-base font-black text-white block mt-0.5">
+                    {totalPayment.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
               </div>
@@ -673,8 +721,8 @@ export function MortgageReportModal({
             {/* Annual Breakdown Summary */}
             <div className="space-y-2">
               <span className="text-xs font-bold text-foreground block">جدول الاستهلاك السنوي</span>
-              <div className="border rounded-lg overflow-hidden text-xs">
-                <table className="w-full text-right">
+              <div className="border rounded-lg overflow-x-auto text-xs w-full min-w-0">
+                <table className="w-full text-right min-w-[480px]">
                   <thead className="bg-muted/60 text-muted-foreground font-bold">
                     <tr>
                       <th className="p-2">السنة</th>
@@ -708,26 +756,45 @@ export function MortgageReportModal({
           </div>
         </div>
 
-        <DialogFooter className="p-4 border-t bg-muted/20 flex flex-wrap items-center justify-between gap-3">
+        <DialogFooter className="p-4 border-t bg-muted/20 flex flex-wrap items-center justify-between gap-2.5">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             إغلاق
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               onClick={handleShareWhatsApp}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 text-xs h-10 px-4"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 text-xs h-10 px-3.5"
             >
               <Share2 className="h-4 w-4" />
-              مشاركة ملخص عبر الواتساب
+              مشاركة واتساب
             </Button>
 
             <Button
-              onClick={handlePrintOrDownload}
+              onClick={handlePrint}
+              variant="outline"
+              className="border-border text-foreground font-bold gap-1.5 text-xs h-10 px-3.5"
+            >
+              <Printer className="h-4 w-4" />
+              طباعة التقرير
+            </Button>
+
+            <Button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
               className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 text-xs sm:text-sm h-10 px-5 shadow-md"
             >
-              <Download className="h-4 w-4" />
-              تحميل التقرير PDF / طباعة
+              {downloading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  جارٍ التنزيل...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  تحميل ملف PDF
+                </>
+              )}
             </Button>
           </div>
         </DialogFooter>

@@ -169,7 +169,7 @@ export default function MortgageCalculatorPage() {
 
   return (
     <AdminLayout>
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6" dir="rtl">
+      <div className="w-full max-w-7xl mx-auto space-y-6 min-w-0" dir="rtl">
         <AdminPageHeader
           title="حاسبة التمويل العقاري والأقساط (Mortgage Calculator)"
           subtitle="حساب الأقساط الشهرية، جدول السداد، نسب الفائدة، ومقارنة خطط التمويل المباشر والبنكي للعملاء"
