@@ -522,6 +522,21 @@ export const DEFAULT_STAFF_USERS: User[] = [
   { id: "staff-4", name: "أحمد سليم", email: "ahmed@alamoudi.com", username: "ahmed", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
 ];
 
+function mergeWithSeedProperties(cachedList: Property[] = []): Property[] {
+  const map = new Map<string, Property>();
+  for (const p of SEED_PROPERTIES) {
+    if (p && (p.id || p.code)) {
+      map.set(p.id || p.code, p);
+    }
+  }
+  for (const p of cachedList) {
+    if (p && (p.id || p.code)) {
+      map.set(p.id || p.code, p);
+    }
+  }
+  return Array.from(map.values());
+}
+
 function readCache(): CachePayload | null {
   try {
     // حاول تقرأ الـ v4 أول
@@ -539,9 +554,7 @@ function readCache(): CachePayload | null {
     const parsed: CachePayload = JSON.parse(raw);
     // نرفض بس الـ cache اللي عمره أكتر من 7 أيام
     if (Date.now() - parsed.ts > CACHE_HARD_TTL) return null;
-    if (!parsed.properties || parsed.properties.length === 0) {
-      parsed.properties = SEED_PROPERTIES;
-    }
+    parsed.properties = mergeWithSeedProperties(parsed.properties || []);
     return parsed;
   } catch { return null; }
 }
@@ -564,7 +577,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [properties, setProperties] = useState<Property[]>(() => {
     const cached = readCache();
-    return cached?.properties?.length ? cached.properties : SEED_PROPERTIES;
+    return mergeWithSeedProperties(cached?.properties || []);
   });
   const [users, setUsers] = useState<User[]>(DEFAULT_STAFF_USERS);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
@@ -710,7 +723,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       else if (!cached?.types?.length) setPropertyTypes(DEFAULT_PROPERTY_TYPES);
 
       if (newProps && newProps.length > 0) setProperties(newProps);
-      else if (!cached?.properties?.length) setProperties(SEED_PROPERTIES);
+      else setProperties(mergeWithSeedProperties(cached?.properties));
 
       if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] });
 
@@ -722,7 +735,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         writeCache({
           regions: (newRegions && newRegions.length > 0) ? newRegions : (cached?.regions?.length ? cached.regions : DEFAULT_REGIONS),
           types: (newTypes && newTypes.length > 0) ? newTypes : (cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES),
-          properties: (newProps && newProps.length > 0) ? newProps : (cached?.properties?.length ? cached.properties : SEED_PROPERTIES),
+          properties: (newProps && newProps.length > 0) ? newProps : mergeWithSeedProperties(cached?.properties),
           settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
         });
         void Promise.allSettled([
