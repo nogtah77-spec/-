@@ -1,4 +1,4 @@
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useData, Region } from "@/context/DataContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,28 @@ import { Label } from "@/components/ui/label";
 import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon, Upload, X, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { HeroImageAdjuster } from "@/components/admin/HeroImageAdjuster";
 
 export default function Regions() {
-  const { regions, addRegion, updateRegion, deleteRegion, toggleRegion } = useData();
+  const { regions, addRegion, updateRegion, deleteRegion, toggleRegion, settings, updateSettings } = useData();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editTarget, setEditTarget] = useState<Region | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Region | null>(null);
   const [newName, setNewName] = useState("");
   const [heroImage, setHeroImage] = useState("");
+  const [rawHeroImage, setRawHeroImage] = useState("");
+  const [overlayColor, setOverlayColor] = useState(settings.regionHeroOverlayColor || "#000000");
+  const [overlayOpacity, setOverlayOpacity] = useState(settings.regionHeroOverlayOpacity ?? 25);
+  const [gradientOpacity, setGradientOpacity] = useState(settings.regionHeroGradientOpacity ?? 60);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (settings.regionHeroOverlayColor) setOverlayColor(settings.regionHeroOverlayColor);
+    if (settings.regionHeroOverlayOpacity !== undefined) setOverlayOpacity(settings.regionHeroOverlayOpacity);
+    if (settings.regionHeroGradientOpacity !== undefined) setGradientOpacity(settings.regionHeroGradientOpacity);
+  }, [settings]);
 
   const handleAdd = async () => {
     if (!newName.trim()) return;
@@ -28,10 +39,16 @@ export default function Regions() {
     try {
       const saved = await addRegion(newName.trim(), heroImage.trim());
       if (!saved) return;
+      await updateSettings({
+        regionHeroOverlayColor: overlayColor,
+        regionHeroOverlayOpacity: overlayOpacity,
+        regionHeroGradientOpacity: gradientOpacity,
+      }).catch(() => {});
       setNewName("");
       setHeroImage("");
+      setRawHeroImage("");
       setShowAddDialog(false);
-      toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+      toast({ title: "تم بنجاح", description: "تمت إضافة المنطقة وإعدادات الغلاف بنجاح" });
     } finally {
       setSaving(false);
     }
@@ -43,10 +60,16 @@ export default function Regions() {
     try {
       const saved = await updateRegion(editTarget.id, newName.trim(), heroImage.trim());
       if (!saved) return;
+      await updateSettings({
+        regionHeroOverlayColor: overlayColor,
+        regionHeroOverlayOpacity: overlayOpacity,
+        regionHeroGradientOpacity: gradientOpacity,
+      }).catch(() => {});
       setEditTarget(null);
       setNewName("");
       setHeroImage("");
-      toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+      setRawHeroImage("");
+      toast({ title: "تم بنجاح", description: "تم تحديث المنطقة وإعدادات الغلاف بنجاح" });
     } finally {
       setSaving(false);
     }
@@ -57,19 +80,20 @@ export default function Regions() {
     const deleted = await deleteRegion(deleteTarget.id);
     if (!deleted) return;
     setDeleteTarget(null);
-    toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+    toast({ title: "تم بنجاح", description: "تم حذف المنطقة بنجاح" });
   };
 
   const handleToggle = async (id: string) => {
     const toggled = await toggleRegion(id);
     if (!toggled) return;
-    toast({ title: "تم بنجاح", description: "تمت العملية بنجاح" });
+    toast({ title: "تم بنجاح", description: "تم تعديل حالة المنطقة بنجاح" });
   };
 
   const openEdit = (r: Region) => {
     setEditTarget(r);
     setNewName(r.name);
     setHeroImage(r.heroImage ?? "");
+    setRawHeroImage(r.heroImage ?? "");
   };
 
   const handleHeroFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -80,20 +104,28 @@ export default function Regions() {
       toast({ title: "ملف غير صالح", description: "اختر ملف صورة فقط.", variant: "destructive" });
       return;
     }
-    if (file.size > 4 * 1024 * 1024) {
-      toast({ title: "الصورة كبيرة جدًا", description: "يجب ألا يتجاوز حجم الصورة 4 ميجابايت.", variant: "destructive" });
+    if (file.size > 8 * 1024 * 1024) {
+      toast({ title: "الصورة كبيرة جدًا", description: "يجب ألا يتجاوز حجم الصورة 8 ميجابايت.", variant: "destructive" });
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setHeroImage(String(reader.result ?? ""));
+    reader.onload = () => {
+      const result = String(reader.result ?? "");
+      setRawHeroImage(result);
+      setHeroImage(result);
+    };
     reader.onerror = () => toast({ title: "تعذر قراءة الصورة", description: "حاول اختيار الصورة مرة أخرى.", variant: "destructive" });
     reader.readAsDataURL(file);
   };
 
-  const clearHeroImage = () => setHeroImage("");
+  const clearHeroImage = () => {
+    setHeroImage("");
+    setRawHeroImage("");
+  };
 
   const removeSavedHeroImage = () => {
     setHeroImage("");
+    setRawHeroImage("");
     toast({
       title: "تمت إزالة الصورة من التعديل",
       description: "اضغط «حفظ» لتأكيد حذف صورة الغلاف من المنطقة.",
@@ -102,49 +134,78 @@ export default function Regions() {
 
   const renderHeroEditor = () => (
     <div className="space-y-3">
-      <Label>صورة غلاف المدينة</Label>
-      {heroImage ? (
-        <div className="relative h-32 overflow-hidden rounded-lg border bg-muted">
-          <img src={heroImage} alt="معاينة غلاف المدينة" className="h-full w-full object-cover" />
-          <Button
-            type="button"
-            size="icon"
-            variant="destructive"
-            className="absolute left-2 top-2 h-8 w-8"
-            onClick={clearHeroImage}
-            aria-label="إزالة صورة الغلاف"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+      <Label className="text-sm font-bold">صورة غلاف المدينة والموقع</Label>
+
+      {/* Interactive Hero Image Adjuster & Overlay Controller */}
+      {rawHeroImage || heroImage ? (
+        <div className="space-y-2">
+          <HeroImageAdjuster
+            imageUrl={rawHeroImage || heroImage}
+            onImageAdjusted={(adjusted) => setHeroImage(adjusted)}
+            overlayColor={overlayColor}
+            overlayOpacity={overlayOpacity}
+            gradientOpacity={gradientOpacity}
+            onOverlayChange={(ov) => {
+              setOverlayColor(ov.color);
+              setOverlayOpacity(ov.overlayOpacity);
+              setGradientOpacity(ov.gradientOpacity);
+            }}
+            regionName={newName}
+          />
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
+              onClick={clearHeroImage}
+            >
+              <X className="h-3.5 w-3.5" />
+              إزالة الصورة
+            </Button>
+          </div>
         </div>
       ) : (
-        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed bg-muted/40 text-xs text-muted-foreground">
-          لا توجد صورة غلاف
+        <div className="flex h-28 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed bg-muted/30 text-xs text-muted-foreground p-4 text-center">
+          <ImageIcon className="h-7 w-7 text-muted-foreground/50" />
+          <span>لا توجد صورة غلاف مرفوعة حالياً</span>
+          <span className="text-[10px] text-muted-foreground/70">ارفع صورة لتتمكن من تحريكها وضبط المعاينة والشفافية بحرية</span>
         </div>
       )}
+
       <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleHeroFile} className="hidden" />
-      <Button type="button" variant="outline" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}>
-        <Upload className="h-4 w-4" />
-        {heroImage.startsWith("data:") ? "تغيير الصورة المرفوعة" : "رفع صورة من الجهاز"}
-      </Button>
-      {editTarget && heroImage && (
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
-          onClick={removeSavedHeroImage}
-        >
-          <Trash2 className="h-4 w-4" />
-          حذف صورة الغلاف الحالية
+      
+      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+        <Button type="button" variant="outline" className="flex-1 gap-2 border-accent/40 hover:bg-accent/10" onClick={() => fileInputRef.current?.click()}>
+          <Upload className="h-4 w-4 text-accent" />
+          {(rawHeroImage || heroImage).startsWith("data:") ? "استبدال الصورة المرفوعة" : "رفع صورة من جهازك"}
         </Button>
-      )}
-      <p className="text-[11px] text-muted-foreground">PNG أو JPG أو WEBP — بحد أقصى 4 ميجابايت.</p>
-      <div className="space-y-2">
-        <Label htmlFor="regionHeroUrl">أو رابط صورة الغلاف</Label>
+
+        {editTarget && (rawHeroImage || heroImage) && (
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+            onClick={removeSavedHeroImage}
+          >
+            <Trash2 className="h-4 w-4" />
+            حذف الغلاف
+          </Button>
+        )}
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">صيغ PNG أو JPG أو WEBP — بحد أقصى 8 ميجابايت.</p>
+
+      <div className="space-y-1.5 pt-1">
+        <Label htmlFor="regionHeroUrl" className="text-xs">أو أدخل رابط صورة خارجي</Label>
         <Input
           id="regionHeroUrl"
-          value={heroImage.startsWith("data:") ? "" : heroImage}
-          onChange={(event) => setHeroImage(event.target.value)}
+          value={(rawHeroImage || heroImage).startsWith("data:") ? "" : (rawHeroImage || heroImage)}
+          onChange={(event) => {
+            const val = event.target.value;
+            setRawHeroImage(val);
+            setHeroImage(val);
+          }}
           placeholder="/city-heroes/city.jpg أو https://..."
           dir="ltr"
         />
@@ -161,7 +222,7 @@ export default function Regions() {
           eyebrow="نطاق التغطية"
           icon={MapPin}
           actions={
-            <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={() => { setNewName(""); setShowAddDialog(true); }}>
+            <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={() => { setNewName(""); setHeroImage(""); setRawHeroImage(""); setShowAddDialog(true); }}>
               <Plus className="h-4 w-4" />
               إضافة منطقة
             </Button>
@@ -223,7 +284,7 @@ export default function Regions() {
 
       {/* Add Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>إضافة منطقة جديدة</DialogTitle>
           </DialogHeader>
@@ -243,7 +304,7 @@ export default function Regions() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editTarget} onOpenChange={(open) => !open && setEditTarget(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>تعديل المنطقة</DialogTitle>
           </DialogHeader>
