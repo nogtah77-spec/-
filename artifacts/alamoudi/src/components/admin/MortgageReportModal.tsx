@@ -74,30 +74,10 @@ export function MortgageReportModal({
     day: "numeric",
   });
 
-  // Standalone Printable Document HTML
-  const generatePrintableHTML = (isAutoPrint = false) => {
-    return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <title>تقرير دراسة التمويل والأقساط - ${reportId}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    @page {
-      size: A4 portrait;
-      margin: 8mm 12mm;
-    }
+  const getReportStyles = () => `
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      font-family: 'Cairo', 'Segoe UI', Tahoma, 'Noto Sans Arabic', Arial, sans-serif;
       background-color: #ffffff;
       color: #0f172a;
       line-height: 1.45;
@@ -106,27 +86,13 @@ export function MortgageReportModal({
       text-align: right;
     }
     .report-container {
-      max-width: 820px;
+      max-width: 800px;
       margin: 0 auto;
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 20px 24px;
+      padding: 22px 26px;
     }
-    @media print {
-      body {
-        background: #ffffff;
-      }
-      .report-container {
-        border: none;
-        padding: 0;
-        max-width: 100%;
-      }
-      .no-print {
-        display: none !important;
-      }
-    }
-    /* Header */
     .header {
       display: flex;
       justify-content: space-between;
@@ -162,7 +128,6 @@ export function MortgageReportModal({
       margin-bottom: 3px;
       font-family: monospace;
     }
-    /* Info Cards */
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -173,7 +138,7 @@ export function MortgageReportModal({
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 9px 12px;
+      padding: 10px 12px;
     }
     .info-card-title {
       font-size: 10.5px;
@@ -189,14 +154,8 @@ export function MortgageReportModal({
       margin-bottom: 3px;
       font-size: 11.5px;
     }
-    .info-label {
-      color: #64748b;
-    }
-    .info-value {
-      font-weight: 700;
-      color: #0f172a;
-    }
-    /* Golden Summary Hero Box */
+    .info-label { color: #64748b; }
+    .info-value { font-weight: 700; color: #0f172a; }
     .hero-summary {
       background: linear-gradient(135deg, #10202d 0%, #173044 100%);
       color: #ffffff;
@@ -224,46 +183,18 @@ export function MortgageReportModal({
       border-radius: 6px;
       padding: 8px 4px;
     }
-    .metric-label {
-      font-size: 9.5px;
-      color: #cbd5e1;
-      margin-bottom: 2px;
-    }
-    .metric-val {
-      font-size: 14px;
-      font-weight: 900;
-      color: #ffffff;
-    }
-    .metric-val.gold {
-      color: #f1dfbc;
-      font-size: 16px;
-    }
-    .metric-sub {
-      font-size: 9px;
-      color: #94a3b8;
-      margin-top: 1px;
-    }
-    /* Table */
-    .table-container {
-      margin-bottom: 14px;
-    }
-    .section-title {
-      font-size: 11.5px;
-      font-weight: 800;
-      color: #10202d;
-      margin-bottom: 5px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 10.5px;
-      text-align: right;
-    }
+    .metric-label { font-size: 9.5px; color: #cbd5e1; margin-bottom: 2px; }
+    .metric-val { font-size: 14px; font-weight: 900; color: #ffffff; }
+    .metric-val.gold { color: #f1dfbc; font-size: 16px; }
+    .metric-sub { font-size: 9px; color: #94a3b8; margin-top: 1px; }
+    .table-container { margin-bottom: 14px; }
+    .section-title { font-size: 11.5px; font-weight: 800; color: #10202d; margin-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; text-align: right; }
     th {
       background: #f1f5f9;
       color: #1e293b;
       font-weight: 800;
-      padding: 5px 8px;
+      padding: 6px 8px;
       border-bottom: 2px solid #cbd5e1;
     }
     td {
@@ -271,19 +202,10 @@ export function MortgageReportModal({
       border-bottom: 1px solid #f1f5f9;
       color: #334155;
     }
-    tr:nth-child(even) td {
-      background: #fcfcfc;
-    }
-    .num {
-      font-weight: 700;
-    }
-    .green {
-      color: #059669;
-    }
-    .amber {
-      color: #d97706;
-    }
-    /* Notes & Signatures */
+    tr:nth-child(even) td { background: #fcfcfc; }
+    .num { font-weight: 700; }
+    .green { color: #059669; }
+    .amber { color: #d97706; }
     .notes-box {
       background: #fffbeb;
       border: 1px solid #fde68a;
@@ -307,18 +229,8 @@ export function MortgageReportModal({
       text-align: center;
       min-height: 60px;
     }
-    .sig-title {
-      font-size: 10px;
-      font-weight: 700;
-      color: #475569;
-      margin-bottom: 20px;
-    }
-    .sig-line {
-      border-top: 1px solid #94a3b8;
-      width: 60%;
-      margin: 0 auto;
-    }
-    /* Footer */
+    .sig-title { font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 20px; }
+    .sig-line { border-top: 1px solid #94a3b8; width: 60%; margin: 0 auto; }
     .footer {
       border-top: 1px solid #e2e8f0;
       padding-top: 8px;
@@ -328,257 +240,217 @@ export function MortgageReportModal({
       font-size: 9px;
       color: #64748b;
     }
-    .contact-items {
-      display: flex;
-      gap: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="report-container">
-    <!-- Header -->
-    <div class="header">
-      <div>
-        <div class="brand-title">العمودي للتسويق العقاري</div>
-        <div class="brand-subtitle">خطة التمويل وجدول سداد الأقساط المعتمدة</div>
-      </div>
-      <div class="meta-box">
-        <div class="meta-badge">${reportId}</div>
-        <div><strong>تاريخ الإصدار:</strong> ${issueDate}</div>
-        <div><strong>المستشار المالي:</strong> ${advisorName}</div>
-      </div>
-    </div>
+    .contact-items { display: flex; gap: 10px; }
+  `;
 
-    <!-- Client & Property Details -->
-    <div class="info-grid">
-      <div class="info-card">
-        <div class="info-card-title">بيانات العميل وخطة السداد</div>
-        <div class="info-row">
-          <span class="info-label">اسم العميل:</span>
-          <span class="info-value">${clientName.trim() || "العميل الكريم"}</span>
+  const getReportBodyHTML = () => `
+    <div class="report-container">
+      <div class="header">
+        <div>
+          <div class="brand-title">العمودي للتسويق العقاري</div>
+          <div class="brand-subtitle">خطة التمويل وجدول سداد الأقساط المعتمدة</div>
         </div>
-        <div class="info-row">
-          <span class="info-label">برنامج التمويل:</span>
-          <span class="info-value">${programName}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">مدة السداد:</span>
-          <span class="info-value">${loanYears} سنوات (${totalMonths} قسطاً شهرياً)</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">معدل الفائدة:</span>
-          <span class="info-value">${interestRate === 0 ? "0% (بدون أي فوائد)" : `${interestRate}% سنوياً`}</span>
+        <div class="meta-box">
+          <div class="meta-badge">${reportId}</div>
+          <div><strong>تاريخ الإصدار:</strong> ${issueDate}</div>
+          <div><strong>المستشار المالي:</strong> ${advisorName}</div>
         </div>
       </div>
 
-      <div class="info-card">
-        <div class="info-card-title">تفاصيل العقار محل الدراسة</div>
-        <div class="info-row">
-          <span class="info-label">كود العقار:</span>
-          <span class="info-value">${selectedProperty?.code || "عقار مختار"}</span>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-card-title">بيانات العميل وخطة السداد</div>
+          <div class="info-row">
+            <span class="info-label">اسم العميل:</span>
+            <span class="info-value">${clientName.trim() || "العميل الكريم"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">برنامج التمويل:</span>
+            <span class="info-value">${programName}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">مدة السداد:</span>
+            <span class="info-value">${loanYears} سنوات (${totalMonths} قسطاً شهرياً)</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">معدل الفائدة:</span>
+            <span class="info-value">${interestRate === 0 ? "0% (بدون أي فوائد)" : `${interestRate}% سنوياً`}</span>
+          </div>
         </div>
-        <div class="info-row">
-          <span class="info-label">وصف العقار:</span>
-          <span class="info-value">${selectedProperty?.title || "وحدة عقارية فاخرة"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">الموقع / المنطقة:</span>
-          <span class="info-value">${selectedProperty?.location || "القاهرة الجديدة / مدينتي"}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">سعر العقار الإجمالي:</span>
-          <span class="info-value" style="color:#b99a68;">${propertyPrice.toLocaleString("ar-EG")} ج.م</span>
+
+        <div class="info-card">
+          <div class="info-card-title">تفاصيل العقار محل الدراسة</div>
+          <div class="info-row">
+            <span class="info-label">كود العقار:</span>
+            <span class="info-value">${selectedProperty?.code || "عقار مختار"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">وصف العقار:</span>
+            <span class="info-value">${selectedProperty?.title || "وحدة عقارية فاخرة"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">الموقع / المنطقة:</span>
+            <span class="info-value">${selectedProperty?.location || "القاهرة الجديدة / مدينتي"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">سعر العقار الإجمالي:</span>
+            <span class="info-value" style="color:#b99a68;">${propertyPrice.toLocaleString("ar-EG")} ج.م</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Golden KPI Summary Box -->
-    <div class="hero-summary">
-      <div class="summary-title">ملخص الخطة المالية والاستثمارية للأقساط</div>
-      <div class="metrics-grid">
-        <div class="metric-item">
-          <div class="metric-label">القسط الشهري</div>
-          <div class="metric-val gold">${monthlyInstallment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
-          <div class="metric-sub">ثابت على ${totalMonths} شهر</div>
-        </div>
+      <div class="hero-summary">
+        <div class="summary-title">ملخص الخطة المالية والاستثمارية للأقساط</div>
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <div class="metric-label">القسط الشهري</div>
+            <div class="metric-val gold">${monthlyInstallment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-sub">ثابت على ${totalMonths} شهر</div>
+          </div>
 
-        <div class="metric-item">
-          <div class="metric-label">الدفعة الأولى (المقدم)</div>
-          <div class="metric-val">${downPaymentAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
-          <div class="metric-sub">بنسبة ${downPaymentPercent}%</div>
-        </div>
+          <div class="metric-item">
+            <div class="metric-label">الدفعة الأولى (المقدم)</div>
+            <div class="metric-val">${downPaymentAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-sub">بنسبة ${downPaymentPercent}%</div>
+          </div>
 
-        <div class="metric-item">
-          <div class="metric-label">المبلغ الممول</div>
-          <div class="metric-val">${loanAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
-          <div class="metric-sub">أصل التمويل العقاري</div>
-        </div>
+          <div class="metric-item">
+            <div class="metric-label">المبلغ الممول</div>
+            <div class="metric-val">${loanAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-sub">أصل التمويل العقاري</div>
+          </div>
 
-        <div class="metric-item">
-          <div class="metric-label">إجمالي المبلغ المسدد</div>
-          <div class="metric-val">${totalPayment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
-          <div class="metric-sub">${totalInterest > 0 ? `شاملاً ${totalInterest.toLocaleString("ar-EG")} ج.م فوائد` : "بدون أي فوائد إضافية"}</div>
+          <div class="metric-item">
+            <div class="metric-label">إجمالي المبلغ المسدد</div>
+            <div class="metric-val">${totalPayment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-sub">${totalInterest > 0 ? `شاملاً ${totalInterest.toLocaleString("ar-EG")} ج.م فوائد` : "بدون أي فوائد إضافية"}</div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Annual Breakdown Table -->
-    <div class="table-container">
-      <div class="section-title">جدول استهلاك وسداد الأقساط السنوي</div>
-      <table>
-        <thead>
-          <tr>
-            <th>السنة</th>
-            <th>إجمالي المسدد سنوياً</th>
-            <th>أصل القسط المسدد</th>
-            <th>الفوائد المسددة</th>
-            <th style="text-align:left;">الرصيد المتبقي</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${annualSchedule
-            .map(
-              (row) => `
+      <div class="table-container">
+        <div class="section-title">جدول استهلاك وسداد الأقساط السنوي</div>
+        <table>
+          <thead>
             <tr>
-              <td><strong>السنة ${row.year}</strong></td>
-              <td class="num">${row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
-              <td class="num green">${row.principalPaid.toLocaleString("ar-EG")} ج.م</td>
-              <td class="num amber">${row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("ar-EG")} ج.م` : "0 ج.م"}</td>
-              <td class="num" style="text-align:left; color:#475569;">${row.remainingBalance.toLocaleString("ar-EG")} ج.م</td>
+              <th>السنة</th>
+              <th>إجمالي المسدد سنوياً</th>
+              <th>أصل القسط المسدد</th>
+              <th>الفوائد المسددة</th>
+              <th style="text-align:left;">الرصيد المتبقي</th>
             </tr>
-          `
-            )
-            .join("")}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Notes -->
-    <div class="notes-box">
-      <strong>ملاحظات هامة:</strong> ${customNotes}
-    </div>
-
-    <!-- Signatures -->
-    <div class="signatures">
-      <div class="sig-box">
-        <div class="sig-title">اعتماد المستشار المالي / المدير التنفيذي</div>
-        <div class="sig-line"></div>
+          </thead>
+          <tbody>
+            ${annualSchedule
+              .map(
+                (row) => `
+              <tr>
+                <td><strong>السنة ${row.year}</strong></td>
+                <td class="num">${row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
+                <td class="num green">${row.principalPaid.toLocaleString("ar-EG")} ج.م</td>
+                <td class="num amber">${row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("ar-EG")} ج.م` : "0 ج.م"}</td>
+                <td class="num" style="text-align:left; color:#475569;">${row.remainingBalance.toLocaleString("ar-EG")} ج.م</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
       </div>
-      <div class="sig-box">
-        <div class="sig-title">توقيع العميل / استلام نسخة العرض</div>
-        <div class="sig-line"></div>
+
+      <div class="notes-box">
+        <strong>ملاحظات هامة:</strong> ${customNotes}
+      </div>
+
+      <div class="signatures">
+        <div class="sig-box">
+          <div class="sig-title">اعتماد المستشار المالي / المدير التنفيذي</div>
+          <div class="sig-line"></div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-title">توقيع العميل / استلام نسخة العرض</div>
+          <div class="sig-line"></div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div>العمودي للتسويق العقاري — منصة العقارات الفاخرة</div>
+        <div class="contact-items">
+          <span>هاتف: 01000000000</span>
+          <span>البريد: info@alamoudi.com</span>
+          <span>الموقع: alamoudi-real-estate.vercel.app</span>
+        </div>
       </div>
     </div>
+  `;
 
-    <!-- Footer -->
-    <div class="footer">
-      <div>العمودي للتسويق العقاري — منصة العقارات الفاخرة</div>
-      <div class="contact-items">
-        <span>هاتف: 01000000000</span>
-        <span>البريد: info@alamoudi.com</span>
-        <span>الموقع: alamoudi-real-estate.vercel.app</span>
-      </div>
-    </div>
-  </div>
-
-  ${
-    isAutoPrint
-      ? `<script>
-    window.onload = function() {
-      setTimeout(function() {
-        window.print();
-      }, 350);
-    };
-  </script>`
-      : ""
-  }
-</body>
-</html>`;
-  };
-
-  // Direct PDF Download directly to user's device via high-definition Canvas rasterizer & jsPDF
+  // Direct PDF Download via Native SVG ForeignObject Render (100% Joined Arabic text)
   const handleDirectDownloadPDF = async () => {
     setDownloading(true);
     toast({
-      title: "جارٍ تحميل ملف PDF مباشرة إلى جهازك...",
-      description: "لحظات وسيتم حفظ الملف في مجلد التنزيلات (Downloads)",
+      title: "جارٍ تحميل ملف PDF...",
+      description: "يتم إنشاء وتنزيل الملف مباشرة إلى جهازك",
     });
 
     try {
-      // 1. Ensure jsPDF is loaded
       if (!(window as any).jspdf) {
         await new Promise<void>((resolve, reject) => {
           const script = document.createElement("script");
           script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
           script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load PDF engine"));
+          script.onerror = () => reject(new Error("Failed to load jsPDF"));
           document.head.appendChild(script);
         });
       }
 
-      // 2. Render report in off-screen iframe to get exact browser-rasterized canvas
-      const iframe = document.createElement("iframe");
-      iframe.style.position = "fixed";
-      iframe.style.left = "-9999px";
-      iframe.style.top = "0";
-      iframe.style.width = "820px";
-      iframe.style.height = "1200px";
-      iframe.style.border = "none";
-      document.body.appendChild(iframe);
+      const svgWidth = 800;
+      const svgHeight = 1130;
 
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!doc) throw new Error("Could not access iframe document");
+      const svgContent = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}">
+          <foreignObject width="100%" height="100%">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="width: ${svgWidth}px; background: #ffffff; padding: 10px;">
+              <style>${getReportStyles()}</style>
+              ${getReportBodyHTML()}
+            </div>
+          </foreignObject>
+        </svg>
+      `;
 
-      doc.open();
-      doc.write(generatePrintableHTML(false));
-      doc.close();
+      const svgBlob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+      const svgUrl = URL.createObjectURL(svgBlob);
 
-      // Wait for fonts & DOM to settle
-      await new Promise((r) => setTimeout(r, 600));
-
-      const reportElem = doc.querySelector(".report-container") as HTMLElement;
-      if (!reportElem) throw new Error("Report element not found");
-
-      // Load html2canvas if needed or use native SVG foreignObject drawing
-      if (!(window as any).html2canvas) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load html2canvas"));
-          document.head.appendChild(script);
-        });
-      }
-
-      const canvas = await (window as any).html2canvas(reportElem, {
-        scale: 2.2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("SVG rasterization failed"));
+        img.src = svgUrl;
       });
 
-      document.body.removeChild(iframe);
+      const canvas = document.createElement("canvas");
+      canvas.width = svgWidth * 2;
+      canvas.height = svgHeight * 2;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Could not create canvas context");
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(svgUrl);
 
       const { jsPDF } = (window as any).jspdf;
       const pdf = new jsPDF("p", "mm", "a4");
-      const imgData = canvas.toDataURL("image/jpeg", 0.96);
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
-      const pdfWidth = 210;
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      pdf.addImage(imgData, "JPEG", 0, 0, pdfWidth, Math.min(297, pdfHeight));
+      pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
       pdf.save(`تقرير-التمويل-العقاري-${reportId}.pdf`);
 
       toast({
-        title: "تم حفظ ملف PDF بنجاح في جهازك ✓",
-        description: `اسم الملف: تقرير-التمويل-العقاري-${reportId}.pdf`,
+        title: "تم تنزيل ملف PDF بنجاح ✓",
+        description: `تم حفظ الملف باسم: تقرير-التمويل-العقاري-${reportId}.pdf`,
       });
-    } catch (error) {
-      console.error("Direct PDF download failed, opening print view:", error);
-      toast({
-        title: "جاري حفظ التقرير كـ PDF عبر المتصفح...",
-        description: "اضغط حفظ كـ PDF للاحتفاظ بنسخة فورية",
-      });
+    } catch (err) {
+      console.warn("Direct SVG rasterization failed, opening print-to-pdf:", err);
       handlePrint();
     } finally {
       setDownloading(false);
@@ -587,11 +459,37 @@ export function MortgageReportModal({
 
   // Direct Print Handler
   const handlePrint = () => {
-    const htmlContent = generatePrintableHTML(true);
+    const fullHtml = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تقرير دراسة التمويل والأقساط - ${reportId}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    ${getReportStyles()}
+    @page { size: A4 portrait; margin: 8mm 12mm; }
+    @media print {
+      body { background: #ffffff; }
+      .report-container { border: none; padding: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  ${getReportBodyHTML()}
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); }, 300);
+    };
+  </script>
+</body>
+</html>`;
+
     const printWindow = window.open("", "_blank", "width=900,height=1000");
     if (printWindow) {
       printWindow.document.open();
-      printWindow.document.write(htmlContent);
+      printWindow.document.write(fullHtml);
       printWindow.document.close();
     }
   };
