@@ -180,12 +180,13 @@ export function PropertyFilterPanel({
         </div>
       </div>
 
-      {/* ── 2. Segmented Pill Row: نوع العرض (Centered) ── */}
-      <div className="mb-4 pb-3.5 border-b border-border/50">
-        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
-          <span className="text-xs font-bold text-foreground/90 shrink-0">
-            نوع العرض:
-          </span>
+      {/* ── 2. Segmented Pill Row: نوع العرض (Unified Professional Layout) ── */}
+      <div className="mb-3 pb-3 border-b border-border/50">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            <span>نوع العرض:</span>
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {CATEGORY_OPTIONS.map((option) => {
@@ -210,12 +211,13 @@ export function PropertyFilterPanel({
         </div>
       </div>
 
-      {/* ── 3. Category / Sector Row: فئة العقار (Centered) ── */}
+      {/* ── 3. Category / Sector Row: فئة العقار (Unified Professional Layout) ── */}
       <div className="mb-4">
-        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5">
-          <span className="text-xs font-bold text-foreground/90 shrink-0">
-            فئة العقار:
-          </span>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            <span>فئة العقار:</span>
+          </div>
 
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             {SECTOR_OPTIONS.map((option) => {
@@ -227,7 +229,7 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ sector: option.value }, true)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
                     active
                       ? "bg-accent/15 text-accent border border-accent/60 shadow-sm"
                       : "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border border-border/40"

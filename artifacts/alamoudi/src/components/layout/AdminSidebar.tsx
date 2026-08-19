@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings, FileCheck2,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox, Bot,
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox, Bot, Calculator,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -30,13 +30,14 @@ type SidebarSection = {
 const sidebarSections: SidebarSection[] = [
   {
     items: [
-      { href: "/admin", label: "الرئيسية", icon: LayoutDashboard },
+      { href: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
     ],
   },
   {
     title: "العقارات والمعاملات",
     items: [
       { href: "/admin/properties", label: "العقارات", icon: Building2 },
+      { href: "/admin/mortgage-calculator", label: "حاسبة التمويل والأقساط", icon: Calculator },
       { href: "/admin/regions", label: "المناطق", icon: MapPin },
       { href: "/admin/property-types", label: "أنواع العقارات", icon: Home },
       { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser },

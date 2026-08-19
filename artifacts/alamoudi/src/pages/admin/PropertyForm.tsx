@@ -242,34 +242,38 @@ export default function PropertyForm() {
         {/* ── AI Smart Property Parser Card ── */}
         {!isEdit && (
           <Card className="border-accent/40 bg-gradient-to-br from-card via-card to-accent/5 shadow-md">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0">
-                    <Wand2 className="h-4.5 w-4.5" />
+            <CardHeader className="pb-3.5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-3 w-full sm:w-auto">
+                  <div className="w-10 h-10 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 mt-0.5 sm:mt-0 shadow-sm">
+                    <Wand2 className="h-5 w-5" />
                   </div>
-                  <div>
-                    <CardTitle className="text-sm font-bold flex items-center gap-2">
-                      <span>المحلل الذكي للإعلانات العقارية (AI Smart Ingestion)</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle className="text-sm sm:text-base font-bold text-foreground">
+                        المحلل الذكي للإعلانات العقارية
+                      </CardTitle>
                       <span className="text-[10px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">Pro Hub</span>
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                       الصق أي نص عشوائي أو رسالة واتساب، وسيقوم الذكاء الاصطناعي باستخراج كافة البيانات وتعبئة الخانات فوراً.
                     </p>
                   </div>
                 </div>
 
                 {/* AI Agent Status Indicator Badge */}
-                {isAiAgentActive ? (
-                  <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 shadow-sm shrink-0">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>وكيل Gemini Pro متصل ونشط ⚡</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/70 px-3 py-1.5 rounded-xl border border-border/50 shrink-0">
-                    <span>⚪ وضع المحلل المحلي السريع</span>
-                  </div>
-                )}
+                <div className="self-start sm:self-auto shrink-0 pt-1 sm:pt-0">
+                  {isAiAgentActive ? (
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 shadow-sm">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>وكيل Gemini Pro متصل ⚡</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/80 px-3 py-1.5 rounded-xl border border-border/60 shadow-sm">
+                      <span>⚪ المحلل المحلي السريع</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">

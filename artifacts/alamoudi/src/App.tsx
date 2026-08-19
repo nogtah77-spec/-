@@ -53,6 +53,7 @@ const SmartBanners    = lazy(() => import("@/pages/admin/SmartBanners"));
 const Sources              = lazy(() => import("@/pages/admin/Sources"));
 const AiAgents             = lazy(() => import("@/pages/admin/AiAgents"));
 const WhatsAppBot          = lazy(() => import("@/pages/admin/WhatsAppBot"));
+const MortgageCalculatorPage = lazy(() => import("@/pages/admin/MortgageCalculatorPage"));
 const FinishingGallery     = lazy(() => import("@/pages/admin/FinishingGallery"));
 const AIChatWidget = lazy(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
 
@@ -196,6 +197,7 @@ function Router() {
 
       <Route path="/admin">{() => <Protected component={Dashboard} />}</Route>
       <Route path="/admin/properties">{() => <Protected component={Properties} />}</Route>
+      <Route path="/admin/mortgage-calculator">{() => <Protected component={MortgageCalculatorPage} />}</Route>
       <Route path="/admin/properties/new">{() => <Protected component={PropertyForm} />}</Route>
       <Route path="/admin/properties/:id/edit">{() => <Protected component={PropertyForm} />}</Route>
       <Route path="/admin/regions">{() => <Protected component={Regions} />}</Route>
