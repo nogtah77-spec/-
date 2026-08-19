@@ -75,7 +75,8 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     return filterProperties(properties, appliedFilters, regions, propertyTypes).map(resolve);
   }, [properties, appliedFilters, regions, propertyTypes, resolve]);
 
-  const gridClass = "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4";
+  const listGridClass = "grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4";
+  const cardGridClass = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4";
   const applyFilters = (next: PropertyFilterState) => {
     const fixed = { ...next, regionId };
     setFilters(fixed);
@@ -197,7 +198,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                 </button>
               </div>
             ) : (
-              <div className={filters.viewMode === "list" ? "grid grid-cols-1 gap-3" : gridClass}>
+              <div className={filters.viewMode === "list" ? listGridClass : cardGridClass}>
                 {filtered.map(p => (
                   <PropertyCard
                     key={p.id}
