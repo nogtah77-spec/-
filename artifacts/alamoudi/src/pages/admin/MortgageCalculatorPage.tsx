@@ -24,10 +24,12 @@ import {
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatNumber } from "@/lib/utils";
+import { MortgageReportModal } from "@/components/admin/MortgageReportModal";
 
 const FINANCING_PROGRAMS = [
   { id: "direct", name: "تقسيط مباشر من المطور (0% بدون فوائد)", rate: 0, desc: "أقساط متساوية بدون أي فوائد بنكية" },
@@ -47,6 +49,7 @@ export default function MortgageCalculatorPage() {
   const [loanYears, setLoanYears] = useState<number>(10);
   const [programId, setProgramId] = useState<string>("direct");
   const [customInterestRate, setCustomInterestRate] = useState<number>(10);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
 
   // Property picker handler
   const handleSelectProperty = (id: string) => {
@@ -156,6 +159,14 @@ export default function MortgageCalculatorPage() {
     window.open(url, "_blank");
   };
 
+  const selectedProperty = useMemo(() => {
+    return properties.find(p => p.id === selectedPropertyId || p.code === selectedPropertyId) || null;
+  }, [properties, selectedPropertyId]);
+
+  const programName = useMemo(() => {
+    return FINANCING_PROGRAMS.find(p => p.id === programId)?.name || "خطة تمويل عقاري";
+  }, [programId]);
+
   return (
     <AdminLayout>
       <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6" dir="rtl">
@@ -167,19 +178,18 @@ export default function MortgageCalculatorPage() {
           actions={
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => window.print()}
-                variant="outline"
-                className="gap-1.5 h-10 px-4 rounded-xl text-xs sm:text-sm font-bold border-border"
+                onClick={() => setShowReportModal(true)}
+                className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 h-10 px-4 rounded-xl shadow-md text-xs sm:text-sm"
               >
-                <Printer className="h-4 w-4" />
-                طباعة التقرير
+                <FileText className="h-4 w-4" />
+                معاينة وتصدير تقرير PDF
               </Button>
               <Button
                 onClick={handleShareWhatsApp}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 h-10 px-4 rounded-xl shadow-md text-xs sm:text-sm"
               >
                 <MessageSquare className="h-4 w-4" />
-                مشاركة عبر الواتساب
+                مشاركة سريعة
               </Button>
             </div>
           }
@@ -472,6 +482,25 @@ export default function MortgageCalculatorPage() {
           </div>
 
         </div>
+
+        {/* ── Official Luxury PDF & Print Report Modal ── */}
+        <MortgageReportModal
+          open={showReportModal}
+          onOpenChange={setShowReportModal}
+          propertyPrice={propertyPrice}
+          downPaymentPercent={downPaymentPercent}
+          downPaymentAmount={downPaymentAmount}
+          loanAmount={loanAmount}
+          loanYears={loanYears}
+          totalMonths={totalMonths}
+          interestRate={interestRate}
+          programName={programName}
+          monthlyInstallment={monthlyInstallment}
+          totalInterest={totalInterest}
+          totalPayment={totalPayment}
+          annualSchedule={annualSchedule}
+          selectedProperty={selectedProperty}
+        />
       </div>
     </AdminLayout>
   );
