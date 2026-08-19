@@ -9,7 +9,7 @@ import {
   Share2,
   FileText,
   Loader2,
-  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { Property } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -75,7 +75,7 @@ export function MortgageReportModal({
     day: "numeric",
   });
 
-  // Generate printable standalone HTML document for high-res PDF export & printing
+  // Generate printable standalone HTML document with 100% native font rendering & RTL preservation
   const generatePrintableHTML = (isAutoPrint = false) => {
     return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -95,23 +95,25 @@ export function MortgageReportModal({
     }
     @page {
       size: A4 portrait;
-      margin: 10mm 12mm;
+      margin: 8mm 12mm;
     }
     body {
-      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
       background-color: #ffffff;
       color: #0f172a;
       line-height: 1.45;
-      font-size: 12.5px;
+      font-size: 12px;
       direction: rtl;
+      text-align: right;
+      unicode-bidi: embed;
     }
     .report-container {
-      max-width: 800px;
+      max-width: 820px;
       margin: 0 auto;
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 12px;
-      padding: 22px 26px;
+      padding: 20px 24px;
     }
     @media print {
       body {
@@ -131,21 +133,21 @@ export function MortgageReportModal({
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #b99a68;
-      padding-bottom: 14px;
-      margin-bottom: 16px;
+      border-bottom: 2.5px solid #b99a68;
+      padding-bottom: 12px;
+      margin-bottom: 14px;
     }
     .brand-title {
       font-size: 22px;
       font-weight: 900;
       color: #10202d;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.3px;
     }
     .brand-subtitle {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 700;
       color: #b99a68;
-      margin-top: 2px;
+      margin-top: 1px;
     }
     .meta-box {
       text-align: left;
@@ -159,33 +161,34 @@ export function MortgageReportModal({
       font-weight: 700;
       padding: 3px 8px;
       border-radius: 6px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       font-family: monospace;
     }
     /* Info Cards */
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
     .info-card {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 8px;
-      padding: 10px 12px;
+      padding: 9px 12px;
     }
     .info-card-title {
-      font-size: 11px;
-      font-weight: 700;
+      font-size: 10.5px;
+      font-weight: 800;
       color: #b99a68;
-      margin-bottom: 6px;
-      text-transform: uppercase;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 3px;
     }
     .info-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       font-size: 11.5px;
     }
     .info-label {
@@ -197,39 +200,39 @@ export function MortgageReportModal({
     }
     /* Golden Summary Hero Box */
     .hero-summary {
-      background: linear-gradient(135deg, #10202d 0%, #1a3348 100%);
+      background: linear-gradient(135deg, #10202d 0%, #173044 100%);
       color: #ffffff;
       border-radius: 10px;
-      padding: 14px 18px;
-      margin-bottom: 16px;
-      border: 1px solid #b99a68;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      border: 1.5px solid #b99a68;
     }
     .summary-title {
-      font-size: 11.5px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 800;
       color: #d8be92;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-align: center;
     }
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
+      gap: 8px;
       text-align: center;
     }
     .metric-item {
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(185, 154, 104, 0.3);
-      border-radius: 8px;
-      padding: 8px 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(185, 154, 104, 0.35);
+      border-radius: 6px;
+      padding: 8px 4px;
     }
     .metric-label {
-      font-size: 10px;
+      font-size: 9.5px;
       color: #cbd5e1;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
     .metric-val {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 900;
       color: #ffffff;
     }
@@ -238,40 +241,40 @@ export function MortgageReportModal({
       font-size: 16px;
     }
     .metric-sub {
-      font-size: 9.5px;
+      font-size: 9px;
       color: #94a3b8;
-      margin-top: 2px;
+      margin-top: 1px;
     }
     /* Table */
     .table-container {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .section-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
       color: #10202d;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
+      font-size: 10.5px;
+      text-align: right;
     }
     th {
       background: #f1f5f9;
       color: #1e293b;
-      font-weight: 700;
-      padding: 6px 8px;
-      text-align: right;
+      font-weight: 800;
+      padding: 5px 8px;
       border-bottom: 2px solid #cbd5e1;
     }
     td {
-      padding: 5.5px 8px;
+      padding: 5px 8px;
       border-bottom: 1px solid #f1f5f9;
       color: #334155;
     }
     tr:nth-child(even) td {
-      background: #fafafa;
+      background: #fcfcfc;
     }
     .num {
       font-weight: 700;
@@ -286,31 +289,31 @@ export function MortgageReportModal({
     .notes-box {
       background: #fffbeb;
       border: 1px solid #fde68a;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 10.5px;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 10px;
       color: #92400e;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .signatures {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 16px;
-      padding-top: 6px;
+      gap: 16px;
+      margin-bottom: 12px;
+      padding-top: 4px;
     }
     .sig-box {
       border: 1px dashed #cbd5e1;
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 6px;
+      padding: 8px;
       text-align: center;
-      min-height: 65px;
+      min-height: 60px;
     }
     .sig-title {
-      font-size: 10.5px;
+      font-size: 10px;
       font-weight: 700;
       color: #475569;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .sig-line {
       border-top: 1px solid #94a3b8;
@@ -320,16 +323,16 @@ export function MortgageReportModal({
     /* Footer */
     .footer {
       border-top: 1px solid #e2e8f0;
-      padding-top: 10px;
+      padding-top: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 9.5px;
+      font-size: 9px;
       color: #64748b;
     }
     .contact-items {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
   </style>
 </head>
@@ -486,7 +489,7 @@ export function MortgageReportModal({
     window.onload = function() {
       setTimeout(function() {
         window.print();
-      }, 400);
+      }, 350);
     };
   </script>`
       : ""
@@ -495,51 +498,24 @@ export function MortgageReportModal({
 </html>`;
   };
 
-  // Direct PDF File Download Handler
+  // Direct PDF Export with perfect native Arabic text shaping
   const handleDownloadPDF = async () => {
     setDownloading(true);
-    toast({ title: "جارٍ تجهيز وتحميل ملف PDF...", description: "لحظات وسيتم حفظ الملف على جهازك" });
+    toast({
+      title: "جارٍ فتح مستند PDF الرسمي عالي الدقة...",
+      description: "اختر «حفظ بتنسيق PDF» لحفظ الملف فوراً بجودة فيكتور فائقة وبخطوط عربية متصلة 100%",
+    });
 
     try {
-      // Check if html2pdf is available on window, if not load dynamically
-      if (!(window as any).html2pdf) {
-        await new Promise<void>((resolve, reject) => {
-          const script = document.createElement("script");
-          script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load PDF library"));
-          document.head.appendChild(script);
-        });
+      const htmlContent = generatePrintableHTML(true);
+      const printWindow = window.open("", "_blank", "width=900,height=1000");
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
       }
-
-      const rawHTML = generatePrintableHTML(false);
-      const tempContainer = document.createElement("div");
-      tempContainer.style.position = "fixed";
-      tempContainer.style.left = "-9999px";
-      tempContainer.style.top = "0";
-      tempContainer.style.width = "800px";
-      tempContainer.style.background = "#ffffff";
-      tempContainer.innerHTML = rawHTML;
-      document.body.appendChild(tempContainer);
-
-      const target = tempContainer.querySelector(".report-container") || tempContainer;
-
-      const opt = {
-        margin: [6, 8, 6, 8],
-        filename: `تقرير-التمويل-العقاري-${reportId}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      };
-
-      await (window as any).html2pdf().set(opt).from(target).save();
-      document.body.removeChild(tempContainer);
-
-      toast({ title: "تم تحميل ملف الـ PDF بنجاح ✓", description: `تم حفظ الملف باسم: تقرير-التمويل-العقاري-${reportId}.pdf` });
     } catch (error) {
-      console.error("PDF generation failed, falling back to print dialog:", error);
-      toast({ title: "يتم فتح نافذة الحفظ كـ PDF الآن...", variant: "default" });
-      handlePrint();
+      console.error("PDF generation failed:", error);
     } finally {
       setDownloading(false);
     }
@@ -591,7 +567,7 @@ export function MortgageReportModal({
                   معاينة وتخصيص تقرير التمويل الرسمي (PDF Report)
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  قالب طباعة ملكي جاهز للتحميل كملف PDF على جهازك أو الطباعة المباشرة
+                  قالب طباعة ملكي A4 متوافق 100% مع الخطوط العربية المتصلة وبدون أي تشبيك مقلوب
                 </p>
               </div>
             </div>
@@ -771,15 +747,6 @@ export function MortgageReportModal({
             </Button>
 
             <Button
-              onClick={handlePrint}
-              variant="outline"
-              className="border-border text-foreground font-bold gap-1.5 text-xs h-10 px-3.5"
-            >
-              <Printer className="h-4 w-4" />
-              طباعة التقرير
-            </Button>
-
-            <Button
               onClick={handleDownloadPDF}
               disabled={downloading}
               className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 text-xs sm:text-sm h-10 px-5 shadow-md"
@@ -787,12 +754,12 @@ export function MortgageReportModal({
               {downloading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  جارٍ التنزيل...
+                  جارٍ التجهيز...
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  تحميل ملف PDF
+                  تحميل / حفظ ملف PDF
                 </>
               )}
             </Button>
