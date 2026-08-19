@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Sparkles } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
@@ -216,8 +216,7 @@ export function PropertyCard({
               
               {property.finishing && (
                 <div className="pt-0.5">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent border border-accent/20">
-                    <Sparkles className="h-2.5 w-2.5 text-accent" />
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-accent/10 text-accent border border-accent/20">
                     {property.finishing}
                   </span>
                 </div>
@@ -228,13 +227,11 @@ export function PropertyCard({
           {/* Bottom Row: Price & Specifications (Modern Golden Layout) */}
           <div className="mt-3 pt-2 border-t border-border/60 space-y-2">
             {/* Price Display */}
-            <div dir="ltr" className="flex items-baseline justify-between gap-1">
+            <div dir="ltr" className="flex items-baseline justify-start gap-1.5">
+              <span className="text-base sm:text-lg font-black text-accent tracking-tight">
+                {formatNumber(property.price)}
+              </span>
               <span className="text-[10px] font-bold text-muted-foreground tracking-wider">EGP</span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-base sm:text-lg font-black text-accent tracking-tight">
-                  {formatNumber(property.price)}
-                </span>
-              </div>
             </div>
 
             {/* Specs Row: Beds, Baths, Area (Clean Golden Line) */}
@@ -370,8 +367,7 @@ export function PropertyCard({
             </div>
 
             {property.finishing && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
-                <Sparkles className="h-3 w-3 text-accent" />
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
                 {property.finishing}
               </span>
             )}
@@ -393,13 +389,11 @@ export function PropertyCard({
         {/* Bottom Section: Price & Specs */}
         <div className="mt-4 pt-3 border-t border-border/60 space-y-2.5">
           {/* Price */}
-          <div dir="ltr" className="flex items-baseline justify-between gap-1">
+          <div dir="ltr" className="flex items-baseline justify-start gap-1.5">
+            <span className="text-lg sm:text-xl font-black text-accent tracking-tight">
+              {formatNumber(property.price)}
+            </span>
             <span className="text-xs font-bold text-muted-foreground tracking-wider">EGP</span>
-            <div className="flex items-baseline gap-1">
-              <span className="text-lg sm:text-xl font-black text-accent tracking-tight">
-                {formatNumber(property.price)}
-              </span>
-            </div>
           </div>
 
           {/* Specs Grid */}
