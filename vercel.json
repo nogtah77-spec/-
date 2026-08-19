@@ -1,32 +1,11 @@
 {
-  "version": 2,
-  "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm build",
-  "outputDirectory": "artifacts/alamoudi/dist/public",
-  "functions": {
-    "api/index.mjs": {
-      "includeFiles": "artifacts/api-server/dist/**"
-    }
-  },
+  "buildCommand": "pnpm --filter @workspace/alamoudi run build",
+  "outputDirectory": "artifacts/alamoudi/dist",
+  "framework": "vite",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/((?!_vercel|api).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, max-age=0"
-        }
-      ]
     }
   ]
 }
