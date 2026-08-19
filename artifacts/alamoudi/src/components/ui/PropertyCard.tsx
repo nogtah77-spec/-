@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Sparkles } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
@@ -63,14 +63,14 @@ export function PropertyCard({
   if (isLoading || !property) {
     if (size === "compact") {
       return (
-        <Card className="flex flex-row h-28 overflow-hidden border-border shadow-sm">
-          <Skeleton className="w-28 h-full rounded-none flex-shrink-0" />
+        <Card className="flex flex-row h-32 overflow-hidden border-border/60 shadow-sm rounded-2xl">
+          <Skeleton className="w-36 h-full rounded-none flex-shrink-0" />
           <div className="flex-1 p-3 space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-5 w-1/2" /><Skeleton className="h-3 w-full" /></div>
         </Card>
       );
     }
     return (
-      <Card className="overflow-hidden border-border shadow-sm flex flex-col h-full">
+      <Card className="overflow-hidden border-border/60 shadow-sm flex flex-col h-full rounded-2xl">
         <Skeleton className={cn("w-full rounded-none flex-shrink-0", size === "medium" ? "h-36" : "h-52")} />
         <CardContent className="p-4 flex-1 space-y-3"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-6 w-1/2" /><Skeleton className="h-3 w-full" /></CardContent>
         <CardFooter className="p-4 pt-0 flex gap-2"><Skeleton className="h-8 flex-1" /><Skeleton className="h-8 w-8" /></CardFooter>
@@ -92,16 +92,6 @@ export function PropertyCard({
   const imageCount = property.images?.length || 0;
   const isNew = () => { try { return Date.now() - new Date(property.createdAt).getTime() < 7 * 86400000; } catch { return false; } };
   const goToDetails = () => navigate(`/properties/${property.id}`);
-  const highlightedDetails = [
-    property.parking ? `موقف: ${property.parking}` : "",
-    property.additionalFeatures || "",
-  ].filter(Boolean).slice(0, 2);
-  const detailTextClass = detailsScale === "city" ? "text-sm" : "text-xs";
-  const detailIconClass = detailsScale === "city" ? "h-4 w-4" : "h-3.5 w-3.5";
-  const detailItemClass = detailsScale === "city"
-    ? "h-8 rounded-md border border-accent/30 bg-accent/10 px-2 py-1"
-    : "h-7 rounded-md border border-accent/20 bg-accent/5 px-1.5 py-0.5";
-  const detailLabelClass = detailsScale === "city" ? "text-[10px]" : "text-[9px]";
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -109,27 +99,6 @@ export function PropertyCard({
     if (navigator.share) { try { await navigator.share({ title: property.title, url }); return; } catch {} }
     await navigator.clipboard.writeText(url);
     toast({ title: "تم نسخ رابط العقار" });
-  };
-
-  const handleWhatsApp = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const num = normalizePhoneForWa(settings.whatsapp || settings.phone1);
-    const text = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
-    if (num) window.open(`https://wa.me/${num}?text=${text}`, "_blank");
-    else toast({ title: "لم يتم إعداد واتساب", variant: "destructive" });
-  };
-
-  const handleCall = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const num = settings.phone1.replace(/\s/g, "");
-    if (num) window.location.href = `tel:${num}`;
-    else toast({ title: "لم يتم إعداد رقم الهاتف", variant: "destructive" });
-  };
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(property.code);
-    toast({ title: "تم نسخ الكود", description: property.code });
   };
 
   const handleFavorite = (e: React.MouseEvent) => {
@@ -150,355 +119,313 @@ export function PropertyCard({
     toast({ title: wasIn ? "تمت الإزالة من المقارنة" : "تمت الإضافة للمقارنة" });
   };
 
+  // ── 1. COMPACT HORIZONTAL CARD (Carousel & Compact City/Home rows) ──
   if (size === "compact" && layout === "list") {
     return (
       <Card
         dir="rtl"
         onClick={goToDetails}
         className={cn(
-          "relative flex flex-col overflow-hidden group cursor-pointer card-luxury rounded-2xl transition-all duration-300",
+          "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border border-border/70 bg-card/95 backdrop-blur shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)] hover:border-accent/50 hover:-translate-y-0.5",
           emphasized
-            ? compactHomeCard ? "min-h-[196px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60" : compactCityCard ? "min-h-[208px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60" : "min-h-[220px] border-accent/30 bg-card shadow-[0_10px_28px_rgba(16,32,45,0.15)] hover:-translate-y-1 hover:border-accent/60"
-            : compactHomeCard ? "min-h-[180px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]" : compactCityCard ? "min-h-[188px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]" : "min-h-[200px] border-card-border shadow-[0_6px_18px_rgba(16,32,45,0.08)] hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(16,32,45,0.12)]",
+            ? "min-h-[190px] border-accent/40 shadow-[0_10px_26px_rgba(16,32,45,0.14)] hover:border-accent/70"
+            : "min-h-[180px]"
         )}
       >
-        <div dir="ltr" className="pointer-events-none absolute inset-x-2 top-2 z-30 flex items-start justify-between gap-1">
-          {property.typeName ? (
-            <span className="inline-flex max-w-[52%] truncate rounded-full border border-accent/35 bg-accent/10 px-2.5 py-1 text-[10px] font-extrabold text-accent shadow-sm">
-              {property.typeName}
-            </span>
-          ) : <span />}
-          <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[11px] px-2.5 py-1 font-extrabold shadow-sm">
-            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
-          </Badge>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-row">
-        <div className={cn("relative flex-shrink-0 overflow-hidden bg-muted", emphasized ? "w-32 sm:w-40" : "w-32")}>
+        {/* Right Side: Image Box (Same approved size & aspect) */}
+        <div className={cn("relative flex-shrink-0 overflow-hidden bg-muted/80", emphasized ? "w-36 sm:w-44" : "w-32 sm:w-40")}>
           {showVideoCover
-            ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover" />
+            ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="160px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             : coverImg
-              ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="128px" className="w-full h-full object-cover" />
-              : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/50" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/10" />
-          <div className="absolute bottom-2 inset-x-2 flex flex-wrap items-center gap-1">
-            {propHasVideo && (
-              <span className="flex items-center gap-0.5 rounded-full bg-black/65 px-2 py-0.5 text-[9px] text-white backdrop-blur-sm">
-                <Play className="h-2.5 w-2.5 fill-white" />فيديو
+              ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="160px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              : <div className="w-full h-full bg-gradient-to-br from-accent/15 via-muted to-muted/40 flex items-center justify-center"><Camera className="h-8 w-8 text-muted-foreground/30" /></div>}
+          
+          {/* Subtle Dark Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25" />
+
+          {/* Top-Right Badge inside Image */}
+          <div className="absolute top-2 right-2 z-20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-accent-foreground font-black text-[10px] shadow-sm">
+              {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
+            </span>
+          </div>
+
+          {/* Bottom Badges inside Image */}
+          <div className="absolute bottom-2 inset-x-2 z-20 flex flex-wrap items-center justify-between gap-1 text-[9px]">
+            {property.typeName ? (
+              <span className="px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white/95 font-bold border border-white/10">
+                {property.typeName}
               </span>
-            )}
-            {property.featured && <Badge className="rounded-full border-none bg-yellow-500 px-2 py-0.5 text-[9px] text-white">مميز</Badge>}
-            {isNew() && <Badge className="rounded-full border-none bg-emerald-500 px-2 py-0.5 text-[9px] text-white">جديد</Badge>}
+            ) : <span />}
+
+            <div className="flex items-center gap-1">
+              {propHasVideo && (
+                <span className="flex items-center gap-0.5 rounded bg-black/65 px-1.5 py-0.5 text-white backdrop-blur-sm">
+                  <Play className="h-2 w-2 fill-white" />
+                </span>
+              )}
+              {isNew() && <span className="rounded bg-emerald-500/90 text-white font-bold px-1.5 py-0.5">جديد</span>}
+              {property.featured && <span className="rounded bg-amber-500/90 text-white font-bold px-1.5 py-0.5">مميز</span>}
+            </div>
           </div>
         </div>
 
-        <div className={cn(
-          "flex min-w-0 flex-1 flex-col",
-          compactHomeCard ? "pb-2" : "pb-1",
-          compactHomeCard ? "justify-start" : "justify-between",
-          emphasized ? "px-4 pt-2.5" : "px-3.5 pt-2.5",
-        )}>
-          <div className="min-w-0">
-            <div className="mb-1.5 flex items-center justify-between gap-2">
-              <div dir="ltr" className={cn(
-                "relative -top-0.5 inline-flex min-w-0 items-center justify-center gap-1 rounded-md border border-accent/45 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-1.5 py-0.5 text-center shadow-[0_3px_10px_rgba(180,152,107,0.14),inset_0_1px_0_rgba(255,255,255,0.08)]",
-                emphasized ? "sm:px-2 sm:py-1" : "",
-              )}>
-                <span className={cn(
-                  "inline-flex h-5 min-w-[3.25rem] shrink-0 items-center justify-center rounded-sm bg-accent/20 px-1 text-center font-black tracking-[0.12em] text-accent uppercase leading-none",
-                  emphasized ? "text-[10px]" : "text-[9px]",
-                )}>CODE</span>
-                <h3 className={cn(
-                  "flex h-5 items-center truncate text-center font-black font-mono tracking-[0.12em] text-accent group-hover:text-foreground transition-colors",
-                  emphasized ? "text-base" : "text-xs",
-                )}>{property.code}</h3>
+        {/* Left Side: Content & Details (Redesigned with Luxury Layout) */}
+        <div className="flex min-w-0 flex-1 flex-col justify-between p-3 sm:p-3.5">
+          {/* Top Row: Code & Quick Actions */}
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              {/* Property Code Pill */}
+              <div dir="ltr" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-accent/40 bg-accent/10 shadow-xs">
+                <span className="text-[9px] font-black text-accent tracking-wider uppercase">CODE</span>
+                <span className="text-xs font-mono font-black text-accent">{property.code}</span>
+              </div>
+
+              {/* Quick Action Buttons (Favorite / Share) */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleFavorite}
+                  className={cn(
+                    "w-6 h-6 rounded-md flex items-center justify-center transition-colors border",
+                    isFavorite(property.id)
+                      ? "bg-red-500/15 border-red-500/30 text-red-500"
+                      : "bg-muted/50 border-border/60 text-muted-foreground hover:text-accent hover:border-accent/40"
+                  )}
+                  title="المفضلة"
+                >
+                  <Heart className={cn("h-3 w-3", isFavorite(property.id) && "fill-current")} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="w-6 h-6 rounded-md flex items-center justify-center bg-muted/50 border border-border/60 text-muted-foreground hover:text-accent hover:border-accent/40 transition-colors"
+                  title="مشاركة"
+                >
+                  <Share2 className="h-3 w-3" />
+                </button>
               </div>
             </div>
-            <p className={cn("flex min-w-0 flex-nowrap items-center gap-1 whitespace-nowrap text-[11px] font-medium text-foreground/85", compactHomeCard ? "mt-2.5" : "mt-3")}>
-              <MapPin className="h-3 w-3 shrink-0 text-accent" />
-              <span className="min-w-0 truncate">{[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}</span>
-            </p>
-            {property.finishing && (
-              <p dir="rtl" className={cn("inline-flex max-w-[72%] truncate rounded-full border border-accent/25 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent", compactHomeCard ? "mt-2.5" : "mt-4 translate-y-0.5")}>
-                {property.finishing}
+
+            {/* Location & Title */}
+            <div className="mt-2 space-y-1">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-foreground line-clamp-1 group-hover:text-accent transition-colors">
+                <MapPin className="h-3 w-3 shrink-0 text-accent" />
+                <span className="truncate">{[property.regionName, property.subArea].filter(Boolean).join(" - ") || property.title || "موقع العقار"}</span>
               </p>
-            )}
+              
+              {property.finishing && (
+                <div className="pt-0.5">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent/10 text-accent border border-accent/20">
+                    <Sparkles className="h-2.5 w-2.5 text-accent" />
+                    {property.finishing}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className={cn(
-            compactHomeCard ? "flex min-h-0 flex-1 flex-col" : "mt-auto space-y-1.5 pt-2",
-          )}>
-            {compactHomeCard && (
-              <div className="relative min-h-[18px] flex-1" aria-hidden="true">
-                <span className="pointer-events-none absolute inset-x-0 top-1/2 translate-y-1 border-t border-border/70" />
+          {/* Bottom Row: Price & Specifications (Modern Golden Layout) */}
+          <div className="mt-3 pt-2 border-t border-border/60 space-y-2">
+            {/* Price Display */}
+            <div dir="ltr" className="flex items-baseline justify-between gap-1">
+              <span className="text-[10px] font-bold text-muted-foreground tracking-wider">EGP</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-base sm:text-lg font-black text-accent tracking-tight">
+                  {formatNumber(property.price)}
+                </span>
               </div>
-            )}
-            <div className={cn(compactHomeCard ? "space-y-1 pt-1" : "space-y-1.5")}>
-              <div
-                dir="ltr"
-                className={cn(
-                  "flex items-center justify-end gap-1 pt-2",
-                  !compactHomeCard && "border-t border-border/70",
-                )}
-              >
-                <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-tight text-accent", emphasized ? "text-base sm:text-xl" : "text-base")}>{formatNumber(property.price)}</span>
-                <span className="shrink-0 text-[10px] font-bold tracking-widest text-foreground/75">EGP</span>
-              </div>
-              <div dir="rtl" className={cn("grid grid-cols-3 gap-1.5 text-center font-bold text-foreground/90", detailTextClass)}>
+            </div>
+
+            {/* Specs Row: Beds, Baths, Area (Clean Golden Line) */}
+            <div dir="rtl" className="grid grid-cols-3 gap-1.5 text-[10px] font-bold">
               {property.beds > 0 ? (
-                <span className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
-                  <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>غرف</span>
-                  <Bed className={cn(detailIconClass, "text-accent")} />
-                  <strong>{property.beds}</strong>
-                </span>
-              ) : <span />}
+                <div className="flex items-center justify-center gap-1 py-1 rounded bg-muted/40 border border-border/40 text-foreground/90">
+                  <Bed className="h-3 w-3 text-accent shrink-0" />
+                  <span>{property.beds} <span className="text-[9px] text-muted-foreground font-normal">غرف</span></span>
+                </div>
+              ) : <div />}
+
               {property.baths > 0 ? (
-                <span className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
-                  <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>حمام</span>
-                  <Bath className={cn(detailIconClass, "text-accent")} />
-                  <strong>{property.baths}</strong>
-                </span>
-              ) : <span />}
-              <span dir="ltr" className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
-                <strong>{property.area}</strong>
-                <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>م²</span>
-                <Square className={cn(detailIconClass, "text-accent")} />
-              </span>
+                <div className="flex items-center justify-center gap-1 py-1 rounded bg-muted/40 border border-border/40 text-foreground/90">
+                  <Bath className="h-3 w-3 text-accent shrink-0" />
+                  <span>{property.baths} <span className="text-[9px] text-muted-foreground font-normal">حمام</span></span>
+                </div>
+              ) : <div />}
+
+              <div dir="ltr" className="flex items-center justify-center gap-1 py-1 rounded bg-muted/40 border border-border/40 text-foreground/90">
+                <span className="text-[9px] text-muted-foreground font-normal">م²</span>
+                <span>{property.area}</span>
+                <Square className="h-3 w-3 text-accent shrink-0" />
               </div>
             </div>
           </div>
-        </div>
         </div>
       </Card>
     );
   }
 
+  // ── 2. STANDARD GRID CARD (Grid Layout on Home & Catalog) ──
   const imageHeight = emphasized
     ? size === "large" ? "aspect-[1.55] min-h-64" : size === "medium" ? "aspect-[1.55] min-h-48" : "aspect-[1.75] min-h-36"
     : size === "large" ? "aspect-[1.55] min-h-52" : size === "medium" ? "aspect-[1.55] min-h-36" : "aspect-[1.75] min-h-28";
-  const listMode = layout === "list";
 
   return (
-    <Card dir="rtl" onClick={goToDetails} className={cn(
-      "overflow-hidden group cursor-pointer card-luxury h-full rounded-[1.25rem] transition-all duration-300",
-      emphasized
-        ? "border-accent/30 shadow-[0_14px_36px_rgba(16,32,45,0.16)] hover:-translate-y-1.5 hover:border-accent/60"
-        : "border-card-border shadow-[0_8px_24px_rgba(16,32,45,0.09)] hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(16,32,45,0.14)]",
-      listMode
-        ? "flex flex-row flex-wrap sm:flex-nowrap"
-        : "flex flex-col",
-    )}>
-      {listMode && (
-        <div dir="ltr" className="pointer-events-none absolute inset-x-3 top-2 z-30 flex items-start justify-between gap-2">
-          {property.typeName ? (
-            <span dir="rtl" className="inline-flex max-w-[42%] truncate rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-[11px] font-extrabold text-accent shadow-sm">
-              {property.typeName}
-            </span>
-          ) : <span />}
-          <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
-            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
-          </Badge>
-        </div>
+    <Card
+      dir="rtl"
+      onClick={goToDetails}
+      className={cn(
+        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl transition-all duration-300 border border-border/70 bg-card/95 backdrop-blur shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)] hover:border-accent/60 hover:-translate-y-1",
+        emphasized && "border-accent/40 shadow-[0_14px_36px_rgba(16,32,45,0.16)]"
       )}
-      {!listMode && (
-        <div dir="ltr" className="flex min-h-9 items-center justify-between gap-2 px-3 pt-2">
-          {property.typeName ? (
-            <span dir="rtl" className="inline-flex max-w-[42%] truncate rounded-full border border-accent/35 bg-accent/10 px-3 py-1 text-[11px] font-extrabold text-accent shadow-sm">
-              {property.typeName}
-            </span>
-          ) : <span />}
-          <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
-            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
-          </Badge>
-        </div>
-      )}
-      <div className={cn(
-         "relative overflow-hidden bg-muted flex-shrink-0",
-        listMode ? "w-32 min-h-[160px] sm:w-48 md:w-56" : imageHeight,
-        listMode && "sm:min-h-0 sm:self-stretch",
-      )}>
+    >
+      {/* Card Header Media Container */}
+      <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", imageHeight)}>
         {showVideoCover
-          ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 90vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           : coverImg
-            ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 88vw, (max-width: 1024px) 54vw, (max-width: 1024px) 380px, 400px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 90vw, 400px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             : showVideoPoster
               ? <div className="w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center"><Video className="h-10 w-10 text-accent/50" /></div>
               : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
         }
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent z-[5]" />
+        
+        {/* Subtle Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 z-[5]" />
 
-          <div className="absolute inset-x-3 top-3 z-20">
-            <div className="absolute right-0 top-0 flex shrink-0 gap-1.5">
-             <Button
-               variant="outline"
-               size="icon"
-               className={cn(
-                 "h-8 w-8 rounded-lg border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur hover:border-accent hover:bg-white hover:text-accent",
-                 isFavorite(property.id) && "border-red-200 bg-red-50 text-red-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600",
-               )}
-               onClick={handleFavorite}
-               title="المفضلة"
-             >
-               <Heart className={cn("h-3.5 w-3.5", isFavorite(property.id) && "fill-current")} />
-             </Button>
-             <Button
-               variant="outline"
-               size="icon"
-               className="h-8 w-8 rounded-lg border-white/70 bg-white/90 text-slate-600 shadow-sm backdrop-blur hover:border-accent hover:bg-white hover:text-accent"
-               onClick={handleShare}
-               title="مشاركة"
-             >
-               <Share2 className="h-3.5 w-3.5" />
-             </Button>
+        {/* Top Badges & Actions inside Image */}
+        <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
+          {/* Listing Type Badge */}
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-foreground font-black text-xs shadow-md">
+            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
+          </span>
+
+          {/* Favorite & Share Buttons */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleFavorite}
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center backdrop-blur-md transition-colors border",
+                isFavorite(property.id)
+                  ? "bg-red-500/20 border-red-500/40 text-red-500"
+                  : "bg-black/40 border-white/15 text-white/90 hover:text-accent hover:border-accent"
+              )}
+              title="المفضلة"
+            >
+              <Heart className={cn("h-3.5 w-3.5", isFavorite(property.id) && "fill-current")} />
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="w-8 h-8 rounded-lg flex items-center justify-center bg-black/40 border border-white/15 text-white/90 hover:text-accent hover:border-accent backdrop-blur-md transition-colors"
+              title="مشاركة"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
 
-         <div className="absolute bottom-3 left-3 z-20 flex flex-wrap justify-end gap-1.5 max-w-[68%]">
-          {propHasVideo && (
-             <span className="rounded-full bg-black/65 text-white backdrop-blur-sm text-[10px] px-2.5 py-1 flex items-center gap-1 shadow">
-              <Play className="h-2.5 w-2.5 fill-white flex-shrink-0" />فيديو
-            </span>
-          )}
-           {property.featured && <Badge className="rounded-full bg-yellow-500 text-white border-none text-[10px] px-2.5 py-1">مميز</Badge>}
-           {isNew() && <Badge className="rounded-full bg-emerald-500 text-white border-none text-[10px] px-2.5 py-1">جديد</Badge>}
-           {property.status === "reserved" && <Badge className="rounded-full bg-amber-500 text-white border-none text-[10px] px-2.5 py-1">محجوز</Badge>}
-        </div>
+        {/* Bottom Badges inside Image */}
+        <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between gap-2 text-xs">
+          {/* Type Badge & Location */}
+          <div className="flex items-center gap-1.5">
+            {property.typeName && (
+              <span className="px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-white font-bold border border-white/10 text-[11px]">
+                {property.typeName}
+              </span>
+            )}
+            {property.regionName && (
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-white/90 text-[11px]">
+                <MapPin className="h-3 w-3 text-accent" />
+                {property.regionName}
+              </span>
+            )}
+          </div>
 
-        <div className="absolute bottom-3 right-3 z-20">
-          {property.regionName && (
-             <span className="flex items-center gap-1 rounded-full bg-black/45 px-2.5 py-1 text-xs font-medium text-white/95 backdrop-blur-sm">
-               <MapPin className="h-3 w-3 text-accent" />{property.regionName}
-             </span>
-          )}
-        </div>
-
-        <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5">
-          {imageCount > 0 && (
-             <span className="text-white/90 bg-black/45 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs flex items-center gap-1">
-              <Camera className="h-3 w-3" />{imageCount}
-            </span>
-          )}
-          {property.externalUrl && (
-             <span className="text-white/90 bg-black/45 backdrop-blur-sm px-2 py-1 rounded-full text-xs flex items-center gap-1" title="رابط خارجي">
-              <ExternalLink className="h-3 w-3" />
-            </span>
-          )}
+          {/* Media Indicators (Video/Photos) */}
+          <div className="flex items-center gap-1">
+            {propHasVideo && (
+              <span className="flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-md px-2 py-1 text-[10px] text-white">
+                <Play className="h-2.5 w-2.5 fill-white" /> فيديو
+              </span>
+            )}
+            {imageCount > 0 && (
+              <span className="flex items-center gap-1 rounded-md bg-black/50 backdrop-blur-md px-2 py-1 text-[10px] text-white/90">
+                <Camera className="h-2.5 w-2.5" /> {imageCount}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      <CardContent className={cn(
-        "flex-1 flex flex-col min-w-0",
-        listMode ? "px-3 pb-1 pt-2 sm:px-4" : emphasized ? "px-5 pb-1 pt-3 sm:px-6 sm:pt-4" : size === "large" ? "px-5 pb-1 pt-3" : "px-3 pb-1 pt-2.5 sm:px-4",
-        "pb-1",
-      )}>
-        <div className={cn("min-w-0", emphasized ? "mb-3" : "mb-4")}>
-          <div className="min-w-0">
-             <div className="mb-2 flex items-center gap-2">
-              <div dir="ltr" className={cn(
-                "relative -top-0.5 inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-accent/50 bg-gradient-to-br from-accent/15 via-accent/10 to-transparent px-2 py-1 text-center shadow-[0_5px_16px_rgba(180,152,107,0.16),inset_0_1px_0_rgba(255,255,255,0.1)]",
-                emphasized ? "sm:px-2.5 sm:py-1.5" : "",
-              )}>
-                <span className={cn(
-                  "inline-flex h-6 min-w-[3.75rem] shrink-0 items-center justify-center rounded bg-accent/20 px-1 text-center font-black tracking-[0.12em] text-accent uppercase leading-none",
-                  emphasized ? "text-[11px]" : "text-[10px]",
-                )}>CODE</span>
-                <h3 className={cn(
-                  "flex h-6 items-center truncate text-center font-black font-mono tracking-[0.14em] text-accent group-hover:text-foreground transition-colors",
-                  emphasized ? "text-xl" : size === "large" ? "text-base" : size === "medium" ? "text-sm" : "text-xs",
-                )}>
-                  {property.code}
-                </h3>
-             </div>
+      {/* Card Content & Details */}
+      <CardContent className="flex-1 flex flex-col justify-between p-4 sm:p-5">
+        <div>
+          {/* Code & Finishing Row */}
+          <div className="flex items-center justify-between gap-2">
+            <div dir="ltr" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-accent/40 bg-accent/10 shadow-xs">
+              <span className="text-[10px] font-black text-accent tracking-wider uppercase">CODE</span>
+              <span className="text-xs sm:text-sm font-mono font-black text-accent">{property.code}</span>
             </div>
-            <p className={cn("mt-3 flex min-w-0 flex-nowrap items-center gap-1.5 whitespace-nowrap font-medium text-foreground/85", emphasized ? "text-sm" : "text-xs")}>
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-accent" />
-              <span className="min-w-0 truncate">{[property.regionName, property.subArea].filter(Boolean).join(" - ") || "موقع العقار"}</span>
-            </p>
+
+            {property.finishing && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent border border-accent/20">
+                <Sparkles className="h-3 w-3 text-accent" />
+                {property.finishing}
+              </span>
+            )}
+          </div>
+
+          {/* Title & SubArea */}
+          <div className="mt-3">
+            <h3 className="font-bold text-sm sm:text-base text-foreground group-hover:text-accent transition-colors line-clamp-1">
+              {[property.regionName, property.subArea].filter(Boolean).join(" - ") || property.title}
+            </h3>
+            {property.description && (
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-1 leading-relaxed">
+                {property.description}
+              </p>
+            )}
           </div>
         </div>
-        <div className="mt-auto">
-          {((property.finishing || property.view) || highlightedDetails.length > 0) && (
-            <div className={cn("translate-y-1 flex flex-wrap items-center gap-1.5", emphasized ? "pb-3" : "pb-2")}>
-              {emphasized
-                ? highlightedDetails.map((detail) => (
-                    <span key={detail} className="max-w-full truncate rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent">
-                      {detail}
-                    </span>
-                  ))
-                : <>
-                    {property.finishing && property.finishing !== (categoryLabels[property.category] ?? "") && <span dir="rtl" className="rounded-full border border-accent/25 bg-accent/10 px-2.5 py-1 text-[11px] font-semibold text-accent line-clamp-1">{property.finishing}</span>}
-                    {property.view && <span className="rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground line-clamp-1 max-w-[55%]">{property.view}</span>}
-                  </>
-              }
-            </div>
-          )}
-          <div className="space-y-2">
-            <div dir="ltr" className="flex items-center justify-end gap-1 border-t border-border/70 pt-3">
-              <span className={cn("shrink-0 whitespace-nowrap font-extrabold leading-none text-accent", emphasized ? "text-xl sm:text-2xl" : size === "large" ? "text-xl" : size === "medium" ? "text-lg" : "text-base")}>{formatNumber(property.price)}</span>
-              <span className="shrink-0 text-[10px] font-bold tracking-[0.16em] text-foreground/75">EGP</span>
-            </div>
-            <div dir="rtl" className={cn("grid grid-cols-3 gap-2 text-center font-bold text-foreground/90", detailTextClass)}>
-              {property.beds > 0 ? (
-                <span className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
-                  <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>غرف</span>
-                  <Bed className={cn(detailIconClass, "text-accent")} />
-                  <strong>{property.beds}</strong>
-                </span>
-              ) : <span />}
-              {property.baths > 0 ? (
-                <span className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
-                  <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>حمام</span>
-                  <Bath className={cn(detailIconClass, "text-accent")} />
-                  <strong>{property.baths}</strong>
-                </span>
-              ) : <span />}
-              <span dir="ltr" className={cn("inline-flex items-center justify-center gap-1 whitespace-nowrap", detailItemClass)}>
-                <strong>{property.area}</strong>
-                <span className={cn("font-semibold text-muted-foreground", detailLabelClass)}>م²</span>
-                <Square className={cn(detailIconClass, "text-accent")} />
+
+        {/* Bottom Section: Price & Specs */}
+        <div className="mt-4 pt-3 border-t border-border/60 space-y-2.5">
+          {/* Price */}
+          <div dir="ltr" className="flex items-baseline justify-between gap-1">
+            <span className="text-xs font-bold text-muted-foreground tracking-wider">EGP</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg sm:text-xl font-black text-accent tracking-tight">
+                {formatNumber(property.price)}
               </span>
+            </div>
+          </div>
+
+          {/* Specs Grid */}
+          <div dir="rtl" className="grid grid-cols-3 gap-2 text-xs font-bold">
+            {property.beds > 0 ? (
+              <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 text-foreground/90">
+                <Bed className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span>{property.beds} <span className="text-[10px] text-muted-foreground font-normal">غرف</span></span>
+              </div>
+            ) : <div />}
+
+            {property.baths > 0 ? (
+              <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 text-foreground/90">
+                <Bath className="h-3.5 w-3.5 text-accent shrink-0" />
+                <span>{property.baths} <span className="text-[10px] text-muted-foreground font-normal">حمام</span></span>
+              </div>
+            ) : <div />}
+
+            <div dir="ltr" className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 text-foreground/90">
+              <span className="text-[10px] text-muted-foreground font-normal">م²</span>
+              <span>{property.area}</span>
+              <Square className="h-3.5 w-3.5 text-accent shrink-0" />
             </div>
           </div>
         </div>
       </CardContent>
-
-      <CardFooter className={cn(
-        "flex-shrink-0 flex flex-col gap-2",
-        listMode
-          ? "w-full border-t border-border p-3 sm:w-48 sm:border-t-0 sm:border-r sm:p-3 md:w-56"
-          : emphasized ? "p-5 sm:p-6 pt-0" : size === "large" ? "p-5 pt-0" : "p-3 sm:p-4 pt-0",
-      )}>
-         <Button onClick={(e) => { e.stopPropagation(); goToDetails(); }} className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold shadow-sm">
-             عرض تفاصيل العقار
-         </Button>
-         <div className="flex gap-1.5 w-full">
-           <Button variant="outline" size="sm" className="flex-1 h-9 rounded-lg text-green-600 dark:text-green-400 border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/30 hover:border-green-400 dark:hover:border-green-700 text-xs gap-1 transition-colors" onClick={handleWhatsApp}>
-             <WhatsAppIcon className="h-3.5 w-3.5" />واتساب
-          </Button>
-           <Button variant="outline" size="sm" className="flex-1 h-9 rounded-lg text-blue-600 dark:text-blue-400 border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-400 dark:hover:border-blue-700 text-xs gap-1 transition-colors" onClick={handleCall}>
-             <Phone className="h-3.5 w-3.5" />اتصال
-          </Button>
-           <Button variant="outline" size="icon" className="h-9 w-10 rounded-lg text-muted-foreground border-border hover:text-accent" onClick={handleCopy} title="نسخ الكود">
-             <Copy className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-         <Button variant="outline" size="icon"
-           className={cn("h-9 w-full rounded-lg border-accent/30 text-accent hover:bg-accent/10", isInCompare(property.id) && "bg-accent/10")}
-           onClick={handleCompare} title="مقارنة">
-           <Scale className="h-3.5 w-3.5" />
-           <span className="mr-1 text-xs font-semibold">مقارنة العقار</span>
-         </Button>
-        <a
-          href={getTiktokUrl(settings)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center gap-1.5 w-full text-[11px] text-muted-foreground hover:text-accent transition-colors"
-          title="حساب تيك توك"
-        >
-          <TikTokIcon className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">{getTiktokName(settings)}</span>
-        </a>
-      </CardFooter>
     </Card>
   );
 }
