@@ -23,11 +23,26 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
+import { MortgageCalculator } from "@/components/property/MortgageCalculator";
+import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
+import { PropertyShareModal } from "@/components/property/PropertyShareModal";
+import { updatePageMeta } from "@/lib/meta";
 
 
 const categoryLabels: Record<string, string> = {
-  sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
-  administrative: "إداري", medical: "طبي", commercial: "تجاري",
+  residential: "سكني",
+  administrative: "إداري",
+  medical: "طبي",
+  commercial: "تجاري",
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
+};
+
+const listingTypeLabels: Record<string, string> = {
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
 };
 
 const finishingLabels: Record<string, string> = {
@@ -39,7 +54,7 @@ const finishingLabels: Record<string, string> = {
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { properties, propertyTypes, regions, settings, trackPropertyView, fetching } = useData();
+  const { properties, propertyTypes, regions, settings, trackPropertyView, fetching, users } = useData();
   const { isStaff, currentUser } = useAuth();
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
@@ -70,7 +85,16 @@ export default function PropertyDetails() {
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
-  useEffect(() => { if (id) trackPropertyView(id); }, [id, trackPropertyView]);
+  useEffect(() => {
+    if (id) trackPropertyView(id);
+    if (property) {
+      updatePageMeta({
+        title: `${property.title} (${property.code})`,
+        description: property.description || `${property.title} - السعر: ${formatNumber(property.price)} ج.م`,
+        image: property.images?.[0],
+      });
+    }
+  }, [id, property, trackPropertyView]);
 
   if (!property) {
     if (fetching) {
@@ -255,24 +279,39 @@ export default function PropertyDetails() {
             </div>
             <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto">
               <div className="text-3xl font-bold text-accent">{formatNumber(property.price)} <span className="text-base font-normal text-foreground/70">EGP</span></div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {isStaff && (
                   <Button
                     onClick={() => navigate(`/admin/properties/${property.id}/edit`)}
-                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-1.5"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 gap-1.5 rounded-xl font-bold"
                     title="تعديل هذا العقار">
                     <Pencil className="h-4 w-4" />تعديل العقار
                   </Button>
                 )}
-                <Button variant="outline" size="icon" onClick={handleShare} title="مشاركة"><Share2 className="h-4 w-4" /></Button>
+                <PropertyBrochureModal
+                  property={property}
+                  region={regions.find(r => r.id === property.regionId)}
+                  propertyType={propertyTypes.find(t => t.id === property.typeId)}
+                  categoryLabel={categoryLabels[property.category] || property.category}
+                  finishingLabel={finishingLabels[property.finishing] || property.finishing}
+                  companyName={settings.companyName}
+                  phone={settings.phone1}
+                  whatsapp={settings.whatsapp}
+                  email={settings.email}
+                />
+                <PropertyShareModal
+                  property={property}
+                  regionName={regionName}
+                  typeName={typeName}
+                />
                 <Button variant="outline" size="icon"
-                  className={isFavorite(property.id) ? "text-red-500 border-red-200" : ""}
+                  className={cn("rounded-xl border-border/80", isFavorite(property.id) ? "text-red-500 border-red-200" : "")}
                   onClick={() => { toggleFavorite(property.id); toast({ title: isFavorite(property.id) ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة" }); }}
                   title="المفضلة">
                   <Heart className={cn("h-4 w-4", isFavorite(property.id) ? "fill-red-500" : "")} />
                 </Button>
                 <Button variant="outline" size="icon"
-                  className={isInCompare(property.id) ? "text-accent border-accent/30" : ""}
+                  className={cn("rounded-xl border-border/80", isInCompare(property.id) ? "text-accent border-accent/30" : "")}
                   onClick={() => { toggleCompare(property.id); toast({ title: isInCompare(property.id) ? "تمت الإزالة من المقارنة" : "تمت الإضافة للمقارنة" }); }}
                   title="مقارنة">
                   <Scale className="h-4 w-4" />
@@ -439,27 +478,27 @@ export default function PropertyDetails() {
               <Card className="card-luxury">
                 <CardHeader className="pb-3"><CardTitle className="text-base">تفاصيل العقار</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                  <div className="flex flex-col">
                     {[
                       { label: "كود العقار", value: property.code, copy: true },
-                      { label: "نوع العقار", value: typeName },
-                      { label: "المنطقة", value: regionName },
+                      { label: "نوع العقار", value: typeName || property.unitType || null },
+                      { label: "فئة العقار", value: categoryLabels[property.category] || property.category },
+                      { label: "نوع العرض", value: listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع" },
+                      { label: "المنطقة", value: regionName || null },
                       { label: "المنطقة الفرعية", value: property.subArea || null },
-                      { label: "فئة العقار", value: categoryLabels[property.category] },
                       { label: "المساحة", value: property.area ? `${property.area} م²` : null },
-                      { label: "عدد الغرف", value: property.beds || null },
-                      { label: "عدد الحمامات", value: property.baths || null },
-                      { label: "الدور", value: property.floor || null },
+                      { label: "غرف النوم", value: property.beds || null },
+                      { label: "الحمامات", value: property.baths || null },
+                      { label: "الدور", value: property.floor !== null && property.floor !== undefined && property.floor > 0 ? `الدور ${property.floor}` : property.floor === 0 ? "أرضي" : null },
                       { label: "عدد طوابق العقار", value: property.floors || null },
-                      { label: "نوع الطابق", value: property.unitType || null },
-                      { label: "الواجهة", value: property.floorText || null },
-                      { label: "التوزيع", value: property.layout || null },
+                      { label: "الواجهة", value: property.unitType || null },
+                      { label: "الفيو", value: property.view || null },
                       { label: "ماستر", value: property.master || null },
+                      { label: "الدريسنج", value: property.floorText || null },
                       { label: "أسانسير", value: property.elevator || null },
                       { label: "موقف سيارة", value: property.parking || null },
                       { label: "المميزات الإضافية", value: property.additionalFeatures || null },
                       { label: "التشطيب", value: property.finishing ? (finishingLabels[property.finishing] || property.finishing) : null },
-                      { label: "الفيو", value: property.view || null },
                       { label: "الموقع", value: property.location || null },
                     ].filter(r => r.value != null && r.value !== "").map((row, i) => (
                       <div key={i} className="flex justify-between items-start gap-3 py-2.5 border-b border-border last:border-0">
@@ -481,60 +520,86 @@ export default function PropertyDetails() {
 
               {/* Source info — admin only */}
               {isStaff && (
-                (property.sourcePhones?.some(ph => ph.trim()) ||
-                 property.sourceEmail?.trim() ||
-                 property.sourceLocation?.trim() ||
-                 property.sourceNotes?.trim() ||
-                 property.source?.trim())
-              ) && (
-                <Card className="card-luxury border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                      <FileText className="h-4 w-4" />
-                      بيانات المصدر
-                      <span className="text-[10px] font-normal bg-amber-200/60 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">للمدير فقط</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {property.source?.trim() && (
+                Boolean(
+                  property.sourcePhones?.some(ph => ph.trim()) ||
+                  property.sourceEmail?.trim() ||
+                  property.sourceLocation?.trim() ||
+                  property.sourceNotes?.trim() ||
+                  property.source?.trim()
+                ) && (
+                  <Card className="card-luxury border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                        <FileText className="h-4 w-4" />
+                        بيانات المصدر
+                        <span className="text-[10px] font-normal bg-amber-200/60 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">للمدير فقط</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground w-20 flex-shrink-0">المصدر</span>
-                        <span className="font-medium">{property.source}</span>
+                        <span className="text-muted-foreground w-24 flex-shrink-0">نوع المصدر</span>
+                        <span className="font-semibold text-accent">{property.agentType === "broker" ? "بروكر / وسيط" : "مباشر"}</span>
                       </div>
-                    )}
-                    {(property.sourcePhones ?? []).filter(ph => ph.trim()).map((ph, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
-                        <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline font-medium transition-colors" dir="ltr">
-                          <Phone className="h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />{ph}
-                        </a>
-                      </div>
-                    ))}
-                    {property.sourceEmail?.trim() && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
-                        <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-foreground hover:text-violet-600 dark:hover:text-violet-400 hover:underline transition-colors" dir="ltr">
-                          <Mail className="h-3.5 w-3.5 flex-shrink-0 text-violet-600 dark:text-violet-400" />{property.sourceEmail}
-                        </a>
-                      </div>
-                    )}
-                    {property.sourceLocation?.trim() && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground w-20 flex-shrink-0">الموقع</span>
-                        <a href={property.sourceLocation} target="_blank" rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-accent hover:underline">
-                          <LinkIcon className="h-3.5 w-3.5 flex-shrink-0" />افتح الرابط
-                        </a>
-                      </div>
-                    )}
-                    {property.sourceNotes?.trim() && (
-                      <div className="flex gap-2 text-sm">
-                        <span className="text-muted-foreground w-20 flex-shrink-0">ملاحظات</span>
-                        <p className="text-sm leading-relaxed whitespace-pre-line">{property.sourceNotes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      {property.assignedStaffId && property.assignedStaffId !== "none" && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground w-24 flex-shrink-0">الموظف المسؤول</span>
+                          <span className="font-medium">
+                            {users.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
+                          </span>
+                        </div>
+                      )}
+                      {property.source?.trim() && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground w-24 flex-shrink-0">اسم المالك</span>
+                          <span className="font-medium">{property.source}</span>
+                        </div>
+                      )}
+                      {(property.sourcePhones ?? []).filter(ph => ph.trim()).map((ph, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
+                          <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline font-medium transition-colors" dir="ltr">
+                            <Phone className="h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />{ph}
+                          </a>
+                        </div>
+                      ))}
+                      {property.sourceEmail?.trim() && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
+                          <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-foreground hover:text-violet-600 dark:hover:text-violet-400 hover:underline transition-colors" dir="ltr">
+                            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-violet-600 dark:text-violet-400" />{property.sourceEmail}
+                          </a>
+                        </div>
+                      )}
+                      {property.sourceLocation?.trim() && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground w-20 flex-shrink-0">الموقع</span>
+                          <a href={property.sourceLocation} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-accent hover:underline">
+                            <LinkIcon className="h-3.5 w-3.5 flex-shrink-0" />افتح الرابط
+                          </a>
+                        </div>
+                      )}
+                      {property.sourceNotes?.trim() && (
+                        <div className="flex gap-2 text-sm">
+                          <span className="text-muted-foreground w-20 flex-shrink-0">ملاحظات</span>
+                          <p className="text-sm leading-relaxed whitespace-pre-line">{property.sourceNotes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )
+              )}
+
+              {/* Mortgage & Installment Calculator */}
+              {property.price > 0 && (
+                <div className="pt-2">
+                  <MortgageCalculator
+                    price={property.price}
+                    propertyTitle={property.title}
+                    propertyCode={property.code}
+                    whatsappNumber={settings.whatsapp || settings.phone1}
+                  />
+                </div>
               )}
 
               {/* Map */}

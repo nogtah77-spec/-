@@ -26,6 +26,22 @@ const statusLabels: Record<PropertyStatus, string> = {
   reserved: "محجوز",
 };
 
+const categoryLabels: Record<string, string> = {
+  residential: "سكني",
+  administrative: "إداري",
+  medical: "طبي",
+  commercial: "تجاري",
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
+};
+
+const listingTypeLabels: Record<string, string> = {
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
+};
+
 const statusColors: Record<PropertyStatus, string> = {
   active: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
   listed: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -209,6 +225,8 @@ export default function Properties() {
                   />
                 </TableHead>
                 <TableHead>الكود</TableHead>
+                <TableHead>فئة العقار</TableHead>
+                <TableHead>نوع العرض</TableHead>
                 <TableHead>النوع</TableHead>
                 <TableHead>المنطقة</TableHead>
                 <TableHead>السعر</TableHead>
@@ -232,6 +250,16 @@ export default function Properties() {
                   <TableCell>
                     <span className="font-mono text-xs font-semibold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap">
                       {property.code}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium whitespace-nowrap">
+                      {categoryLabels[property.category] || property.category}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-0.5 rounded bg-accent/10 text-accent font-semibold whitespace-nowrap">
+                      {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
                     </span>
                   </TableCell>
                   <TableCell>{propertyTypes.find(t => t.id === property.typeId)?.name}</TableCell>

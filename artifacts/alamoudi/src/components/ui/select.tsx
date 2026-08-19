@@ -111,22 +111,18 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        // Floating premium menu — clearly separated, 12px radius
-        "relative z-50 max-h-[min(22rem,var(--radix-select-content-available-height))] min-w-[8rem] " +
-        "overflow-hidden rounded-md " +
-        "border border-border bg-popover text-popover-foreground " +
-        "shadow-[0_8px_24px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.04)] " +
+        // Floating premium menu — clean rounded corners, smooth shadow
+        "relative z-50 max-h-64 sm:max-h-72 min-w-[8rem] " +
+        "overflow-hidden rounded-xl " +
+        "border border-border/80 bg-popover text-popover-foreground " +
+        "shadow-[0_12px_36px_rgba(0,0,0,0.25),0_0_0_1px_rgba(255,255,255,0.06)] " +
         "duration-[180ms] " +
         "data-[state=open]:animate-in data-[state=closed]:animate-out " +
         "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 " +
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 " +
         "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 " +
         "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 " +
-        "origin-[--radix-select-content-transform-origin] " +
-        "[scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent] " +
-        "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent " +
-        "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border " +
-        "[&::-webkit-scrollbar-thumb:hover]:bg-muted-foreground/40",
+        "origin-[--radix-select-content-transform-origin]",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
         className
@@ -134,17 +130,15 @@ const SelectContent = React.forwardRef<
       position={position}
       {...props}
     >
-      <SlowScrollButton direction="up" />
       <SelectPrimitive.Viewport
         className={cn(
-          "p-1",
+          "p-1.5 overflow-y-auto max-h-60 sm:max-h-64",
           position === "popper" &&
             "w-full min-w-[var(--radix-select-trigger-width)]"
         )}
       >
         {children}
       </SelectPrimitive.Viewport>
-      <SlowScrollButton direction="down" />
     </SelectPrimitive.Content>
   </SelectPrimitive.Portal>
 ))

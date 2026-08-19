@@ -27,8 +27,19 @@ interface PropertyCardProps {
 }
 
 const categoryLabels: Record<string, string> = {
-  sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
-  administrative: "إداري", medical: "طبي", commercial: "تجاري",
+  residential: "سكني",
+  administrative: "إداري",
+  medical: "طبي",
+  commercial: "تجاري",
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
+};
+
+const listingTypeLabels: Record<string, string> = {
+  sale: "للبيع",
+  rent: "للإيجار",
+  furnished: "مفروش",
 };
 
 export function PropertyCard({
@@ -158,7 +169,7 @@ export function PropertyCard({
             </span>
           ) : <span />}
           <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[11px] px-2.5 py-1 font-extrabold shadow-sm">
-            {categoryLabels[property.category] || "للبيع"}
+            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
           </Badge>
         </div>
         <div className="flex min-h-0 flex-1 flex-row">
@@ -284,7 +295,7 @@ export function PropertyCard({
             </span>
           ) : <span />}
           <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
-            {categoryLabels[property.category] || "للبيع"}
+            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
           </Badge>
         </div>
       )}
@@ -296,7 +307,7 @@ export function PropertyCard({
             </span>
           ) : <span />}
           <Badge className="rounded-full bg-accent text-accent-foreground border-none text-[12px] px-3 py-1 font-extrabold shadow-sm">
-            {categoryLabels[property.category] || "للبيع"}
+            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
           </Badge>
         </div>
       )}

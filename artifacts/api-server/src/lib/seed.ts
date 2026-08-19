@@ -13,37 +13,28 @@ import { hashPassword } from "./auth";
 import { logger } from "./logger";
 
 const DEFAULT_REGIONS = [
+  { id: "badr", name: "مدينة بدر", active: true },
   { id: "shorouk", name: "مدينة الشروق", active: true, heroImage: "/city-heroes/shorouk.jpg" },
   { id: "madinaty", name: "مدينتي", active: true },
-  { id: "badr", name: "مدينة بدر", active: true },
-  { id: "wasal", name: "كمباوند وصال", active: true },
+  { id: "wasal", name: "كمبوند وصال", active: true },
   { id: "tagamoa", name: "التجمع", active: true },
   { id: "beit_elwatan", name: "بيت الوطن", active: true },
-  { id: "rehab", name: "الرحاب", active: true },
-  { id: "new_capital", name: "العاصمة الإدارية الجديدة", active: true },
   { id: "nasr_city", name: "مدينة نصر", active: true },
-  { id: "mohandeseen", name: "المهندسين", active: true },
-  { id: "sheikh_zayed", name: "الشيخ زايد", active: true },
-  { id: "oct6", name: "6 أكتوبر", active: true },
+  { id: "new_heliopolis", name: "هليوبوليس الجديدة", active: true },
 ];
 
 const DEFAULT_PROPERTY_TYPES = [
   { id: "apartment", name: "شقة", active: true },
   { id: "duplex", name: "دوبلكس", active: true },
   { id: "villa", name: "فيلا", active: true },
-  { id: "penthouse", name: "بنت هاوس", active: true },
   { id: "townhouse", name: "تاون هاوس", active: true },
   { id: "twinhouse", name: "توين هاوس", active: true },
-  { id: "studio", name: "أستوديو", active: true },
+  { id: "penthouse", name: "بنتهاوس", active: true },
   { id: "shop", name: "محل", active: true },
-  { id: "office", name: "مكتب إداري", active: true },
   { id: "clinic", name: "عيادة", active: true },
-  { id: "medical_center", name: "مركز طبي", active: true },
-  { id: "restaurant", name: "مطعم", active: true },
-  { id: "cafe", name: "كافيه", active: true },
-  { id: "land", name: "أرض", active: true },
-  { id: "pharmacy", name: "صيدلية", active: true },
+  { id: "office", name: "مكتب", active: true },
   { id: "building", name: "عمارة", active: true },
+  { id: "entire_building", name: "مبنى", active: true },
 ];
 
 const DEFAULT_SETTINGS = {

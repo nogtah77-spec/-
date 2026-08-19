@@ -30,6 +30,7 @@ import {
   PROPERTY_CARD_SIZE_KEY,
   type PropertyFilterState,
 } from "@/lib/propertyFilters";
+import { updatePageMeta } from "@/lib/meta";
 
 function tiktokId(url: string): string | null {
   const m = url.match(/\/video\/(\d{6,})/);
@@ -189,6 +190,13 @@ export default function Home() {
       localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
     } catch {}
   }, [filters.cardSize]);
+
+  useEffect(() => {
+    updatePageMeta({
+      title: "الرئيسية | منصة العقارات الفاخرة",
+      description: "منصة العمودي للتسويق العقاري — تصفح أفضل الفلل والشقق والعقارات الفاخرة والتجارية في مصر.",
+    });
+  }, []);
   const resolve = (p: any) => ({
     ...p,
     typeName: propertyTypes.find((t) => t.id === p.typeId)?.name,
@@ -259,41 +267,46 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
-        {/* ── 3 Action Buttons — البلاط المتساوية ── */}
-        <div className="container px-3 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4">
-          <div className="flex gap-2 sm:gap-3 max-w-3xl mx-auto">
+        {/* ── 3 Action Buttons — Luxury Quick Actions ── */}
+        <div className="container px-3 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
+          <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-[180ms] text-white font-bold text-[10px] sm:text-sm select-none cursor-pointer"
-              style={{
-                background: "linear-gradient(135deg, #A2845A, #B99A68)",
-              }}
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-gradient-to-br from-accent/90 to-accent text-accent-foreground shadow-[0_4px_16px_rgba(185,154,104,0.25)] hover:shadow-[0_8px_24px_rgba(185,154,104,0.4)] hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-accent/40"
             >
-              <Plus className="h-4 w-4 sm:h-6 sm:w-6" />
-              أعرض عقارك لدينا
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-black/15 flex items-center justify-center shrink-0">
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="text-center sm:text-right">
+                <span className="block text-xs sm:text-sm font-bold leading-tight">أعرض عقارك</span>
+                <span className="hidden sm:block text-[10px] text-accent-foreground/80 font-normal mt-0.5">بيع أو تأجير وحدتك</span>
+              </div>
             </Link>
+
             <Link
               href="/finishing-services"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm select-none"
-              style={{
-                background: "linear-gradient(135deg, #0d1a24, #10202D)",
-                color: "#F5F3EE",
-                border: "1px solid rgba(255,255,255,0.10)",
-              }}
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card/95 hover:bg-card text-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border/80 hover:border-accent/50"
             >
-              <Building2 className="h-4 w-4 sm:h-6 sm:w-6" />
-              خدمات التشطيبات
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="text-center sm:text-right">
+                <span className="block text-xs sm:text-sm font-bold leading-tight">خدمات التشطيبات</span>
+                <span className="hidden sm:block text-[10px] text-muted-foreground font-normal mt-0.5">تصميم وديكورات فاخرة</span>
+              </div>
             </Link>
+
             <Link
               href="/consultation"
-              className="flex-1 flex flex-col items-center justify-center gap-1 sm:gap-2 rounded-md py-4 sm:py-5 hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200 font-bold text-[10px] sm:text-sm text-foreground select-none"
-              style={{ border: "1.5px solid #B99A68" }}
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card/95 hover:bg-card text-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border/80 hover:border-accent/50"
             >
-              <MessageCircle
-                className="h-4 w-4 sm:h-6 sm:w-6"
-                style={{ color: "#B99A68" }}
-              />
-              اطرح استفسارك
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="text-center sm:text-right">
+                <span className="block text-xs sm:text-sm font-bold leading-tight">اطرح استفسارك</span>
+                <span className="hidden sm:block text-[10px] text-muted-foreground font-normal mt-0.5">استشارة عقارية فورية</span>
+              </div>
             </Link>
           </div>
         </div>

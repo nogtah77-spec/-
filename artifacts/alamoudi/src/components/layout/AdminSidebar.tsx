@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings, FileCheck2,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox,
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox, Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -68,6 +68,13 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { href: "/admin/users", label: "المستخدمين", icon: Users },
       { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck },
+    ],
+  },
+  {
+    title: "الذكاء الاصطناعي والأتمتة",
+    items: [
+      { href: "/admin/agents", label: "وكلاء الذكاء الاصطناعي", icon: Bot, adminOnly: true },
+      { href: "/admin/whatsapp", label: "ربط واتساب الذكي (WhatsApp Bot)", icon: MessageSquare, adminOnly: true },
     ],
   },
   {

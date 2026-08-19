@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
-import { Menu, MapPin, Sparkles } from "lucide-react";
+import { Menu, MapPin, Sparkles, Smartphone, Download } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "../ui/sheet";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { useAIChat } from "@/context/AIChatContext";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
 import { buildWaUrl } from "@/lib/phone";
 import { getTiktokUrl } from "@/lib/socials";
+import { InstallAppModal } from "../ui/InstallAppModal";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -21,6 +22,7 @@ export function Navbar() {
   const tiktokHref = getTiktokUrl(settings);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [installModalOpen, setInstallModalOpen] = useState(false);
   const closeStart = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -51,22 +53,22 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full glass-navbar">
-      {/* Desktop — 3 columns */}
-      <div className="container h-16 hidden md:grid grid-cols-3 items-center px-6">
+      {/* Desktop */}
+      <div className="container h-16 hidden md:flex items-center justify-between px-4 lg:px-6 gap-3">
         {/* Brand — far right (RTL start) */}
-        <div className="flex justify-start items-center">
+        <div className="flex justify-start items-center flex-shrink-0">
           <Link href="/" data-testid="link-brand">
             <span className="text-2xl font-bold text-foreground dark:text-white tracking-tight leading-none">
               العمودي
             </span>
-            <span className="text-sm font-light text-muted-foreground mr-2 tracking-wide">
+            <span className="text-xs lg:text-sm font-light text-muted-foreground mr-2 tracking-wide hidden sm:inline">
               شريكك نحو الاستثمار الأفضل
             </span>
           </Link>
         </div>
 
         {/* Nav — center */}
-        <nav className="flex justify-center items-center gap-6">
+        <nav className="flex justify-center items-center gap-4 lg:gap-6 flex-shrink-0">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -92,14 +94,14 @@ export function Navbar() {
         </nav>
 
         {/* Actions — far left (RTL end) */}
-        <div className="flex justify-end items-center gap-2">
+        <div className="flex justify-end items-center gap-2 flex-shrink-0 whitespace-nowrap">
           {whatsappHref && (
             <a
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
               title="واتساب"
-              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors"
+              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30 transition-colors flex-shrink-0"
               data-testid="link-whatsapp"
             >
               <WhatsAppIcon className="h-4 w-4" />
@@ -110,7 +112,7 @@ export function Navbar() {
             target="_blank"
             rel="noopener noreferrer"
             title="تيك توك"
-            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
             data-testid="link-tiktok"
           >
             <TikTokIcon className="h-4 w-4" />
@@ -121,7 +123,7 @@ export function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               title="تيليجرام"
-              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-[#2AABEE] hover:bg-[#2AABEE]/10 transition-colors"
+              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-[#2AABEE] hover:bg-[#2AABEE]/10 transition-colors flex-shrink-0"
               data-testid="link-telegram"
             >
               <TelegramIcon className="h-4 w-4" />
@@ -133,7 +135,7 @@ export function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               title="موقعنا"
-              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              className="w-8 h-8 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex-shrink-0"
               data-testid="link-maps"
             >
               <MapPin className="h-4 w-4" />
@@ -141,15 +143,23 @@ export function Navbar() {
           )}
           {(!settings.themeMode || settings.themeMode === "user") && (
             <>
-              <div className="w-px h-4 bg-border mx-1" />
+              <div className="w-px h-4 bg-border mx-0.5" />
               <ThemeToggle />
             </>
           )}
+          <button
+            onClick={() => setInstallModalOpen(true)}
+            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-accent bg-accent/10 hover:bg-accent hover:text-accent-foreground border border-accent/30 shadow-sm transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap flex-shrink-0"
+            title="تثبيت تطبيق العمودي"
+          >
+            <Smartphone className="h-3 w-3" />
+            <span>تثبيت التطبيق</span>
+          </button>
           {isStaff ? (
             <Button
               asChild
               size="sm"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-md px-4 text-sm font-medium"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-3.5 h-7 text-xs font-bold shadow-sm whitespace-nowrap flex-shrink-0"
               data-testid="button-nav-dashboard"
             >
               <Link href="/admin">لوحة التحكم</Link>
@@ -157,7 +167,7 @@ export function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="text-sm font-medium text-muted-foreground hover:text-accent transition-colors px-1"
+              className="inline-flex items-center text-xs font-semibold text-muted-foreground hover:text-accent transition-colors px-2 py-1 rounded-md hover:bg-accent/5 whitespace-nowrap flex-shrink-0"
               data-testid="link-login"
             >
               تسجيل الدخول
@@ -265,6 +275,19 @@ export function Navbar() {
                   موقعنا
                 </a>
               )}
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setInstallModalOpen(true);
+                }}
+                className="mt-2 flex items-center justify-between w-full py-2.5 px-3.5 rounded-xl text-sm font-bold bg-accent/15 text-accent border border-accent/30 hover:bg-accent hover:text-accent-foreground transition-all"
+              >
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4" />
+                  <span>تثبيت التطبيق على هاتفك</span>
+                </div>
+                <Download className="h-4 w-4" />
+              </button>
             </nav>
           </SheetContent>
         </Sheet>
@@ -273,8 +296,19 @@ export function Navbar() {
           <span className="text-2xl font-bold text-foreground dark:text-white">العمودي</span>
         </Link>
 
-        {(!settings.themeMode || settings.themeMode === "user") && <ThemeToggle />}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setInstallModalOpen(true)}
+            className="flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-accent/10 text-accent border border-accent/30"
+            title="تثبيت التطبيق"
+          >
+            <Smartphone className="h-4 w-4" />
+          </button>
+          {(!settings.themeMode || settings.themeMode === "user") && <ThemeToggle />}
+        </div>
       </div>
+
+      <InstallAppModal open={installModalOpen} onOpenChange={setInstallModalOpen} />
     </header>
   );
 }

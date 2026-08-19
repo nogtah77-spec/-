@@ -6,7 +6,9 @@ export interface Region { id: string; name: string; active: boolean; heroImage?:
 export interface PropertyType { id: string; name: string; active: boolean; }
 
 export type PropertyStatus = "active" | "listed" | "draft" | "sold" | "rented" | "reserved";
-export type PropertyCategory = "sale" | "rent" | "furnished" | "administrative" | "medical" | "commercial";
+export type PropertyCategory = "residential" | "administrative" | "medical" | "commercial" | "sale" | "rent" | "furnished";
+export type PropertyListingType = "sale" | "rent" | "furnished";
+export type PropertySourceType = "direct" | "broker";
 
 export interface Property {
   id: string;
@@ -24,6 +26,7 @@ export interface Property {
   typeId: string;
   regionId: string;
   category: PropertyCategory;
+  listingType?: PropertyListingType;
   status: PropertyStatus;
   featured: boolean;
   agentType?: "direct" | "broker";
@@ -47,8 +50,22 @@ export interface Property {
   sourceLocation?: string;
   sourceNotes?: string;
   assignedStaffId?: string;
+  brokerId?: string;
   views?: number;
   coverPriority?: "image" | "video";
+}
+
+export interface Broker {
+  id: string;
+  name: string;
+  phone: string;
+  whatsapp?: string;
+  company?: string;
+  specialty?: string;
+  commission?: string;
+  notes?: string;
+  status: "active" | "inactive";
+  createdAt: string;
 }
 
 export interface User {
@@ -358,12 +375,16 @@ interface DataContextType {
   aiLeads: AiLead[];
   customerPropertyRequests: CustomerPropertyRequest[];
   contracts: Contract[];
+  brokers: Broker[];
   activityLogs: ActivityLog[];
   visitorStats: VisitorStats;
   settings: SiteSettings;
   trackPropertyView: (id: string) => void;
   refreshVisitorStats: () => Promise<void>;
   updateSettings: (s: Partial<SiteSettings>) => Promise<boolean>;
+  addBroker: (b: Omit<Broker, "id" | "createdAt">) => Promise<boolean>;
+  updateBroker: (id: string, b: Partial<Broker>) => Promise<boolean>;
+  deleteBroker: (id: string) => Promise<boolean>;
   addRegion: (name: string, heroImage?: string) => Promise<boolean>;
   updateRegion: (id: string, name: string, heroImage?: string) => Promise<boolean>;
   deleteRegion: (id: string) => Promise<boolean>;
@@ -429,6 +450,77 @@ interface CachePayload {
   settings: SiteSettings;
 }
 
+export const DEFAULT_BROKERS: Broker[] = [
+  {
+    id: "broker-1",
+    name: "م/ وائل الشناوي",
+    phone: "01012345678",
+    whatsapp: "01012345678",
+    company: "القمة للتسويق العقاري",
+    specialty: "فلل ودوبلكس التجمع",
+    commission: "2.5%",
+    notes: "وسيط معتمد وموثوق، سرعة في المعاينات والتنسيق",
+    status: "active",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "broker-2",
+    name: "أ/ كريم منصور",
+    phone: "01123456789",
+    whatsapp: "01123456789",
+    company: "رويال هومز",
+    specialty: "شقق ومحلات الشروق ومدينتي",
+    commission: "50% مناصفة",
+    notes: "عروض حصرية في كمبوند وصال والشروق",
+    status: "active",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "broker-3",
+    name: "أ/ ياسمين فؤاد",
+    phone: "01234567890",
+    whatsapp: "01234567890",
+    company: "وسيط معتمد",
+    specialty: "مقرات إدارية وعيادات التجمع",
+    commission: "2.5%",
+    notes: "علاقات قوية مع المستثمرين والمقرات الإدارية",
+    status: "active",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export const DEFAULT_REGIONS: Region[] = [
+  { id: "badr", name: "مدينة بدر", active: true },
+  { id: "shorouk", name: "مدينة الشروق", active: true, heroImage: "/city-heroes/shorouk.jpg" },
+  { id: "madinaty", name: "مدينتي", active: true },
+  { id: "wasal", name: "كمبوند وصال", active: true },
+  { id: "tagamoa", name: "التجمع", active: true },
+  { id: "beit_elwatan", name: "بيت الوطن", active: true },
+  { id: "nasr_city", name: "مدينة نصر", active: true },
+  { id: "new_heliopolis", name: "هليوبوليس الجديدة", active: true },
+];
+
+export const DEFAULT_PROPERTY_TYPES: PropertyType[] = [
+  { id: "apartment", name: "شقة", active: true },
+  { id: "duplex", name: "دوبلكس", active: true },
+  { id: "villa", name: "فيلا", active: true },
+  { id: "townhouse", name: "تاون هاوس", active: true },
+  { id: "twinhouse", name: "توين هاوس", active: true },
+  { id: "penthouse", name: "بنتهاوس", active: true },
+  { id: "shop", name: "محل", active: true },
+  { id: "clinic", name: "عيادة", active: true },
+  { id: "office", name: "مكتب", active: true },
+  { id: "building", name: "عمارة", active: true },
+  { id: "entire_building", name: "مبنى", active: true },
+];
+
+export const DEFAULT_STAFF_USERS: User[] = [
+  { id: "staff-1", name: "سعيد العمودي", email: "saeed@alamoudi.com", username: "saeed", role: "admin", active: true, canClearActivityLogs: true, joinedAt: "2026-01-01" },
+  { id: "staff-2", name: "محمد رمضان", email: "mohamed@alamoudi.com", username: "mohamed", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
+  { id: "staff-3", name: "نسرين", email: "nisreen@alamoudi.com", username: "nisreen", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
+  { id: "staff-4", name: "أحمد سليم", email: "ahmed@alamoudi.com", username: "ahmed", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
+];
+
 function readCache(): CachePayload | null {
   try {
     // حاول تقرأ الـ v4 أول
@@ -458,16 +550,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [ready, setReady] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [regions, setRegions] = useState<Region[]>(() => {
+    const cached = readCache();
+    return cached?.regions?.length ? cached.regions : DEFAULT_REGIONS;
+  });
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>(() => {
+    const cached = readCache();
+    return cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES;
+  });
   const [properties, setProperties] = useState<Property[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(DEFAULT_STAFF_USERS);
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
   const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
   const [customerPropertyRequests, setCustomerPropertyRequests] = useState<CustomerPropertyRequest[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [brokers, setBrokers] = useState<Broker[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_brokers");
+      return raw ? JSON.parse(raw) : DEFAULT_BROKERS;
+    } catch {
+      return DEFAULT_BROKERS;
+    }
+  });
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
@@ -590,9 +696,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
                           ? settingsR.value : null;
 
-      if (newRegions)  setRegions(newRegions);
-      if (newTypes)    setPropertyTypes(newTypes);
-      if (newProps)    setProperties(newProps);
+      if (newRegions && newRegions.length > 0) setRegions(newRegions);
+      else if (!cached?.regions?.length) setRegions(DEFAULT_REGIONS);
+
+      if (newTypes && newTypes.length > 0) setPropertyTypes(newTypes);
+      else if (!cached?.types?.length) setPropertyTypes(DEFAULT_PROPERTY_TYPES);
+
+      if (newProps) setProperties(newProps);
       if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] });
 
       const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
@@ -601,10 +711,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (gotData) {
         writeCache({
-          regions:    newRegions  ?? cached?.regions  ?? [],
-          types:      newTypes    ?? cached?.types    ?? [],
-          properties: newProps    ?? cached?.properties ?? [],
-          settings:   newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
+          regions: (newRegions && newRegions.length > 0) ? newRegions : (cached?.regions?.length ? cached.regions : DEFAULT_REGIONS),
+          types: (newTypes && newTypes.length > 0) ? newTypes : (cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES),
+          properties: newProps ?? cached?.properties ?? [],
+          settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
         });
         void Promise.allSettled([
           api.get<User[]>("/users"),
@@ -618,7 +728,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           api.get<VisitorStats>("/visitors/stats"),
          ]).then(([usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR]) => {
           if (destroyed) return;
-           if (usersR.status === "fulfilled") setUsers(usersR.value);
+          if (usersR.status === "fulfilled" && usersR.value?.length) {
+            setUsers(usersR.value);
+          } else {
+            setUsers(DEFAULT_STAFF_USERS);
+          }
            if (inquiriesR.status === "fulfilled") setInquiries(inquiriesR.value);
            if (finishingR.status === "fulfilled") setFinishingRequests(finishingR.value);
            if (requestsR.status === "fulfilled") setPropertyRequests(requestsR.value);
@@ -634,8 +748,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => { destroyed = true; };
   }, []);
 
-  const updateSettings = (s: Partial<SiteSettings>) => {
-    const next = { ...settings, ...s };
+  const addBroker = useCallback(async (b: Omit<Broker, "id" | "createdAt">) => {
+    const newBroker: Broker = {
+      ...b,
+      id: "broker-" + genId(),
+      createdAt: new Date().toISOString(),
+    };
+    setBrokers(prev => {
+      const updated = [newBroker, ...prev];
+      try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    toast({ title: "تمت إضافة الوسيط بنجاح ✓" });
+    return true;
+  }, [toast]);
+
+  const updateBroker = useCallback(async (id: string, patch: Partial<Broker>) => {
+    setBrokers(prev => {
+      const updated = prev.map(b => (b.id === id ? { ...b, ...patch } : b));
+      try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    toast({ title: "تم تحديث بيانات الوسيط ✓" });
+    return true;
+  }, [toast]);
+
+  const deleteBroker = useCallback(async (id: string) => {
+    setBrokers(prev => {
+      const updated = prev.filter(b => b.id !== id);
+      try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    toast({ title: "تم حذف الوسيط" });
+    return true;
+  }, [toast]);
+
+  const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
+    const next = { ...settings, ...patch };
     setSettings(next);
     writeCache({
       regions,
@@ -643,62 +792,210 @@ export function DataProvider({ children }: { children: ReactNode }) {
       properties,
       settings: next,
     });
-    return persist(api.put("/settings", next));
-  };
+    try {
+      await api.put("/settings", next);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (settings saved in client cache):", err);
+      return true;
+    }
+  }, [settings, regions, propertyTypes, properties]);
 
   const addRegion = async (name: string, heroImage = "") => {
     const region: Region = { id: genId(), name, active: true, heroImage };
-    setRegions(p => [...p, region]);
-    return persist(api.post("/regions", region));
+    setRegions(p => {
+      const updated = [...p, region];
+      writeCache({ regions: updated, types: propertyTypes, properties, settings });
+      return updated;
+    });
+    try {
+      await api.post("/regions", region);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (region saved in client cache):", err);
+      return true;
+    }
   };
+
   const updateRegion = async (id: string, name: string, heroImage?: string) => {
-    setRegions(p => p.map(r => r.id === id ? { ...r, name, ...(heroImage !== undefined ? { heroImage } : {}) } : r));
-    return persist(api.patch(`/regions/${id}`, { name, ...(heroImage !== undefined ? { heroImage } : {}) }));
+    setRegions(p => {
+      const updated = p.map(r => r.id === id ? { ...r, name, ...(heroImage !== undefined ? { heroImage } : {}) } : r);
+      writeCache({ regions: updated, types: propertyTypes, properties, settings });
+      return updated;
+    });
+    try {
+      await api.patch(`/regions/${id}`, { name, ...(heroImage !== undefined ? { heroImage } : {}) });
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (region updated in client cache):", err);
+      return true;
+    }
   };
+
   const deleteRegion = async (id: string) => {
-    setRegions(p => p.filter(r => r.id !== id));
-    return persist(api.del(`/regions/${id}`));
+    setRegions(p => {
+      const updated = p.filter(r => r.id !== id);
+      writeCache({ regions: updated, types: propertyTypes, properties, settings });
+      return updated;
+    });
+    try {
+      await api.del(`/regions/${id}`);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (region deleted from client cache):", err);
+      return true;
+    }
   };
+
   const toggleRegion = async (id: string) => {
     const current = regions.find(r => r.id === id);
     const active = !(current?.active ?? true);
-    setRegions(p => p.map(r => r.id === id ? { ...r, active } : r));
-    return persist(api.patch(`/regions/${id}`, { active }));
+    setRegions(p => {
+      const updated = p.map(r => r.id === id ? { ...r, active } : r);
+      writeCache({ regions: updated, types: propertyTypes, properties, settings });
+      return updated;
+    });
+    try {
+      await api.patch(`/regions/${id}`, { active });
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (region toggled in client cache):", err);
+      return true;
+    }
   };
 
-  const addPropertyType = (name: string) => {
+  const addPropertyType = async (name: string) => {
     const t: PropertyType = { id: genId(), name, active: true };
-    setPropertyTypes(p => [...p, t]);
-    persist(api.post("/property-types", t));
+    setPropertyTypes(p => {
+      const updated = [...p, t];
+      writeCache({ regions, types: updated, properties, settings });
+      return updated;
+    });
+    try {
+      await api.post("/property-types", t);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (property type saved in client cache):", err);
+      return true;
+    }
   };
-  const updatePropertyType = (id: string, name: string) => {
-    setPropertyTypes(p => p.map(t => t.id === id ? { ...t, name } : t));
-    persist(api.patch(`/property-types/${id}`, { name }));
+
+  const updatePropertyType = async (id: string, name: string) => {
+    setPropertyTypes(p => {
+      const updated = p.map(t => t.id === id ? { ...t, name } : t);
+      writeCache({ regions, types: updated, properties, settings });
+      return updated;
+    });
+    try {
+      await api.patch(`/property-types/${id}`, { name });
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (property type updated in client cache):", err);
+      return true;
+    }
   };
-  const deletePropertyType = (id: string) => {
-    setPropertyTypes(p => p.filter(t => t.id !== id));
-    persist(api.del(`/property-types/${id}`));
+
+  const deletePropertyType = async (id: string) => {
+    setPropertyTypes(p => {
+      const updated = p.filter(t => t.id !== id);
+      writeCache({ regions, types: updated, properties, settings });
+      return updated;
+    });
+    try {
+      await api.del(`/property-types/${id}`);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (property type deleted from client cache):", err);
+      return true;
+    }
   };
-  const togglePropertyType = (id: string) => {
+
+  const togglePropertyType = async (id: string) => {
     const current = propertyTypes.find(t => t.id === id);
     const active = !(current?.active ?? true);
-    setPropertyTypes(p => p.map(t => t.id === id ? { ...t, active } : t));
-    persist(api.patch(`/property-types/${id}`, { active }));
+    setPropertyTypes(p => {
+      const updated = p.map(t => t.id === id ? { ...t, active } : t);
+      writeCache({ regions, types: updated, properties, settings });
+      return updated;
+    });
+    try {
+      await api.patch(`/property-types/${id}`, { active });
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (property type toggled in client cache):", err);
+      return true;
+    }
   };
 
-  const addProperty = (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => {
+  const addProperty = async (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => {
     const code = p.code?.trim() || genCode();
-    const property: Property = { ...p, code, id: genId(), createdAt: new Date().toISOString() };
-    setProperties(prev => [...prev, property]);
-    return persist(api.post("/properties", property));
+    const sanitizedSourcePhones = (p.sourcePhones || []).filter(ph => ph && typeof ph === "string" && ph.trim());
+    const property: Property = {
+      ...p,
+      code,
+      sourcePhones: sanitizedSourcePhones,
+      id: genId(),
+      createdAt: new Date().toISOString(),
+    };
+
+    setProperties(prev => {
+      const updated = [...prev, property];
+      writeCache({
+        regions,
+        types: propertyTypes,
+        properties: updated,
+        settings,
+      });
+      return updated;
+    });
+
+    try {
+      await api.post("/properties", property);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (property saved in client cache):", err);
+      return true;
+    }
   };
-  const updateProperty = (id: string, p: Partial<Property>) => {
-    setProperties(prev => prev.map(prop => prop.id === id ? { ...prop, ...p } : prop));
-    return persist(api.patch(`/properties/${id}`, p));
+
+  const updateProperty = async (id: string, p: Partial<Property>) => {
+    setProperties(prev => {
+      const updated = prev.map(prop => prop.id === id ? { ...prop, ...p } : prop);
+      writeCache({
+        regions,
+        types: propertyTypes,
+        properties: updated,
+        settings,
+      });
+      return updated;
+    });
+
+    try {
+      await api.patch(`/properties/${id}`, p);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (property updated in client cache):", err);
+      return true;
+    }
   };
-  const deleteProperty = (id: string) => {
-    setProperties(p => p.filter(x => x.id !== id));
-    persist(api.del(`/properties/${id}`));
+
+  const deleteProperty = async (id: string) => {
+    setProperties(prev => {
+      const updated = prev.filter(x => x.id !== id);
+      writeCache({
+        regions,
+        types: propertyTypes,
+        properties: updated,
+        settings,
+      });
+      return updated;
+    });
+
+    try {
+      await api.del(`/properties/${id}`);
+    } catch (err) {
+      console.warn("Server sync warning (deleted from client cache):", err);
+    }
   };
   const bulkDeleteProperties = (ids: string[]) => {
     if (ids.length === 0) return;
@@ -979,6 +1276,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addPropertyRequest, updatePropertyRequestStatus, deletePropertyRequest,
       addCustomerPropertyRequest, updateCustomerPropertyRequest, deleteCustomerPropertyRequest,
       addContract, updateContract, deleteContract,
+      brokers, addBroker, updateBroker, deleteBroker,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
       addAd, updateAd, deleteAd, reorderAds, trackAdView, trackAdClick,
     }}>

@@ -15,6 +15,7 @@ import { getVisitorId } from "@/lib/visitorTracking";
 import { LiveVisitorsBubble } from "@/components/ui/LiveVisitorsBubble";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
+import { InstallPwaPrompt } from "@/components/ui/InstallPwaPrompt";
 
 import Home from "@/pages/Home";
 import About from "@/pages/About";
@@ -50,6 +51,8 @@ const AdsAdmin        = lazy(() => import("@/pages/admin/Ads"));
 const AdAnalytics     = lazy(() => import("@/pages/admin/AdAnalytics"));
 const SmartBanners    = lazy(() => import("@/pages/admin/SmartBanners"));
 const Sources              = lazy(() => import("@/pages/admin/Sources"));
+const AiAgents             = lazy(() => import("@/pages/admin/AiAgents"));
+const WhatsAppBot          = lazy(() => import("@/pages/admin/WhatsAppBot"));
 const FinishingGallery     = lazy(() => import("@/pages/admin/FinishingGallery"));
 const AIChatWidget = lazy(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
 
@@ -214,6 +217,8 @@ function Router() {
       <Route path="/admin/ads/:id/analytics">{() => <Protected component={AdAnalytics} />}</Route>
       <Route path="/admin/smart-banners">{() => <Protected component={SmartBanners} />}</Route>
       <Route path="/admin/sources">{() => <Protected component={Sources} />}</Route>
+      <Route path="/admin/agents">{() => <Protected component={AiAgents} adminOnly />}</Route>
+      <Route path="/admin/whatsapp">{() => <Protected component={WhatsAppBot} adminOnly />}</Route>
       <Route path="/admin/finishing-gallery">{() => <Protected component={FinishingGallery} />}</Route>
 
       <Route component={NotFound} />
@@ -293,6 +298,7 @@ function App() {
                     </AppReadyGate>
                     <ScrollToTopButton />
                     <StaffLiveBubble />
+                    <InstallPwaPrompt />
                     {AI_ASSISTANT_ENABLED && (
                       <Suspense fallback={null}>
                         <AIChatWidget />

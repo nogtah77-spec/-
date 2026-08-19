@@ -7,14 +7,41 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Mail, Plus, X, Download, Edit2, Trash2, Search, BookUser, MapPin, FileText } from "lucide-react";
+import {
+  Phone,
+  Plus,
+  X,
+  Download,
+  Edit2,
+  Trash2,
+  Search,
+  BookUser,
+  Handshake,
+  UserCheck,
+  MessageCircle,
+  ExternalLink,
+  AlertCircle,
+  Building,
+} from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Link } from "wouter";
 
 export default function Sources() {
-  const { properties, propertyTypes, regions, users, updateProperty } = useData();
+  const {
+    properties,
+    propertyTypes,
+    regions,
+    users,
+    updateProperty,
+  } = useData();
   const { toast } = useToast();
+
   const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "direct" | "broker" | "missing">("all");
+
+  // Edit Modal State
   const [editTarget, setEditTarget] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     source: string;
@@ -23,41 +50,73 @@ export default function Sources() {
     sourceLocation: string;
     sourceNotes: string;
     assignedStaffId: string;
-  }>({ source: "", sourcePhones: [""], sourceEmail: "", sourceLocation: "", sourceNotes: "", assignedStaffId: "" });
+    agentType: "direct" | "broker";
+  }>({
+    source: "",
+    sourcePhones: [""],
+    sourceEmail: "",
+    sourceLocation: "",
+    sourceNotes: "",
+    assignedStaffId: "",
+    agentType: "direct",
+  });
 
   const staffUsers = useMemo(
     () => users.filter(user => user.role === "admin" || user.role === "agent"),
-    [users],
+    [users]
   );
+
   const staffLabel = (user: typeof staffUsers[number]) => {
     const accountName = user.username ? `@${user.username}` : user.email;
     return user.name ? `${accountName} — ${user.name}` : accountName;
   };
 
-  const sourcedProps = useMemo(() =>
-    properties.filter(p =>
-      p.source?.trim() ||
-      p.sourcePhones?.some(ph => ph.trim()) ||
-      p.sourceEmail?.trim() ||
-      p.sourceLocation?.trim() ||
-      p.sourceNotes?.trim() ||
-      p.assignedStaffId?.trim()
-    ),
+  // Counts
+  const totalDirect = useMemo(
+    () => properties.filter(p => p.agentType !== "broker" && (p.source?.trim() || p.sourcePhones?.some(ph => ph.trim()))).length,
+    [properties]
+  );
+  const totalBroker = useMemo(
+    () => properties.filter(p => p.agentType === "broker").length,
+    [properties]
+  );
+  const totalMissing = useMemo(
+    () => properties.filter(p => !p.source?.trim() && !p.sourcePhones?.some(ph => ph.trim())).length,
+    [properties]
+  );
+  const totalAllWithSource = useMemo(
+    () => properties.filter(p => p.source?.trim() || p.sourcePhones?.some(ph => ph.trim()) || p.agentType === "broker").length,
     [properties]
   );
 
-  const filtered = useMemo(() => {
+  // Filtered List
+  const displayedProperties = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return sourcedProps;
-    return sourcedProps.filter(p =>
-      p.code?.toLowerCase().includes(q) ||
-      p.source?.toLowerCase().includes(q) ||
-      p.sourceEmail?.toLowerCase().includes(q) ||
-      p.sourceNotes?.toLowerCase().includes(q) ||
-      staffUsers.some(user => user.id === p.assignedStaffId && staffLabel(user).toLowerCase().includes(q)) ||
-      p.sourcePhones?.some(ph => ph.includes(q))
-    );
-  }, [sourcedProps, search, staffUsers]);
+
+    return properties.filter(p => {
+      const isBroker = p.agentType === "broker";
+      const hasSource = !!(p.source?.trim() || p.sourcePhones?.some(ph => ph.trim()));
+
+      // 1. Filter by category
+      if (filterType === "direct" && (isBroker || !hasSource)) return false;
+      if (filterType === "broker" && !isBroker) return false;
+      if (filterType === "missing" && hasSource) return false;
+
+      // 2. Filter by search query
+      if (!q) return true;
+
+      const staff = staffUsers.find(u => u.id === p.assignedStaffId);
+      const staffName = staff ? staffLabel(staff).toLowerCase() : "";
+
+      return (
+        p.code?.toLowerCase().includes(q) ||
+        p.source?.toLowerCase().includes(q) ||
+        p.sourceNotes?.toLowerCase().includes(q) ||
+        staffName.includes(q) ||
+        p.sourcePhones?.some(ph => ph.includes(q))
+      );
+    });
+  }, [properties, filterType, search, staffUsers]);
 
   const openEdit = (id: string) => {
     const p = properties.find(x => x.id === id);
@@ -69,6 +128,7 @@ export default function Sources() {
       sourceLocation: p.sourceLocation ?? "",
       sourceNotes: p.sourceNotes ?? "",
       assignedStaffId: p.assignedStaffId ?? "",
+      agentType: (p.agentType as "direct" | "broker") || "direct",
     });
     setEditTarget(id);
   };
@@ -82,25 +142,47 @@ export default function Sources() {
       sourceLocation: editForm.sourceLocation,
       sourceNotes: editForm.sourceNotes,
       assignedStaffId: editForm.assignedStaffId,
+      agentType: editForm.agentType,
     });
     if (!saved) return;
-    toast({ title: "تم حفظ بيانات المالك ✓" });
+    toast({ title: "تم حفظ بيانات المصدر بنجاح ✓" });
     setEditTarget(null);
   };
 
   const clearSource = async (id: string) => {
-    const cleared = await updateProperty(id, { source: "", sourcePhones: [], sourceEmail: "", sourceLocation: "", sourceNotes: "", assignedStaffId: "" });
+    if (!window.confirm("هل تريد مسح بيانات المصدر لهذا العقار؟")) return;
+    const cleared = await updateProperty(id, {
+      source: "",
+      sourcePhones: [],
+      sourceEmail: "",
+      sourceLocation: "",
+      sourceNotes: "",
+      assignedStaffId: "",
+      agentType: "direct",
+    });
     if (!cleared) return;
-    toast({ title: "تم مسح بيانات المالك" });
+    toast({ title: "تم مسح بيانات المصدر" });
+  };
+
+  const openWhatsApp = (phone: string, propCode?: string, name?: string) => {
+    const clean = phone.replace(/\D/g, "");
+    const formatted = clean.startsWith("0") ? `20${clean.slice(1)}` : clean.startsWith("20") ? clean : `20${clean}`;
+    const msg = encodeURIComponent(
+      `مرحباً ${name ? `أستاذ ${name}` : ""}، أتواصل معك بخصوص العقار (${propCode || ""}) من شركة العمودي للتسويق العقاري.`
+    );
+    window.open(`https://wa.me/${formatted}?text=${msg}`, "_blank");
   };
 
   const exportCSV = () => {
-    const rows = [["كود العقار", "اسم المالك", "أرقام التواصل", "البريد الإلكتروني", "رابط الموقع", "ملاحظات", "الموظف المسؤول", "نوع العقار", "المنطقة"]];
-    sourcedProps.forEach(p => {
+    const rows = [
+      ["كود العقار", "نوع المصدر", "اسم المصدر", "أرقام التواصل", "البريد الإلكتروني", "رابط الموقع", "ملاحظات", "الموظف المسؤول", "نوع العقار", "المنطقة"]
+    ];
+    displayedProperties.forEach(p => {
       const type = propertyTypes.find(t => t.id === p.typeId)?.name ?? "";
       const region = regions.find(r => r.id === p.regionId)?.name ?? "";
       rows.push([
         p.code,
+        p.agentType === "broker" ? "بروكر" : "مالك مباشر",
         p.source ?? "",
         (p.sourcePhones ?? []).filter(ph => ph.trim()).join(" / "),
         p.sourceEmail ?? "",
@@ -121,22 +203,18 @@ export default function Sources() {
     URL.revokeObjectURL(url);
   };
 
-  const addPhone = () => setEditForm(f => ({ ...f, sourcePhones: [...f.sourcePhones, ""] }));
-  const removePhone = (i: number) => setEditForm(f => ({ ...f, sourcePhones: f.sourcePhones.filter((_, idx) => idx !== i) }));
-  const setPhone = (i: number, v: string) => setEditForm(f => ({ ...f, sourcePhones: f.sourcePhones.map((p, idx) => idx === i ? v : p) }));
-
   return (
     <AdminLayout>
-      <div className="p-6 max-w-5xl mx-auto space-y-6" dir="rtl">
+      <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6" dir="rtl">
         <AdminPageHeader
           title="مصادر العقارات"
-          subtitle="بيانات التواصل مع الملاك والسماسرة — خاصة بالإدارة فقط"
+          subtitle="سجل موحد لبيانات التواصل مع الملاك والبروكرز — خاصة بالإدارة فقط"
           eyebrow="دليل المصادر"
           icon={BookUser}
           actions={
             <Button
               variant="outline"
-              className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white"
+              className="h-10 gap-2 border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/15 hover:text-white text-xs sm:text-sm"
               onClick={exportCSV}
             >
               <Download className="h-4 w-4" />
@@ -145,201 +223,367 @@ export default function Sources() {
           }
         />
 
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span><span className="font-semibold text-foreground">{sourcedProps.length}</span> مالك مسجّل</span>
-          {search && <span>— <span className="font-semibold text-foreground">{filtered.length}</span> نتيجة</span>}
+        {/* ── KPI Summary Cards ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={() => setFilterType("all")}
+            className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
+              filterType === "all"
+                ? "bg-card border-accent shadow-sm ring-1 ring-accent/30"
+                : "bg-card/60 border-border/70 hover:border-accent/40"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">كل العقارات</span>
+              <BookUser className="h-4 w-4 text-blue-500" />
+            </div>
+            <p className="text-xl font-bold text-foreground mt-2">{properties.length}</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterType("direct")}
+            className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
+              filterType === "direct"
+                ? "bg-card border-emerald-500 shadow-sm ring-1 ring-emerald-500/30"
+                : "bg-card/60 border-border/70 hover:border-emerald-500/40"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">ملاك مباشرين</span>
+              <UserCheck className="h-4 w-4 text-emerald-500" />
+            </div>
+            <p className="text-xl font-bold text-emerald-600 mt-2">{totalDirect}</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterType("broker")}
+            className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
+              filterType === "broker"
+                ? "bg-card border-amber-500 shadow-sm ring-1 ring-amber-500/30"
+                : "bg-card/60 border-border/70 hover:border-amber-500/40"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">عبر بروكرز</span>
+              <Handshake className="h-4 w-4 text-amber-500" />
+            </div>
+            <p className="text-xl font-bold text-amber-600 mt-2">{totalBroker}</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterType("missing")}
+            className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
+              filterType === "missing"
+                ? "bg-card border-rose-500 shadow-sm ring-1 ring-rose-500/30"
+                : "bg-card/60 border-border/70 hover:border-rose-500/40"
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground font-medium">ينقصها مصدر</span>
+              <AlertCircle className="h-4 w-4 text-rose-500" />
+            </div>
+            <p className="text-xl font-bold text-rose-600 mt-2">{totalMissing}</p>
+          </button>
         </div>
 
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            className="pr-9"
-            placeholder="ابحث بالكود أو اسم المالك أو الموظف أو الهاتف أو البريد..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        {/* ── Search & Filter Controls ── */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          {/* Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setFilterType("all")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterType === "all"
+                  ? "bg-foreground text-background shadow-sm"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              الكل ({properties.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterType("direct")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterType === "direct"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              🏠 ملاك مباشرين ({totalDirect})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterType("broker")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterType === "broker"
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              🤝 بروكرز ({totalBroker})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterType("missing")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                filterType === "missing"
+                  ? "bg-rose-600 text-white shadow-sm"
+                  : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              ⚠️ ينقصها بيانات ({totalMissing})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="بحث بكود العقار، المالك، البروكر، الهاتف..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pr-10 h-10 rounded-xl bg-background text-xs sm:text-sm border-border/80"
+            />
+          </div>
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <BookUser className="h-12 w-12 mx-auto mb-3 opacity-20" />
-            <p className="text-base font-medium">{search ? "لا توجد نتائج مطابقة" : "لا توجد مصادر مسجّلة حتى الآن"}</p>
-            {!search && <p className="text-xs mt-1">أضف بيانات التواصل عند إدخال أي عقار من صفحة العقارات</p>}
+        {/* ── Main Properties List ── */}
+        {displayedProperties.length === 0 ? (
+          <div className="text-center py-16 bg-card rounded-2xl border border-dashed border-border/80">
+            <BookUser className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+            <p className="text-sm font-bold text-foreground">لا توجد عقارات تطابق هذا البحث</p>
+            <p className="text-xs text-muted-foreground mt-1">جرّب اختيار فلتر آخر أو كتابة كود مختلف</p>
           </div>
         ) : (
-          <div className="rounded-xl border overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b">
-                  <tr className="text-right">
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الكود</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">اسم المالك</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">أرقام التواصل</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">البريد</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الموقع</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">ملاحظات</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الموظف المسؤول</th>
-                    <th className="px-4 py-3 font-semibold text-muted-foreground whitespace-nowrap">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filtered.map(p => {
-                    const phones = (p.sourcePhones ?? []).filter(ph => ph.trim());
-                    return (
-                      <tr key={p.id} className="hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3">
-                          <span className="font-mono font-semibold text-accent">{p.code}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {p.source?.trim()
-                            ? <span className="font-medium">{p.source}</span>
-                            : <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {phones.length > 0 ? (
-                            <div className="flex flex-col gap-1">
-                              {phones.map((ph, i) => (
-                                <a key={i} href={`tel:${ph.replace(/\s/g, "")}`}
-                                  className="flex items-center gap-1.5 text-accent hover:underline" dir="ltr">
-                                  <Phone className="h-3 w-3 flex-shrink-0" />{ph}
-                                </a>
-                              ))}
-                            </div>
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {p.sourceEmail?.trim() ? (
-                            <a href={`mailto:${p.sourceEmail}`}
-                              className="flex items-center gap-1.5 text-accent hover:underline" dir="ltr">
-                              <Mail className="h-3 w-3 flex-shrink-0" />{p.sourceEmail}
-                            </a>
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {p.sourceLocation?.trim() ? (
-                            <a href={p.sourceLocation} target="_blank" rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 text-accent hover:underline text-xs">
-                              <MapPin className="h-3 w-3 flex-shrink-0" />الموقع
-                            </a>
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-3 max-w-[180px]">
-                          {p.sourceNotes?.trim() ? (
-                            <p className="text-xs text-muted-foreground line-clamp-2">{p.sourceNotes}</p>
-                          ) : <span className="text-muted-foreground text-xs">—</span>}
-                        </td>
-                        <td className="px-4 py-3 min-w-[180px]">
-                          {p.assignedStaffId ? (
-                            (() => {
-                              const user = staffUsers.find(candidate => candidate.id === p.assignedStaffId);
-                              return user
-                                ? <span className="text-xs">{staffLabel(user)}<span className="block text-muted-foreground">{user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}</span></span>
-                                : <span className="text-xs text-muted-foreground">{p.assignedStaffId}</span>;
-                            })()
-                          ) : <span className="text-muted-foreground text-xs">غير محدد</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-1">
-                            <button onClick={() => openEdit(p.id)}
-                              className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors" title="تعديل">
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={() => clearSource(p.id)}
-                              className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="مسح البيانات">
-                              <Trash2 className="h-3.5 w-3.5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {displayedProperties.map(p => {
+              const type = propertyTypes.find(t => t.id === p.typeId)?.name ?? "";
+              const region = regions.find(r => r.id === p.regionId)?.name ?? "";
+              const staff = staffUsers.find(u => u.id === p.assignedStaffId);
+              const isBroker = p.agentType === "broker";
+              const hasContact = p.sourcePhones && p.sourcePhones.some(ph => ph.trim());
+
+              return (
+                <div
+                  key={p.id}
+                  className="p-4 rounded-2xl bg-card border border-border/80 hover:border-accent/50 shadow-sm transition-all duration-200 space-y-3 relative overflow-hidden"
+                >
+                  {/* Top Bar: Code, Badges & Edit Button */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/properties/${p.id}`}
+                        className="font-bold text-accent hover:underline flex items-center gap-1 text-sm"
+                      >
+                        <span>{p.code}</span>
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </Link>
+                      <Badge variant="outline" className="text-[11px] font-medium border-border/60">
+                        {type} · {region}
+                      </Badge>
+                      {isBroker ? (
+                        <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[10px] font-bold">
+                          🤝 بروكر
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-bold">
+                          🏠 مالك مباشر
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        onClick={() => openEdit(p.id)}
+                        title="تعديل بيانات المصدر"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => clearSource(p.id)}
+                        title="مسح بيانات المصدر"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Middle Info: Name & Contact details */}
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-foreground">
+                        {p.source ? (
+                          <span>{p.source}</span>
+                        ) : (
+                          <span className="text-muted-foreground italic text-xs">لم يُسجل اسم</span>
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Phones & Action buttons */}
+                    {hasContact ? (
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        {p.sourcePhones?.filter(ph => ph.trim()).map((phone, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-lg border border-border/50 text-xs font-mono">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            <span>{phone}</span>
+                            <button
+                              type="button"
+                              onClick={() => openWhatsApp(phone, p.code, p.source)}
+                              className="text-emerald-500 hover:text-emerald-400 p-0.5 transition-colors cursor-pointer"
+                              title="فتح محادثة واتساب"
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
                             </button>
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        لا توجد أرقام تواصل مسجلة
+                      </p>
+                    )}
 
-      <Dialog open={!!editTarget} onOpenChange={v => { if (!v) setEditTarget(null); }}>
-        <DialogContent dir="rtl" className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BookUser className="h-5 w-5 text-accent" />
-               تعديل بيانات المالك
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-               <Label className="text-sm">اسم المالك</Label>
-               <Input placeholder="مثال: أحمد السيد / مالك مباشر..."
-                value={editForm.source} onChange={e => setEditForm(f => ({ ...f, source: e.target.value }))} />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />أرقام التواصل</Label>
-              <div className="space-y-2">
-                {editForm.sourcePhones.map((ph, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Input dir="ltr" className="flex-1 text-right" placeholder="+20 10 0000 0000"
-                      value={ph} onChange={e => setPhone(i, e.target.value)} />
-                    {editForm.sourcePhones.length > 1 && (
-                      <button type="button" onClick={() => removePhone(i)}
-                        className="w-9 h-9 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors flex-shrink-0">
-                        <X className="h-4 w-4" />
-                      </button>
+                    {/* Source Notes */}
+                    {p.sourceNotes && (
+                      <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg border border-border/30 line-clamp-2">
+                        {p.sourceNotes}
+                      </p>
                     )}
                   </div>
-                ))}
-                {editForm.sourcePhones.length < 5 && (
-                  <button type="button" onClick={addPhone}
-                    className="w-full flex items-center justify-center gap-1.5 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-accent hover:border-accent transition-colors">
-                    <Plus className="h-4 w-4" />أضف رقم
-                  </button>
-                )}
+
+                  {/* Footer: Assigned Staff */}
+                  <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>الموظف المسؤول:</span>
+                    <span className="font-medium text-foreground">
+                      {staff ? staffLabel(staff) : "غير محدد"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Edit Source Modal ── */}
+        <Dialog open={!!editTarget} onOpenChange={open => !open && setEditTarget(null)}>
+          <DialogContent className="max-w-md" dir="rtl">
+            <DialogHeader>
+              <DialogTitle>تعديل بيانات مصدر العقار</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold">نوع المصدر</Label>
+                <Select
+                  value={editForm.agentType}
+                  onValueChange={v => setEditForm(f => ({ ...f, agentType: v as "direct" | "broker" }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="direct">🏠 مالك مباشر</SelectItem>
+                    <SelectItem value="broker">🤝 بروكر (وسيط عقاري)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold">
+                  {editForm.agentType === "broker" ? "اسم البروكر / الشركة" : "اسم المالك"}
+                </Label>
+                <Input
+                  value={editForm.source}
+                  onChange={e => setEditForm(f => ({ ...f, source: e.target.value }))}
+                  placeholder="اسم المالك أو البروكر..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold">أرقام التواصل</Label>
+                <div className="space-y-2">
+                  {editForm.sourcePhones.map((ph, i) => (
+                    <div key={i} className="flex gap-2">
+                      <Input
+                        dir="ltr"
+                        className="text-right"
+                        placeholder="+20 10 0000 0000"
+                        value={ph}
+                        onChange={e => {
+                          const updated = [...editForm.sourcePhones];
+                          updated[i] = e.target.value;
+                          setEditForm(f => ({ ...f, sourcePhones: updated }));
+                        }}
+                      />
+                      {editForm.sourcePhones.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => setEditForm(f => ({ ...f, sourcePhones: f.sourcePhones.filter((_, idx) => idx !== i) }))}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  {editForm.sourcePhones.length < 4 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditForm(f => ({ ...f, sourcePhones: [...editForm.sourcePhones, ""] }))}
+                      className="w-full text-xs"
+                    >
+                      <Plus className="h-3.5 w-3.5 ml-1" /> أضف رقم
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold">ملاحظات المصدر</Label>
+                <Textarea
+                  rows={2}
+                  value={editForm.sourceNotes}
+                  onChange={e => setEditForm(f => ({ ...f, sourceNotes: e.target.value }))}
+                  placeholder="ملاحظات حول طريقة التواصل أو نسبة العمولة..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold">الموظف المسؤول</Label>
+                <Select
+                  value={editForm.assignedStaffId || "__unassigned"}
+                  onValueChange={v => setEditForm(f => ({ ...f, assignedStaffId: v === "__unassigned" ? "" : v }))}
+                >
+                  <SelectTrigger><SelectValue placeholder="اختر الموظف" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unassigned">غير محدد</SelectItem>
+                    {staffUsers.map(u => (
+                      <SelectItem key={u.id} value={u.id}>{staffLabel(u)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />البريد الإلكتروني</Label>
-              <Input dir="ltr" className="text-right" type="email" placeholder="example@mail.com"
-                value={editForm.sourceEmail} onChange={e => setEditForm(f => ({ ...f, sourceEmail: e.target.value }))} />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />رابط الموقع</Label>
-              <Input dir="ltr" className="text-right text-xs" placeholder="https://maps.google.com/..."
-                value={editForm.sourceLocation} onChange={e => setEditForm(f => ({ ...f, sourceLocation: e.target.value }))} />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" />ملاحظات</Label>
-              <Textarea rows={3} placeholder="تفاصيل إضافية عن المصدر..."
-                value={editForm.sourceNotes} onChange={e => setEditForm(f => ({ ...f, sourceNotes: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-sm">الموظف المسؤول</Label>
-              <Select
-                value={editForm.assignedStaffId || "__unassigned"}
-                onValueChange={value => setEditForm(f => ({ ...f, assignedStaffId: value === "__unassigned" ? "" : value }))}
-              >
-                <SelectTrigger><SelectValue placeholder="اختر الموظف المسؤول" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__unassigned">غير محدد</SelectItem>
-                  {staffUsers.map(user => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {staffLabel(user)} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>
-            <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={saveEdit}>حفظ التغييرات</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setEditTarget(null)}>إلغاء</Button>
+              <Button onClick={saveEdit} className="bg-primary text-primary-foreground font-bold">حفظ التغييرات</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </AdminLayout>
   );
 }

@@ -7,22 +7,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatNumber, toNumericString } from "@/lib/utils";
 import { SEED_SOURCES } from "@/data/seedSources";
+import { parsePropertyText } from "@/lib/aiPropertyParser";
+import { parsePropertyWithGemini } from "@/lib/geminiApi";
 
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 
 export default function PropertyForm() {
-  const { regions, propertyTypes, users, addProperty, updateProperty, properties } = useData();
+  const { regions, propertyTypes, users, addProperty, updateProperty, properties, brokers } = useData();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const params = useParams<{ id?: string }>();
   const isEdit = !!params.id;
   const existing = isEdit ? properties.find(p => p.id === params.id) : undefined;
+  const [aiText, setAiText] = useState("");
+  const [aiParsedSummary, setAiParsedSummary] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const apiKey = typeof window !== "undefined" ? localStorage.getItem("alm_ai_api_key") || "" : "";
+  const aiModel = typeof window !== "undefined" ? localStorage.getItem("alm_ai_default_model") || "gemini-1.5-pro" : "gemini-1.5-pro";
+  const isAiAgentActive = (() => {
+    if (!apiKey.trim()) return false;
+    try {
+      const saved = localStorage.getItem("alm_ai_agents");
+      if (!saved) return true;
+      const parsedAgents = JSON.parse(saved);
+      const ing = parsedAgents.find((a: any) => a.id === "ingestion-agent");
+      return ing ? ing.active !== false : true;
+    } catch {
+      return true;
+    }
+  })();
 
   const [form, setForm] = useState({
     code: existing?.code ?? "",
@@ -37,7 +57,8 @@ export default function PropertyForm() {
     view: existing?.view ?? "",
     typeId: existing?.typeId ?? "",
     regionId: existing?.regionId ?? "",
-    category: existing?.category ?? "sale" as PropertyCategory,
+    category: (existing?.category ?? "residential") as PropertyCategory,
+    listingType: (existing?.listingType ?? "sale") as "sale" | "rent" | "furnished",
     status: existing?.status ?? "active" as PropertyStatus,
     featured: existing?.featured ?? false,
     agentType: existing?.agentType ?? "direct" as "direct" | "broker",
@@ -59,6 +80,7 @@ export default function PropertyForm() {
     sourceLocation: existing?.sourceLocation ?? "",
     sourceNotes: existing?.sourceNotes ?? "",
     assignedStaffId: existing?.assignedStaffId ?? "",
+    brokerId: existing?.brokerId ?? "",
     coverPriority: existing?.coverPriority ?? "image",
   });
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
@@ -96,6 +118,7 @@ export default function PropertyForm() {
     };
     const payload = {
       ...form,
+      sourcePhones: form.sourcePhones.filter(ph => ph && ph.trim()),
       title: form.code.trim(),
       price: numericValue(form.price),
       area: numericValue(form.area),
@@ -120,8 +143,84 @@ export default function PropertyForm() {
   const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm(p => ({ ...p, [k]: v }));
   const staffUsers = users.filter(user => user.role === "admin" || user.role === "agent");
   const staffLabel = (user: typeof staffUsers[number]) => {
-    const accountName = user.username ? `@${user.username}` : user.email;
-    return user.name ? `${accountName} — ${user.name}` : accountName;
+    return user.name || (user.username ? `@${user.username}` : user.email);
+  };
+
+  const handleAiAutoFill = async () => {
+    if (!aiText.trim()) {
+      toast({ title: "يرجى لصق نص الإعلان أو الرسالة أولاً", variant: "destructive" });
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const staffList = staffUsers.map(u => ({ id: u.id, name: staffLabel(u) }));
+      const regionsList = regions.map(r => ({ id: r.id, name: r.name }));
+      const typesList = propertyTypes.map(t => ({ id: t.id, name: t.name }));
+
+      const parsed = isAiAgentActive
+        ? await parsePropertyWithGemini(aiText, apiKey, aiModel, regionsList, typesList, staffList)
+        : parsePropertyText(aiText);
+
+      // Match staff specifically from parsed.assignedStaffName or assignedStaffId
+      let matchedStaff = (parsed as any).assignedStaffId;
+      if (!matchedStaff && (parsed as any).assignedStaffName) {
+        const targetStaff = (parsed as any).assignedStaffName.trim().toLowerCase();
+        const found = staffUsers.find(u => {
+          const uName = (u.name || "").toLowerCase();
+          return uName.includes(targetStaff) || targetStaff.includes(uName);
+        });
+        if (found) {
+          matchedStaff = found.id;
+        }
+      }
+
+      setForm(prev => ({
+        ...prev,
+        code: parsed.code || (!isEdit ? "ALM-" + Math.floor(1000 + Math.random() * 9000) : prev.code),
+        price: parsed.price !== undefined ? parsed.price : (isEdit ? prev.price : 0),
+        area: parsed.area !== undefined ? parsed.area : (isEdit ? prev.area : 0),
+        beds: parsed.beds !== undefined ? parsed.beds : (isEdit ? prev.beds : 0),
+        baths: parsed.baths !== undefined ? parsed.baths : (isEdit ? prev.baths : 0),
+        floors: parsed.floors !== undefined ? parsed.floors : (isEdit ? prev.floors : 0),
+        floor: parsed.floor !== undefined ? parsed.floor : (isEdit ? prev.floor : 0),
+        floorText: parsed.floorText || "",
+        regionId: parsed.regionId || prev.regionId,
+        typeId: parsed.typeId || prev.typeId,
+        category: parsed.category || "residential",
+        listingType: parsed.listingType || "sale",
+        finishing: parsed.finishing || "",
+        master: parsed.master || "",
+        view: parsed.view || "",
+        layout: parsed.layout || "",
+        unitType: parsed.unitType || "",
+        subArea: parsed.subArea || "",
+        location: parsed.location || "",
+        additionalFeatures: parsed.additionalFeatures || "",
+        elevator: parsed.elevator || "",
+        parking: parsed.parking || "",
+        agentType: parsed.agentType || "direct",
+        source: parsed.source || "",
+        sourcePhones: parsed.sourcePhones?.length ? parsed.sourcePhones : [""],
+        assignedStaffId: matchedStaff || "",
+        description: parsed.description || prev.description,
+      }));
+
+      toast({
+        title: isAiAgentActive
+          ? "تم التحليل والتعبئة بواسطة وكيل Gemini Pro! 🪄⚡"
+          : "تم التحليل والتعبئة بواسطة المحلل المحلي! 🪄",
+      });
+      setAiParsedSummary(
+        isAiAgentActive
+          ? "تمت المعالجة عبر وكيل Gemini Pro واستخراج (الكود، السعر، المساحة، الماستر، الموظف، المميزات، التقسيمة) بنجاح."
+          : "تم استخراج البيانات عبر المحلل المحلي وتعبئتها تلقائياً."
+      );
+    } catch (err) {
+      console.error("AI parse error:", err);
+      toast({ title: "حدث خطأ أثناء معالجة الذكاء الاصطناعي", variant: "destructive" });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -139,6 +238,68 @@ export default function PropertyForm() {
             </Button>
           </div>
         </div>
+
+        {/* ── AI Smart Property Parser Card ── */}
+        {!isEdit && (
+          <Card className="border-accent/40 bg-gradient-to-br from-card via-card to-accent/5 shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                    <Wand2 className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold flex items-center gap-2">
+                      <span>المحلل الذكي للإعلانات العقارية (AI Smart Ingestion)</span>
+                      <span className="text-[10px] bg-accent/20 text-accent font-bold px-2 py-0.5 rounded-full">Pro Hub</span>
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      الصق أي نص عشوائي أو رسالة واتساب، وسيقوم الذكاء الاصطناعي باستخراج كافة البيانات وتعبئة الخانات فوراً.
+                    </p>
+                  </div>
+                </div>
+
+                {/* AI Agent Status Indicator Badge */}
+                {isAiAgentActive ? (
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-500 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20 shadow-sm shrink-0">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>وكيل Gemini Pro متصل ونشط ⚡</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/70 px-3 py-1.5 rounded-xl border border-border/50 shrink-0">
+                    <span>⚪ وضع المحلل المحلي السريع</span>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea
+                rows={3}
+                placeholder="الصق نص الرسالة أو الإعلان هنا..."
+                value={aiText}
+                onChange={e => setAiText(e.target.value)}
+                className="text-xs sm:text-sm bg-background/80 focus:border-accent"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Button
+                  type="button"
+                  onClick={handleAiAutoFill}
+                  disabled={aiLoading}
+                  className="bg-accent text-accent-foreground font-bold hover:bg-accent/90 gap-2 h-9 px-4 rounded-xl shadow-md text-xs"
+                >
+                  {aiLoading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                  {aiLoading ? "جارٍ المعالجة بالذكاء الاصطناعي..." : "تحليل وتعبئة الخانات فوراً"}
+                </Button>
+                {aiParsedSummary && (
+                  <span className="text-xs text-emerald-500 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {aiParsedSummary}
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
@@ -189,6 +350,10 @@ export default function PropertyForm() {
                     <Input type="number" value={form.floor || ""} onChange={e => set("floor", Number(e.target.value))} placeholder="0" />
                   </div>
                   <div className="space-y-2">
+                    <Label>الدريسنج</Label>
+                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="يوجد / غرفة دريسنج / لا..." />
+                  </div>
+                  <div className="space-y-2">
                     <Label>التشطيب</Label>
                     <Select value={form.finishing} onValueChange={v => set("finishing", v)}>
                       <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
@@ -196,20 +361,12 @@ export default function PropertyForm() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>الفيو</Label>
-                    <Input value={form.view} onChange={e => set("view", e.target.value)} placeholder="بحري / قبلي / حديقة..." />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>نوع الطابق</Label>
-                    <Input value={form.unitType} onChange={e => set("unitType", e.target.value)} placeholder="أرضي / متكرر / أخير..." />
-                  </div>
-                  <div className="space-y-2">
                     <Label>الواجهة</Label>
-                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="أمامي / خلفي / ركني..." />
+                    <Input value={form.unitType} onChange={e => set("unitType", e.target.value)} placeholder="أمامي / خلفي / بانورامي / ركني..." />
                   </div>
                   <div className="space-y-2">
-                    <Label>التوزيع</Label>
-                    <Input value={form.layout} onChange={e => set("layout", e.target.value)} placeholder="مثال: 3 غرف + 2 حمام" />
+                    <Label>الفيو</Label>
+                    <Input value={form.view} onChange={e => set("view", e.target.value)} placeholder="فيو حديقة / مفتوح / مول / مسبح / نيل..." />
                   </div>
                   <div className="space-y-2">
                     <Label>ماستر</Label>
@@ -325,40 +482,62 @@ export default function PropertyForm() {
           <div className="space-y-6">
             {/* Classification */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">التصنيف</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">التصنيف والبيانات الأساسية</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>فئة العقار</Label>
+                  <Label>فئة العقار (الاستخدام) *</Label>
                   <Select value={form.category} onValueChange={(v: PropertyCategory) => set("category", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sale">للبيع</SelectItem>
-                      <SelectItem value="rent">للإيجار</SelectItem>
-                      <SelectItem value="furnished">مفروش</SelectItem>
+                      <SelectItem value="residential">سكني</SelectItem>
                       <SelectItem value="administrative">إداري</SelectItem>
                       <SelectItem value="medical">طبي</SelectItem>
                       <SelectItem value="commercial">تجاري</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>نوع العرض *</Label>
+                  <Select value={form.listingType} onValueChange={(v: "sale" | "rent" | "furnished") => set("listingType", v)}>
+                    <SelectTrigger><SelectValue placeholder="اختر نوع العرض" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sale">للبيع</SelectItem>
+                      <SelectItem value="rent">للإيجار</SelectItem>
+                      <SelectItem value="furnished">مفروش</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-2">
                   <Label>نوع العقار *</Label>
                   <Select value={form.typeId} onValueChange={v => set("typeId", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر النوع" /></SelectTrigger>
-                    <SelectContent>{propertyTypes.filter(t => t.active).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {propertyTypes.filter(t => t.active).map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
                   <Label>المنطقة *</Label>
                   <Select value={form.regionId} onValueChange={v => set("regionId", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر المنطقة" /></SelectTrigger>
-                    <SelectContent>{regions.filter(r => r.active).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {regions.filter(r => r.active).map(r => (
+                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
                   <Label>المنطقة الفرعية</Label>
                   <Input value={form.subArea} onChange={e => set("subArea", e.target.value)} placeholder="مثال: المنطقة ١ / B7" />
                 </div>
+
                 <div className="space-y-2">
                   <Label>الحالة</Label>
                   <Select value={form.status} onValueChange={(v: PropertyStatus) => set("status", v)}>
@@ -376,10 +555,15 @@ export default function PropertyForm() {
               </CardContent>
             </Card>
 
-            {/* Featured + Agent Type */}
+            {/* Featured + Administrative & Source Options */}
             <Card>
-              <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Star className="h-4 w-4 text-yellow-500" />خيارات إدارية</CardTitle></CardHeader>
-              <CardContent className="space-y-5">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  خيارات إدارية ومصدر العقار
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <Label className="text-sm font-medium">عقار مميز</Label>
@@ -391,22 +575,64 @@ export default function PropertyForm() {
                     className="data-[state=checked]:bg-yellow-500"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">نوع العرض</Label>
-                  <Select value={form.agentType} onValueChange={(v: "direct" | "broker") => set("agentType", v)}>
+
+                <div className="border-t pt-3 space-y-2">
+                  <Label className="text-sm">نوع المصدر</Label>
+                  <Select value={form.agentType || "direct"} onValueChange={(v: "direct" | "broker") => set("agentType", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="direct">مباشر</SelectItem>
-                      <SelectItem value="broker">بروكر</SelectItem>
+                      <SelectItem value="direct">مباشر (من المالك)</SelectItem>
+                      <SelectItem value="broker">بروكر (وسيط عقاري)</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">يظهر للمدير فقط</p>
                 </div>
-                <div className="border-t pt-4 space-y-4">
-                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">بيانات المالك / التواصل</p>
+
+                {form.agentType === "broker" && (
+                  <div className="space-y-2 p-3 rounded-xl bg-accent/10 border border-accent/30 animate-in fade-in-50">
+                    <Label className="text-xs font-bold text-accent flex items-center gap-1.5">
+                      <Handshake className="h-3.5 w-3.5" />
+                      اختر الوسيط / البروكر المعتمد
+                    </Label>
+                    <Select
+                      value={form.brokerId || "__none"}
+                      onValueChange={v => {
+                        if (v === "__none") {
+                          set("brokerId", "");
+                          return;
+                        }
+                        const b = brokers.find(x => x.id === v);
+                        if (b) {
+                          setForm(prev => ({
+                            ...prev,
+                            brokerId: b.id,
+                            source: b.name,
+                            sourcePhones: [b.phone, b.whatsapp || ""].filter(Boolean),
+                            sourceNotes: `شركة: ${b.company || "خاص"} · عمولة: ${b.commission || "غير محددة"}`,
+                          }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="اختر من دليل الوسطاء" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">وسيط غير مسجل (إدخال يدوي)</SelectItem>
+                        {brokers.map(b => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.name} {b.company ? `(${b.company})` : ""} - {b.phone}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="border-t pt-3 space-y-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                    {form.agentType === "broker" ? "بيانات البروكر / التواصل" : "بيانات المالك / التواصل"}
+                  </p>
                   <div className="space-y-2">
-                     <Label className="text-sm">اسم المالك</Label>
-                     <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="اسم مالك العقار..." />
+                    <Label className="text-sm">{form.agentType === "broker" ? "اسم البروكر" : "اسم المالك"}</Label>
+                    <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="اسم المصدر..." />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm flex items-center gap-1.5">
@@ -486,24 +712,24 @@ export default function PropertyForm() {
                       onChange={e => set("sourceNotes", e.target.value)}
                     />
                   </div>
-                   <div className="space-y-2">
-                     <Label className="text-sm">الموظف المسؤول</Label>
-                     <Select
-                       value={form.assignedStaffId || "__unassigned"}
-                       onValueChange={value => set("assignedStaffId", value === "__unassigned" ? "" : value)}
-                     >
-                       <SelectTrigger><SelectValue placeholder="اختر الموظف المسؤول" /></SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="__unassigned">غير محدد</SelectItem>
-                         {staffUsers.map(user => (
-                           <SelectItem key={user.id} value={user.id}>
-                             {staffLabel(user)} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                     <p className="text-xs text-muted-foreground">يظهر هذا الاختيار للإدارة فقط.</p>
-                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">الموظف المسؤول</Label>
+                    <Select
+                      value={form.assignedStaffId || "__unassigned"}
+                      onValueChange={value => set("assignedStaffId", value === "__unassigned" ? "" : value)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="اختر الموظف المسؤول" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__unassigned">غير محدد</SelectItem>
+                        {staffUsers.map(user => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {staffLabel(user)} · {user.role === "admin" ? "مدير النظام" : "مستشار عقاري"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">يظهر هذا الاختيار للإدارة فقط.</p>
+                  </div>
                   <p className="text-xs text-muted-foreground">خاص بالإدارة — لا يظهر للزوّار</p>
                 </div>
               </CardContent>

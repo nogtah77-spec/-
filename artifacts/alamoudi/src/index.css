@@ -17,19 +17,29 @@
 
 .ads-carousel::-webkit-scrollbar { display: none; }
 
-/* ── إصلاح scroll في Radix Select — يتجاوز الـ overflow:hidden الـ inline ── */
+/* ── إصلاح scroll في Radix Select — شريط تمرير ذهبي بارز ومحدد الارتفاع ── */
 [data-radix-select-viewport] {
+  max-height: 240px !important;
   overflow-y: auto !important;
-  max-height: min(22rem, var(--radix-select-content-available-height, 22rem)) !important;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #B99A68 rgba(255, 255, 255, 0.08) !important;
 }
-[data-radix-select-viewport]::-webkit-scrollbar { width: 6px; }
-[data-radix-select-viewport]::-webkit-scrollbar-track { background: transparent; }
+[data-radix-select-viewport]::-webkit-scrollbar {
+  width: 8px !important;
+  display: block !important;
+}
+[data-radix-select-viewport]::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 8px !important;
+}
 [data-radix-select-viewport]::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 999px;
+  background: #B99A68 !important;
+  border-radius: 8px !important;
+  border: 1.5px solid rgba(16, 32, 45, 0.8) !important;
+}
+[data-radix-select-viewport]::-webkit-scrollbar-thumb:hover {
+  background: #d4b584 !important;
 }
 
 @keyframes ai-pulse {
@@ -423,5 +433,35 @@
   .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
   .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
     inset: -1px;
+  }
+}
+
+/* ── Luxury PDF Brochure Print Styles ── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-brochure,
+  #printable-brochure * {
+    visibility: visible;
+  }
+  #printable-brochure {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: auto;
+    margin: 0;
+    padding: 24px;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #10202D !important;
+    font-size: 13px;
+    direction: rtl;
+  }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
   }
 }

@@ -1,13 +1,15 @@
 import { Link } from "wouter";
-import type { ReactNode } from "react";
-import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Phone, Mail, MapPin, Facebook, Instagram, ExternalLink, Smartphone, Download } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { useData } from "@/context/DataContext";
 import { getTiktokUrl, getTiktokName } from "@/lib/socials";
 import { buildWaUrl } from "@/lib/phone";
+import { InstallAppModal } from "../ui/InstallAppModal";
 
 export function Footer() {
   const { settings } = useData();
+  const [installModalOpen, setInstallModalOpen] = useState(false);
 
   const contactItems = [
     settings.phone1 && {
@@ -110,15 +112,24 @@ export function Footer() {
             <h4 className="text-xs font-semibold text-foreground mb-5 uppercase tracking-widest">
               روابط سريعة
             </h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="/" className="hover:text-accent transition-colors">الرئيسية</Link></li>
-              <li><Link href="/about" className="hover:text-accent transition-colors">من نحن</Link></li>
-              <li><Link href="/consultation" className="hover:text-accent transition-colors">استشارة عقارية</Link></li>
-              <li><Link href="/finishing-services" className="hover:text-accent transition-colors">خدمات التشطيبات</Link></li>
-              <li><Link href="/add-property" className="hover:text-accent transition-colors">أعرض عقارك</Link></li>
-              <li><Link href="/favorites" className="hover:text-accent transition-colors">المفضلة</Link></li>
-              <li><Link href="/compare" className="hover:text-accent transition-colors">المقارنة</Link></li>
-            </ul>
+              <ul className="space-y-3 text-sm text-muted-foreground">
+                <li><Link href="/" className="hover:text-accent transition-colors">الرئيسية</Link></li>
+                <li><Link href="/about" className="hover:text-accent transition-colors">من نحن</Link></li>
+                <li><Link href="/consultation" className="hover:text-accent transition-colors">استشارة عقارية</Link></li>
+                <li><Link href="/finishing-services" className="hover:text-accent transition-colors">خدمات التشطيبات</Link></li>
+                <li><Link href="/add-property" className="hover:text-accent transition-colors">أعرض عقارك</Link></li>
+                <li><Link href="/favorites" className="hover:text-accent transition-colors">المفضلة</Link></li>
+                <li><Link href="/compare" className="hover:text-accent transition-colors">المقارنة</Link></li>
+                <li className="pt-1">
+                  <button
+                    onClick={() => setInstallModalOpen(true)}
+                    className="flex items-center gap-1.5 text-accent font-bold hover:opacity-80 transition-opacity"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    <span>تثبيت تطبيق المنصة 📱</span>
+                  </button>
+                </li>
+              </ul>
           </div>
 
           {/* Contact */}
@@ -180,6 +191,7 @@ export function Footer() {
           </div>
         </div>
       </div>
+      <InstallAppModal open={installModalOpen} onOpenChange={setInstallModalOpen} />
     </footer>
   );
 }

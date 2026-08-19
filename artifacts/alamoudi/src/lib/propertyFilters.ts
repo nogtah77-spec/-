@@ -144,10 +144,12 @@ function matchesParking(property: Property, requested: string): boolean {
 
 function matchesSector(property: Property, sector: PropertySector): boolean {
   if (sector === "all") return true;
+  if (property.category === sector) return true;
   if (sector === "residential") {
+    if (property.category === "residential" || !property.category) return true;
     return !Object.values(SECTOR_TYPE_GROUPS).some((ids) => ids.includes(property.typeId));
   }
-  return SECTOR_TYPE_GROUPS[sector].includes(property.typeId);
+  return SECTOR_TYPE_GROUPS[sector]?.includes(property.typeId) || property.category === sector;
 }
 
 export function filterProperties(
@@ -168,7 +170,10 @@ export function filterProperties(
 
   const filtered = properties.filter((property) => {
     if (filters.regionId && property.regionId !== filters.regionId) return false;
-    if (filters.category !== "all" && property.category !== filters.category) return false;
+    if (filters.category !== "all") {
+      const isMatch = property.listingType === filters.category || property.category === (filters.category as any);
+      if (!isMatch) return false;
+    }
     if (!matchesSector(property, filters.sector)) return false;
     if (filters.typeId && property.typeId !== filters.typeId) return false;
     if (minPrice !== null && property.price < minPrice) return false;
