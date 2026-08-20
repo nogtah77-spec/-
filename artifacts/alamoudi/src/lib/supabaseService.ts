@@ -208,6 +208,7 @@ export const supabaseService = {
         name: u.name,
         email: u.email,
         username: u.username || "",
+        password: u.password || "",
         role: u.role || "customer",
         active: u.active ?? true,
         canClearActivityLogs: u.can_clear_activity_logs ?? false,
@@ -228,13 +229,19 @@ export const supabaseService = {
         name: user.name,
         email: user.email,
         username: user.username || user.email.split("@")[0] || user.id,
+        password: user.password || "",
         role: user.role || "customer",
         active: user.active ?? true,
         can_clear_activity_logs: user.canClearActivityLogs ?? false,
         joined_at: user.joinedAt || new Date().toISOString(),
       };
       const { error } = await supabase.from("users").upsert(row);
-      if (error) throw error;
+      if (error) {
+        // Fallback without password column if schema not yet migrated
+        const { password: _p, ...fallbackRow } = row;
+        const { error: fallbackErr } = await supabase.from("users").upsert(fallbackRow);
+        if (fallbackErr) throw fallbackErr;
+      }
       return true;
     } catch (e) {
       console.warn("Supabase save user error:", e);

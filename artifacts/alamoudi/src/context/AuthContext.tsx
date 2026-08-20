@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 import { useData, User, DEFAULT_STAFF_USERS } from "./DataContext";
 import { api, type ApiError } from "@/lib/api";
+import { supabaseService } from "@/lib/supabaseService";
 
 const AUTH_STORAGE_KEY = "alm_auth_user";
 
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       /* Fallback to local / cached authentication */
     }
 
-    // 2. Gather all known users (from state, localStorage, and defaults)
+    // 2. Gather all known users (from state, localStorage, defaults, and Supabase cloud)
     const localUsers: User[] = (() => {
       try {
         const raw = localStorage.getItem("alm_users");
@@ -97,6 +98,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     DEFAULT_STAFF_USERS.forEach(u => userMap.set(u.id, u));
     (users || []).forEach(u => userMap.set(u.id, u));
     localUsers.forEach(u => userMap.set(u.id, u));
+
+    // Real-time Cloud Sync from Supabase so any user added from another device logs in instantly
+    try {
+      const cloudUsers = await supabaseService.fetchUsers();
+      if (cloudUsers && cloudUsers.length > 0) {
+        cloudUsers.forEach(u => userMap.set(u.id, u));
+      }
+    } catch (e) {
+      console.warn("Supabase fetch during login warning:", e);
+    }
+
     const allUsers = Array.from(userMap.values());
 
     // 3. Match user by username, email, email prefix, or full name

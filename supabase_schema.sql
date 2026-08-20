@@ -66,11 +66,15 @@ CREATE TABLE IF NOT EXISTS public.users (
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     username TEXT UNIQUE NOT NULL,
+    password TEXT DEFAULT '',
     role TEXT DEFAULT 'agent',
     active BOOLEAN DEFAULT true,
     can_clear_activity_logs BOOLEAN DEFAULT false,
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- ضمان وجود عمود كلمة المرور في حال كان الجدول منشأ مسبقاً
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT '';
 
 -- 5. جدول استفسارات العملاء (Inquiries)
 CREATE TABLE IF NOT EXISTS public.inquiries (
