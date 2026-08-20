@@ -50,24 +50,22 @@ export default function Users() {
       toast({ title: "خطأ", description: "يرجى إدخال الاسم والبريد الإلكتروني", variant: "destructive" });
       return;
     }
-    if (isStaffRole && (!form.username || !form.password)) {
-      toast({ title: "خطأ", description: "حسابات الإدارة والموظفين تتطلب اسم مستخدم وكلمة مرور", variant: "destructive" });
-      return;
-    }
+    const finalUsername = (form.username.trim() || form.email.split("@")[0].trim() || form.name.trim().replace(/\s+/g, "_")).toLowerCase();
+    const finalPassword = form.password.trim() || "123456";
     setIsSubmitting(true);
     try {
       const saved = await addUser({
         name: form.name.trim(),
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
         role: form.role,
-        username: isStaffRole ? form.username.trim() : undefined,
-        password: isStaffRole ? form.password : undefined,
+        username: finalUsername,
+        password: finalPassword,
         canClearActivityLogs: form.role === "agent" ? form.canClearActivityLogs : false,
         active: true,
       });
       if (!saved) return;
       setShowAddDialog(false);
-      toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم وحفظه بنجاح" });
+      toast({ title: "تم بنجاح", description: `تمت إضافة المستخدم بنجاح. اسم المستخدم: ${finalUsername}` });
     } finally {
       setIsSubmitting(false);
     }
@@ -75,23 +73,20 @@ export default function Users() {
 
   const handleEdit = async () => {
     if (!editTarget || !form.name || !form.email) return;
-    if (isStaffRole && !form.username) {
-      toast({ title: "خطأ", description: "حسابات الإدارة والموظفين تتطلب اسم مستخدم", variant: "destructive" });
-      return;
-    }
+    const finalUsername = (form.username.trim() || form.email.split("@")[0].trim() || form.name.trim().replace(/\s+/g, "_")).toLowerCase();
     const saved = await updateUser(editTarget.id, {
-      name: form.name,
-      email: form.email,
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
       role: form.role,
-      username: isStaffRole ? form.username.trim() : undefined,
+      username: finalUsername,
       canClearActivityLogs: form.role === "agent" ? form.canClearActivityLogs : false,
-      ...(form.password ? { password: form.password } : {}),
+      ...(form.password.trim() ? { password: form.password.trim() } : {}),
     });
     if (saved && editTarget.id === currentUser?.id) {
       await refreshCurrentUser();
     }
     setEditTarget(null);
-    toast({ title: "تم بنجاح", description: "تم تحديث بيانات المستخدم" });
+    toast({ title: "تم بنجاح", description: "تم تحديث بيانات المستخدم بنجاح" });
   };
 
   const handleDelete = () => {
@@ -123,7 +118,7 @@ export default function Users() {
   };
 
   const openAdd = () => {
-    setForm({ name: "", email: "", username: "", role: "customer", password: "", canClearActivityLogs: false });
+    setForm({ name: "", email: "", username: "", role: "agent", password: "123456", canClearActivityLogs: false });
     setShowAddDialog(true);
   };
 
@@ -131,9 +126,9 @@ export default function Users() {
     setForm({
       name: u.name,
       email: u.email,
-      username: u.username || "",
+      username: u.username || u.email.split("@")[0] || "",
       role: u.role,
-      password: "",
+      password: u.password || "",
       canClearActivityLogs: u.canClearActivityLogs ?? false,
     });
     setEditTarget(u);
@@ -242,14 +237,39 @@ export default function Users() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>الاسم</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input
+                placeholder="الاسم الكامل"
+                value={form.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setForm(prev => ({
+                    ...prev,
+                    name,
+                    username: prev.username || name.trim().replace(/\s+/g, "_").toLowerCase(),
+                  }));
+                }}
+              />
             </div>
             <div className="space-y-2">
               <Label>البريد الإلكتروني</Label>
-              <Input type="email" dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <Input
+                type="email"
+                dir="ltr"
+                placeholder="user@example.com"
+                value={form.email}
+                onChange={(e) => {
+                  const email = e.target.value;
+                  const prefix = email.split("@")[0].toLowerCase();
+                  setForm(prev => ({
+                    ...prev,
+                    email,
+                    username: prev.username && prev.username !== prev.email.split("@")[0].toLowerCase() ? prev.username : prefix,
+                  }));
+                }}
+              />
             </div>
             <div className="space-y-2">
-              <Label>الدور</Label>
+              <Label>الدور والصلاحية</Label>
                 <Select
                   value={form.role}
                   disabled={editTarget?.id === currentUser?.id}
@@ -259,46 +279,52 @@ export default function Users() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">مدير النظام</SelectItem>
-                  <SelectItem value="agent">مستشار عقاري</SelectItem>
+                  <SelectItem value="admin">مدير النظام (كامل الصلاحيات)</SelectItem>
+                  <SelectItem value="agent">مستشار عقاري (موظف)</SelectItem>
                   <SelectItem value="customer">عميل</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {isStaffRole && (
-              <>
-                <p className="text-xs text-muted-foreground">بيانات الدخول للوحة التحكم (للإدارة والموظفين فقط)</p>
-                <div className="space-y-2">
-                  <Label>اسم المستخدم</Label>
-                  <Input dir="ltr" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+            <div className="space-y-2">
+              <Label>اسم المستخدم (لتسجيل الدخول)</Label>
+              <Input
+                dir="ltr"
+                placeholder="مثال: ahmed"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase().trim() })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>كلمة المرور</Label>
+              <Input
+                type="text"
+                dir="ltr"
+                placeholder="مثال: 123456"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+            </div>
+            {isAdmin && form.role === "agent" && (
+              <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
+                <Checkbox
+                  id="new-user-clear-activity-logs"
+                  checked={form.canClearActivityLogs}
+                  onCheckedChange={(checked) => setForm({ ...form, canClearActivityLogs: checked === true })}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="new-user-clear-activity-logs" className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold">
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    السماح بتصفير سجلات النشاط
+                  </Label>
+                  <p className="text-xs leading-5 text-muted-foreground">صلاحية حساسة تمنح الموظف حذف سجل النشاط بالكامل بعد التأكيد.</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>كلمة المرور</Label>
-                  <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                </div>
-                {isAdmin && form.role === "agent" && (
-                  <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
-                    <Checkbox
-                      id="new-user-clear-activity-logs"
-                      checked={form.canClearActivityLogs}
-                      onCheckedChange={(checked) => setForm({ ...form, canClearActivityLogs: checked === true })}
-                    />
-                    <div className="space-y-1">
-                      <Label htmlFor="new-user-clear-activity-logs" className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold">
-                        <ShieldCheck className="h-4 w-4 text-accent" />
-                        السماح بتصفير سجلات النشاط
-                      </Label>
-                      <p className="text-xs leading-5 text-muted-foreground">صلاحية حساسة تمنح الموظف حذف سجل النشاط بالكامل بعد التأكيد.</p>
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>إلغاء</Button>
             <Button onClick={handleAdd} disabled={isSubmitting}>
-              {isSubmitting ? "جارٍ الحفظ..." : "إضافة"}
+              {isSubmitting ? "جارٍ الحفظ..." : "إضافة المستخدم"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -319,46 +345,41 @@ export default function Users() {
               <Input type="email" dir="ltr" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
             <div className="space-y-2">
-              <Label>الدور</Label>
+              <Label>الدور والصلاحية</Label>
               <Select value={form.role} onValueChange={(val: any) => setForm({ ...form, role: val })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">مدير النظام</SelectItem>
-                  <SelectItem value="agent">مستشار عقاري</SelectItem>
+                  <SelectItem value="admin">مدير النظام (كامل الصلاحيات)</SelectItem>
+                  <SelectItem value="agent">مستشار عقاري (موظف)</SelectItem>
                   <SelectItem value="customer">عميل</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {isStaffRole && (
-              <>
-                <p className="text-xs text-muted-foreground">بيانات الدخول للوحة التحكم (للإدارة والموظفين فقط)</p>
-                <div className="space-y-2">
-                  <Label>اسم المستخدم</Label>
-                  <Input dir="ltr" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+            <div className="space-y-2">
+              <Label>اسم المستخدم</Label>
+              <Input dir="ltr" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase().trim() })} />
+            </div>
+            <div className="space-y-2">
+              <Label>كلمة مرور جديدة <span className="text-muted-foreground font-normal">(اتركها فارغة للإبقاء على الحالية)</span></Label>
+              <Input type="text" dir="ltr" placeholder="أدخل كلمة مرور جديدة" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+            </div>
+            {isAdmin && form.role === "agent" && (
+              <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
+                <Checkbox
+                  id="edit-user-clear-activity-logs"
+                  checked={form.canClearActivityLogs}
+                  onCheckedChange={(checked) => setForm({ ...form, canClearActivityLogs: checked === true })}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="edit-user-clear-activity-logs" className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold">
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                    السماح بتصفير سجلات النشاط
+                  </Label>
+                  <p className="text-xs leading-5 text-muted-foreground">صلاحية حساسة تمنح الموظف حذف سجل النشاط بالكامل بعد التأكيد.</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>كلمة مرور جديدة <span className="text-muted-foreground font-normal">(اتركها فارغة للإبقاء على الحالية)</span></Label>
-                  <Input type="password" dir="ltr" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                </div>
-                {isAdmin && form.role === "agent" && (
-                  <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
-                    <Checkbox
-                      id="edit-user-clear-activity-logs"
-                      checked={form.canClearActivityLogs}
-                      onCheckedChange={(checked) => setForm({ ...form, canClearActivityLogs: checked === true })}
-                    />
-                    <div className="space-y-1">
-                      <Label htmlFor="edit-user-clear-activity-logs" className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold">
-                        <ShieldCheck className="h-4 w-4 text-accent" />
-                        السماح بتصفير سجلات النشاط
-                      </Label>
-                      <p className="text-xs leading-5 text-muted-foreground">صلاحية حساسة تمنح الموظف حذف سجل النشاط بالكامل بعد التأكيد.</p>
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
           <DialogFooter>

@@ -1122,8 +1122,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addUser = async (u: Omit<User, "id" | "joinedAt">) => {
+    const finalEmail = u.email.trim().toLowerCase();
+    const finalUsername = (u.username?.trim() || finalEmail.split("@")[0] || u.name.trim().replace(/\s+/g, "_")).toLowerCase();
+    const finalPassword = u.password || "123456";
+
     const newUser: User = {
       ...u,
+      name: u.name.trim(),
+      email: finalEmail,
+      username: finalUsername,
+      password: finalPassword,
       id: genId(),
       joinedAt: new Date().toISOString(),
     };
@@ -1131,8 +1139,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Check duplicate email / username locally
     const duplicate = users.find(
       existing =>
-        (existing.email && existing.email.toLowerCase() === newUser.email.toLowerCase()) ||
-        (newUser.username && existing.username && existing.username.toLowerCase() === newUser.username.toLowerCase())
+        (existing.email && existing.email.toLowerCase() === finalEmail) ||
+        (existing.username && existing.username.toLowerCase() === finalUsername)
     );
     if (duplicate) {
       toast({
@@ -1152,10 +1160,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     supabaseService.saveUser(newUser).catch(() => {});
 
     try {
-      const saved = await api.post<User>("/users", u);
+      const saved = await api.post<User>("/users", { ...newUser });
       if (saved && saved.id) {
         setUsers(prev => {
-          const updated = prev.map(x => (x.id === newUser.id ? saved : x));
+          const updated = prev.map(x => (x.id === newUser.id ? { ...saved, password: finalPassword } : x));
           try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
           return updated;
         });
@@ -1168,12 +1176,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUser = async (id: string, u: Partial<User>) => {
-    const { password: _pw, ...rest } = u;
     let targetUser: User | null = null;
     setUsers(prev => {
       const updated = prev.map(x => {
         if (x.id === id) {
-          targetUser = { ...x, ...rest };
+          targetUser = { ...x, ...u };
           return targetUser;
         }
         return x;
