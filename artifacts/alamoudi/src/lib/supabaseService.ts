@@ -195,4 +195,63 @@ export const supabaseService = {
       return false;
     }
   },
+
+  // Fetch Users
+  async fetchUsers(): Promise<User[] | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.from("users").select("*").order("joined_at", { ascending: false });
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data.map((u: any) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        username: u.username || "",
+        role: u.role || "customer",
+        active: u.active ?? true,
+        canClearActivityLogs: u.can_clear_activity_logs ?? false,
+        joinedAt: u.joined_at || new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.warn("Supabase fetch users error:", e);
+      return null;
+    }
+  },
+
+  // Save / upsert User
+  async saveUser(user: User): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const row = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username || user.email.split("@")[0] || user.id,
+        role: user.role || "customer",
+        active: user.active ?? true,
+        can_clear_activity_logs: user.canClearActivityLogs ?? false,
+        joined_at: user.joinedAt || new Date().toISOString(),
+      };
+      const { error } = await supabase.from("users").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save user error:", e);
+      return false;
+    }
+  },
+
+  // Delete User
+  async deleteUser(id: string): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase.from("users").delete().eq("id", id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase delete user error:", e);
+      return false;
+    }
+  },
 };

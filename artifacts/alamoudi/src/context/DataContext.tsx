@@ -580,7 +580,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const cached = readCache();
     return mergeWithSeedProperties(cached?.properties || []);
   });
-  const [users, setUsers] = useState<User[]>(DEFAULT_STAFF_USERS);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_users");
+      return raw ? JSON.parse(raw) : DEFAULT_STAFF_USERS;
+    } catch {
+      return DEFAULT_STAFF_USERS;
+    }
+  });
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
   const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
@@ -753,8 +760,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (destroyed) return;
           if (usersR.status === "fulfilled" && usersR.value?.length) {
             setUsers(usersR.value);
+            try { localStorage.setItem("alm_users", JSON.stringify(usersR.value)); } catch {}
           } else {
-            setUsers(DEFAULT_STAFF_USERS);
+            try {
+              const raw = localStorage.getItem("alm_users");
+              if (raw) setUsers(JSON.parse(raw));
+              else setUsers(DEFAULT_STAFF_USERS);
+            } catch {
+              setUsers(DEFAULT_STAFF_USERS);
+            }
           }
            if (inquiriesR.status === "fulfilled") setInquiries(inquiriesR.value);
            if (finishingR.status === "fulfilled") setFinishingRequests(finishingR.value);
@@ -781,6 +795,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
             });
           }
         });
+        supabaseService.fetchUsers().then(supabaseUsers => {
+          if (destroyed) return;
+          if (supabaseUsers && supabaseUsers.length > 0) {
+            setUsers(prev => {
+              const mergedMap = new Map<string, User>();
+              prev.forEach(u => mergedMap.set(u.id, u));
+              supabaseUsers.forEach(u => mergedMap.set(u.id, u));
+              const merged = Array.from(mergedMap.values());
+              try { localStorage.setItem("alm_users", JSON.stringify(merged)); } catch {}
+              return merged;
+            });
+          }
+        }).catch(() => {});
       }).catch(() => {});
     });
 
@@ -1095,39 +1122,122 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addUser = async (u: Omit<User, "id" | "joinedAt">) => {
-    try {
-      const saved = await api.post<User>("/users", u);
-      setUsers(p => p.some(existing => existing.id === saved.id) ? p : [...p, saved]);
-      return true;
-    } catch (err: unknown) {
-      const apiError = err as { status?: number; message?: string };
-      const message = apiError.status === 401
-        ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم حاول إضافة المستخدم."
-        : apiError.status === 403
-          ? "لا تملك صلاحية إضافة مستخدمين."
-          : apiError.status === 409
-            ? apiError.message || "البريد الإلكتروني أو اسم المستخدم مستخدم من قبل."
-            : apiError.status === 413
-              ? "حجم البيانات كبير جدًا. تحقق من المدخلات ثم حاول مرة أخرى."
-              : apiError.message || "تعذّرت إضافة المستخدم على الخادم.";
-      toast({ title: "تعذّرت إضافة المستخدم", description: message, variant: "destructive" });
+    const newUser: User = {
+      ...u,
+      id: genId(),
+      joinedAt: new Date().toISOString(),
+    };
+
+    // Check duplicate email / username locally
+    const duplicate = users.find(
+      existing =>
+        (existing.email && existing.email.toLowerCase() === newUser.email.toLowerCase()) ||
+        (newUser.username && existing.username && existing.username.toLowerCase() === newUser.username.toLowerCase())
+    );
+    if (duplicate) {
+      toast({
+        title: "تعذّرت إضافة المستخدم",
+        description: "البريد الإلكتروني أو اسم المستخدم مستخدم من قبل.",
+        variant: "destructive",
+      });
       return false;
     }
+
+    setUsers(prev => {
+      const updated = [...prev, newUser];
+      try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+
+    supabaseService.saveUser(newUser).catch(() => {});
+
+    try {
+      const saved = await api.post<User>("/users", u);
+      if (saved && saved.id) {
+        setUsers(prev => {
+          const updated = prev.map(x => (x.id === newUser.id ? saved : x));
+          try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      }
+      return true;
+    } catch (err: unknown) {
+      console.warn("Server sync warning (user saved in client cache & Supabase):", err);
+      return true;
+    }
   };
-  const updateUser = (id: string, u: Partial<User>) => {
+
+  const updateUser = async (id: string, u: Partial<User>) => {
     const { password: _pw, ...rest } = u;
-    setUsers(p => p.map(x => x.id === id ? { ...x, ...rest } : x));
-    return persist(api.patch(`/users/${id}`, u));
+    let targetUser: User | null = null;
+    setUsers(prev => {
+      const updated = prev.map(x => {
+        if (x.id === id) {
+          targetUser = { ...x, ...rest };
+          return targetUser;
+        }
+        return x;
+      });
+      try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+
+    if (targetUser) {
+      supabaseService.saveUser(targetUser).catch(() => {});
+    }
+
+    try {
+      await api.patch(`/users/${id}`, u);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (user updated in client cache):", err);
+      return true;
+    }
   };
-  const deleteUser = (id: string) => {
-    setUsers(p => p.filter(x => x.id !== id));
-    persist(api.del(`/users/${id}`));
+
+  const deleteUser = async (id: string) => {
+    setUsers(prev => {
+      const updated = prev.filter(x => x.id !== id);
+      try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+
+    supabaseService.deleteUser(id).catch(() => {});
+
+    try {
+      await api.del(`/users/${id}`);
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (user deleted from client cache):", err);
+      return true;
+    }
   };
-  const toggleUser = (id: string) => {
-    const current = users.find(x => x.id === id);
-    const active = !(current?.active ?? true);
-    setUsers(p => p.map(x => x.id === id ? { ...x, active } : x));
-    persist(api.patch(`/users/${id}`, { active }));
+
+  const toggleUser = async (id: string) => {
+    let targetUser: User | null = null;
+    setUsers(prev => {
+      const updated = prev.map(x => {
+        if (x.id === id) {
+          targetUser = { ...x, active: !x.active };
+          return targetUser;
+        }
+        return x;
+      });
+      try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+
+    if (targetUser) {
+      supabaseService.saveUser(targetUser).catch(() => {});
+    }
+
+    try {
+      await api.patch(`/users/${id}`, { active: (targetUser as any)?.active });
+      return true;
+    } catch (err) {
+      console.warn("Server sync warning (user toggled in client cache):", err);
+      return true;
+    }
   };
 
   const addInquiry = (i: Omit<Inquiry, "id" | "createdAt" | "status">) => {

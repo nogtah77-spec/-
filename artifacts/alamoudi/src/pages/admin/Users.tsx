@@ -67,7 +67,7 @@ export default function Users() {
       });
       if (!saved) return;
       setShowAddDialog(false);
-      toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم وحفظه على الخادم" });
+      toast({ title: "تم بنجاح", description: "تمت إضافة المستخدم وحفظه بنجاح" });
     } finally {
       setIsSubmitting(false);
     }

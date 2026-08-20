@@ -2,6 +2,10 @@
   "outputDirectory": "artifacts/alamoudi/dist",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
