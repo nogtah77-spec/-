@@ -22,7 +22,7 @@ export interface Property {
   beds: number;
   baths: number;
   floors: number;
-  floor: number;
+  floor: number | string;
   finishing: string;
   view: string;
   typeId: string;

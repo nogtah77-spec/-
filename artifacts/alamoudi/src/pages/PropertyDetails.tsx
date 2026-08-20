@@ -341,11 +341,11 @@ export default function PropertyDetails() {
               <span className="font-semibold">{property.area}</span>
               <span className="text-muted-foreground text-xs">م²</span>
             </div>
-            {property.floor > 0 && (
+            {property.floor !== undefined && property.floor !== null && property.floor !== "" && (
               <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
                 <Layers className="h-4 w-4 text-accent flex-shrink-0" />
-                <span className="font-semibold">{property.floor}</span>
-                <span className="text-muted-foreground text-xs">دور</span>
+                <span className="font-semibold">{property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor}</span>
+                {typeof property.floor === "number" && property.floor > 0 && <span className="text-muted-foreground text-xs">دور</span>}
               </div>
             )}
             {property.finishing && (
@@ -440,11 +440,11 @@ export default function PropertyDetails() {
                   <span className="font-semibold">{property.area}</span>
                   <span className="text-muted-foreground text-xs">م²</span>
                 </div>
-                {property.floor > 0 && (
+                {property.floor !== undefined && property.floor !== null && property.floor !== "" && (
                   <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
                     <Layers className="h-4 w-4 text-accent flex-shrink-0" />
-                    <span className="font-semibold">{property.floor}</span>
-                    <span className="text-muted-foreground text-xs">دور</span>
+                    <span className="font-semibold">{property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor}</span>
+                    {typeof property.floor === "number" && property.floor > 0 && <span className="text-muted-foreground text-xs">دور</span>}
                   </div>
                 )}
                 {property.finishing && (
@@ -489,7 +489,14 @@ export default function PropertyDetails() {
                       { label: "المساحة", value: property.area ? `${property.area} م²` : null },
                       { label: "غرف النوم", value: property.beds || null },
                       { label: "الحمامات", value: property.baths || null },
-                      { label: "الدور", value: property.floor !== null && property.floor !== undefined && property.floor > 0 ? `الدور ${property.floor}` : property.floor === 0 ? "أرضي" : null },
+                      {
+                        label: "الدور",
+                        value: property.floor !== null && property.floor !== undefined && property.floor !== ""
+                          ? (typeof property.floor === "number"
+                              ? (property.floor > 0 ? `الدور ${property.floor}` : "أرضي")
+                              : (property.floor === "0" ? "أرضي" : property.floor))
+                          : null
+                      },
                       { label: "عدد طوابق العقار", value: property.floors || null },
                       { label: "الواجهة", value: property.unitType || null },
                       { label: "الفيو", value: property.view || null },

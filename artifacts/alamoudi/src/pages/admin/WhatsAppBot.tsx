@@ -252,7 +252,7 @@ export default function WhatsAppBot() {
           `💰 *السعر:* ${parsed.price ? parsed.price.toLocaleString("ar-EG") + " ج.م" : "غير محدد"}\n` +
           `📐 *المساحة:* ${parsed.area ? parsed.area + " م²" : "غير محددة"}\n` +
           `🛏️ *الغرف / الحمامات:* ${parsed.beds || 0} غرف | ${parsed.baths || 0} حمام\n` +
-          `🚪 *الدور:* ${parsed.floor === 0 ? "أرضي" : "الدور " + (parsed.floor || 1)}\n` +
+          `🚪 *الدور:* ${parsed.floor === 0 ? "أرضي" : (parsed.floor ? "الدور " + parsed.floor : "غير محدد")}\n` +
           `📍 *المنطقة:* ${parsed.regionId ? (regions.find(r => r.id === parsed.regionId)?.name || parsed.regionId) : "مدينة الشروق"}\n` +
           `👤 *الموظف المسؤول:* ${assignedStaffName}\n\n` +
           `🔗 *رابط المعاينة المباشر:*\n` +

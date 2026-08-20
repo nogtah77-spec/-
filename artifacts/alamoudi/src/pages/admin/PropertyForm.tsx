@@ -52,7 +52,7 @@ export default function PropertyForm() {
     beds: existing?.beds ?? 0,
     baths: existing?.baths ?? 0,
     floors: existing?.floors ?? 0,
-    floor: existing?.floor ?? 0,
+    floor: existing?.floor !== undefined && existing?.floor !== null ? String(existing.floor) : "",
     finishing: existing?.finishing ?? "",
     view: existing?.view ?? "",
     typeId: existing?.typeId ?? "",
@@ -125,7 +125,7 @@ export default function PropertyForm() {
       beds: numericValue(form.beds),
       baths: numericValue(form.baths),
       floors: numericValue(form.floors),
-      floor: numericValue(form.floor),
+      floor: typeof form.floor === "string" ? form.floor.trim() : form.floor,
       images,
     };
     try {
@@ -182,7 +182,7 @@ export default function PropertyForm() {
         beds: parsed.beds !== undefined ? parsed.beds : (isEdit ? prev.beds : 0),
         baths: parsed.baths !== undefined ? parsed.baths : (isEdit ? prev.baths : 0),
         floors: parsed.floors !== undefined ? parsed.floors : (isEdit ? prev.floors : 0),
-        floor: parsed.floor !== undefined ? parsed.floor : (isEdit ? prev.floor : 0),
+        floor: parsed.floor !== undefined ? (typeof parsed.floor === "number" ? (parsed.floor === 0 ? "أرضي" : String(parsed.floor)) : String(parsed.floor)) : (isEdit ? String(prev.floor ?? "") : ""),
         floorText: parsed.floorText || "",
         regionId: parsed.regionId || prev.regionId,
         typeId: parsed.typeId || prev.typeId,
@@ -351,7 +351,12 @@ export default function PropertyForm() {
                   </div>
                   <div className="space-y-2">
                     <Label>الدور</Label>
-                    <Input type="number" value={form.floor || ""} onChange={e => set("floor", Number(e.target.value))} placeholder="0" />
+                    <Input
+                      type="text"
+                      value={form.floor}
+                      onChange={e => set("floor", e.target.value)}
+                      placeholder="مثال: أرضي / الأول / الثالث / أخير / متكرر..."
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>الدريسنج</Label>

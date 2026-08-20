@@ -36,7 +36,7 @@ export default function Compare() {
     { label: "المساحة", key: "area", format: (v: any) => v ? `${v} م²` : "—" },
     { label: "غرف النوم", key: "beds", format: (v: any) => v > 0 ? v : "—" },
     { label: "الحمامات", key: "baths", format: (v: any) => v > 0 ? v : "—" },
-    { label: "الدور", key: "floor", format: (v: any) => v > 0 ? v : "—" },
+    { label: "الدور", key: "floor", format: (v: any) => v !== null && v !== undefined && v !== "" ? (typeof v === "number" ? (v > 0 ? `الدور ${v}` : "أرضي") : (v === "0" ? "أرضي" : v)) : "—" },
     { label: "عدد طوابق العقار", key: "floors", format: (v: any) => v > 0 ? v : "—" },
     { label: "التشطيب", key: "finishing", format: (v: any) => v ? (finishingLabels[v] || v) : "—" },
     { label: "الفيو", key: "view", format: (v: any) => v || "—" },
