@@ -204,14 +204,28 @@ export default function Home() {
   });
 
   const featuredProps = useMemo(
-    () => properties.filter((p) => p.featured).map(resolve),
+    () =>
+      properties
+        .filter((p) => p.featured && p.status !== "archived")
+        .sort((a, b) => {
+          const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
+          const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
+          return timeB - timeA;
+        })
+        .map(resolve),
     [properties, propertyTypes, regions],
   );
+
   const latestProps = useMemo(
     () =>
       [...properties]
-        .filter((p) => !p.featured)
-        .reverse()
+        .filter((p) => p.status !== "archived" && p.status !== "sold" && p.status !== "rented")
+        .sort((a, b) => {
+          const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
+          const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
+          if (timeA !== timeB) return timeB - timeA;
+          return String(b.id).localeCompare(String(a.id));
+        })
         .slice(0, 6)
         .map(resolve),
     [properties, propertyTypes, regions],
