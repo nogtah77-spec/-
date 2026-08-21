@@ -30,7 +30,15 @@ export default function PropertyForm() {
   const { toast } = useToast();
   const params = useParams<{ id?: string }>();
   const isEdit = !!params.id;
-  const existing = isEdit ? properties.find(p => p.id === params.id) : undefined;
+  const existing = isEdit
+    ? properties.find(
+        p =>
+          p.id === params.id ||
+          p.code === params.id ||
+          (p.code && params.id && p.code.toLowerCase() === params.id.toLowerCase()) ||
+          (p.id && params.id && p.id.toLowerCase() === params.id.toLowerCase())
+      )
+    : undefined;
   const [aiText, setAiText] = useState("");
   const [aiParsedSummary, setAiParsedSummary] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -160,8 +168,9 @@ export default function PropertyForm() {
       images,
     };
     try {
-      const saved = isEdit && params.id
-        ? await updateProperty(params.id, payload)
+      const targetId = existing?.id || params.id;
+      const saved = isEdit && targetId
+        ? await updateProperty(targetId, payload)
         : await addProperty(payload);
       if (!saved) return;
       toast({ title: "تم الحفظ بنجاح", description: isEdit ? "تم تحديث بيانات العقار." : "تم إضافة العقار الجديد." });

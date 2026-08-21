@@ -521,18 +521,73 @@ export const DEFAULT_STAFF_USERS: User[] = [
 ];
 
 function mergeWithSeedProperties(cachedList: Property[] = []): Property[] {
+  const deleted: string[] = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
+    } catch {
+      return [];
+    }
+  })();
+
+  const overrides: Record<string, Property> = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
+    } catch {
+      return {};
+    }
+  })();
+
   const map = new Map<string, Property>();
+
+  // 1. Initial seeds (only if not deleted)
   for (const p of SEED_PROPERTIES) {
-    if (p && (p.id || p.code)) {
-      map.set(p.id || p.code, p);
+    if (p) {
+      const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
+      if (!isDeleted) {
+        const idKey = (p.id || "").toLowerCase();
+        const codeKey = (p.code || "").toLowerCase();
+        if (idKey) map.set(idKey, p);
+        if (codeKey) map.set(codeKey, p);
+      }
     }
   }
+
+  // 2. Cached properties override seeds
   for (const p of cachedList) {
-    if (p && (p.id || p.code)) {
-      map.set(p.id || p.code, p);
+    if (p) {
+      const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
+      if (!isDeleted) {
+        const idKey = (p.id || "").toLowerCase();
+        const codeKey = (p.code || "").toLowerCase();
+        if (idKey) map.set(idKey, p);
+        if (codeKey) map.set(codeKey, p);
+      }
     }
   }
-  return Array.from(map.values());
+
+  // 3. User Overrides ALWAYS win
+  for (const [, p] of Object.entries(overrides)) {
+    if (p) {
+      const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
+      if (!isDeleted) {
+        const idKey = (p.id || "").toLowerCase();
+        const codeKey = (p.code || "").toLowerCase();
+        if (idKey) map.set(idKey, p);
+        if (codeKey) map.set(codeKey, p);
+      }
+    }
+  }
+
+  // Deduplicate by unique id
+  const finalMap = new Map<string, Property>();
+  for (const p of map.values()) {
+    const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
+    if (!isDeleted) {
+      const uniqueKey = p.id || p.code;
+      if (uniqueKey) finalMap.set(uniqueKey, p);
+    }
+  }
+  return Array.from(finalMap.values());
 }
 
 function readCache(): CachePayload | null {
@@ -1027,39 +1082,82 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateProperty = async (id: string, p: Partial<Property>) => {
     let updatedTarget: Property | null = null;
+    const targetIdLower = (id || "").toLowerCase().trim();
+
     setProperties(prev => {
+      let found = false;
       const updated = prev.map(prop => {
-        if (prop.id === id) {
-          updatedTarget = { ...prop, ...p };
+        const matchId = (prop.id || "").toLowerCase().trim() === targetIdLower;
+        const matchCode = (prop.code || "").toLowerCase().trim() === targetIdLower;
+        if (matchId || matchCode) {
+          found = true;
+          updatedTarget = { ...prop, ...p, id: prop.id || id };
           return updatedTarget;
         }
         return prop;
       });
+
+      if (!found && id) {
+        updatedTarget = { ...p, id, code: p.code || id, createdAt: new Date().toISOString() } as Property;
+        updated.push(updatedTarget);
+      }
+
       writeCache({
         regions,
         types: propertyTypes,
         properties: updated,
         settings,
       });
+
+      // Save to persistent overrides
+      if (updatedTarget) {
+        try {
+          const overrides = JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
+          overrides[id] = updatedTarget;
+          if (updatedTarget.id) overrides[updatedTarget.id] = updatedTarget;
+          if (updatedTarget.code) overrides[updatedTarget.code] = updatedTarget;
+          localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
+        } catch {}
+      }
+
       return updated;
     });
 
     if (updatedTarget) {
-      supabaseService.saveProperty(updatedTarget).catch(() => {});
+      await supabaseService.saveProperty(updatedTarget).catch(() => {});
     }
 
     try {
       await api.patch(`/properties/${id}`, p);
       return true;
     } catch (err) {
-      console.warn("Server sync warning (property updated in client cache):", err);
       return true;
     }
   };
 
   const deleteProperty = async (id: string) => {
+    const targetIdLower = (id || "").toLowerCase().trim();
+
+    // 1. Add to persistent blacklist
+    try {
+      const deleted: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
+      if (!deleted.includes(id)) deleted.push(id);
+      if (!deleted.includes(targetIdLower)) deleted.push(targetIdLower);
+      localStorage.setItem("alm_deleted_properties", JSON.stringify(deleted));
+
+      // Remove from persistent overrides
+      const overrides = JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
+      delete overrides[id];
+      delete overrides[targetIdLower];
+      localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
+    } catch {}
+
     setProperties(prev => {
-      const updated = prev.filter(x => x.id !== id);
+      const updated = prev.filter(x => {
+        const matchId = (x.id || "").toLowerCase().trim() === targetIdLower;
+        const matchCode = (x.code || "").toLowerCase().trim() === targetIdLower;
+        return !matchId && !matchCode;
+      });
       writeCache({
         regions,
         types: propertyTypes,
@@ -1069,7 +1167,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return updated;
     });
 
-    supabaseService.deleteProperty(id).catch(() => {});
+    await supabaseService.deleteProperty(id).catch(() => {});
 
     try {
       await api.del(`/properties/${id}`);
