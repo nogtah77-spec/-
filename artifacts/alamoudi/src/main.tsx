@@ -2,12 +2,24 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Register Service Worker for PWA support
-if (typeof window !== "undefined" && "serviceWorker" in navigator && process.env.NODE_ENV === "production") {
+// Register Service Worker with instant auto-update for PWA support
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* SW registration failed */
-    });
+    navigator.serviceWorker.register("/sw.js").then((reg) => {
+      // Check for updates on every page load
+      reg.update().catch(() => {});
+      reg.addEventListener("updatefound", () => {
+        const newWorker = reg.installing;
+        if (newWorker) {
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              // New version available, take control immediately
+              newWorker.postMessage({ type: "SKIP_WAITING" });
+            }
+          });
+        }
+      });
+    }).catch(() => {});
   });
 }
 

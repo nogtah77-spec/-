@@ -1,21 +1,11 @@
-const CACHE_NAME = "alamoudi-cache-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json"
-];
+const CACHE_NAME = "alamoudi-cache-v4-live";
 
-// Install: Cache core static assets
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
+// Install: Skip waiting immediately to activate new version
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
-// Activate: Clean up old caches
+// Activate: Purge ALL old caches immediately across all clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -26,53 +16,48 @@ self.addEventListener("activate", (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch: Network first for API, Stale-While-Revalidate for static assets
+// Listen for explicit cache-busting messages
+self.addEventListener("message", (event) => {
+  if (event.data && (event.data.type === "SKIP_WAITING" || event.data.action === "skipWaiting")) {
+    self.skipWaiting();
+  }
+});
+
+// Fetch: Strict Network-First for ALL requests (HTML, JS, CSS, Data) to guarantee instant live code execution
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests and chrome-extension schemes
+  // Ignore non-GET, chrome-extensions, or non-http protocols
   if (request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
-  // API calls: Network first
-  if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      fetch(request).catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // Navigation requests: Network first with HTML fallback
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match("/index.html") || caches.match("/");
-      })
-    );
-    return;
-  }
-
-  // Static assets (images, styles, scripts): Cache first / Stale-While-Revalidate
+  // Network First Strategy for everything: fetch freshest from server, fallback to cache ONLY if completely offline
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
+    fetch(request)
+      .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
+          const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseToCache);
+            cache.put(request, responseClone);
           });
         }
         return networkResponse;
-      }).catch(() => cachedResponse);
-
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        // Offline fallback
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
+          if (request.mode === "navigate") {
+            return caches.match("/index.html") || caches.match("/");
+          }
+          return new Response("Network unavailable", { status: 503, statusText: "Offline" });
+        });
+      })
   );
 });
