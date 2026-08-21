@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -131,7 +131,70 @@ export default function PropertyDetails() {
 
   const typeName = propertyTypes.find(t => t.id === property.typeId)?.name;
   const regionName = regions.find(r => r.id === property.regionId)?.name;
-  const similar = properties.filter(p => p.id !== property.id && (p.regionId === property.regionId || p.typeId === property.typeId)).slice(0, 6);
+
+  // Smart Multi-Factor Similarity Algorithm
+  const similar = useMemo(() => {
+    if (!property || properties.length <= 1) return [];
+
+    const candidates = properties.filter(p => p.id !== property.id);
+
+    const scored = candidates.map(p => {
+      let score = 0;
+
+      // 1. Same Region / City (Highest Priority: +50 pts)
+      if (property.regionId && p.regionId === property.regionId) {
+        score += 50;
+      }
+
+      // 2. Same Sub-area / District (+30 pts)
+      if (property.subArea && p.subArea && property.subArea.trim() && p.subArea.trim()) {
+        const pSub = p.subArea.toLowerCase().trim();
+        const curSub = property.subArea.toLowerCase().trim();
+        if (pSub === curSub || pSub.includes(curSub) || curSub.includes(pSub)) {
+          score += 30;
+        }
+      }
+
+      // 3. Same Listing Type (Sale with Sale, Rent with Rent: +25 pts)
+      if (p.listingType === property.listingType || p.category === property.category) {
+        score += 25;
+      }
+
+      // 4. Same Property Type (Apartment, Villa, etc.: +20 pts)
+      if (property.typeId && p.typeId === property.typeId) {
+        score += 20;
+      }
+
+      // 5. Price proximity (within price range: up to +15 pts)
+      if (property.price > 0 && p.price > 0) {
+        const priceRatio = Math.min(property.price, p.price) / Math.max(property.price, p.price);
+        score += Math.round(priceRatio * 15);
+      }
+
+      // 6. Area proximity (up to +10 pts)
+      if (property.area > 0 && p.area > 0) {
+        const areaRatio = Math.min(property.area, p.area) / Math.max(property.area, p.area);
+        score += Math.round(areaRatio * 10);
+      }
+
+      // 7. Same number of bedrooms (+5 pts)
+      if (property.beds > 0 && p.beds === property.beds) {
+        score += 5;
+      }
+
+      // Small deterministic tie-breaker to balance variety
+      const hash = (p.id || "").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      const tieBreaker = (hash % 9) * 0.1;
+
+      return { property: p, score: score + tieBreaker };
+    });
+
+    // Sort descending by match score
+    scored.sort((a, b) => b.score - a.score);
+
+    // Pick top 6 most relevant matching properties
+    return scored.slice(0, 6).map(s => s.property);
+  }, [property, properties]);
 
   const waNum = normalizePhoneForWa(settings.whatsapp || settings.phone1 || "");
   const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
