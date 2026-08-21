@@ -1,4 +1,4 @@
-﻿import type { User } from "@/context/DataContext";
+import type { User } from "@/context/DataContext";
 
 export const PERMISSION_STORAGE_KEY = "alamoudi_roles_perms";
 
@@ -9,12 +9,14 @@ export interface PermissionGroup {
 
 export const PERMISSION_GROUPS: PermissionGroup[] = [
   {
-    category: "إدارة العقارات",
+    category: "إدارة العقارات والمعاملات",
     items: [
       { key: "إدارة العقارات-إضافة عقار", label: "إضافة عقار" },
       { key: "إدارة العقارات-تعديل عقار", label: "تعديل عقار" },
       { key: "إدارة العقارات-حذف عقار", label: "حذف عقار" },
       { key: "إدارة العقارات-نشر العقارات", label: "نشر العقارات" },
+      { key: "إدارة العقارات-مصادر العقارات", label: "مصادر العقارات" },
+      { key: "إدارة العقارات-إدارة العقود", label: "إدارة العقود" },
     ],
   },
   {
@@ -50,6 +52,8 @@ export const DEFAULT_ROLE_PERMS: Record<string, Record<string, boolean>> = {
     "إدارة العقارات-تعديل عقار": true,
     "إدارة العقارات-حذف عقار": true,
     "إدارة العقارات-نشر العقارات": true,
+    "إدارة العقارات-مصادر العقارات": true,
+    "إدارة العقارات-إدارة العقود": true,
     "إدارة المستخدمين-عرض المستخدمين": true,
     "إدارة المستخدمين-إضافة مستخدم": true,
     "إدارة المستخدمين-تعديل صلاحيات": true,
@@ -66,6 +70,8 @@ export const DEFAULT_ROLE_PERMS: Record<string, Record<string, boolean>> = {
     "إدارة العقارات-تعديل عقار": true,
     "إدارة العقارات-حذف عقار": false,
     "إدارة العقارات-نشر العقارات": false,
+    "إدارة العقارات-مصادر العقارات": false,
+    "إدارة العقارات-إدارة العقود": false,
     "إدارة المستخدمين-عرض المستخدمين": false,
     "إدارة المستخدمين-إضافة مستخدم": false,
     "إدارة المستخدمين-تعديل صلاحيات": false,

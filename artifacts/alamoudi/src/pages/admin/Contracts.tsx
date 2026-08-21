@@ -794,8 +794,17 @@ function ContractDetailDialog({
   );
 }
 
+import { useAuth } from "@/context/AuthContext";
+import { checkUserPermission } from "@/lib/permissions";
+import { ShieldAlert } from "lucide-react";
+import { Link } from "wouter";
+
 export default function Contracts() {
   const { contracts, properties, regions, propertyTypes, users, fetching, reload, addContract, updateContract, deleteContract } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canManageContracts = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-إدارة العقود");
+
   const staffUsers = useMemo(() => users.filter((user) => user.role === "admin" || user.role === "agent"), [users]);
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -806,6 +815,25 @@ export default function Contracts() {
   const [formOpen, setFormOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Contract | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  if (!canManageContracts) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية الوصول إلى إدارة العقود والمعاملات. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const counts = useMemo(() => ({
     all: contracts.length,

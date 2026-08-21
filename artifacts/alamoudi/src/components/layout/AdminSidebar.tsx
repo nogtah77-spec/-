@@ -44,8 +44,8 @@ const sidebarSections: SidebarSection[] = [
       { href: "/admin/mortgage-calculator", label: "حاسبة التمويل والأقساط", icon: Calculator },
       { href: "/admin/regions", label: "المناطق", icon: MapPin, permission: "الإعدادات-إدارة المناطق" },
       { href: "/admin/property-types", label: "أنواع العقارات", icon: Home, permission: "الإعدادات-إدارة الأنواع" },
-      { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser },
-      { href: "/admin/contracts", label: "العقود", icon: FileCheck2 },
+      { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser, permission: "إدارة العقارات-مصادر العقارات" },
+      { href: "/admin/contracts", label: "العقود", icon: FileCheck2, permission: "إدارة العقارات-إدارة العقود" },
     ],
   },
   {

@@ -160,8 +160,12 @@ export default function Users() {
     toast({ title: "تم بنجاح", description: "تم تحديث حالة المستخدم" });
   };
 
+  const [showAddPass, setShowAddPass] = useState(false);
+  const [showEditPass, setShowEditPass] = useState(false);
+
   const openAdd = () => {
-    setForm({ name: "", email: "", username: "", role: "agent", password: "123456", canClearActivityLogs: false });
+    setForm({ name: "", email: "", username: "", role: "agent", password: "", canClearActivityLogs: false });
+    setShowAddPass(false);
     setShowAddDialog(true);
   };
 
@@ -171,9 +175,10 @@ export default function Users() {
       email: u.email,
       username: u.username || u.email.split("@")[0] || "",
       role: u.role,
-      password: u.password || "",
+      password: "", // لا يتم جلب أو إظهار كلمة المرور القديمة نهائياً لحماية الخصوصية
       canClearActivityLogs: u.canClearActivityLogs ?? false,
     });
+    setShowEditPass(false);
     setEditTarget(u);
   };
 
@@ -347,13 +352,24 @@ export default function Users() {
             </div>
             <div className="space-y-2">
               <Label>كلمة المرور</Label>
-              <Input
-                type="text"
-                dir="ltr"
-                placeholder="مثال: 123456"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
+              <div className="relative">
+                <Input
+                  type={showAddPass ? "text" : "password"}
+                  dir="ltr"
+                  placeholder="أدخل كلمة المرور (أو اتركها فارغة لـ 123456)"
+                  className="pl-10"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowAddPass(!showAddPass)}
+                >
+                  {showAddPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             {isAdmin && form.role === "agent" && (
               <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">
@@ -413,8 +429,25 @@ export default function Users() {
               <Input dir="ltr" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value.toLowerCase().trim() })} />
             </div>
             <div className="space-y-2">
-              <Label>كلمة مرور جديدة <span className="text-muted-foreground font-normal">(اتركها فارغة للإبقاء على الحالية)</span></Label>
-              <Input type="text" dir="ltr" placeholder="أدخل كلمة مرور جديدة" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              <Label>تعيين كلمة مرور جديدة <span className="text-muted-foreground font-normal">(اختياري - اتركها فارغة للإبقاء على الحالية)</span></Label>
+              <div className="relative">
+                <Input
+                  type={showEditPass ? "text" : "password"}
+                  dir="ltr"
+                  placeholder="••••••••"
+                  className="pl-10"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute left-3 top-2.5 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowEditPass(!showEditPass)}
+                >
+                  {showEditPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             {isAdmin && form.role === "agent" && (
               <div className="flex items-start gap-3 rounded-xl border border-accent/20 bg-accent/5 p-3">

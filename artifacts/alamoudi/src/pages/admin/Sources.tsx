@@ -28,6 +28,10 @@ import {
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Link } from "wouter";
 
+import { useAuth } from "@/context/AuthContext";
+import { checkUserPermission } from "@/lib/permissions";
+import { ShieldAlert } from "lucide-react";
+
 export default function Sources() {
   const {
     properties,
@@ -36,12 +40,14 @@ export default function Sources() {
     users,
     updateProperty,
   } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canManageSources = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-مصادر العقارات");
   const { toast } = useToast();
 
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "direct" | "broker" | "missing">("all");
 
-  // Edit Modal State
   const [editTarget, setEditTarget] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     source: string;
@@ -60,6 +66,25 @@ export default function Sources() {
     assignedStaffId: "",
     agentType: "direct",
   });
+
+  if (!canManageSources) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية الوصول إلى إدارة مصادر العقارات وأصحابها. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const staffUsers = useMemo(
     () => users.filter(user => user.role === "admin" || user.role === "agent"),
