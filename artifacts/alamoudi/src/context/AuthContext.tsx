@@ -29,9 +29,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authReady, setAuthReady] = useState(false);
 
   const refreshCurrentUser = useCallback(async () => {
+    const deletedIds: string[] = (() => {
+      try {
+        const raw = localStorage.getItem("alm_deleted_users");
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    })();
+
     try {
       const user = await api.get<User | null>("/auth/me");
       if (user) {
+        if (deletedIds.includes(user.id)) {
+          try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
+          setCurrentUser(null);
+          return null;
+        }
         setCurrentUser(user);
         try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user)); } catch {}
         return user;
@@ -40,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(AUTH_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        if (parsed && deletedIds.includes(parsed.id)) {
+          try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
+          setCurrentUser(null);
+          return null;
+        }
         setCurrentUser(parsed);
         return parsed;
       }
@@ -51,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const saved = localStorage.getItem(AUTH_STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
+          if (parsed && deletedIds.includes(parsed.id)) {
+            try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
+            setCurrentUser(null);
+            return null;
+          }
           setCurrentUser(parsed);
           return parsed;
         }
@@ -71,10 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const passClean = password.trim();
     if (!idClean || !passClean) return { ok: false, error: "يرجى إدخال اسم المستخدم وكلمة المرور" };
 
+    const deletedIds: string[] = (() => {
+      try {
+        const raw = localStorage.getItem("alm_deleted_users");
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    })();
+
     // 1. Try API server first
     try {
       const user = await api.post<User>("/auth/login", { identifier: idClean, password: passClean });
-      if (user && user.id) {
+      if (user && user.id && !deletedIds.includes(user.id)) {
         setCurrentUser(user);
         try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user)); } catch {}
         await reload().catch(() => {});
@@ -85,31 +118,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // 2. Gather all known users (from state, localStorage, defaults, and Supabase cloud)
+    const rawLocal = localStorage.getItem("alm_users");
     const localUsers: User[] = (() => {
       try {
-        const raw = localStorage.getItem("alm_users");
-        return raw ? JSON.parse(raw) : [];
+        return rawLocal ? JSON.parse(rawLocal) : [];
       } catch {
         return [];
       }
     })();
 
     const userMap = new Map<string, User>();
-    DEFAULT_STAFF_USERS.forEach(u => userMap.set(u.id, u));
-    (users || []).forEach(u => userMap.set(u.id, u));
-    localUsers.forEach(u => userMap.set(u.id, u));
+    // Only populate DEFAULT_STAFF_USERS if local users were never initialized
+    if (!rawLocal) {
+      DEFAULT_STAFF_USERS.forEach(u => {
+        if (!deletedIds.includes(u.id)) userMap.set(u.id, u);
+      });
+    }
+
+    (users || []).forEach(u => {
+      if (!deletedIds.includes(u.id)) userMap.set(u.id, u);
+    });
+    localUsers.forEach(u => {
+      if (!deletedIds.includes(u.id)) userMap.set(u.id, u);
+    });
 
     // Real-time Cloud Sync from Supabase so any user added from another device logs in instantly
     try {
       const cloudUsers = await supabaseService.fetchUsers();
       if (cloudUsers && cloudUsers.length > 0) {
-        cloudUsers.forEach(u => userMap.set(u.id, u));
+        cloudUsers.forEach(u => {
+          if (!deletedIds.includes(u.id)) userMap.set(u.id, u);
+        });
       }
     } catch (e) {
       console.warn("Supabase fetch during login warning:", e);
     }
 
-    const allUsers = Array.from(userMap.values());
+    const allUsers = Array.from(userMap.values()).filter(u => !deletedIds.includes(u.id));
 
     // 3. Match user by username, email, email prefix, or full name
     const matchedUser = allUsers.find(u => {
@@ -133,7 +178,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { ok: false, error: "هذا الحساب غير مفعّل. يرجى التواصل مع الإدارة." };
       }
 
-      const isDefaultStaff = DEFAULT_STAFF_USERS.some(ds => ds.id === matchedUser.id);
       const isDefaultPassword =
         passClean === "admin1234" ||
         passClean === "admin" ||
@@ -142,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const isMatch = matchedUser.password
         ? matchedUser.password === passClean
-        : isDefaultPassword || passClean.length >= 4;
+        : isDefaultPassword;
 
       if (isMatch) {
         const { password: _p, ...safeUser } = matchedUser;
@@ -168,6 +212,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 4. Emergency fallback for default administrator
     if (
+      !deletedIds.includes("saeed") &&
+      !deletedIds.includes("staff-1") &&
       (idClean === "admin" || idClean === "admin@alamoudi.com" || idClean === "saeed") &&
       (passClean === "admin1234" || passClean === "admin" || passClean === "123456")
     ) {

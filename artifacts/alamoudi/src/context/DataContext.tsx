@@ -582,8 +582,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [users, setUsers] = useState<User[]>(() => {
     try {
+      const deletedIds: string[] = JSON.parse(localStorage.getItem("alm_deleted_users") || "[]");
       const raw = localStorage.getItem("alm_users");
-      return raw ? JSON.parse(raw) : DEFAULT_STAFF_USERS;
+      const list: User[] = raw ? JSON.parse(raw) : DEFAULT_STAFF_USERS;
+      return list.filter(u => !deletedIds.includes(u.id));
     } catch {
       return DEFAULT_STAFF_USERS;
     }
@@ -1203,6 +1205,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteUser = async (id: string) => {
+    try {
+      const deletedList: string[] = JSON.parse(localStorage.getItem("alm_deleted_users") || "[]");
+      if (!deletedList.includes(id)) {
+        deletedList.push(id);
+        localStorage.setItem("alm_deleted_users", JSON.stringify(deletedList));
+      }
+    } catch {}
+
     setUsers(prev => {
       const updated = prev.filter(x => x.id !== id);
       try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
