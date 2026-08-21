@@ -533,20 +533,6 @@ export function PropertyCarousel({
       onMouseEnter={pauseForInteraction}
       onMouseLeave={() => resumeAfterInteraction(1000)}
     >
-      {canPrev && (
-        <button
-          onClick={() => scroll("prev")}
-          aria-label="السابق"
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
-            bg-black/25 dark:bg-black/30 backdrop-blur-md border border-white/20
-            items-center justify-center text-white/80
-            hover:text-white hover:bg-black/45 hover:border-white/35
-            transition-all duration-200 shadow-sm"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      )}
-
       <div
         ref={viewportRef}
         dir="ltr"
@@ -579,20 +565,6 @@ export function PropertyCarousel({
           ))}
         </div>
       </div>
-
-      {canNext && (
-        <button
-          onClick={() => scroll("next")}
-          aria-label="التالي"
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 flex w-8 h-8 md:w-9 md:h-9 rounded-full
-            bg-black/25 dark:bg-black/30 backdrop-blur-md border border-white/20
-            items-center justify-center text-white/80
-            hover:text-white hover:bg-black/45 hover:border-white/35
-            transition-all duration-200 shadow-sm"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-      )}
     </div>
   );
 }
