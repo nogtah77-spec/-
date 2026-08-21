@@ -49,104 +49,96 @@ export function PropertyCarousel({
   });
 
   const isInteractingRef = useRef(false);
-  const autoPlayTimerRef = useRef<number | null>(null);
-  const lastTouchTimeRef = useRef<number>(0);
+  const timerRef = useRef<number | null>(null);
 
   const clearTimer = useCallback(() => {
-    if (autoPlayTimerRef.current !== null) {
-      window.clearTimeout(autoPlayTimerRef.current);
-      autoPlayTimerRef.current = null;
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   }, []);
 
-  const scheduleNextSlide = useCallback(
-    (delayMs?: number) => {
+  const scheduleNext = useCallback(
+    (delay: number) => {
       clearTimer();
       if (!autoPlay || isInteractingRef.current || !emblaApi || properties.length < 2) {
         return;
       }
-
-      const waitTime = delayMs ?? Math.max(1500, autoPlayDelay);
-      autoPlayTimerRef.current = window.setTimeout(() => {
+      timerRef.current = window.setTimeout(() => {
         if (isInteractingRef.current || !emblaApi) return;
         emblaApi.scrollNext();
-      }, waitTime);
+      }, delay);
     },
-    [autoPlay, autoPlayDelay, clearTimer, emblaApi, properties.length],
+    [autoPlay, clearTimer, emblaApi, properties.length],
   );
 
-  const onInteractionStart = useCallback(() => {
+  const onStart = useCallback(() => {
     isInteractingRef.current = true;
-    lastTouchTimeRef.current = Date.now();
     clearTimer();
   }, [clearTimer]);
 
-  const onInteractionEnd = useCallback(() => {
+  const onEnd = useCallback(() => {
     isInteractingRef.current = false;
-    lastTouchTimeRef.current = Date.now();
     clearTimer();
     if (!autoPlay || properties.length < 2) return;
 
-    // Grace period gives user ample time to read after letting go of touch or hover
-    scheduleNextSlide(Math.max(3500, autoPlayDelay));
-  }, [autoPlay, autoPlayDelay, clearTimer, properties.length, scheduleNextSlide]);
+    // Guaranteed full 4+ seconds grace period after removing mouse or finger
+    const postInteractionDelay = Math.max(4000, Number(autoPlayDelay) || 4000);
+    scheduleNext(postInteractionDelay);
+  }, [autoPlay, autoPlayDelay, clearTimer, properties.length, scheduleNext]);
 
   // Hook into Embla's internal touch and pointer drag lifecycle
   useEffect(() => {
     if (!emblaApi) return;
 
-    const onPointerDown = () => {
-      onInteractionStart();
+    const handlePointerDown = () => {
+      onStart();
     };
 
-    const onPointerUp = () => {
-      onInteractionEnd();
+    const handlePointerUp = () => {
+      onEnd();
     };
 
-    const onSettle = () => {
-      // If user is currently touching or interacting, do NOT schedule
+    const handleSettle = () => {
+      // If user is currently touching or hovering, do NOT schedule
       if (isInteractingRef.current) {
         clearTimer();
         return;
       }
-      // If settle happened right after a touch/drag, ensure grace period is respected
-      const elapsedSinceTouch = Date.now() - lastTouchTimeRef.current;
-      const minGrace = Math.max(3500, autoPlayDelay);
-      if (elapsedSinceTouch < minGrace) {
-        scheduleNextSlide(minGrace - elapsedSinceTouch);
-      } else {
-        scheduleNextSlide();
-      }
+      // When a slide settles during normal autoplay, wait the full autoPlayDelay (min 3.5s)
+      const standardDelay = Math.max(3500, Number(autoPlayDelay) || 3500);
+      scheduleNext(standardDelay);
     };
 
-    emblaApi.on("pointerDown", onPointerDown);
-    emblaApi.on("pointerUp", onPointerUp);
-    emblaApi.on("settle", onSettle);
+    emblaApi.on("pointerDown", handlePointerDown);
+    emblaApi.on("pointerUp", handlePointerUp);
+    emblaApi.on("settle", handleSettle);
 
-    // Initial schedule
-    scheduleNextSlide();
+    // Initial autoplay start
+    const initialDelay = Math.max(3500, Number(autoPlayDelay) || 3500);
+    scheduleNext(initialDelay);
 
     return () => {
       clearTimer();
-      emblaApi.off("pointerDown", onPointerDown);
-      emblaApi.off("pointerUp", onPointerUp);
-      emblaApi.off("settle", onSettle);
+      emblaApi.off("pointerDown", handlePointerDown);
+      emblaApi.off("pointerUp", handlePointerUp);
+      emblaApi.off("settle", handleSettle);
     };
-  }, [emblaApi, autoPlayDelay, clearTimer, onInteractionStart, onInteractionEnd, scheduleNextSlide]);
+  }, [emblaApi, autoPlayDelay, clearTimer, onStart, onEnd, scheduleNext]);
 
   if (!properties || properties.length === 0) return null;
 
   return (
     <div
       className={cn("relative overflow-hidden", className)}
-      onMouseEnter={onInteractionStart}
-      onMouseLeave={onInteractionEnd}
-      onPointerDown={onInteractionStart}
-      onPointerUp={onInteractionEnd}
-      onPointerCancel={onInteractionEnd}
-      onTouchStart={onInteractionStart}
-      onTouchEnd={onInteractionEnd}
-      onTouchCancel={onInteractionEnd}
+      onPointerEnter={onStart}
+      onPointerLeave={onEnd}
+      onPointerDown={onStart}
+      onPointerUp={onEnd}
+      onPointerCancel={onEnd}
+      onTouchStart={onStart}
+      onTouchEnd={onEnd}
+      onTouchCancel={onEnd}
       dir="rtl"
     >
       <div ref={emblaRef} className="overflow-hidden py-3">
