@@ -51,18 +51,37 @@ export function PropertyBrochureModal({
     try {
       const element = printRef.current;
       
-      // Capture the element in high resolution (scale 2.5) with CORS support
-      const canvas = await html2canvas(element, {
-        scale: 2.5,
+      // Ensure all images are loaded before capturing
+      const imgElements = element.querySelectorAll("img");
+      await Promise.all(
+        Array.from(imgElements).map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+
+      // Dynamically resolve html2canvas function
+      const html2canvasFn = (html2canvas as any).default || html2canvas;
+
+      // Capture the element in high resolution with strict CORS safety (no tainted canvas)
+      const canvas = await html2canvasFn(element, {
+        scale: 2,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
         windowWidth: 850,
+        imageTimeout: 15000,
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF({
+
+      // Dynamically resolve jsPDF constructor
+      const PDFClass = (jsPDF as any).jsPDF || jsPDF;
+      const pdf = new PDFClass({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
@@ -96,11 +115,11 @@ export function PropertyBrochureModal({
         title: "تم تحميل ملف الـ PDF بنجاح 📄✨",
         description: `تم حفظ البروشور باسم: بروشور_عقار_${sanitizedCode}.pdf`,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("PDF generation error:", err);
       toast({
         title: "تعذر توليد ملف الـ PDF",
-        description: "يرجى المحاولة مرة أخرى أو استخدام زر الطباعة المباشرة.",
+        description: err?.message || "يرجى استخدام زر الطباعة المباشرة كبديل فوري.",
         variant: "destructive",
       });
     } finally {
