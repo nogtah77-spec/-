@@ -278,6 +278,20 @@ export interface Ad {
   imageUrl?: string;
 }
 
+export interface QrCodeItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  type: "url" | "image";
+  url?: string;
+  imageUrl?: string;
+  icon?: "location" | "whatsapp" | "tiktok" | "website" | "phone" | "custom";
+  active: boolean;
+  showInHome?: boolean;
+  showInPdf?: boolean;
+  order?: number;
+}
+
 export interface SiteSettings {
   companyName: string;
   companyDescription: string;
@@ -312,6 +326,7 @@ export interface SiteSettings {
   regionHeroGradientOpacity: number;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
+  qrCodes?: QrCodeItem[];
   /** Seconds to wait after each card movement before starting the next one. */
   carouselAutoPlayDelay: number;
   /** Movement speed multiplier: 1 is the natural speed. */
@@ -351,6 +366,44 @@ const DEFAULT_SETTINGS: SiteSettings = {
   regionHeroGradientOpacity: 60,
   tiktokVideos: [],
   ads: [],
+  qrCodes: [
+    {
+      id: "qr-wa",
+      title: "تواصل واتساب مباشر",
+      subtitle: "امسح للتحدث معنا فوراً على واتساب",
+      type: "url",
+      url: "https://wa.me/201000000000",
+      icon: "whatsapp",
+      active: true,
+      showInHome: true,
+      showInPdf: true,
+      order: 1,
+    },
+    {
+      id: "qr-maps",
+      title: "موقعنا على الخريطة",
+      subtitle: "امسح لفتح موقع مقر الشركة في خرائط جوجل",
+      type: "url",
+      url: "https://maps.google.com",
+      icon: "location",
+      active: true,
+      showInHome: true,
+      showInPdf: true,
+      order: 2,
+    },
+    {
+      id: "qr-web",
+      title: "منصة العمودي العقارية",
+      subtitle: "امسح لفتح المنصة وتصفح أحدث العقارات",
+      type: "url",
+      url: "https://alamoudi-real-estate.vercel.app/",
+      icon: "website",
+      active: true,
+      showInHome: true,
+      showInPdf: false,
+      order: 3,
+    },
+  ],
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
   allowCustomerImageDownloads: true,

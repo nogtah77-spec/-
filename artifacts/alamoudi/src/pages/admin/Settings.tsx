@@ -34,7 +34,22 @@ import {
   Palette,
   LockKeyhole,
   Settings as SettingsIcon,
+  QrCode as QrCodeIcon,
+  Globe,
+  Trash2,
+  Pencil,
+  Check,
+  Sparkles,
+  Smartphone,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { QrCodeView } from "@/components/ui/QrCodeView";
 import {
   WhatsAppIcon,
   TikTokIcon,
@@ -44,7 +59,7 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
-import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
+import type { SiteSettings, TiktokVideo, QrCodeItem } from "@/context/DataContext";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
@@ -99,6 +114,126 @@ export default function Settings() {
   const [editVideo, setEditVideo] =
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const thumbRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // QR Codes Management State & Handlers
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [editingQr, setEditingQr] = useState<QrCodeItem | null>(null);
+  const [qrFileLoading, setQrFileLoading] = useState(false);
+  const qrFileInputRef = useRef<HTMLInputElement>(null);
+  const [qrForm, setQrForm] = useState<Omit<QrCodeItem, "id">>({
+    title: "",
+    subtitle: "",
+    type: "url",
+    url: "",
+    imageUrl: "",
+    icon: "whatsapp",
+    active: true,
+    showInHome: true,
+    showInPdf: true,
+  });
+
+  const handleOpenAddQr = () => {
+    setEditingQr(null);
+    setQrForm({
+      title: "",
+      subtitle: "",
+      type: "url",
+      url: form.whatsapp ? `https://wa.me/${form.whatsapp.replace(/[^0-9]/g, "")}` : "",
+      imageUrl: "",
+      icon: "whatsapp",
+      active: true,
+      showInHome: true,
+      showInPdf: true,
+    });
+    setQrModalOpen(true);
+  };
+
+  const handleOpenEditQr = (qr: QrCodeItem) => {
+    setEditingQr(qr);
+    setQrForm({
+      title: qr.title,
+      subtitle: qr.subtitle || "",
+      type: qr.type,
+      url: qr.url || "",
+      imageUrl: qr.imageUrl || "",
+      icon: qr.icon || "custom",
+      active: qr.active !== false,
+      showInHome: qr.showInHome !== false,
+      showInPdf: qr.showInPdf !== false,
+    });
+    setQrModalOpen(true);
+  };
+
+  const handleQrImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast({ title: "الصورة كبيرة جداً (حد 3MB)", variant: "destructive" });
+      return;
+    }
+    setQrFileLoading(true);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setQrForm((p) => ({ ...p, imageUrl: ev.target?.result as string, type: "image" }));
+      setQrFileLoading(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleSaveQr = () => {
+    if (!qrForm.title.trim()) {
+      toast({ title: "يرجى إدخال عنوان للـ QR كود", variant: "destructive" });
+      return;
+    }
+    if (qrForm.type === "url" && !qrForm.url?.trim()) {
+      toast({ title: "يرجى إدخال الرابط المراد توليد QR له", variant: "destructive" });
+      return;
+    }
+    if (qrForm.type === "image" && !qrForm.imageUrl) {
+      toast({ title: "يرجى رفع صورة الـ QR كود", variant: "destructive" });
+      return;
+    }
+
+    const currentList = form.qrCodes || [];
+    let updatedList: QrCodeItem[];
+
+    if (editingQr) {
+      updatedList = currentList.map((item) =>
+        item.id === editingQr.id
+          ? { ...item, ...qrForm }
+          : item
+      );
+    } else {
+      const newQrItem: QrCodeItem = {
+        id: `qr-${Date.now()}`,
+        ...qrForm,
+        order: currentList.length + 1,
+      };
+      updatedList = [...currentList, newQrItem];
+    }
+
+    setForm((prev) => ({ ...prev, qrCodes: updatedList }));
+    updateSettings({ qrCodes: updatedList });
+    setQrModalOpen(false);
+    toast({ title: editingQr ? "تم تعديل الـ QR بنجاح ✓" : "تمت إضافة الـ QR كود بنجاح ✓" });
+  };
+
+  const handleDeleteQr = (id: string) => {
+    const updatedList = (form.qrCodes || []).filter((item) => item.id !== id);
+    setForm((prev) => ({ ...prev, qrCodes: updatedList }));
+    updateSettings({ qrCodes: updatedList });
+    toast({ title: "تم حذف الـ QR كود بنجاح" });
+  };
+
+  const handleToggleQr = (id: string, key: "active" | "showInHome" | "showInPdf", val: boolean) => {
+    const updatedList = (form.qrCodes || []).map((item) =>
+      item.id === id ? { ...item, [key]: val } : item
+    );
+    setForm((prev) => ({ ...prev, qrCodes: updatedList }));
+    updateSettings({ qrCodes: updatedList });
+  };
+
   const markLoginFormDirty = () => {
     loginFormDirtyRef.current = true;
   };
@@ -314,9 +449,10 @@ export default function Settings() {
         />
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-3 lg:w-auto lg:grid-cols-6">
+          <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-7">
             <TabsTrigger value="general">عام</TabsTrigger>
             <TabsTrigger value="contact">التواصل</TabsTrigger>
+            <TabsTrigger value="qrcodes">رموز الـ QR</TabsTrigger>
             <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>
             <TabsTrigger value="tiktok">تيك توك</TabsTrigger>
             <TabsTrigger value="system">النظام</TabsTrigger>
@@ -539,6 +675,376 @@ export default function Settings() {
                 </Button>
               </CardFooter>
             </Card>
+          </TabsContent>
+
+          {/* ── QR Codes Management ── */}
+          <TabsContent value="qrcodes" className="mt-6 space-y-6">
+            <Card className="card-luxury">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <QrCodeIcon className="h-5 w-5 text-accent" />
+                    <span>إدارة رموز الاستجابة السريعة (QR Codes)</span>
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    توليد وإدارة رموز QR متعددة لتسهيل الوصول المباشر عبر كاميرا الهاتف في أسفل الموقع وبروشورات العقارات PDF
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={handleOpenAddQr}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2 rounded-xl font-bold shadow-xs"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>إضافة QR كود جديد</span>
+                </Button>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                {/* List of QR Codes */}
+                {(!form.qrCodes || form.qrCodes.length === 0) ? (
+                  <div className="text-center py-12 border-2 border-dashed border-border/80 rounded-2xl p-6 bg-muted/20">
+                    <QrCodeIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+                    <h3 className="text-base font-bold text-foreground mb-1">لا توجد رموز QR مضافة حالياً</h3>
+                    <p className="text-xs text-muted-foreground max-w-sm mx-auto mb-4">
+                      أضف رمز QR لموقعك على الخريطة، أو محادثة الواتساب، أو حساب تيك توك لتظهر لزوار الموقع وفي ملفات الـ PDF
+                    </p>
+                    <Button onClick={handleOpenAddQr} variant="outline" className="gap-2 rounded-xl border-accent/40 text-accent">
+                      <Plus className="h-4 w-4" />
+                      إضافة أول كود QR
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {form.qrCodes.map((qr) => (
+                      <div
+                        key={qr.id}
+                        className="rounded-2xl border border-border/80 bg-card/60 p-4 flex flex-col justify-between hover:border-accent/50 transition-all shadow-xs gap-4"
+                      >
+                        <div className="flex items-start gap-4">
+                          {/* QR Thumbnail */}
+                          <div className="bg-white p-1 rounded-xl border border-border shadow-inner shrink-0">
+                            <QrCodeView
+                              url={qr.url}
+                              imageUrl={qr.imageUrl}
+                              type={qr.type}
+                              size={80}
+                              alt={qr.title}
+                            />
+                          </div>
+
+                          {/* Details */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="text-sm font-bold text-foreground truncate">{qr.title}</h4>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground"
+                                  onClick={() => handleOpenEditQr(qr)}
+                                  title="تعديل"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-lg text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDeleteQr(qr.id)}
+                                  title="حذف"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {qr.subtitle && (
+                              <p className="text-xs text-muted-foreground line-clamp-1">{qr.subtitle}</p>
+                            )}
+
+                            {qr.url && (
+                              <p className="text-[11px] text-accent/90 font-mono dir-ltr text-right truncate bg-accent/5 px-2 py-0.5 rounded-md border border-accent/10">
+                                {qr.url}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Toggles Footer */}
+                        <div className="border-t border-border/60 pt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={qr.active !== false}
+                              onCheckedChange={(v) => handleToggleQr(qr.id, "active", v)}
+                              id={`active-${qr.id}`}
+                            />
+                            <Label htmlFor={`active-${qr.id}`} className="text-xs cursor-pointer">
+                              {qr.active !== false ? "مفعّل" : "معطّل"}
+                            </Label>
+                          </div>
+
+                          <div className="flex items-center gap-4 text-muted-foreground">
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={qr.showInHome !== false}
+                                onChange={(e) => handleToggleQr(qr.id, "showInHome", e.target.checked)}
+                                className="rounded border-border"
+                              />
+                              <span>الصفحة الرئيسية</span>
+                            </label>
+
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={qr.showInPdf !== false}
+                                onChange={(e) => handleToggleQr(qr.id, "showInPdf", e.target.checked)}
+                                className="rounded border-border"
+                              />
+                              <span>بروشور PDF</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+
+              <CardFooter className="border-t pt-4 flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  * يتم حفظ وتحديث رموز الـ QR سحابياً فورياً وتنعكس على المنصة وملفات الـ PDF مباشرة.
+                </p>
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {saving ? "جاري الحفظ..." : "حفظ الكل"}
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Dialog for Adding / Editing QR Code */}
+            <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+              <DialogContent className="max-w-md p-6 bg-card border-border/80" dir="rtl">
+                <DialogHeader className="pb-3 border-b border-border/60">
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                    <QrCodeIcon className="h-5 w-5 text-accent" />
+                    <span>{editingQr ? "تعديل رمز QR" : "إضافة رمز QR جديد"}</span>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  {/* Title */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="qr-title" className="text-xs font-semibold">عنوان الـ QR كود (يظهر للمستخدم)</Label>
+                    <Input
+                      id="qr-title"
+                      placeholder="مثال: موقعنا على الخريطة / تواصل واتساب"
+                      value={qrForm.title}
+                      onChange={(e) => setQrForm((p) => ({ ...p, title: e.target.value }))}
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  {/* Subtitle */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="qr-subtitle" className="text-xs font-semibold">الوصف التوضيحي (اختياري)</Label>
+                    <Input
+                      id="qr-subtitle"
+                      placeholder="مثال: امسح لفتح الموقع الجغرافي مباشرة"
+                      value={qrForm.subtitle}
+                      onChange={(e) => setQrForm((p) => ({ ...p, subtitle: e.target.value }))}
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  {/* Type Selector: URL or Image */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">نوع الإدخال</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={qrForm.type === "url" ? "default" : "outline"}
+                        className={qrForm.type === "url" ? "bg-accent text-accent-foreground font-bold" : ""}
+                        onClick={() => setQrForm((p) => ({ ...p, type: "url" }))}
+                      >
+                        توليد تلقائي من رابط
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={qrForm.type === "image" ? "default" : "outline"}
+                        className={qrForm.type === "image" ? "bg-accent text-accent-foreground font-bold" : ""}
+                        onClick={() => setQrForm((p) => ({ ...p, type: "image" }))}
+                      >
+                        رفع صورة جاهزة
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* If URL: Input and Presets */}
+                  {qrForm.type === "url" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="qr-url" className="text-xs font-semibold">الرابط المستهدف (URL أو نص)</Label>
+                      <Input
+                        id="qr-url"
+                        dir="ltr"
+                        placeholder="https://..."
+                        value={qrForm.url}
+                        onChange={(e) => setQrForm((p) => ({ ...p, url: e.target.value }))}
+                        className="rounded-xl font-mono text-xs"
+                      />
+
+                      {/* Quick URL Presets */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {form.whatsapp && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setQrForm((p) => ({
+                                ...p,
+                                url: `https://wa.me/${form.whatsapp.replace(/[^0-9]/g, "")}`,
+                                icon: "whatsapp",
+                                title: p.title || "تواصل واتساب",
+                              }))
+                            }
+                            className="text-[11px] bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 px-2 py-0.5 rounded-lg hover:bg-green-500/20"
+                          >
+                            + واتساب الشركة
+                          </button>
+                        )}
+                        {form.mapsUrl && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setQrForm((p) => ({
+                                ...p,
+                                url: form.mapsUrl,
+                                icon: "location",
+                                title: p.title || "موقعنا على الخريطة",
+                              }))
+                            }
+                            className="text-[11px] bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-2 py-0.5 rounded-lg hover:bg-red-500/20"
+                          >
+                            + خرائط جوجل
+                          </button>
+                        )}
+                        {form.tiktok && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setQrForm((p) => ({
+                                ...p,
+                                url: form.tiktok,
+                                icon: "tiktok",
+                                title: p.title || "حساب تيك توك",
+                              }))
+                            }
+                            className="text-[11px] bg-neutral-500/10 text-foreground border border-border px-2 py-0.5 rounded-lg hover:bg-muted"
+                          >
+                            + تيك توك
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* If Image: File Uploader */
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold">صورة الـ QR كود</Label>
+                      <input
+                        type="file"
+                        ref={qrFileInputRef}
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleQrImageUpload}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => qrFileInputRef.current?.click()}
+                        disabled={qrFileLoading}
+                        className="w-full gap-2 rounded-xl border-dashed border-accent/40"
+                      >
+                        <Upload className="h-4 w-4 text-accent" />
+                        <span>{qrForm.imageUrl ? "تغيير صورة الـ QR" : "رفع صورة QR من الجهاز"}</span>
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Icon Selector */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">أيقونة التصنيف</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: "whatsapp", label: "واتساب", icon: WhatsAppIcon },
+                        { id: "location", label: "موقع", icon: MapPin },
+                        { id: "tiktok", label: "تيك توك", icon: TikTokIcon },
+                        { id: "website", label: "موقع ويب", icon: Globe },
+                        { id: "phone", label: "هاتف", icon: Phone },
+                        { id: "custom", label: "افتراضي", icon: QrCodeIcon },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        const isSelected = qrForm.icon === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setQrForm((p) => ({ ...p, icon: item.id as any }))}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs border transition-all ${
+                              isSelected
+                                ? "bg-accent text-accent-foreground font-bold border-accent shadow-xs"
+                                : "bg-card hover:bg-muted border-border text-muted-foreground"
+                            }`}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            <span>{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Live Preview Inside Dialog */}
+                  <div className="pt-2 border-t border-border/60 flex items-center justify-center">
+                    <div className="text-center p-3 rounded-2xl bg-muted/40 border border-border/80">
+                      <span className="text-[10px] text-muted-foreground block mb-2 font-semibold">
+                        معاينة مباشرة للرمز
+                      </span>
+                      <div className="bg-white p-2 rounded-xl border border-border inline-block shadow-xs">
+                        <QrCodeView
+                          url={qrForm.type === "url" ? qrForm.url : undefined}
+                          imageUrl={qrForm.type === "image" ? qrForm.imageUrl : undefined}
+                          type={qrForm.type}
+                          size={110}
+                          alt="معاينة QR"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="pt-3 border-t border-border/60 flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setQrModalOpen(false)}
+                    className="rounded-xl"
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleSaveQr}
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl font-bold gap-1.5"
+                  >
+                    <Check className="h-4 w-4" />
+                    <span>{editingQr ? "تحديث الـ QR" : "إضافة الكود"}</span>
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* ── Hero Image ── */}

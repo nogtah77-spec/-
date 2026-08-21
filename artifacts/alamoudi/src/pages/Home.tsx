@@ -24,6 +24,7 @@ import { PublicBannerSlot } from "@/components/ui/AdsBanner";
 import { PropertyCarousel } from "@/components/ui/PropertyCarousel";
 import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
 import { StickyQuickSearch } from "@/components/ui/StickyQuickSearch";
+import { HomeQrSection } from "@/components/home/HomeQrSection";
 import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
@@ -737,6 +738,9 @@ export default function Home() {
                 </div>
               </div>
             </section>
+
+            {/* ── Home QR Codes Showcase ── */}
+            <HomeQrSection />
           </>
         )}
       </main>

@@ -7,11 +7,12 @@ import {
   Phone, Mail, Layers, Compass, Car, Sparkles, CheckCircle2, ShieldCheck, Loader2
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
-import { Property, Region, PropertyType } from "@/context/DataContext";
+import { Property, Region, PropertyType, type QrCodeItem } from "@/context/DataContext";
 import { formatNumber } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
+import { QrCodeView } from "@/components/ui/QrCodeView";
 
 interface PropertyBrochureModalProps {
   property: Property;
@@ -23,6 +24,7 @@ interface PropertyBrochureModalProps {
   phone?: string;
   whatsapp?: string;
   email?: string;
+  qrCodes?: QrCodeItem[];
 }
 
 export function PropertyBrochureModal({
@@ -35,6 +37,7 @@ export function PropertyBrochureModal({
   phone = "+20 10 0000 0000",
   whatsapp = "+20 10 0000 0000",
   email = "info@alamoudi.com",
+  qrCodes = [],
 }: PropertyBrochureModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
@@ -122,6 +125,14 @@ export function PropertyBrochureModal({
     if (type === "furnished") return "مفروش";
     return "للبيع";
   };
+
+  const propertyUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/properties/${property.id}`
+    : `https://alamoudi-real-estate.vercel.app/properties/${property.id}`;
+
+  const activePdfQrs = (qrCodes || []).filter(
+    (q) => q.active !== false && q.showInPdf !== false
+  );
 
   return (
     <Dialog>
@@ -296,7 +307,7 @@ export function PropertyBrochureModal({
                   <Square className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">المساحة</span>
-                    <span className="font-bold text-[#10202D]">{property.area} م²</span>
+                    <span className="font-bold text-[#10202D]">{property.area ? `${property.area} م²` : "غير محدد"}</span>
                   </div>
                 </div>
 
@@ -304,7 +315,7 @@ export function PropertyBrochureModal({
                   <Bed className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">الغرف</span>
-                    <span className="font-bold text-[#10202D]">{property.beds} غرف</span>
+                    <span className="font-bold text-[#10202D]">{property.beds > 0 ? `${property.beds} غرف` : (property.beds === 0 ? "استوديو" : "غير محدد")}</span>
                   </div>
                 </div>
 
@@ -312,7 +323,7 @@ export function PropertyBrochureModal({
                   <Bath className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">الحمامات</span>
-                    <span className="font-bold text-[#10202D]">{property.baths} حمام</span>
+                    <span className="font-bold text-[#10202D]">{property.baths > 0 ? `${property.baths} حمام` : "غير محدد"}</span>
                   </div>
                 </div>
 
@@ -378,11 +389,11 @@ export function PropertyBrochureModal({
               </div>
             )}
 
-            {/* 6. Footer Contact & QR Stamp */}
-            <div className="flex items-center justify-between border-t-2 border-[#B99A68]/40 pt-4 text-xs">
-              <div className="space-y-1 text-right">
+            {/* 6. Footer Contact & Dynamic QR Stamps */}
+            <div className="flex items-center justify-between border-t-2 border-[#B99A68]/40 pt-4 text-xs gap-4">
+              <div className="space-y-1 text-right flex-1">
                 <span className="font-bold text-[#10202D] block">للحجز والاستفسار المباشر:</span>
-                <div className="flex flex-wrap gap-4 text-gray-600 font-semibold">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600 font-semibold">
                   <span className="flex items-center gap-1.5" dir="ltr">
                     <Phone className="h-3.5 w-3.5 text-[#B99A68]" /> {phone}
                   </span>
@@ -395,27 +406,38 @@ export function PropertyBrochureModal({
                 </div>
               </div>
 
-              <div className="hidden sm:flex flex-col items-center text-center">
-                <div className="h-13 w-13 rounded-lg border border-[#B99A68]/40 p-1 bg-white flex items-center justify-center shadow-xs">
-                  <svg viewBox="0 0 100 100" className="h-full w-full">
-                    <rect x="0" y="0" width="30" height="30" fill="#10202D" />
-                    <rect x="5" y="5" width="20" height="20" fill="#fff" />
-                    <rect x="10" y="10" width="10" height="10" fill="#B99A68" />
-                    
-                    <rect x="70" y="0" width="30" height="30" fill="#10202D" />
-                    <rect x="75" y="5" width="20" height="20" fill="#fff" />
-                    <rect x="80" y="10" width="10" height="10" fill="#B99A68" />
-
-                    <rect x="0" y="70" width="30" height="30" fill="#10202D" />
-                    <rect x="5" y="75" width="20" height="20" fill="#fff" />
-                    <rect x="10" y="80" width="10" height="10" fill="#B99A68" />
-
-                    <rect x="40" y="20" width="10" height="20" fill="#10202D" />
-                    <rect x="60" y="40" width="20" height="10" fill="#10202D" />
-                    <rect x="35" y="60" width="30" height="10" fill="#B99A68" />
-                  </svg>
+              {/* Dynamic QR Codes Stamp for Brochure */}
+              <div className="flex items-center gap-3">
+                {/* 1. Direct Property URL QR */}
+                <div className="flex flex-col items-center text-center">
+                  <QrCodeView
+                    url={propertyUrl}
+                    type="url"
+                    size={58}
+                    alt="رابط صفحة العقار"
+                    className="p-1 rounded-lg border border-[#B99A68]/40 shadow-xs bg-white"
+                  />
+                  <span className="text-[8.5px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
+                    امسح لفتح العقار
+                  </span>
                 </div>
-                <span className="text-[9px] text-gray-500 font-bold mt-0.5">امسح للرابط</span>
+
+                {/* 2. Custom Settings Active PDF QR (if configured) */}
+                {activePdfQrs.slice(0, 1).map((q) => (
+                  <div key={q.id} className="flex flex-col items-center text-center">
+                    <QrCodeView
+                      url={q.url}
+                      imageUrl={q.imageUrl}
+                      type={q.type}
+                      size={58}
+                      alt={q.title}
+                      className="p-1 rounded-lg border border-[#B99A68]/40 shadow-xs bg-white"
+                    />
+                    <span className="text-[8.5px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
+                      {q.title}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

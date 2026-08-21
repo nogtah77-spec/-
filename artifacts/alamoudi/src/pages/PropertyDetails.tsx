@@ -317,6 +317,7 @@ export default function PropertyDetails() {
                     phone={settings.phone1}
                     whatsapp={settings.whatsapp}
                     email={settings.email}
+                    qrCodes={settings.qrCodes}
                   />
                 )}
                 <PropertyShareModal
