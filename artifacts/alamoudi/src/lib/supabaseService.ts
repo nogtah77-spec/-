@@ -4,17 +4,38 @@ import { SEED_PROPERTIES } from "@/data/seedProperties";
 
 // Helper to convert Property to DB Row
 export function propertyToRow(p: Property) {
+  const safeNumber = (val: any, fallback = 0) => {
+    const n = Number(val);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
+  const rawFloor = p.floor;
+  let numericFloor = 0;
+  let derivedFloorText = p.floorText || "";
+
+  if (typeof rawFloor === "number") {
+    numericFloor = rawFloor;
+  } else if (typeof rawFloor === "string" && rawFloor.trim()) {
+    const parsed = parseFloat(rawFloor);
+    if (!isNaN(parsed)) {
+      numericFloor = parsed;
+    } else {
+      numericFloor = 0;
+      if (!derivedFloorText) derivedFloorText = rawFloor.trim();
+    }
+  }
+
   return {
     id: p.id,
     code: p.code,
     title: p.title,
     description: p.description || "",
-    price: p.price || 0,
-    area: p.area || 0,
-    beds: p.beds || 0,
-    baths: p.baths || 0,
-    floors: p.floors || 1,
-    floor: p.floor || 0,
+    price: safeNumber(p.price, 0),
+    area: safeNumber(p.area, 0),
+    beds: safeNumber(p.beds, 0),
+    baths: safeNumber(p.baths, 0),
+    floors: safeNumber(p.floors, 0),
+    floor: numericFloor,
     finishing: p.finishing || "",
     view: p.view || "",
     type_id: p.typeId || null,
@@ -24,21 +45,21 @@ export function propertyToRow(p: Property) {
     status: p.status || "active",
     featured: Boolean(p.featured),
     agent_type: p.agentType || "direct",
-    images: p.images || [],
+    images: Array.isArray(p.images) ? p.images : [],
     video_url: p.videoUrl || "",
     external_url: p.externalUrl || "",
     maps_url: p.mapsUrl || "",
     unit_type: p.unitType || "",
     sub_area: p.subArea || "",
     layout: p.layout || "",
-    floor_text: p.floorText || "",
+    floor_text: derivedFloorText,
     master: p.master || "",
     location: p.location || "",
     additional_features: p.additionalFeatures || "",
     elevator: p.elevator || "",
     parking: p.parking || "",
     source: p.source || "",
-    source_phones: p.sourcePhones || [],
+    source_phones: Array.isArray(p.sourcePhones) ? p.sourcePhones : [],
     assigned_staff_id: p.assignedStaffId || "",
     created_at: p.createdAt || new Date().toISOString(),
   };

@@ -530,6 +530,14 @@ export function recordRecentEdit(property: Property) {
   const item = { property, timestamp: Date.now() };
   if (property.id) recentPropertyEdits.set(property.id, item);
   if (property.code) recentPropertyEdits.set(property.code.toLowerCase().trim(), item);
+
+  try {
+    const raw = localStorage.getItem("alm_recent_property_edits");
+    const stored = raw ? JSON.parse(raw) : {};
+    stored[property.id] = item;
+    if (property.code) stored[property.code.toLowerCase().trim()] = item;
+    localStorage.setItem("alm_recent_property_edits", JSON.stringify(stored));
+  } catch {}
 }
 
 export function clearRecentEdit(idOrCode: string) {
@@ -537,6 +545,16 @@ export function clearRecentEdit(idOrCode: string) {
   const key = idOrCode.toLowerCase().trim();
   recentPropertyEdits.delete(idOrCode);
   recentPropertyEdits.delete(key);
+
+  try {
+    const raw = localStorage.getItem("alm_recent_property_edits");
+    if (raw) {
+      const stored = JSON.parse(raw);
+      delete stored[idOrCode];
+      delete stored[key];
+      localStorage.setItem("alm_recent_property_edits", JSON.stringify(stored));
+    }
+  } catch {}
 }
 
 export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
@@ -545,15 +563,30 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     if (fp && fp.id) map.set(fp.id, fp);
   }
 
-  // Apply active recent edits (within 60 seconds) strictly over fresh DB reads
+  // Apply active recent edits (within 15 minutes) strictly over fresh DB reads
   const now = Date.now();
+  const fifteenMinutes = 15 * 60 * 1000;
+
   for (const [key, item] of recentPropertyEdits.entries()) {
-    if (now - item.timestamp < 60000 && item.property && item.property.id) {
+    if (now - item.timestamp < fifteenMinutes && item.property && item.property.id) {
       map.set(item.property.id, item.property);
-    } else if (now - item.timestamp >= 60000) {
+    } else if (now - item.timestamp >= fifteenMinutes) {
       recentPropertyEdits.delete(key);
     }
   }
+
+  try {
+    const raw = localStorage.getItem("alm_recent_property_edits");
+    if (raw) {
+      const stored = JSON.parse(raw);
+      for (const k of Object.keys(stored)) {
+        const it = stored[k];
+        if (it && now - it.timestamp < fifteenMinutes && it.property && it.property.id) {
+          map.set(it.property.id, it.property);
+        }
+      }
+    }
+  } catch {}
 
   return Array.from(map.values());
 }
