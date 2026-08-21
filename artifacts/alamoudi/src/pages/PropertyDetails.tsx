@@ -23,6 +23,7 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
+import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
 import { PropertyShareModal } from "@/components/property/PropertyShareModal";
 import { updatePageMeta } from "@/lib/meta";
@@ -194,61 +195,13 @@ export default function PropertyDetails() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      {/* Lightbox */}
-      {lightboxIdx !== null && images.length > 0 && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none touch-none"
-          onTouchStart={lbTouchStart}
-          onTouchEnd={lbTouchEnd}
-        >
-          {/* X على اليسار — بعيد عن الهامبرجر اليميني */}
-          <button
-            className="absolute top-4 left-4 z-20 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
-            onClick={() => setLightboxIdx(null)}
-            aria-label="إغلاق"
-          >
-            <X className="h-5 w-5 text-white" />
-          </button>
-
-          {/* العداد */}
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 text-white/60 text-sm font-medium tabular-nums pointer-events-none">
-            {lightboxIdx + 1} / {images.length}
-          </div>
-
-          {/* الصورة — pointer-events-none يمنع click-through */}
-          <img
-            src={images[lightboxIdx]}
-            alt=""
-            draggable={false}
-            className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl pointer-events-none"
-          />
-
-          {/* أسهم بـ onClick بسيط — تشتغل لأنه مفيش setPointerCapture */}
-          {images.length > 1 && (
-            <div className="absolute bottom-5 flex items-center gap-4">
-              <button
-                onClick={lbPrev}
-                className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
-                aria-label="السابق"
-              >
-                <ChevronRight className="h-6 w-6 text-white" />
-              </button>
-              <div className="flex gap-1.5 pointer-events-none">
-                {images.length <= 10 && images.map((_, i) => (
-                  <span key={i} className={cn("block rounded-full transition-all", i === lightboxIdx ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/40")} />
-                ))}
-              </div>
-              <button
-                onClick={lbNext}
-                className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm"
-                aria-label="التالي"
-              >
-                <ChevronLeft className="h-6 w-6 text-white" />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Zoomable Lightbox with Pinch-to-zoom & Double-tap */}
+      <ZoomableLightbox
+        images={images}
+        currentIndex={lightboxIdx}
+        onClose={() => setLightboxIdx(null)}
+        onChangeIndex={setLightboxIdx}
+      />
 
       <main className="flex-1 pb-16">
         {/* Breadcrumb */}
