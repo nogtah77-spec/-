@@ -648,7 +648,7 @@ export default function PropertyDetails() {
                   return (
                     <Link
                       key={p.id}
-                      href={`/property/${p.id}`}
+                      href={`/properties/${p.id}`}
                       className="group flex items-stretch gap-3 p-2.5 rounded-2xl bg-card border border-border/70 hover:border-accent/50 hover:shadow-md transition-all duration-300 overflow-hidden relative"
                     >
                       {/* Image Thumbnail */}

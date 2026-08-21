@@ -194,6 +194,7 @@ function Router() {
       <Route path="/finishing-services" component={FinishingServices} />
       <Route path="/privacy" component={PrivacyPolicy} />
       <Route path="/properties/:id" component={PropertyDetails} />
+      <Route path="/property/:id" component={PropertyDetails} />
       <Route path="/favorites" component={Favorites} />
       <Route path="/compare" component={Compare} />
       <Route path="/login" component={Login} />
