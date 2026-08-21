@@ -613,6 +613,27 @@ function writeCache(payload: Omit<CachePayload, "ts">) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), ...payload })); } catch {}
 }
 
+// Global broadcast channel for instant multi-device live sync
+const globalBroadcastChannel = supabase ? supabase.channel("alm_global_sync", { config: { broadcast: { self: false } } }) : null;
+if (globalBroadcastChannel) globalBroadcastChannel.subscribe();
+
+export function sendRealtimeSync(event: string, payload: any) {
+  if (globalBroadcastChannel) {
+    globalBroadcastChannel.send({
+      type: "broadcast",
+      event: "sync_event",
+      payload: { event, ...payload },
+    }).catch(() => {});
+  }
+  if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+    try {
+      const bc = new BroadcastChannel("alm_local_sync");
+      bc.postMessage({ event, ...payload });
+      bc.close();
+    } catch {}
+  }
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [ready, setReady] = useState(false);
@@ -865,7 +886,67 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }).catch(() => {});
     });
 
-    // Supabase Realtime live sync across all tabs & devices
+    // Multi-Layer Realtime Live Sync Engine
+    const handleSyncPayload = (data: any) => {
+      if (!data) return;
+      const { event, property, propertyId, user, userId } = data;
+
+      if (event === "PROPERTY_ADD" && property) {
+        setProperties(prev => {
+          const exists = prev.some(p => p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase()));
+          if (exists) return prev;
+          const updated = [property, ...prev];
+          writeCache({ regions, types: propertyTypes, properties: updated, settings });
+          return updated;
+        });
+      } else if (event === "PROPERTY_UPDATE" && property) {
+        setProperties(prev => {
+          const updated = prev.map(p => (p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase())) ? property : p);
+          writeCache({ regions, types: propertyTypes, properties: updated, settings });
+          return updated;
+        });
+      } else if (event === "PROPERTY_DELETE" && propertyId) {
+        const idLower = String(propertyId).toLowerCase();
+        setProperties(prev => {
+          const updated = prev.filter(p => (p.id || "").toLowerCase() !== idLower && (p.code || "").toLowerCase() !== idLower);
+          writeCache({ regions, types: propertyTypes, properties: updated, settings });
+          return updated;
+        });
+      } else if ((event === "USER_ADD" || event === "USER_UPDATE") && user) {
+        setUsers(prev => {
+          const exists = prev.some(u => u.id === user.id);
+          const updated = exists ? prev.map(u => u.id === user.id ? user : u) : [...prev, user];
+          try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else if (event === "USER_DELETE" && userId) {
+        setUsers(prev => {
+          const updated = prev.filter(u => u.id !== userId);
+          try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      }
+    };
+
+    // 1. Supabase Broadcast Listener (Cross-Device Worldwide WebSocket)
+    if (globalBroadcastChannel) {
+      globalBroadcastChannel.on("broadcast", { event: "sync_event" }, (msg) => {
+        handleSyncPayload(msg.payload);
+      });
+    }
+
+    // 2. Local Cross-Tab / Desktop App BroadcastChannel Listener
+    let localBc: BroadcastChannel | null = null;
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      try {
+        localBc = new BroadcastChannel("alm_local_sync");
+        localBc.onmessage = (e) => {
+          handleSyncPayload(e.data);
+        };
+      } catch {}
+    }
+
+    // 3. Supabase Postgres Changes fallback listener
     let realtimeChannel: any = null;
     if (supabase) {
       realtimeChannel = supabase
@@ -879,18 +960,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
               setProperties(prev => {
                 const exists = prev.some(p => p.id === newProp.id);
                 const updated = exists ? prev.map(p => p.id === newProp.id ? newProp : p) : [newProp, ...prev];
+                writeCache({ regions, types: propertyTypes, properties: updated, settings });
                 return updated;
               });
             } else if (payload.eventType === "UPDATE") {
               const updatedProp = rowToProperty(payload.new);
               setProperties(prev => {
                 const updated = prev.map(p => p.id === updatedProp.id ? updatedProp : p);
+                writeCache({ regions, types: propertyTypes, properties: updated, settings });
                 return updated;
               });
             } else if (payload.eventType === "DELETE") {
               const deletedId = (payload.old as any)?.id;
               if (deletedId) {
-                setProperties(prev => prev.filter(p => p.id !== deletedId));
+                setProperties(prev => {
+                  const updated = prev.filter(p => p.id !== deletedId);
+                  writeCache({ regions, types: propertyTypes, properties: updated, settings });
+                  return updated;
+                });
               }
             }
           }
@@ -951,11 +1038,48 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .subscribe();
     }
 
+    // 4. Smart Foreground & Focus & Polling Sync
+    const syncFreshData = () => {
+      supabaseService.fetchProperties().then(freshProps => {
+        if (freshProps && freshProps.length > 0) {
+          setProperties(prev => {
+            const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}`).join("|");
+            const freshSig = freshProps.map(p => `${p.id}_${p.code}_${p.price}_${p.status}`).join("|");
+            if (prevSig !== freshSig) {
+              writeCache({ regions, types: propertyTypes, properties: freshProps, settings });
+              return freshProps;
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchUsers().then(freshUsers => {
+        if (freshUsers && freshUsers.length > 0) {
+          setUsers(freshUsers);
+          try { localStorage.setItem("alm_users", JSON.stringify(freshUsers)); } catch {}
+        }
+      }).catch(() => {});
+    };
+
+    window.addEventListener("focus", syncFreshData);
+    const onVisChange = () => {
+      if (document.visibilityState === "visible") syncFreshData();
+    };
+    document.addEventListener("visibilitychange", onVisChange);
+    const pollInterval = setInterval(syncFreshData, 10000);
+
     return () => {
       destroyed = true;
       if (realtimeChannel && supabase) {
         supabase.removeChannel(realtimeChannel);
       }
+      if (localBc) {
+        localBc.close();
+      }
+      window.removeEventListener("focus", syncFreshData);
+      document.removeEventListener("visibilitychange", onVisChange);
+      clearInterval(pollInterval);
     };
   }, []);
 
@@ -1161,6 +1285,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     supabaseService.saveProperty(property).catch(() => {});
+    sendRealtimeSync("PROPERTY_ADD", { property });
 
     try {
       await api.post("/properties", property);
@@ -1216,6 +1341,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (updatedTarget) {
       await supabaseService.saveProperty(updatedTarget).catch(() => {});
+      sendRealtimeSync("PROPERTY_UPDATE", { property: updatedTarget });
     }
 
     try {
@@ -1259,6 +1385,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     await supabaseService.deleteProperty(id).catch(() => {});
+    sendRealtimeSync("PROPERTY_DELETE", { propertyId: id });
 
     try {
       await api.del(`/properties/${id}`);
@@ -1346,6 +1473,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     supabaseService.saveUser(newUser).catch(() => {});
+    sendRealtimeSync("USER_ADD", { user: newUser });
 
     try {
       const saved = await api.post<User>("/users", { ...newUser });
@@ -1379,6 +1507,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (targetUser) {
       supabaseService.saveUser(targetUser).catch(() => {});
+      sendRealtimeSync("USER_UPDATE", { user: targetUser });
     }
 
     try {
@@ -1406,6 +1535,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     supabaseService.deleteUser(id).catch(() => {});
+    sendRealtimeSync("USER_DELETE", { userId: id });
 
     try {
       await api.del(`/users/${id}`);
