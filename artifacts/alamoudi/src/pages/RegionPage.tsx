@@ -25,6 +25,7 @@ function hexToRgba(hex: string | undefined, opacity: number): string {
   return `rgba(${red}, ${green}, ${blue}, ${Math.min(100, Math.max(0, opacity)) / 100})`;
 }
 import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
+import { StickyQuickSearch } from "@/components/ui/StickyQuickSearch";
 import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
@@ -36,6 +37,13 @@ import {
 export default function RegionPage({ params }: { params: { regionId: string } }) {
   const { regionId } = params;
   const { properties, regions, propertyTypes, settings } = useData();
+
+  const [scrollY, setScrollY] = useState(0);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const region = regions.find(r => r.id === regionId);
   const getInitialCardSize = () => {
@@ -116,6 +124,20 @@ export default function RegionPage({ params }: { params: { regionId: string } })
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+
+      {/* Floating Sticky Quick Search on Scroll */}
+      <StickyQuickSearch
+        filters={filters}
+        regions={regions}
+        propertyTypes={propertyTypes}
+        visible={scrollY > 280}
+        isFiltering={hasActivePropertyFilters({ ...appliedFilters, regionId: "" })}
+        resultCount={filtered.length}
+        onChange={(next) => setFilters({ ...next, regionId })}
+        onApply={applyFilters}
+        onReset={resetFilters}
+      />
+
       <main className="flex-1">
         <section className="relative isolate h-[clamp(220px,25vw,320px)] w-full overflow-hidden bg-primary">
           {region.heroImage && !heroImageFailed ? (

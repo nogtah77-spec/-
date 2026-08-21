@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Pencil, Trash2, Home as HomeIcon } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -164,15 +164,28 @@ export default function Properties() {
           }
         />
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-md">
+        {/* Sticky Search & Action Bar */}
+        <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-md py-3 -mx-4 px-4 sm:-mx-8 sm:px-8 border-b border-border/60 shadow-xs transition-all flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative flex-1 w-full max-w-md">
             <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="بحث بالعنوان، الكود، المنطقة، أو النوع..."
-              className="pr-9"
+              className="pr-9 h-10 bg-card border-border/80 rounded-xl"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground self-end sm:self-center">
+            <span>النتائج: <strong>{filteredProperties.length}</strong> من أصل {properties.length}</span>
           </div>
         </div>
 

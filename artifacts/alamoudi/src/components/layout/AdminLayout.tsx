@@ -55,7 +55,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:mr-64 min-w-0 w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col md:mr-64 min-w-0 w-full overflow-x-clip">
         {/* Topbar */}
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
           <div className="flex items-center md:hidden">
