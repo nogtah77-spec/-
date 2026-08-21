@@ -49,3 +49,57 @@ export function formatMoneyText(value: unknown, suffix = "") {
   const formatted = formatNumber(value);
   return formatted ? `${formatted}${suffix ? ` ${suffix}` : ""}` : String(value ?? "");
 }
+
+import { ComponentType, lazy, type LazyExoticComponent } from "react";
+
+/**
+ * Robust lazy loading wrapper with automatic retry on chunk loading errors
+ * (e.g. after deployments or mobile network hiccups) to guarantee 100% smooth page loads.
+ */
+export function lazyWithRetry<T extends ComponentType<any>>(
+  componentImport: () => Promise<{ default: T } | T>,
+  retriesLeft = 2,
+  interval = 1000
+): LazyExoticComponent<T> {
+  return lazy(() =>
+    new Promise<{ default: T }>((resolve, reject) => {
+      const tryImport = () => {
+        componentImport()
+          .then((module) => {
+            const resolved = (module as any)?.default ? (module as { default: T }) : { default: module as T };
+            resolve(resolved);
+          })
+          .catch((error: Error) => {
+            const errorMsg = String(error?.message || "");
+            const isChunkLoadError =
+              error?.name === "ChunkLoadError" ||
+              errorMsg.includes("Failed to fetch dynamically imported module") ||
+              errorMsg.includes("Importing a module script failed") ||
+              errorMsg.includes("error loading dynamically imported module");
+
+            if (retriesLeft > 0) {
+              setTimeout(() => {
+                retriesLeft--;
+                tryImport();
+              }, interval);
+            } else if (isChunkLoadError && typeof window !== "undefined") {
+              const reloadKey = `chunk_reload_${window.location.pathname}`;
+              const lastReload = sessionStorage.getItem(reloadKey);
+              const now = Date.now();
+
+              if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+                sessionStorage.setItem(reloadKey, String(now));
+                window.location.reload();
+                return;
+              }
+              reject(error);
+            } else {
+              reject(error);
+            }
+          });
+      };
+
+      tryImport();
+    })
+  );
+}

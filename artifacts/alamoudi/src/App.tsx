@@ -17,6 +17,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { InstallPwaPrompt } from "@/components/ui/InstallPwaPrompt";
 
+import { lazyWithRetry } from "@/lib/utils";
+
 import Home from "@/pages/Home";
 import About from "@/pages/About";
 import AddProperty from "@/pages/AddProperty";
@@ -29,33 +31,33 @@ import Compare from "@/pages/Compare";
 import Login from "@/pages/Login";
 import RegionPage from "@/pages/RegionPage";
 
-const Dashboard = lazy(() => import("@/pages/admin/Dashboard"));
-const Properties = lazy(() => import("@/pages/admin/Properties"));
-const PropertyForm = lazy(() => import("@/pages/admin/PropertyForm"));
-const Regions = lazy(() => import("@/pages/admin/Regions"));
-const PropertyTypes = lazy(() => import("@/pages/admin/PropertyTypes"));
-const Users = lazy(() => import("@/pages/admin/Users"));
-const Roles = lazy(() => import("@/pages/admin/Roles"));
-const Settings = lazy(() => import("@/pages/admin/Settings"));
-const Analytics = lazy(() => import("@/pages/admin/Analytics"));
-const ActivityLogs = lazy(() => import("@/pages/admin/ActivityLogs"));
-const ImportExport = lazy(() => import("@/pages/admin/ImportExport"));
-const Inquiries = lazy(() => import("@/pages/admin/Inquiries"));
-const CustomerRequests = lazy(() => import("@/pages/admin/CustomerRequests"));
-const Contracts = lazy(() => import("@/pages/admin/Contracts"));
-const PropertyRequests = lazy(() => import("@/pages/admin/PropertyRequests"));
-const FinishingRequests = lazy(() => import("@/pages/admin/FinishingRequests"));
-const AiLeads = lazy(() => import("@/pages/admin/AiLeads"));
-const Backup = lazy(() => import("@/pages/admin/Backup"));
-const AdsAdmin        = lazy(() => import("@/pages/admin/Ads"));
-const AdAnalytics     = lazy(() => import("@/pages/admin/AdAnalytics"));
-const SmartBanners    = lazy(() => import("@/pages/admin/SmartBanners"));
-const Sources              = lazy(() => import("@/pages/admin/Sources"));
-const AiAgents             = lazy(() => import("@/pages/admin/AiAgents"));
-const WhatsAppBot          = lazy(() => import("@/pages/admin/WhatsAppBot"));
-const MortgageCalculatorPage = lazy(() => import("@/pages/admin/MortgageCalculatorPage"));
-const FinishingGallery     = lazy(() => import("@/pages/admin/FinishingGallery"));
-const AIChatWidget = lazy(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
+const Dashboard = lazyWithRetry(() => import("@/pages/admin/Dashboard"));
+const Properties = lazyWithRetry(() => import("@/pages/admin/Properties"));
+const PropertyForm = lazyWithRetry(() => import("@/pages/admin/PropertyForm"));
+const Regions = lazyWithRetry(() => import("@/pages/admin/Regions"));
+const PropertyTypes = lazyWithRetry(() => import("@/pages/admin/PropertyTypes"));
+const Users = lazyWithRetry(() => import("@/pages/admin/Users"));
+const Roles = lazyWithRetry(() => import("@/pages/admin/Roles"));
+const Settings = lazyWithRetry(() => import("@/pages/admin/Settings"));
+const Analytics = lazyWithRetry(() => import("@/pages/admin/Analytics"));
+const ActivityLogs = lazyWithRetry(() => import("@/pages/admin/ActivityLogs"));
+const ImportExport = lazyWithRetry(() => import("@/pages/admin/ImportExport"));
+const Inquiries = lazyWithRetry(() => import("@/pages/admin/Inquiries"));
+const CustomerRequests = lazyWithRetry(() => import("@/pages/admin/CustomerRequests"));
+const Contracts = lazyWithRetry(() => import("@/pages/admin/Contracts"));
+const PropertyRequests = lazyWithRetry(() => import("@/pages/admin/PropertyRequests"));
+const FinishingRequests = lazyWithRetry(() => import("@/pages/admin/FinishingRequests"));
+const AiLeads = lazyWithRetry(() => import("@/pages/admin/AiLeads"));
+const Backup = lazyWithRetry(() => import("@/pages/admin/Backup"));
+const AdsAdmin        = lazyWithRetry(() => import("@/pages/admin/Ads"));
+const AdAnalytics     = lazyWithRetry(() => import("@/pages/admin/AdAnalytics"));
+const SmartBanners    = lazyWithRetry(() => import("@/pages/admin/SmartBanners"));
+const Sources              = lazyWithRetry(() => import("@/pages/admin/Sources"));
+const AiAgents             = lazyWithRetry(() => import("@/pages/admin/AiAgents"));
+const WhatsAppBot          = lazyWithRetry(() => import("@/pages/admin/WhatsAppBot"));
+const MortgageCalculatorPage = lazyWithRetry(() => import("@/pages/admin/MortgageCalculatorPage"));
+const FinishingGallery     = lazyWithRetry(() => import("@/pages/admin/FinishingGallery"));
+const AIChatWidget = lazyWithRetry(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
 
 const queryClient = new QueryClient();
 
@@ -65,9 +67,11 @@ function Protected({ component: Component, adminOnly = false }: { component: Com
   if (!isStaff) return <Redirect to="/login" />;
   if (adminOnly && currentUser?.role !== "admin") return <Redirect to="/admin" />;
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>}>
-      <Component />
-    </Suspense>
+    <ErrorBoundary>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>}>
+        <Component />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
@@ -298,13 +302,21 @@ function App() {
                         <Router />
                       </ErrorBoundary>
                     </AppReadyGate>
-                    <ScrollToTopButton />
-                    <StaffLiveBubble />
-                    <InstallPwaPrompt />
+                    <ErrorBoundary fallback={null}>
+                      <ScrollToTopButton />
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                      <StaffLiveBubble />
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                      <InstallPwaPrompt />
+                    </ErrorBoundary>
                     {AI_ASSISTANT_ENABLED && (
-                      <Suspense fallback={null}>
-                        <AIChatWidget />
-                      </Suspense>
+                      <ErrorBoundary fallback={null}>
+                        <Suspense fallback={null}>
+                          <AIChatWidget />
+                        </Suspense>
+                      </ErrorBoundary>
                     )}
                   </WouterRouter>
                   <Toaster />

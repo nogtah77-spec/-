@@ -1,24 +1,60 @@
 import { Component, ErrorInfo, ReactNode } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
+  name?: string;
 }
 
 interface State {
   hasError: boolean;
+  error?: Error;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
+  }
+
+  componentDidMount() {
+    window.addEventListener("popstate", this.handleReset);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("popstate", this.handleReset);
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("[ErrorBoundary]", error, info.componentStack, "path:", window.location.pathname);
+    console.error(`[ErrorBoundary${this.props.name ? `:${this.props.name}` : ""}]`, error, info.componentStack, "path:", window.location.pathname);
+
+    const errorMsg = String(error?.message || "");
+    const isChunkLoadError =
+      error?.name === "ChunkLoadError" ||
+      errorMsg.includes("Failed to fetch dynamically imported module") ||
+      errorMsg.includes("Importing a module script failed") ||
+      errorMsg.includes("error loading dynamically imported module");
+
+    // Auto silent recovery for chunk load errors caused by server updates
+    if (isChunkLoadError && typeof window !== "undefined") {
+      const reloadKey = `eb_chunk_reload_${window.location.pathname}`;
+      const lastReload = sessionStorage.getItem(reloadKey);
+      const now = Date.now();
+
+      if (!lastReload || now - parseInt(lastReload, 10) > 12000) {
+        sessionStorage.setItem(reloadKey, String(now));
+        window.location.reload();
+      }
+    }
   }
+
+  handleReset = () => {
+    if (this.state.hasError) {
+      this.setState({ hasError: false, error: undefined });
+    }
+  };
 
   handleReload = () => {
     this.setState({ hasError: false });
@@ -31,26 +67,31 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback !== undefined) {
+        return this.props.fallback;
+      }
+
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-6" dir="rtl">
-          <div className="text-center max-w-sm">
-            <div className="w-16 h-16 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mx-auto mb-5">
-              <AlertTriangle className="h-8 w-8" />
+        <div className="min-h-[60vh] flex items-center justify-center bg-background p-6" dir="rtl">
+          <div className="text-center max-w-md p-6 rounded-2xl bg-card border border-border/80 shadow-sm">
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-7 w-7" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">حصل خطأ غير متوقع</h1>
-            <p className="text-muted-foreground mb-7 text-sm leading-relaxed">
-              نأسف على الإزعاج، حصلت مشكلة مؤقتة. جرّب تحديث الصفحة أو الرجوع للرئيسية.
+            <h1 className="text-xl font-bold text-foreground mb-2">جاري استعادة الصفحة بسلاسة</h1>
+            <p className="text-muted-foreground mb-6 text-xs sm:text-sm leading-relaxed">
+              تم تحديث بعض ملفات المنصة أو حدث انقطاع مؤقت في الاتصال. يمكنك إعادة المحاولة فوراً لفتح الصفحة.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button
                 onClick={this.handleReload}
-                className="rounded-full px-7 py-2.5 text-sm font-medium bg-accent text-accent-foreground hover:bg-accent/90 transition-colors shadow-md"
+                className="flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-xs sm:text-sm font-bold bg-accent text-accent-foreground hover:bg-accent/90 transition-colors shadow-md"
               >
-                إعادة المحاولة
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>إعادة المحاولة</span>
               </button>
               <button
                 onClick={this.handleHome}
-                className="rounded-full px-7 py-2.5 text-sm font-medium border border-border text-foreground hover:bg-muted transition-colors"
+                className="rounded-xl px-6 py-2.5 text-xs sm:text-sm font-semibold border border-border text-foreground hover:bg-muted transition-colors"
               >
                 العودة للرئيسية
               </button>
