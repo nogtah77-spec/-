@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { SEED_PROPERTIES } from "@/data/seedProperties";
-import { supabaseService } from "@/lib/supabaseService";
+import { supabaseService, rowToProperty } from "@/lib/supabaseService";
+import { supabase } from "@/lib/supabaseClient";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -592,9 +593,7 @@ function mergeWithSeedProperties(cachedList: Property[] = []): Property[] {
 
 function readCache(): CachePayload | null {
   try {
-    // حاول تقرأ الـ v4 أول
     let raw = localStorage.getItem(CACHE_KEY);
-    // لو مش موجود، حاول تهجّر الـ v3 القديم
     if (!raw) {
       const oldRaw = localStorage.getItem("alm_cache_v3");
       if (oldRaw) {
@@ -605,9 +604,7 @@ function readCache(): CachePayload | null {
     }
     if (!raw) return null;
     const parsed: CachePayload = JSON.parse(raw);
-    // نرفض بس الـ cache اللي عمره أكتر من 7 أيام
     if (Date.now() - parsed.ts > CACHE_HARD_TTL) return null;
-    parsed.properties = mergeWithSeedProperties(parsed.properties || []);
     return parsed;
   } catch { return null; }
 }
@@ -630,7 +627,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [properties, setProperties] = useState<Property[]>(() => {
     const cached = readCache();
-    return mergeWithSeedProperties(cached?.properties || []);
+    if (cached?.properties && cached.properties.length > 0) {
+      return cached.properties;
+    }
+    return SEED_PROPERTIES;
   });
   const [users, setUsers] = useState<User[]>(() => {
     try {
@@ -840,11 +840,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabaseService.fetchProperties().then(supabaseProps => {
           if (destroyed) return;
           if (supabaseProps && supabaseProps.length > 0) {
-            setProperties(mergeWithSeedProperties(supabaseProps));
+            setProperties(supabaseProps);
             writeCache({
               regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
               types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
-              properties: mergeWithSeedProperties(supabaseProps),
+              properties: supabaseProps,
               settings: cached?.settings ?? DEFAULT_SETTINGS,
             });
           }
@@ -865,7 +865,98 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }).catch(() => {});
     });
 
-    return () => { destroyed = true; };
+    // Supabase Realtime live sync across all tabs & devices
+    let realtimeChannel: any = null;
+    if (supabase) {
+      realtimeChannel = supabase
+        .channel("alm_realtime_db")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "properties" },
+          (payload) => {
+            if (payload.eventType === "INSERT") {
+              const newProp = rowToProperty(payload.new);
+              setProperties(prev => {
+                const exists = prev.some(p => p.id === newProp.id);
+                const updated = exists ? prev.map(p => p.id === newProp.id ? newProp : p) : [newProp, ...prev];
+                return updated;
+              });
+            } else if (payload.eventType === "UPDATE") {
+              const updatedProp = rowToProperty(payload.new);
+              setProperties(prev => {
+                const updated = prev.map(p => p.id === updatedProp.id ? updatedProp : p);
+                return updated;
+              });
+            } else if (payload.eventType === "DELETE") {
+              const deletedId = (payload.old as any)?.id;
+              if (deletedId) {
+                setProperties(prev => prev.filter(p => p.id !== deletedId));
+              }
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "users" },
+          (payload) => {
+            if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+              const u = payload.new as any;
+              const updatedUser: User = {
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                username: u.username || "",
+                password: u.password || "",
+                role: u.role || "customer",
+                active: u.active ?? true,
+                canClearActivityLogs: u.can_clear_activity_logs ?? false,
+                joinedAt: u.joined_at || new Date().toISOString(),
+              };
+              setUsers(prev => {
+                const exists = prev.some(user => user.id === updatedUser.id);
+                const updated = exists ? prev.map(user => user.id === updatedUser.id ? updatedUser : user) : [...prev, updatedUser];
+                try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+                return updated;
+              });
+            } else if (payload.eventType === "DELETE") {
+              const deletedId = (payload.old as any)?.id;
+              if (deletedId) {
+                setUsers(prev => {
+                  const updated = prev.filter(u => u.id !== deletedId);
+                  try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+                  return updated;
+                });
+              }
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "inquiries" },
+          () => {
+            supabaseService.fetchInquiries().then(inqs => {
+              if (inqs) setInquiries(inqs);
+            }).catch(() => {});
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "customer_property_requests" },
+          () => {
+            supabaseService.fetchCustomerRequests().then(reqs => {
+              if (reqs) setCustomerPropertyRequests(reqs);
+            }).catch(() => {});
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      destroyed = true;
+      if (realtimeChannel && supabase) {
+        supabase.removeChannel(realtimeChannel);
+      }
+    };
   }, []);
 
   const addBroker = useCallback(async (b: Omit<Broker, "id" | "createdAt">) => {

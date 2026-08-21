@@ -261,4 +261,54 @@ export const supabaseService = {
       return false;
     }
   },
+
+  // Fetch Inquiries
+  async fetchInquiries(): Promise<any[] | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.from("inquiries").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data) return null;
+      return data.map((r: any) => ({
+        id: r.id,
+        propertyId: r.property_id || "",
+        propertyCode: r.property_code || "",
+        name: r.name,
+        phone: r.phone,
+        message: r.message || "",
+        status: r.status || "new",
+        createdAt: r.created_at || new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.warn("Supabase fetch inquiries error:", e);
+      return null;
+    }
+  },
+
+  // Fetch Customer Requests
+  async fetchCustomerRequests(): Promise<any[] | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.from("customer_property_requests").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      if (!data) return null;
+      return data.map((r: any) => ({
+        id: r.id,
+        customerName: r.customer_name,
+        customerPhone: r.customer_phone,
+        requestType: r.request_type || "buy",
+        propertyCategory: r.property_category || "residential",
+        regionId: r.region_id || "",
+        budgetMin: Number(r.budget_min) || 0,
+        budgetMax: Number(r.budget_max) || 0,
+        notes: r.notes || "",
+        status: r.status || "new",
+        assignedStaffId: r.assigned_staff_id || "",
+        createdAt: r.created_at || new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.warn("Supabase fetch customer requests error:", e);
+      return null;
+    }
+  },
 };
