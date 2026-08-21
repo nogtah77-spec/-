@@ -23,10 +23,10 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
-import { MortgageCalculator } from "@/components/property/MortgageCalculator";
 import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
 import { PropertyShareModal } from "@/components/property/PropertyShareModal";
 import { updatePageMeta } from "@/lib/meta";
+import { checkUserPermission } from "@/lib/permissions";
 
 
 const categoryLabels: Record<string, string> = {
@@ -56,6 +56,8 @@ export default function PropertyDetails() {
   const [, navigate] = useLocation();
   const { properties, propertyTypes, regions, settings, trackPropertyView, fetching, users } = useData();
   const { isStaff, currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canViewBrochure = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-بروشور العقار PDF");
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
@@ -288,17 +290,19 @@ export default function PropertyDetails() {
                     <Pencil className="h-4 w-4" />تعديل العقار
                   </Button>
                 )}
-                <PropertyBrochureModal
-                  property={property}
-                  region={regions.find(r => r.id === property.regionId)}
-                  propertyType={propertyTypes.find(t => t.id === property.typeId)}
-                  categoryLabel={categoryLabels[property.category] || property.category}
-                  finishingLabel={finishingLabels[property.finishing] || property.finishing}
-                  companyName={settings.companyName}
-                  phone={settings.phone1}
-                  whatsapp={settings.whatsapp}
-                  email={settings.email}
-                />
+                {canViewBrochure && (
+                  <PropertyBrochureModal
+                    property={property}
+                    region={regions.find(r => r.id === property.regionId)}
+                    propertyType={propertyTypes.find(t => t.id === property.typeId)}
+                    categoryLabel={categoryLabels[property.category] || property.category}
+                    finishingLabel={finishingLabels[property.finishing] || property.finishing}
+                    companyName={settings.companyName}
+                    phone={settings.phone1}
+                    whatsapp={settings.whatsapp}
+                    email={settings.email}
+                  />
+                )}
                 <PropertyShareModal
                   property={property}
                   regionName={regionName}
@@ -595,18 +599,6 @@ export default function PropertyDetails() {
                     </CardContent>
                   </Card>
                 )
-              )}
-
-              {/* Mortgage & Installment Calculator */}
-              {property.price > 0 && (
-                <div className="pt-2">
-                  <MortgageCalculator
-                    price={property.price}
-                    propertyTitle={property.title}
-                    propertyCode={property.code}
-                    whatsappNumber={settings.whatsapp || settings.phone1}
-                  />
-                </div>
               )}
 
               {/* Map */}
