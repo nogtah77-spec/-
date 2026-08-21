@@ -107,7 +107,7 @@ export function InstallAppModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-5 sm:p-6 overflow-hidden rounded-3xl border-accent/30 shadow-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
-        <DialogHeader className="text-right pb-2">
+        <DialogHeader className="text-right pb-2 pl-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center border border-accent/30 shadow-md flex-shrink-0">
               <img src="/logo.png" alt="العمودي" className="w-8 h-8 object-contain" onError={(e) => {
