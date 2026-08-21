@@ -518,9 +518,6 @@ export const DEFAULT_PROPERTY_TYPES: PropertyType[] = [
 
 export const DEFAULT_STAFF_USERS: User[] = [
   { id: "staff-1", name: "سعيد العمودي", email: "saeed@alamoudi.com", username: "saeed", role: "admin", active: true, canClearActivityLogs: true, joinedAt: "2026-01-01" },
-  { id: "staff-2", name: "محمد رمضان", email: "mohamed@alamoudi.com", username: "mohamed", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
-  { id: "staff-3", name: "نسرين", email: "nisreen@alamoudi.com", username: "nisreen", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
-  { id: "staff-4", name: "أحمد سليم", email: "ahmed@alamoudi.com", username: "ahmed", role: "agent", active: true, canClearActivityLogs: false, joinedAt: "2026-01-01" },
 ];
 
 function mergeWithSeedProperties(cachedList: Property[] = []): Property[] {

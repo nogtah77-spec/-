@@ -86,8 +86,14 @@ const DEFAULT_AGENTS: AiAgentConfig[] = [
   },
 ];
 
+import { useAuth } from "@/context/AuthContext";
+import { ShieldAlert } from "lucide-react";
+import { Link } from "wouter";
+
 export default function AiAgents() {
   const { toast } = useToast();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
 
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem("alm_ai_api_key") || "";
@@ -108,6 +114,25 @@ export default function AiAgents() {
   });
 
   const [testInput, setTestInput] = useState("");
+
+  if (!isAdmin) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            إعدادات وكلاء الذكاء الاصطناعي مخصصة لمدير النظام فقط.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
   const [testOutput, setTestOutput] = useState("");
   const [testing, setTesting] = useState(false);
 

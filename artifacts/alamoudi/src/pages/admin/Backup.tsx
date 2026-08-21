@@ -7,12 +7,37 @@ import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
+import { useAuth } from "@/context/AuthContext";
+import { ShieldAlert } from "lucide-react";
+import { Link } from "wouter";
+
 const KEYS = ["alamoudi_regions","alamoudi_property_types","alamoudi_properties","alamoudi_users","alamoudi_inquiries","alamoudi_finishing_requests","alamoudi_property_requests","alamoudi_settings","alamoudi_favorites","alamoudi_compare"];
 
 export default function Backup() {
   const data = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  if (!isAdmin) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            النسخ الاحتياطي واستعادة البيانات مخصصة لمدير النظام فقط.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const handleExport = () => {
     const backup: Record<string, any> = { exportedAt: new Date().toISOString(), version: "1.0" };
