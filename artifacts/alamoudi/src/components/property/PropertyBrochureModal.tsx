@@ -321,7 +321,13 @@ export function PropertyBrochureModal({
                   <div>
                     <span className="block text-[10px] text-gray-500">الدور</span>
                     <span className="font-bold text-[#10202D]">
-                      {property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor || property.floorText || "متكرر"}
+                      {property.floor === 0 || property.floor === "0"
+                        ? "أرضي"
+                        : (property.floorText && property.floorText.trim())
+                          ? property.floorText
+                          : (property.floor !== undefined && property.floor !== null && property.floor !== "")
+                            ? `الدور ${property.floor}`
+                            : "غير محدد"}
                     </span>
                   </div>
                 </div>
@@ -330,15 +336,15 @@ export function PropertyBrochureModal({
                   <Building2 className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">التشطيب</span>
-                    <span className="font-bold text-[#10202D]">{finishingLabel || property.finishing || "نصف تشطيب"}</span>
+                    <span className="font-bold text-[#10202D]">{finishingLabel || property.finishing || "غير محدد"}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
                   <Compass className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
-                    <span className="block text-[10px] text-gray-500">الإطلالة / الوجهة</span>
-                    <span className="font-bold text-[#10202D]">{property.view || property.unitType || "مميزة"}</span>
+                    <span className="block text-[10px] text-gray-500">الإطلالة / الواجهة</span>
+                    <span className="font-bold text-[#10202D]">{property.view || property.unitType || "غير محدد"}</span>
                   </div>
                 </div>
 
@@ -346,7 +352,7 @@ export function PropertyBrochureModal({
                   <Sparkles className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">المصعد (الأسانسير)</span>
-                    <span className="font-bold text-[#10202D]">{property.elevator || "متوفر"}</span>
+                    <span className="font-bold text-[#10202D]">{property.elevator && property.elevator.trim() ? property.elevator : "غير محدد"}</span>
                   </div>
                 </div>
 
@@ -354,7 +360,7 @@ export function PropertyBrochureModal({
                   <Car className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">مكان الجراج</span>
-                    <span className="font-bold text-[#10202D]">{property.parking || "متوفر"}</span>
+                    <span className="font-bold text-[#10202D]">{property.parking && property.parking.trim() ? property.parking : "غير محدد"}</span>
                   </div>
                 </div>
               </div>
