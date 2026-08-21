@@ -522,74 +522,40 @@ export const DEFAULT_STAFF_USERS: User[] = [
   { id: "staff-1", name: "سعيد العمودي", email: "saeed@alamoudi.com", username: "saeed", role: "admin", active: true, canClearActivityLogs: true, joinedAt: "2026-01-01" },
 ];
 
-function mergeWithSeedProperties(cachedList: Property[] = []): Property[] {
-  const deleted: string[] = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
-    } catch {
-      return [];
-    }
-  })();
+// Memory Shield for in-flight/recent edits (prevents transient rollback from slower DB queries)
+const recentPropertyEdits = new Map<string, { property: Property; timestamp: number }>();
 
-  const overrides: Record<string, Property> = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
-    } catch {
-      return {};
-    }
-  })();
+export function recordRecentEdit(property: Property) {
+  if (!property) return;
+  const item = { property, timestamp: Date.now() };
+  if (property.id) recentPropertyEdits.set(property.id, item);
+  if (property.code) recentPropertyEdits.set(property.code.toLowerCase().trim(), item);
+}
 
+export function clearRecentEdit(idOrCode: string) {
+  if (!idOrCode) return;
+  const key = idOrCode.toLowerCase().trim();
+  recentPropertyEdits.delete(idOrCode);
+  recentPropertyEdits.delete(key);
+}
+
+export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
   const map = new Map<string, Property>();
+  for (const fp of freshList) {
+    if (fp && fp.id) map.set(fp.id, fp);
+  }
 
-  // 1. Initial seeds (only if not deleted)
-  for (const p of SEED_PROPERTIES) {
-    if (p) {
-      const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
-      if (!isDeleted) {
-        const idKey = (p.id || "").toLowerCase();
-        const codeKey = (p.code || "").toLowerCase();
-        if (idKey) map.set(idKey, p);
-        if (codeKey) map.set(codeKey, p);
-      }
+  // Apply active recent edits (within 60 seconds) strictly over fresh DB reads
+  const now = Date.now();
+  for (const [key, item] of recentPropertyEdits.entries()) {
+    if (now - item.timestamp < 60000 && item.property && item.property.id) {
+      map.set(item.property.id, item.property);
+    } else if (now - item.timestamp >= 60000) {
+      recentPropertyEdits.delete(key);
     }
   }
 
-  // 2. Cached properties override seeds
-  for (const p of cachedList) {
-    if (p) {
-      const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
-      if (!isDeleted) {
-        const idKey = (p.id || "").toLowerCase();
-        const codeKey = (p.code || "").toLowerCase();
-        if (idKey) map.set(idKey, p);
-        if (codeKey) map.set(codeKey, p);
-      }
-    }
-  }
-
-  // 3. User Overrides ALWAYS win
-  for (const [, p] of Object.entries(overrides)) {
-    if (p) {
-      const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
-      if (!isDeleted) {
-        const idKey = (p.id || "").toLowerCase();
-        const codeKey = (p.code || "").toLowerCase();
-        if (idKey) map.set(idKey, p);
-        if (codeKey) map.set(codeKey, p);
-      }
-    }
-  }
-
-  // Deduplicate by unique id
-  const finalMap = new Map<string, Property>();
-  for (const p of map.values()) {
-    const isDeleted = deleted.includes(p.id) || (p.code && deleted.includes(p.code));
-    if (!isDeleted) {
-      const uniqueKey = p.id || p.code;
-      if (uniqueKey) finalMap.set(uniqueKey, p);
-    }
-  }
-  return Array.from(finalMap.values());
+  return Array.from(map.values());
 }
 
 function readCache(): CachePayload | null {
@@ -862,11 +828,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabaseService.fetchProperties().then(supabaseProps => {
           if (destroyed) return;
           if (supabaseProps && supabaseProps.length > 0) {
-            setProperties(supabaseProps);
+            const protectedList = mergeFreshWithRecentEdits(supabaseProps);
+            setProperties(protectedList);
             writeCache({
               regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
               types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
-              properties: supabaseProps,
+              properties: protectedList,
               settings: cached?.settings ?? DEFAULT_SETTINGS,
             });
           }
@@ -893,6 +860,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const { event, property, propertyId, user, userId } = data;
 
       if (event === "PROPERTY_ADD" && property) {
+        recordRecentEdit(property);
         setProperties(prev => {
           const exists = prev.some(p => p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase()));
           if (exists) {
@@ -913,6 +881,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return updated;
         });
       } else if (event === "PROPERTY_UPDATE" && property) {
+        recordRecentEdit(property);
         setProperties(prev => {
           const updated = prev.map(p => {
             const match = p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase());
@@ -927,6 +896,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return updated;
         });
       } else if (event === "PROPERTY_DELETE" && propertyId) {
+        clearRecentEdit(propertyId);
         const idLower = String(propertyId).toLowerCase();
         setProperties(prev => {
           const updated = prev.filter(p => (p.id || "").toLowerCase() !== idLower && (p.code || "").toLowerCase() !== idLower);
@@ -1066,46 +1036,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .subscribe();
     }
 
-    // 4. Smart Foreground & Focus & Polling Sync (Timestamp-Protected)
+    // 4. Smart Foreground & Focus & Polling Sync (Memory Shield Protected)
     const syncFreshData = () => {
       supabaseService.fetchProperties().then(freshProps => {
         if (freshProps && freshProps.length > 0) {
           setProperties(prev => {
-            const dbMap = new Map<string, Property>();
-            for (const fp of freshProps) {
-              dbMap.set(fp.id, fp);
-            }
-
-            // Protect recent local/broadcast modifications against stale DB queries
-            const mergedList = freshProps.map(fp => {
-              const localProp = prev.find(p => p.id === fp.id || (p.code && p.code.toLowerCase() === fp.code.toLowerCase()));
-              if (localProp) {
-                const localTime = localProp.updatedAt ? new Date(localProp.updatedAt).getTime() : 0;
-                const dbTime = fp.updatedAt ? new Date(fp.updatedAt).getTime() : 0;
-                // If local modification was made within last 20 seconds and is newer than DB row, retain local
-                if (localTime > dbTime && Date.now() - localTime < 30000) {
-                  return localProp;
-                }
-              }
-              return fp;
-            });
-
-            // Also preserve any newly added property not yet in the fresh DB fetch
-            for (const lp of prev) {
-              const existsInDb = mergedList.some(p => p.id === lp.id || (p.code && p.code.toLowerCase() === lp.code.toLowerCase()));
-              if (!existsInDb) {
-                const localTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
-                if (Date.now() - localTime < 30000) {
-                  mergedList.unshift(lp);
-                }
-              }
-            }
-
+            const protectedList = mergeFreshWithRecentEdits(freshProps);
             const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
-            const mergedSig = mergedList.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
+            const mergedSig = protectedList.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
             if (prevSig !== mergedSig) {
-              writeCache({ regions, types: propertyTypes, properties: mergedList, settings });
-              return mergedList;
+              writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
+              return protectedList;
             }
             return prev;
           });
@@ -1152,13 +1093,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
       return updated;
     });
-    toast({ title: "تمت إضافة الوسيط بنجاح ✓" });
+    toast({ title: "تمت إضافة الوسيط بنجاح" });
     return true;
   }, [toast]);
 
   const updateBroker = useCallback(async (id: string, patch: Partial<Broker>) => {
     setBrokers(prev => {
-      const updated = prev.map(b => (b.id === id ? { ...b, ...patch } : b));
+      const updated = prev.map(b => b.id === id ? { ...b, ...patch } : b);
       try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
       return updated;
     });
@@ -1333,8 +1274,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updatedAt: nowIso,
     };
 
+    recordRecentEdit(property);
+
     setProperties(prev => {
-      const updated = [...prev, property];
+      const updated = [property, ...prev];
       writeCache({
         regions,
         types: propertyTypes,
@@ -1379,6 +1322,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updated.push(updatedTarget);
       }
 
+      if (updatedTarget) {
+        recordRecentEdit(updatedTarget);
+      }
+
       writeCache({
         regions,
         types: propertyTypes,
@@ -1401,6 +1348,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     if (updatedTarget) {
+      recordRecentEdit(updatedTarget);
       await supabaseService.saveProperty(updatedTarget).catch(() => {});
       sendRealtimeSync("PROPERTY_UPDATE", { property: updatedTarget });
     }
@@ -1415,6 +1363,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const deleteProperty = async (id: string) => {
     const targetIdLower = (id || "").toLowerCase().trim();
+    clearRecentEdit(id);
+    clearRecentEdit(targetIdLower);
 
     // 1. Add to persistent blacklist
     try {
