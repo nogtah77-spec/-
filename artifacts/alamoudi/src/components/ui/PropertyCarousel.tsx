@@ -32,11 +32,12 @@ export function PropertyCarousel({
 }: PropertyCarouselProps) {
   const safeSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
 
-  // In Embla Carousel, duration determines the transition animation speed (physics).
-  // At 0.25x -> duration is 55 (slow, calm, majestic).
-  // At 1.0x -> duration is 28 (smooth standard).
-  // At 2.0x -> duration is 18 (faster).
-  const emblaDuration = Math.round(28 / Math.sqrt(safeSpeed));
+  // Ultra-Soft Silk Physics (Damped Smooth Glide):
+  // At 0.25x -> duration is ~76 (calm, velvet, cinematic glide)
+  // At 0.50x -> duration is ~54
+  // At 1.00x -> duration is ~38 (luxury smooth)
+  // At 2.00x -> duration is ~27
+  const emblaDuration = Math.round(38 / Math.sqrt(safeSpeed));
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: infinite && properties.length > 1,
@@ -47,37 +48,93 @@ export function PropertyCarousel({
     dragFree: false,
   });
 
-  const isPausedRef = useRef(false);
+  const isInteractingRef = useRef(false);
+  const autoPlayTimerRef = useRef<number | null>(null);
+  const resumeTimerRef = useRef<number | null>(null);
 
-  // Auto-play interval with pause on hover/touch
+  const clearAllTimers = useCallback(() => {
+    if (autoPlayTimerRef.current !== null) {
+      window.clearTimeout(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
+    if (resumeTimerRef.current !== null) {
+      window.clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleNextSlide = useCallback(() => {
+    clearAllTimers();
+    if (!autoPlay || isInteractingRef.current || !emblaApi || properties.length < 2) {
+      return;
+    }
+
+    const waitTime = Math.max(1500, autoPlayDelay);
+    autoPlayTimerRef.current = window.setTimeout(() => {
+      if (isInteractingRef.current || !emblaApi) return;
+      emblaApi.scrollNext();
+    }, waitTime);
+  }, [autoPlay, autoPlayDelay, clearAllTimers, emblaApi, properties.length]);
+
+  const handleInteractionStart = useCallback(() => {
+    isInteractingRef.current = true;
+    clearAllTimers();
+  }, [clearAllTimers]);
+
+  const handleInteractionEnd = useCallback((gracePeriodMs = 3500) => {
+    isInteractingRef.current = false;
+    clearAllTimers();
+    if (!autoPlay || properties.length < 2) return;
+
+    // Grace period gives user ample time to read after letting go of touch or hover
+    resumeTimerRef.current = window.setTimeout(() => {
+      resumeTimerRef.current = null;
+      scheduleNextSlide();
+    }, Math.max(1500, gracePeriodMs));
+  }, [autoPlay, clearAllTimers, properties.length, scheduleNextSlide]);
+
+  // Hook into Embla's internal touch and pointer drag lifecycle
   useEffect(() => {
-    if (!emblaApi || !autoPlay || properties.length < 2) return;
+    if (!emblaApi) return;
 
-    const intervalTime = Math.max(1200, autoPlayDelay);
-    const interval = setInterval(() => {
-      if (!isPausedRef.current && emblaApi) {
-        emblaApi.scrollNext();
+    const onPointerDown = () => {
+      handleInteractionStart();
+    };
+
+    const onPointerUp = () => {
+      handleInteractionEnd(3500);
+    };
+
+    const onSettle = () => {
+      if (!isInteractingRef.current) {
+        scheduleNextSlide();
       }
-    }, intervalTime);
+    };
 
-    return () => clearInterval(interval);
-  }, [emblaApi, autoPlay, autoPlayDelay, properties.length]);
+    emblaApi.on("pointerDown", onPointerDown);
+    emblaApi.on("pointerUp", onPointerUp);
+    emblaApi.on("settle", onSettle);
 
-  const onMouseEnter = useCallback(() => {
-    isPausedRef.current = true;
-  }, []);
+    // Initial schedule
+    scheduleNextSlide();
 
-  const onMouseLeave = useCallback(() => {
-    isPausedRef.current = false;
-  }, []);
+    return () => {
+      clearAllTimers();
+      emblaApi.off("pointerDown", onPointerDown);
+      emblaApi.off("pointerUp", onPointerUp);
+      emblaApi.off("settle", onSettle);
+    };
+  }, [emblaApi, clearAllTimers, handleInteractionStart, handleInteractionEnd, scheduleNextSlide]);
 
   if (!properties || properties.length === 0) return null;
 
   return (
     <div
       className={cn("relative overflow-hidden", className)}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={handleInteractionStart}
+      onMouseLeave={() => handleInteractionEnd(3000)}
+      onTouchStart={handleInteractionStart}
+      onTouchEnd={() => handleInteractionEnd(3500)}
       dir="rtl"
     >
       <div ref={emblaRef} className="overflow-hidden py-3">
