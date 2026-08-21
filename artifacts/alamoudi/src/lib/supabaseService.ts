@@ -41,7 +41,6 @@ export function propertyToRow(p: Property) {
     source_phones: p.sourcePhones || [],
     assigned_staff_id: p.assignedStaffId || "",
     created_at: p.createdAt || new Date().toISOString(),
-    updated_at: p.updatedAt || p.createdAt || new Date().toISOString(),
   };
 }
 
@@ -84,7 +83,7 @@ export function rowToProperty(r: any): Property {
     sourcePhones: Array.isArray(r.source_phones) ? r.source_phones : [],
     assignedStaffId: r.assigned_staff_id || "",
     createdAt: r.created_at || new Date().toISOString(),
-    updatedAt: r.updated_at || r.created_at || new Date().toISOString(),
+    updatedAt: r.created_at || new Date().toISOString(),
   };
 }
 
