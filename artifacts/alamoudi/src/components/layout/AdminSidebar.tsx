@@ -5,7 +5,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
+import { checkUserPermission } from "@/lib/permissions";
+import { useState, useEffect } from "react";
 
 type SidebarBadge =
   | "inquiries"
@@ -20,6 +23,7 @@ type SidebarItem = {
   icon: typeof LayoutDashboard;
   badge?: SidebarBadge;
   adminOnly?: boolean;
+  permission?: string;
 };
 
 type SidebarSection = {
@@ -38,8 +42,8 @@ const sidebarSections: SidebarSection[] = [
     items: [
       { href: "/admin/properties", label: "العقارات", icon: Building2 },
       { href: "/admin/mortgage-calculator", label: "حاسبة التمويل والأقساط", icon: Calculator },
-      { href: "/admin/regions", label: "المناطق", icon: MapPin },
-      { href: "/admin/property-types", label: "أنواع العقارات", icon: Home },
+      { href: "/admin/regions", label: "المناطق", icon: MapPin, permission: "الإعدادات-إدارة المناطق" },
+      { href: "/admin/property-types", label: "أنواع العقارات", icon: Home, permission: "الإعدادات-إدارة الأنواع" },
       { href: "/admin/sources", label: "مصادر العقارات", icon: BookUser },
       { href: "/admin/contracts", label: "العقود", icon: FileCheck2 },
     ],
@@ -67,8 +71,8 @@ const sidebarSections: SidebarSection[] = [
   {
     title: "المستخدمون والصلاحيات",
     items: [
-      { href: "/admin/users", label: "المستخدمين", icon: Users },
-      { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck },
+      { href: "/admin/users", label: "المستخدمين", icon: Users, permission: "إدارة المستخدمين-عرض المستخدمين" },
+      { href: "/admin/roles", label: "الأدوار والصلاحيات", icon: ShieldCheck, adminOnly: true },
     ],
   },
   {
@@ -81,18 +85,26 @@ const sidebarSections: SidebarSection[] = [
   {
     title: "التقارير والنظام",
     items: [
-      { href: "/admin/analytics", label: "التحليلات", icon: BarChart3 },
-      { href: "/admin/activity-logs", label: "سجلات النشاط", icon: Activity },
-      { href: "/admin/import-export", label: "الاستيراد والتصدير", icon: ArrowDownUp, adminOnly: true },
+      { href: "/admin/analytics", label: "التحليلات", icon: BarChart3, permission: "التقارير-عرض التحليلات" },
+      { href: "/admin/activity-logs", label: "سجلات النشاط", icon: Activity, permission: "التقارير-سجلات النشاط" },
+      { href: "/admin/import-export", label: "الاستيراد والتصدير", icon: ArrowDownUp, permission: "التقارير-تصدير البيانات" },
       { href: "/admin/backup", label: "النسخ الاحتياطي", icon: Database, adminOnly: true },
-      { href: "/admin/settings", label: "الإعدادات", icon: Settings },
+      { href: "/admin/settings", label: "الإعدادات", icon: Settings, permission: "الإعدادات-تعديل إعدادات الموقع" },
     ],
   },
 ];
 
 export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
   const [location] = useLocation();
+  const { currentUser } = useAuth();
   const { inquiries, propertyRequests, finishingRequests, aiLeads, customerPropertyRequests } = useData();
+  const [, setPermTick] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setPermTick(t => t + 1);
+    window.addEventListener("permissions-updated", handler);
+    return () => window.removeEventListener("permissions-updated", handler);
+  }, []);
 
   const badgeCounts: Record<string, number> = {
     inquiries: inquiries.filter(x => x.status === "new").length,
@@ -101,10 +113,17 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
     finishingRequests: finishingRequests.filter(x => x.status === "new").length,
     aiLeads: aiLeads.filter(x => x.status === "new").length,
   };
+
+  const isItemAllowed = (item: SidebarItem) => {
+    if (item.adminOnly) return isAdmin;
+    if (item.permission) return checkUserPermission(currentUser, item.permission);
+    return true;
+  };
+
   const visibleSections = sidebarSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.adminOnly || isAdmin),
+      items: section.items.filter(isItemAllowed),
     }))
     .filter((section) => section.items.length > 0);
 

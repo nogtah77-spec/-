@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useData, PropertyType } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,17 +8,42 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Home, Pencil, Trash2, Eye, EyeOff, Plus } from "lucide-react";
+import { Home, Pencil, Trash2, Eye, EyeOff, Plus, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { checkUserPermission } from "@/lib/permissions";
+import { Link } from "wouter";
 
 export default function PropertyTypes() {
   const { propertyTypes, addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canManageTypes = isAdmin || checkUserPermission(currentUser, "الإعدادات-إدارة الأنواع");
+
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editTarget, setEditTarget] = useState<PropertyType | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PropertyType | null>(null);
   const [newName, setNewName] = useState("");
   const { toast } = useToast();
+
+  if (!canManageTypes) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية إدارة أنواع العقارات. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const handleAdd = () => {
     if (!newName.trim()) return;

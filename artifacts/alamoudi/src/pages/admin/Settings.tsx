@@ -46,6 +46,9 @@ import { useToast } from "@/hooks/use-toast";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import type { SiteSettings, TiktokVideo } from "@/context/DataContext";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { checkUserPermission } from "@/lib/permissions";
+import { ShieldAlert } from "lucide-react";
+import { Link } from "wouter";
 
 const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = {
   thumbnail: "",
@@ -63,6 +66,7 @@ export default function Settings() {
   } = useData();
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
+  const canEditSettings = isAdmin || checkUserPermission(currentUser, "الإعدادات-تعديل إعدادات الموقع");
   const { toast } = useToast();
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
@@ -73,6 +77,25 @@ export default function Settings() {
   const [newVideo, setNewVideo] =
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+
+  if (!canEditSettings) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية تعديل إعدادات الموقع. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
   const [editVideo, setEditVideo] =
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const thumbRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});

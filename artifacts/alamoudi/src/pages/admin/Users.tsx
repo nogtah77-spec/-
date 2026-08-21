@@ -8,12 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Search, Users as UsersIcon, Pencil, Trash2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Pencil, Trash2, Eye, EyeOff, ShieldCheck, ShieldAlert } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useData, User } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { checkUserPermission } from "@/lib/permissions";
+import { Link } from "wouter";
 
 const roleLabels = { admin: "مدير النظام", agent: "مستشار عقاري", customer: "عميل" };
 
@@ -21,6 +23,12 @@ export default function Users() {
   const { users, addUser, updateUser, deleteUser, toggleUser } = useData();
   const { currentUser, refreshCurrentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
+  const canView = isAdmin || checkUserPermission(currentUser, "إدارة المستخدمين-عرض المستخدمين");
+  const canAdd = isAdmin || checkUserPermission(currentUser, "إدارة المستخدمين-إضافة مستخدم");
+  const canEdit = isAdmin || checkUserPermission(currentUser, "إدارة المستخدمين-تعديل صلاحيات");
+  const canToggle = isAdmin || checkUserPermission(currentUser, "إدارة المستخدمين-حظر مستخدم");
+  const canDelete = isAdmin;
+
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editTarget, setEditTarget] = useState<User | null>(null);
@@ -39,6 +47,25 @@ export default function Users() {
 
   const isStaffRole = form.role === "admin" || form.role === "agent";
 
+  if (!canView) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية عرض وإدارة المستخدمين. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
   const filteredUsers = users.filter(u => 
     !search || 
     u.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -46,6 +73,10 @@ export default function Users() {
   );
 
   const handleAdd = async () => {
+    if (!canAdd) {
+      toast({ title: "غير مصرح", description: "ليس لديك صلاحية إضافة مستخدمين جدد", variant: "destructive" });
+      return;
+    }
     if (!form.name || !form.email) {
       toast({ title: "خطأ", description: "يرجى إدخال الاسم والبريد الإلكتروني", variant: "destructive" });
       return;
@@ -72,6 +103,10 @@ export default function Users() {
   };
 
   const handleEdit = async () => {
+    if (!canEdit) {
+      toast({ title: "غير مصرح", description: "ليس لديك صلاحية تعديل بيانات أو أدوار المستخدمين", variant: "destructive" });
+      return;
+    }
     if (!editTarget || !form.name || !form.email) return;
     const finalUsername = (form.username.trim() || form.email.split("@")[0].trim() || form.name.trim().replace(/\s+/g, "_")).toLowerCase();
     const saved = await updateUser(editTarget.id, {
@@ -90,6 +125,10 @@ export default function Users() {
   };
 
   const handleDelete = () => {
+    if (!canDelete) {
+      toast({ title: "غير مصرح", description: "حذف المستخدمين مخصص لمدير النظام فقط", variant: "destructive" });
+      return;
+    }
     if (!deleteTarget) return;
     if (deleteTarget.id === currentUser?.id) {
       toast({
@@ -105,6 +144,10 @@ export default function Users() {
   };
 
   const handleToggle = (id: string) => {
+    if (!canToggle) {
+      toast({ title: "غير مصرح", description: "ليس لديك صلاحية تغيير حالة المستخدمين", variant: "destructive" });
+      return;
+    }
     if (id === currentUser?.id) {
       toast({
         title: "لا يمكن تعطيل حسابك",
@@ -143,10 +186,12 @@ export default function Users() {
           eyebrow="فريق العمل والوصول"
           icon={UsersIcon}
           actions={
-            <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={openAdd}>
-              <Plus className="h-4 w-4" />
-              مستخدم جديد
-            </Button>
+            canAdd ? (
+              <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={openAdd}>
+                <Plus className="h-4 w-4" />
+                مستخدم جديد
+              </Button>
+            ) : undefined
           }
         />
 
@@ -186,28 +231,34 @@ export default function Users() {
                   <TableCell>{new Date(user.joinedAt).toLocaleDateString("ar-EG")}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(user)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={user.id === currentUser?.id}
-                        title={user.id === currentUser?.id ? "لا يمكن تعطيل حسابك أثناء تسجيل الدخول" : user.active ? "تعطيل الحساب" : "تفعيل الحساب"}
-                        onClick={() => handleToggle(user.id)}
-                      >
-                        {user.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        disabled={user.id === currentUser?.id}
-                        title={user.id === currentUser?.id ? "لا يمكن حذف حسابك أثناء تسجيل الدخول" : "حذف الحساب"}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={() => setDeleteTarget(user)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canEdit && (
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(user)} title="تعديل المستخدم">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canToggle && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={user.id === currentUser?.id}
+                          title={user.id === currentUser?.id ? "لا يمكن تعطيل حسابك أثناء تسجيل الدخول" : user.active ? "تعطيل الحساب" : "تفعيل الحساب"}
+                          onClick={() => handleToggle(user.id)}
+                        >
+                          {user.active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={user.id === currentUser?.id}
+                          title={user.id === currentUser?.id ? "لا يمكن حذف حسابك أثناء تسجيل الدخول" : "حذف الحساب"}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                          onClick={() => setDeleteTarget(user)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

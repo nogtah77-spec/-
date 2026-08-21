@@ -70,6 +70,9 @@ interface PendingImport {
 
 export default function ImportExport() {
   const { properties, users, inquiries, regions, propertyTypes, importProperties } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canExport = isAdmin || checkUserPermission(currentUser, "التقارير-تصدير البيانات");
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [exportType, setExportType] = useState("properties");
@@ -82,6 +85,25 @@ export default function ImportExport() {
   } | null>(null);
   const [pending, setPending] = useState<PendingImport | null>(null);
   const [fallbackRegionId, setFallbackRegionId] = useState<string>("");
+
+  if (!canExport) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية استيراد وتصدير بيانات المنصة. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const getExportData = () => {
     switch (exportType) {

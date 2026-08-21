@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Search, Plus, Pencil, Trash2, Home as HomeIcon } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -16,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatNumber } from "@/lib/utils";
+import { checkUserPermission } from "@/lib/permissions";
 
 const statusLabels: Record<PropertyStatus, string> = {
   active: "نشط",
@@ -53,6 +55,13 @@ const statusColors: Record<PropertyStatus, string> = {
 
 export default function Properties() {
   const { properties, regions, propertyTypes, deleteProperty, updateProperty, bulkDeleteProperties, bulkUpdateProperties } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canAddProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-إضافة عقار");
+  const canEditProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-تعديل عقار");
+  const canDeleteProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-حذف عقار");
+  const canPublishProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-نشر العقارات");
+
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
@@ -144,12 +153,14 @@ export default function Properties() {
           title="إدارة العقارات"
           subtitle="عرض وإدارة جميع العقارات في المنصة"
           actions={
-            <Button asChild className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]">
-              <Link href="/admin/properties/new">
-                <Plus className="h-4 w-4" />
-                إضافة عقار جديد
-              </Link>
-            </Button>
+            canAddProperty ? (
+              <Button asChild className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]">
+                <Link href="/admin/properties/new">
+                  <Plus className="h-4 w-4" />
+                  إضافة عقار جديد
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
 
@@ -172,34 +183,40 @@ export default function Properties() {
               تم تحديد {selectedCount} عقار
             </span>
             <div className="flex items-center gap-2 mr-auto flex-wrap">
-              <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as PropertyStatus)}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
-                  <SelectValue placeholder="تغيير الحالة إلى..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(statusLabels).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs"
-                disabled={!bulkStatus}
-                onClick={handleBulkStatusChange}
-              >
-                تطبيق
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-8 text-xs"
-                onClick={() => setShowBulkDeleteDialog(true)}
-              >
-                <Trash2 className="h-3 w-3 ml-1" />
-                حذف المحددة
-              </Button>
+              {canPublishProperty && (
+                <>
+                  <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v as PropertyStatus)}>
+                    <SelectTrigger className="w-[140px] h-8 text-xs">
+                      <SelectValue placeholder="تغيير الحالة إلى..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(statusLabels).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    disabled={!bulkStatus}
+                    onClick={handleBulkStatusChange}
+                  >
+                    تطبيق
+                  </Button>
+                </>
+              )}
+              {canDeleteProperty && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-8 text-xs"
+                  onClick={() => setShowBulkDeleteDialog(true)}
+                >
+                  <Trash2 className="h-3 w-3 ml-1" />
+                  حذف المحددة
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="ghost"
@@ -266,41 +283,52 @@ export default function Properties() {
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
                   <TableCell>{formatNumber(property.price)} EGP</TableCell>
                   <TableCell>
-                    <Select
-                      value={property.status}
-                      onValueChange={(val) => handleStatusChange(property.id, val as PropertyStatus)}
-                    >
-                      <SelectTrigger className={`w-[120px] h-8 text-xs ${statusColors[property.status]} border-none font-semibold`}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(statusLabels).map(([key, label]) => (
-                          <SelectItem key={key} value={key}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {canPublishProperty ? (
+                      <Select
+                        value={property.status}
+                        onValueChange={(val) => handleStatusChange(property.id, val as PropertyStatus)}
+                      >
+                        <SelectTrigger className={`w-[120px] h-8 text-xs ${statusColors[property.status]} border-none font-semibold`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(statusLabels).map(([key, label]) => (
+                            <SelectItem key={key} value={key}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${statusColors[property.status]}`}>
+                        {statusLabels[property.status]}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/admin/properties/${property.id}/edit`}>
-                          <Pencil className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                        onClick={() => setDeleteTarget(property)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {canEditProperty && (
+                        <Button variant="ghost" size="icon" asChild title="تعديل العقار">
+                          <Link href={`/admin/properties/${property.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      )}
+                      {canDeleteProperty && (
+                        <Button
+                          variant="ghost" size="icon"
+                          title="حذف العقار"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                          onClick={() => setDeleteTarget(property)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
               ))}
               {filteredProperties.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="p-0">
+                  <TableCell colSpan={9} className="p-0">
                     <EmptyState
                       icon={<HomeIcon className="h-8 w-8" />}
                       title="لا توجد عقارات"

@@ -16,10 +16,16 @@ import { SEED_SOURCES } from "@/data/seedSources";
 import { parsePropertyText } from "@/lib/aiPropertyParser";
 import { parsePropertyWithGemini } from "@/lib/geminiApi";
 
+import { useAuth } from "@/context/AuthContext";
+import { checkUserPermission } from "@/lib/permissions";
+import { ShieldAlert } from "lucide-react";
+
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 
 export default function PropertyForm() {
   const { regions, propertyTypes, users, addProperty, updateProperty, properties, brokers } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const params = useParams<{ id?: string }>();
@@ -28,6 +34,10 @@ export default function PropertyForm() {
   const [aiText, setAiText] = useState("");
   const [aiParsedSummary, setAiParsedSummary] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  const canAddProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-إضافة عقار");
+  const canEditProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-تعديل عقار");
+  const isAuthorized = isEdit ? canEditProperty : canAddProperty;
 
   const apiKey = typeof window !== "undefined" ? localStorage.getItem("alm_ai_api_key") || "" : "";
   const aiModel = typeof window !== "undefined" ? localStorage.getItem("alm_ai_default_model") || "gemini-1.5-pro" : "gemini-1.5-pro";
@@ -43,6 +53,27 @@ export default function PropertyForm() {
       return true;
     }
   })();
+
+  if (!isAuthorized) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            {isEdit
+              ? "ليس لديك صلاحية تعديل بيانات العقارات."
+              : "ليس لديك صلاحية إضافة عقارات جديدة."}
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin/properties">العودة لقائمة العقارات</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const [form, setForm] = useState({
     code: existing?.code ?? "",

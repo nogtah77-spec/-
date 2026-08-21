@@ -13,6 +13,8 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { checkUserPermission } from "@/lib/permissions";
+import { Link } from "wouter";
 
 const ACTION_LABELS: Record<string, string> = {
   created: "إضافة",
@@ -45,9 +47,30 @@ export default function ActivityLogs() {
   const { activityLogs, properties, regions, propertyTypes } = useData();
   const { reload } = useData();
   const { currentUser, refreshCurrentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canViewLogs = isAdmin || checkUserPermission(currentUser, "التقارير-سجلات النشاط");
   const { toast } = useToast();
   const [query, setQuery] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
+
+  if (!canViewLogs) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية عرض سجلات النشاط. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
   const [entityFilter, setEntityFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [clearDialogOpen, setClearDialogOpen] = useState(false);

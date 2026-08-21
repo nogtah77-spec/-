@@ -1,10 +1,14 @@
 import { useEffect, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange, CalendarClock, LineChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange, CalendarClock, LineChart, ShieldAlert } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
 import { RollingNumber } from "@/components/ui/RollingNumber";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { checkUserPermission } from "@/lib/permissions";
+import { Link } from "wouter";
 import {
   ResponsiveContainer,
   BarChart,
@@ -40,12 +44,34 @@ function ChartEmpty({ label }: { label: string }) {
 
 export default function Analytics() {
   const { properties, regions, propertyTypes, inquiries, finishingRequests, propertyRequests, visitorStats, refreshVisitorStats } = useData();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === "admin";
+  const canViewAnalytics = isAdmin || checkUserPermission(currentUser, "التقارير-عرض التحليلات");
 
   useEffect(() => {
     refreshVisitorStats();
     const interval = setInterval(refreshVisitorStats, 12_000);
     return () => clearInterval(interval);
   }, [refreshVisitorStats]);
+
+  if (!canViewAnalytics) {
+    return (
+      <AdminLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 text-destructive flex items-center justify-center">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            ليس لديك صلاحية عرض تحليلات وإحصائيات المنصة. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+          </p>
+          <Button asChild className="mt-4 bg-accent text-accent-foreground">
+            <Link href="/admin">العودة للوحة التحكم</Link>
+          </Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   const visitorCards = [
     { key: "online", title: "متواجدون الآن", value: visitorStats.online, icon: Radio, live: true },
