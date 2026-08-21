@@ -38,6 +38,7 @@ export interface Property {
   externalUrl: string;
   mapsUrl: string;
   createdAt: string;
+  updatedAt?: string;
   unitType?: string;
   subArea?: string;
   layout?: string;
@@ -894,14 +895,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (event === "PROPERTY_ADD" && property) {
         setProperties(prev => {
           const exists = prev.some(p => p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase()));
-          if (exists) return prev;
+          if (exists) {
+            // Update if existing has older timestamp
+            const updated = prev.map(p => {
+              if (p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase())) {
+                const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
+                const inTime = property.updatedAt ? new Date(property.updatedAt).getTime() : Date.now();
+                return inTime >= prevTime ? { ...p, ...property } : p;
+              }
+              return p;
+            });
+            writeCache({ regions, types: propertyTypes, properties: updated, settings });
+            return updated;
+          }
           const updated = [property, ...prev];
           writeCache({ regions, types: propertyTypes, properties: updated, settings });
           return updated;
         });
       } else if (event === "PROPERTY_UPDATE" && property) {
         setProperties(prev => {
-          const updated = prev.map(p => (p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase())) ? property : p);
+          const updated = prev.map(p => {
+            const match = p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase());
+            if (match) {
+              const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
+              const inTime = property.updatedAt ? new Date(property.updatedAt).getTime() : Date.now();
+              return inTime >= prevTime ? { ...p, ...property } : p;
+            }
+            return p;
+          });
           writeCache({ regions, types: propertyTypes, properties: updated, settings });
           return updated;
         });
@@ -966,7 +987,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             } else if (payload.eventType === "UPDATE") {
               const updatedProp = rowToProperty(payload.new);
               setProperties(prev => {
-                const updated = prev.map(p => p.id === updatedProp.id ? updatedProp : p);
+                const updated = prev.map(p => {
+                  if (p.id === updatedProp.id) {
+                    const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
+                    const inTime = updatedProp.updatedAt ? new Date(updatedProp.updatedAt).getTime() : Date.now();
+                    return inTime >= prevTime ? updatedProp : p;
+                  }
+                  return p;
+                });
                 writeCache({ regions, types: propertyTypes, properties: updated, settings });
                 return updated;
               });
@@ -1038,16 +1066,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .subscribe();
     }
 
-    // 4. Smart Foreground & Focus & Polling Sync
+    // 4. Smart Foreground & Focus & Polling Sync (Timestamp-Protected)
     const syncFreshData = () => {
       supabaseService.fetchProperties().then(freshProps => {
         if (freshProps && freshProps.length > 0) {
           setProperties(prev => {
-            const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}`).join("|");
-            const freshSig = freshProps.map(p => `${p.id}_${p.code}_${p.price}_${p.status}`).join("|");
-            if (prevSig !== freshSig) {
-              writeCache({ regions, types: propertyTypes, properties: freshProps, settings });
-              return freshProps;
+            const dbMap = new Map<string, Property>();
+            for (const fp of freshProps) {
+              dbMap.set(fp.id, fp);
+            }
+
+            // Protect recent local/broadcast modifications against stale DB queries
+            const mergedList = freshProps.map(fp => {
+              const localProp = prev.find(p => p.id === fp.id || (p.code && p.code.toLowerCase() === fp.code.toLowerCase()));
+              if (localProp) {
+                const localTime = localProp.updatedAt ? new Date(localProp.updatedAt).getTime() : 0;
+                const dbTime = fp.updatedAt ? new Date(fp.updatedAt).getTime() : 0;
+                // If local modification was made within last 20 seconds and is newer than DB row, retain local
+                if (localTime > dbTime && Date.now() - localTime < 30000) {
+                  return localProp;
+                }
+              }
+              return fp;
+            });
+
+            // Also preserve any newly added property not yet in the fresh DB fetch
+            for (const lp of prev) {
+              const existsInDb = mergedList.some(p => p.id === lp.id || (p.code && p.code.toLowerCase() === lp.code.toLowerCase()));
+              if (!existsInDb) {
+                const localTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 0;
+                if (Date.now() - localTime < 30000) {
+                  mergedList.unshift(lp);
+                }
+              }
+            }
+
+            const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
+            const mergedSig = mergedList.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
+            if (prevSig !== mergedSig) {
+              writeCache({ regions, types: propertyTypes, properties: mergedList, settings });
+              return mergedList;
             }
             return prev;
           });
@@ -1265,12 +1323,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addProperty = async (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => {
     const code = p.code?.trim() || genCode();
     const sanitizedSourcePhones = (p.sourcePhones || []).filter(ph => ph && typeof ph === "string" && ph.trim());
+    const nowIso = new Date().toISOString();
     const property: Property = {
       ...p,
       code,
       sourcePhones: sanitizedSourcePhones,
       id: genId(),
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso,
+      updatedAt: nowIso,
     };
 
     setProperties(prev => {
@@ -1299,6 +1359,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateProperty = async (id: string, p: Partial<Property>) => {
     let updatedTarget: Property | null = null;
     const targetIdLower = (id || "").toLowerCase().trim();
+    const nowIso = new Date().toISOString();
 
     setProperties(prev => {
       let found = false;
@@ -1307,14 +1368,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const matchCode = (prop.code || "").toLowerCase().trim() === targetIdLower;
         if (matchId || matchCode) {
           found = true;
-          updatedTarget = { ...prop, ...p, id: prop.id || id };
+          updatedTarget = { ...prop, ...p, id: prop.id || id, updatedAt: nowIso };
           return updatedTarget;
         }
         return prop;
       });
 
       if (!found && id) {
-        updatedTarget = { ...p, id, code: p.code || id, createdAt: new Date().toISOString() } as Property;
+        updatedTarget = { ...p, id, code: p.code || id, createdAt: nowIso, updatedAt: nowIso } as Property;
         updated.push(updatedTarget);
       }
 
