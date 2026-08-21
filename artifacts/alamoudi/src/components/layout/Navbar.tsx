@@ -166,11 +166,11 @@ export function Navbar() {
           )}
           <button
             onClick={() => setInstallModalOpen(true)}
-            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold text-accent bg-accent/10 hover:bg-accent hover:text-accent-foreground border border-accent/30 shadow-sm transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap flex-shrink-0"
-            title="تثبيت تطبيق العمودي"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-accent bg-accent/10 hover:bg-accent hover:text-accent-foreground border border-accent/30 shadow-sm transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap flex-shrink-0"
+            title="تحميل وتثبيت تطبيق المنصة على جهازك"
           >
-            <Smartphone className="h-3 w-3" />
-            <span>تثبيت التطبيق</span>
+            <Download className="h-3.5 w-3.5" />
+            <span>تحميل التطبيق</span>
           </button>
           {isStaff ? (
             <Button
