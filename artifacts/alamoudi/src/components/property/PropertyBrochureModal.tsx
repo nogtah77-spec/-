@@ -10,7 +10,7 @@ import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { Property, Region, PropertyType } from "@/context/DataContext";
 import { formatNumber } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import html2canvas from "html2canvas";
+import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
 
 interface PropertyBrochureModalProps {
@@ -51,33 +51,13 @@ export function PropertyBrochureModal({
     try {
       const element = printRef.current;
       
-      // Ensure all images are loaded before capturing
-      const imgElements = element.querySelectorAll("img");
-      await Promise.all(
-        Array.from(imgElements).map((img) => {
-          if (img.complete) return Promise.resolve();
-          return new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
-        })
-      );
-
-      // Dynamically resolve html2canvas function
-      const html2canvasFn = (html2canvas as any).default || html2canvas;
-
-      // Capture the element in high resolution with strict CORS safety (no tainted canvas)
-      const canvas = await html2canvasFn(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
+      // Capture element using modern browser SVG foreignObject (supports OKLCH & Tailwind v4 natively)
+      const dataUrl = await toJpeg(element, {
+        quality: 0.95,
         backgroundColor: "#ffffff",
-        logging: false,
-        windowWidth: 850,
-        imageTimeout: 15000,
+        pixelRatio: 2,
+        cacheBust: true,
       });
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
       // Dynamically resolve jsPDF constructor
       const PDFClass = (jsPDF as any).jsPDF || jsPDF;
@@ -91,7 +71,15 @@ export function PropertyBrochureModal({
       const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
       const margin = 10; // 10mm margins
       const targetWidth = pdfWidth - margin * 2;
-      const targetHeight = (canvas.height * targetWidth) / canvas.width;
+
+      // Calculate aspect ratio
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+
+      const targetHeight = (img.height * targetWidth) / img.width;
 
       // Position vertically centered if it fits within A4
       let yOffset = margin;
@@ -100,7 +88,7 @@ export function PropertyBrochureModal({
       }
 
       pdf.addImage(
-        imgData,
+        dataUrl,
         "JPEG",
         margin,
         yOffset,
