@@ -225,12 +225,13 @@ export function PropertyCarousel({
         window.clearTimeout(motionTimerRef.current);
       }
 
-      // This duration controls the visible slide only. It never changes the
-      // independent waiting time before the next automatic movement.
-      const duration = Math.max(
-        260,
-        Math.min(2600, (distance / (640 * safeMotionSpeed)) * 1000),
-      );
+      // Calibrated fluid duration: provides silky smooth, cinematic sliding at any speed
+      const cardWidth = trackRef.current?.children[0]
+        ? (trackRef.current.children[0] as HTMLElement).offsetWidth || 350
+        : 350;
+      const stepCount = Math.max(1, Math.round(distance / cardWidth));
+      const baseDuration = 720 / Math.sqrt(safeMotionSpeed);
+      const duration = Math.round(Math.max(300, Math.min(1800, baseDuration * Math.min(1.4, stepCount))));
 
       isAnimatingRef.current = true;
       setTransitionDuration(duration);
@@ -550,7 +551,7 @@ export function PropertyCarousel({
           style={{
             transform: `translate3d(${-trackOffset}px, 0, 0)`,
             transition: transitionEnabled
-              ? `transform ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`
+              ? `transform ${transitionDuration}ms cubic-bezier(0.25, 1, 0.5, 1)`
               : "none",
             willChange: "transform",
           }}
