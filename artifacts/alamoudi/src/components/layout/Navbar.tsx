@@ -23,7 +23,17 @@ export function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const closeStart = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 15);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -52,7 +62,14 @@ export function Navbar() {
   const mapsHref = settings.mapsUrl || null;
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-navbar">
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full transition-all duration-300",
+        isScrolled
+          ? "bg-background/90 dark:bg-background/95 backdrop-blur-xl border-b border-border/70 shadow-md shadow-black/5"
+          : "glass-navbar bg-background/70 backdrop-blur-md border-b border-border/40"
+      )}
+    >
       {/* Desktop */}
       <div className="container h-16 hidden md:flex items-center justify-between px-4 lg:px-6 gap-3">
         {/* Brand — far right (RTL start) */}

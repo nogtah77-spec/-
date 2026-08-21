@@ -23,6 +23,7 @@ import { Link } from "wouter";
 import { PublicBannerSlot } from "@/components/ui/AdsBanner";
 import { PropertyCarousel } from "@/components/ui/PropertyCarousel";
 import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
+import { StickyQuickSearch } from "@/components/ui/StickyQuickSearch";
 import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
@@ -271,6 +272,17 @@ export default function Home() {
     Math.min(100, Math.max(0, settings.heroOverlayOpacity ?? 85)) / 100;
   const tiktokVideos = (settings.tiktokVideos ?? []).slice(0, 3);
   const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
+  const [showStickySearch, setShowStickySearch] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Reveal sticky search pill when scrolled past 380px (after the hero buttons)
+      setShowStickySearch(window.scrollY > 380);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const gridClass = "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4";
 
@@ -280,6 +292,17 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <StickyQuickSearch
+        filters={filters}
+        regions={regions}
+        propertyTypes={propertyTypes}
+        visible={showStickySearch}
+        isFiltering={isFiltering}
+        resultCount={filterResults.length}
+        onChange={setFilters}
+        onApply={applyFilters}
+        onReset={clearFilters}
+      />
       <main className="flex-1">
         {/* ── 3 Action Buttons — Luxury Quick Actions ── */}
         <div className="container px-3 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
