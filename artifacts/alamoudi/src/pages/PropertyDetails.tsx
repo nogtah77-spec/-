@@ -9,7 +9,7 @@ import { PropertyGallery } from "@/components/ui/PropertyGallery";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
-  Mail, Link as LinkIcon, FileText
+  Mail, Link as LinkIcon, FileText, Camera
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
@@ -620,14 +620,133 @@ export default function PropertyDetails() {
             </div>
           </div>
 
-          {/* Similar */}
+          {/* Similar Properties Mini Luxury Boxes */}
           {similar.length > 0 && (
-            <div className="mt-16">
-              <h2 className="text-2xl font-bold mb-6">عقارات مشابهة</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {similar.map(p => (
-                  <PropertyCard key={p.id} size="compact" property={{ ...p, typeName: propertyTypes.find(t => t.id === p.typeId)?.name, regionName: regions.find(r => r.id === p.regionId)?.name }} />
-                ))}
+            <div className="mt-14 pt-10 border-t border-border/60">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-accent" />
+                    عقارات مشابهة
+                  </h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    عقارات في نفس المنطقة أو من نفس الفئة العقارية
+                  </p>
+                </div>
+                <span className="text-xs font-semibold text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                  {similar.length} عقارات
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
+                {similar.map(p => {
+                  const tName = propertyTypes.find(t => t.id === p.typeId)?.name || p.unitType || "عقار";
+                  const rName = regions.find(r => r.id === p.regionId)?.name || p.location || "";
+                  const thumb = p.images?.[0] || (p.videoUrl ? getVideoThumbnailUrl(p.videoUrl) : null);
+                  const isSale = p.listingType === "sale" || p.category === "sale";
+
+                  return (
+                    <Link
+                      key={p.id}
+                      href={`/property/${p.id}`}
+                      className="group flex items-stretch gap-3 p-2.5 rounded-2xl bg-card border border-border/70 hover:border-accent/50 hover:shadow-md transition-all duration-300 overflow-hidden relative"
+                    >
+                      {/* Image Thumbnail */}
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-muted flex-shrink-0 relative">
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt={p.code || p.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground/40 bg-muted/70">
+                            <Building2 className="h-6 w-6 mb-1" />
+                            <span className="text-[10px]">بدون صورة</span>
+                          </div>
+                        )}
+
+                        {/* Listing type badge */}
+                        <div className="absolute top-1.5 right-1.5">
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm",
+                              isSale
+                                ? "bg-amber-500 text-white"
+                                : "bg-blue-600 text-white"
+                            )}
+                          >
+                            {isSale ? "للبيع" : "للإيجار"}
+                          </span>
+                        </div>
+
+                        {/* Image count pill */}
+                        {p.images?.length > 1 && (
+                          <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-xs text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                            <Camera className="h-2.5 w-2.5" />
+                            <span>{p.images.length}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
+                        <div>
+                          {/* Code & Region */}
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-xs font-bold text-accent font-mono bg-accent/10 px-1.5 py-0.5 rounded">
+                              {p.code}
+                            </span>
+                            {rName && (
+                              <span className="text-[11px] text-muted-foreground truncate flex items-center gap-0.5">
+                                <MapPin className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/70" />
+                                <span className="truncate">{rName}</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Unit Title / Type */}
+                          <h3 className="text-xs sm:text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">
+                            {tName} {p.subArea ? `- ${p.subArea}` : ""}
+                          </h3>
+                        </div>
+
+                        {/* Specs Mini Chips */}
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground my-1">
+                          {p.area > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Square className="h-2.5 w-2.5 text-muted-foreground/70" />
+                              <span>{p.area}م²</span>
+                            </span>
+                          )}
+                          {p.beds > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Bed className="h-2.5 w-2.5 text-muted-foreground/70" />
+                              <span>{p.beds}غ</span>
+                            </span>
+                          )}
+                          {p.baths > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <Bath className="h-2.5 w-2.5 text-muted-foreground/70" />
+                              <span>{p.baths}ح</span>
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Price */}
+                        <div className="flex items-baseline justify-between mt-auto">
+                          <p className="text-xs sm:text-sm font-bold text-accent">
+                            {p.price > 0 ? `${formatNumber(p.price)} ج.م` : "عند الطلب"}
+                          </p>
+                          <span className="text-[10px] text-muted-foreground group-hover:translate-x-[-2px] transition-transform font-medium">
+                            التفاصيل ←
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
