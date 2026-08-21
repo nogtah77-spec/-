@@ -21,6 +21,7 @@ import { checkUserPermission } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
 
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
+import { compressMultipleImages } from "@/lib/imageOptimizer";
 
 export default function PropertyForm() {
   const { regions, propertyTypes, users, addProperty, updateProperty, properties, brokers } = useData();
@@ -125,23 +126,36 @@ export default function PropertyForm() {
   const [images, setImages] = useState<string[]>(existing?.images ?? []);
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = useCallback((files: FileList | null) => {
-    if (!files) return;
-    Array.from(files).slice(0, 20 - images.length).forEach(file => {
-      if (!file.type.match(/image\/(jpeg|png|webp)/)) return;
-      if (file.size > 8 * 1024 * 1024) { toast({ title: "الصورة كبيرة جداً (الحد 8MB)", variant: "destructive" }); return; }
-      const reader = new FileReader();
-      reader.onload = ev => setImages(prev => [...prev, ev.target?.result as string]);
-      reader.readAsDataURL(file);
-    });
-    if (fileRef.current) fileRef.current.value = "";
+  const handleFiles = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const remainingSlots = 20 - images.length;
+    if (remainingSlots <= 0) {
+      toast({ title: "تم الوصول للحد الأقصى للصور (20 صورة)", variant: "destructive" });
+      return;
+    }
+    setCompressing(true);
+    try {
+      const optimized = await compressMultipleImages(files, remainingSlots);
+      if (optimized.length > 0) {
+        setImages(prev => [...prev, ...optimized]);
+        toast({ title: `تم تحسين وضغط ${optimized.length} صورة بتقنية WebP بنجاح ✓` });
+      }
+    } catch (err) {
+      toast({ title: "تعذر معالجة بعض الصور", variant: "destructive" });
+    } finally {
+      setCompressing(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   }, [images.length, toast]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDragging(false);
-    handleFiles(e.dataTransfer.files);
+    if (!compressing) {
+      handleFiles(e.dataTransfer.files);
+    }
   };
 
   const handleSave = async () => {
@@ -460,19 +474,31 @@ export default function PropertyForm() {
                   </div>
                 )}
                 <div
-                  className={cn("border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all",
-                    dragging ? "border-accent bg-accent/5" : "border-border hover:border-accent/60 hover:bg-muted/30")}
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all",
+                    compressing ? "border-accent bg-accent/10 pointer-events-none" : dragging ? "border-accent bg-accent/5" : "border-border hover:border-accent/60 hover:bg-muted/30"
+                  )}
                   onDragOver={e => { e.preventDefault(); setDragging(true); }}
                   onDragLeave={() => setDragging(false)}
                   onDrop={handleDrop}
-                  onClick={() => fileRef.current?.click()}
+                  onClick={() => !compressing && fileRef.current?.click()}
                 >
-                  <UploadCloud className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium text-foreground mb-1">اسحب وأفلت الصور هنا أو انقر للاختيار</p>
-                  <p className="text-xs text-muted-foreground">JPG, PNG, WEBP — حد أقصى 8MB لكل صورة</p>
+                  {compressing ? (
+                    <div className="py-2 space-y-2">
+                      <RefreshCw className="h-8 w-8 text-accent mx-auto animate-spin" />
+                      <p className="text-sm font-bold text-accent">جاري تحسين وضغط الصور بتقنية WebP الذكية...</p>
+                      <p className="text-xs text-muted-foreground">يتم تقليص الحجم مع الحفاظ على أعلى درجات الجودة والوضوح</p>
+                    </div>
+                  ) : (
+                    <>
+                      <UploadCloud className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm font-medium text-foreground mb-1">اسحب وأفلت الصور هنا أو انقر للاختيار</p>
+                      <p className="text-xs text-muted-foreground">يتم ضغط وتحسين الصور تلقائياً (JPG, PNG, WEBP)</p>
+                    </>
+                  )}
                 </div>
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
-                  onChange={e => handleFiles(e.target.files)} />
+                  onChange={e => handleFiles(e.target.files)} disabled={compressing} />
               </CardContent>
             </Card>
 

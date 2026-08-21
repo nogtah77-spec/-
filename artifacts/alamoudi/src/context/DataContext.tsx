@@ -1287,7 +1287,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return updated;
     });
 
-    supabaseService.saveProperty(property).catch(() => {});
+    try {
+      await supabaseService.saveProperty(property);
+    } catch (err) {
+      console.warn("Supabase direct save error:", err);
+    }
+
     sendRealtimeSync("PROPERTY_ADD", { property });
 
     try {
