@@ -406,18 +406,18 @@ export function PropertyBrochureModal({
                 </div>
               </div>
 
-              {/* Dynamic QR Codes Stamp for Brochure */}
-              <div className="flex items-center gap-3">
+              {/* Dynamic QR Codes Stamp for Brochure (Compact & Professional) */}
+              <div className="flex items-center gap-2.5">
                 {/* 1. Direct Property URL QR */}
                 <div className="flex flex-col items-center text-center">
                   <QrCodeView
                     url={propertyUrl}
                     type="url"
-                    size={58}
+                    size={46}
                     alt="رابط صفحة العقار"
-                    className="p-1 rounded-lg border border-[#B99A68]/40 shadow-xs bg-white"
+                    className="p-1 rounded-md border border-[#B99A68]/30 shadow-xs bg-white"
                   />
-                  <span className="text-[8.5px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
+                  <span className="text-[7.5px] sm:text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
                     امسح لفتح العقار
                   </span>
                 </div>
@@ -429,11 +429,11 @@ export function PropertyBrochureModal({
                       url={q.url}
                       imageUrl={q.imageUrl}
                       type={q.type}
-                      size={58}
+                      size={46}
                       alt={q.title}
-                      className="p-1 rounded-lg border border-[#B99A68]/40 shadow-xs bg-white"
+                      className="p-1 rounded-md border border-[#B99A68]/30 shadow-xs bg-white"
                     />
-                    <span className="text-[8.5px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
+                    <span className="text-[7.5px] sm:text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
                       {q.title}
                     </span>
                   </div>
