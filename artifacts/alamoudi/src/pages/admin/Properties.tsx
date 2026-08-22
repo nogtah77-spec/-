@@ -165,12 +165,12 @@ export default function Properties() {
         />
 
         {/* Sticky Search & Action Bar */}
-        <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-md py-3 -mx-4 px-4 sm:-mx-8 sm:px-8 border-b border-border/60 shadow-xs transition-all flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-xl py-3.5 -mx-4 px-4 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 border-b border-border/80 shadow-md shadow-black/5 transition-all flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="relative flex-1 w-full max-w-md">
-            <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
-              placeholder="بحث بالعنوان، الكود، المنطقة، أو النوع..."
-              className="pr-9 h-10 bg-card border-border/80 rounded-xl"
+              placeholder="بحث بالعنوان، الكود (مثل S66)، المنطقة، أو النوع..."
+              className="pr-9 pl-8 h-10 bg-card border-border/80 rounded-xl focus-visible:ring-accent"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -185,7 +185,7 @@ export default function Properties() {
             )}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground self-end sm:self-center">
-            <span>النتائج: <strong>{filteredProperties.length}</strong> من أصل {properties.length}</span>
+            <span>النتائج: <strong className="text-foreground">{filteredProperties.length}</strong> من أصل {properties.length} عقار</span>
           </div>
         </div>
 

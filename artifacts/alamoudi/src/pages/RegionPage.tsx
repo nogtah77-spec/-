@@ -130,7 +130,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
         filters={filters}
         regions={regions}
         propertyTypes={propertyTypes}
-        visible={scrollY > 280}
+        visible={scrollY > 160}
         isFiltering={hasActivePropertyFilters({ ...appliedFilters, regionId: "" })}
         resultCount={filtered.length}
         onChange={(next) => setFilters({ ...next, regionId })}

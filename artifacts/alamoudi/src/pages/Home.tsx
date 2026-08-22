@@ -277,8 +277,8 @@ export default function Home() {
 
   useEffect(() => {
     const handleScroll = () => {
-      // Reveal sticky search pill when scrolled past 380px (after the hero buttons)
-      setShowStickySearch(window.scrollY > 380);
+      // Reveal sticky search pill when scrolled past 220px
+      setShowStickySearch(window.scrollY > 220);
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
