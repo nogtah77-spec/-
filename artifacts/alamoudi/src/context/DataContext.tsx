@@ -548,7 +548,7 @@ export const DEFAULT_BROKERS: Broker[] = [
 
 export const DEFAULT_REGIONS: Region[] = [
   { id: "badr", name: "مدينة بدر", active: true },
-  { id: "shorouk", name: "مدينة الشروق", active: true, heroImage: "/city-heroes/shorouk.jpg" },
+  { id: "shorouk", name: "مدينة الشروق", active: true },
   { id: "madinaty", name: "مدينتي", active: true },
   { id: "wasal", name: "كمبوند وصال", active: true },
   { id: "tagamoa", name: "التجمع", active: true },
@@ -687,13 +687,23 @@ export function sendRealtimeSync(event: string, payload: any) {
   }
 }
 
+function sanitizeRegions(list?: Region[] | null): Region[] {
+  if (!list || !list.length) return DEFAULT_REGIONS;
+  return list.map(r => {
+    if (r.heroImage && (r.heroImage.includes("/city-heroes/") || r.heroImage.includes("shorouk.jpg"))) {
+      return { ...r, heroImage: "" };
+    }
+    return r;
+  });
+}
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [ready, setReady] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [regions, setRegions] = useState<Region[]>(() => {
     const cached = readCache();
-    return cached?.regions?.length ? cached.regions : DEFAULT_REGIONS;
+    return sanitizeRegions(cached?.regions?.length ? cached.regions : DEFAULT_REGIONS);
   });
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>(() => {
     const cached = readCache();
@@ -852,8 +862,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
                           ? settingsR.value : null;
 
-      if (newRegions && newRegions.length > 0) setRegions(newRegions);
+      if (newRegions && newRegions.length > 0) setRegions(sanitizeRegions(newRegions));
       else if (!cached?.regions?.length) setRegions(DEFAULT_REGIONS);
+      else setRegions(sanitizeRegions(cached.regions));
 
       if (newTypes && newTypes.length > 0) setPropertyTypes(newTypes);
       else if (!cached?.types?.length) setPropertyTypes(DEFAULT_PROPERTY_TYPES);
@@ -869,7 +880,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (gotData) {
         writeCache({
-          regions: (newRegions && newRegions.length > 0) ? newRegions : (cached?.regions?.length ? cached.regions : DEFAULT_REGIONS),
+          regions: (newRegions && newRegions.length > 0) ? sanitizeRegions(newRegions) : (cached?.regions?.length ? sanitizeRegions(cached.regions) : DEFAULT_REGIONS),
           types: (newTypes && newTypes.length > 0) ? newTypes : (cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES),
           properties: (newProps && newProps.length > 0) ? newProps : mergeWithSeedProperties(cached?.properties),
           settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
@@ -1239,12 +1250,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateRegion = async (id: string, name: string, heroImage?: string) => {
     setRegions(p => {
-      const updated = p.map(r => r.id === id ? { ...r, name, ...(heroImage !== undefined ? { heroImage } : {}) } : r);
+      const updated = p.map(r => r.id === id ? { ...r, name, heroImage: heroImage !== undefined ? heroImage : (r.heroImage ?? "") } : r);
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
     try {
-      await api.patch(`/regions/${id}`, { name, ...(heroImage !== undefined ? { heroImage } : {}) });
+      await api.patch(`/regions/${id}`, { name, heroImage: heroImage !== undefined ? heroImage : "" });
       return true;
     } catch (err) {
       console.warn("Server sync warning (region updated in client cache):", err);
