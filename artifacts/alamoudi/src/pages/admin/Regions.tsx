@@ -12,6 +12,7 @@ import { Pencil, Trash2, Eye, EyeOff, Plus, Image as ImageIcon, Upload, X, MapPi
 import { useToast } from "@/hooks/use-toast";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { HeroImageAdjuster } from "@/components/admin/HeroImageAdjuster";
+import { compressImage } from "@/lib/imageOptimizer";
 import { checkUserPermission } from "@/lib/permissions";
 import { Link } from "wouter";
 
@@ -122,7 +123,7 @@ export default function Regions() {
     setRawHeroImage(r.heroImage ?? "");
   };
 
-  const handleHeroFile = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleHeroFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -130,18 +131,15 @@ export default function Regions() {
       toast({ title: "ملف غير صالح", description: "اختر ملف صورة فقط.", variant: "destructive" });
       return;
     }
-    if (file.size > 8 * 1024 * 1024) {
-      toast({ title: "الصورة كبيرة جدًا", description: "يجب ألا يتجاوز حجم الصورة 8 ميجابايت.", variant: "destructive" });
-      return;
+    try {
+      toast({ title: "جاري معالجة وتحسين الصورة...", description: "يتم ضغط الصورة لتناسب العرض السريع والفوري." });
+      const optimized = await compressImage(file, { maxWidth: 1920, maxHeight: 1080, quality: 0.82 });
+      setRawHeroImage(optimized);
+      setHeroImage(optimized);
+      toast({ title: "تم تجهيز الصورة بنجاح ✓", description: "اضغط حفظ لحفظ التعديلات على المنطقة." });
+    } catch (err) {
+      toast({ title: "تعذر معالجة الصورة", description: "حاول اختيار صورة أخرى.", variant: "destructive" });
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result ?? "");
-      setRawHeroImage(result);
-      setHeroImage(result);
-    };
-    reader.onerror = () => toast({ title: "تعذر قراءة الصورة", description: "حاول اختيار الصورة مرة أخرى.", variant: "destructive" });
-    reader.readAsDataURL(file);
   };
 
   const clearHeroImage = () => {

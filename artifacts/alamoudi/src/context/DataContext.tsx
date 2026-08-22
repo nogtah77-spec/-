@@ -702,10 +702,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [regions, setRegions] = useState<Region[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_regions");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return sanitizeRegions(parsed);
+      }
+    } catch {}
     const cached = readCache();
     return sanitizeRegions(cached?.regions?.length ? cached.regions : DEFAULT_REGIONS);
   });
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_types");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
     const cached = readCache();
     return cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES;
   });
@@ -948,6 +962,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
             });
           }
         }).catch(() => {});
+
+        supabaseService.fetchRegions().then(supabaseRegs => {
+          if (destroyed) return;
+          if (supabaseRegs && supabaseRegs.length > 0) {
+            const clean = sanitizeRegions(supabaseRegs);
+            setRegions(clean);
+            try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
+          }
+        }).catch(() => {});
+
+        supabaseService.fetchPropertyTypes().then(supabaseTypes => {
+          if (destroyed) return;
+          if (supabaseTypes && supabaseTypes.length > 0) {
+            setPropertyTypes(supabaseTypes);
+            try { localStorage.setItem("alm_types", JSON.stringify(supabaseTypes)); } catch {}
+          }
+        }).catch(() => {});
       }).catch(() => {});
     });
 
@@ -1011,6 +1042,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setUsers(prev => {
           const updated = prev.filter(u => u.id !== userId);
           try { localStorage.setItem("alm_users", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else if ((event === "REGION_ADD" || event === "REGION_UPDATE") && data.region) {
+        setRegions(prev => {
+          const cleanReg = sanitizeRegions([data.region])[0];
+          const exists = prev.some(r => r.id === cleanReg.id);
+          const updated = exists ? prev.map(r => r.id === cleanReg.id ? cleanReg : r) : [...prev, cleanReg];
+          try { localStorage.setItem("alm_regions", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else if (event === "REGION_DELETE" && data.regionId) {
+        setRegions(prev => {
+          const updated = prev.filter(r => r.id !== data.regionId);
+          try { localStorage.setItem("alm_regions", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else if ((event === "TYPE_ADD" || event === "TYPE_UPDATE") && data.propertyType) {
+        setPropertyTypes(prev => {
+          const exists = prev.some(t => t.id === data.propertyType.id);
+          const updated = exists ? prev.map(t => t.id === data.propertyType.id ? data.propertyType : t) : [...prev, data.propertyType];
+          try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else if (event === "TYPE_DELETE" && data.typeId) {
+        setPropertyTypes(prev => {
+          const updated = prev.filter(t => t.id !== data.typeId);
+          try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
           return updated;
         });
       }
@@ -1236,29 +1294,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const region: Region = { id: genId(), name, active: true, heroImage };
     setRegions(p => {
       const updated = [...p, region];
+      try { localStorage.setItem("alm_regions", JSON.stringify(updated)); } catch {}
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
+    supabaseService.saveRegion(region).catch(() => {});
+    sendRealtimeSync("REGION_ADD", { region });
     try {
       await api.post("/regions", region);
       return true;
     } catch (err) {
-      console.warn("Server sync warning (region saved in client cache):", err);
       return true;
     }
   };
 
   const updateRegion = async (id: string, name: string, heroImage?: string) => {
+    let targetRegion: Region | undefined;
     setRegions(p => {
-      const updated = p.map(r => r.id === id ? { ...r, name, heroImage: heroImage !== undefined ? heroImage : (r.heroImage ?? "") } : r);
+      const updated = p.map(r => {
+        if (r.id === id) {
+          targetRegion = { ...r, name, heroImage: heroImage !== undefined ? heroImage : (r.heroImage ?? "") };
+          return targetRegion;
+        }
+        return r;
+      });
+      try { localStorage.setItem("alm_regions", JSON.stringify(updated)); } catch {}
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
+    if (targetRegion) {
+      supabaseService.saveRegion(targetRegion).catch(() => {});
+      sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
+    }
     try {
       await api.patch(`/regions/${id}`, { name, heroImage: heroImage !== undefined ? heroImage : "" });
       return true;
     } catch (err) {
-      console.warn("Server sync warning (region updated in client cache):", err);
       return true;
     }
   };
@@ -1266,31 +1337,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteRegion = async (id: string) => {
     setRegions(p => {
       const updated = p.filter(r => r.id !== id);
+      try { localStorage.setItem("alm_regions", JSON.stringify(updated)); } catch {}
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
+    supabaseService.deleteRegion(id).catch(() => {});
+    sendRealtimeSync("REGION_DELETE", { regionId: id });
     try {
       await api.del(`/regions/${id}`);
       return true;
     } catch (err) {
-      console.warn("Server sync warning (region deleted from client cache):", err);
       return true;
     }
   };
 
   const toggleRegion = async (id: string) => {
-    const current = regions.find(r => r.id === id);
-    const active = !(current?.active ?? true);
+    let targetRegion: Region | undefined;
     setRegions(p => {
-      const updated = p.map(r => r.id === id ? { ...r, active } : r);
+      const updated = p.map(r => {
+        if (r.id === id) {
+          targetRegion = { ...r, active: !r.active };
+          return targetRegion;
+        }
+        return r;
+      });
+      try { localStorage.setItem("alm_regions", JSON.stringify(updated)); } catch {}
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
+    if (targetRegion) {
+      supabaseService.saveRegion(targetRegion).catch(() => {});
+      sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
+    }
     try {
-      await api.patch(`/regions/${id}`, { active });
+      await api.patch(`/regions/${id}`, { active: targetRegion?.active ?? true });
       return true;
     } catch (err) {
-      console.warn("Server sync warning (region toggled in client cache):", err);
       return true;
     }
   };
@@ -1299,29 +1381,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const t: PropertyType = { id: genId(), name, active: true };
     setPropertyTypes(p => {
       const updated = [...p, t];
+      try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
       writeCache({ regions, types: updated, properties, settings });
       return updated;
     });
+    supabaseService.savePropertyType(t).catch(() => {});
+    sendRealtimeSync("TYPE_ADD", { propertyType: t });
     try {
       await api.post("/property-types", t);
       return true;
     } catch (err) {
-      console.warn("Server sync warning (property type saved in client cache):", err);
       return true;
     }
   };
 
   const updatePropertyType = async (id: string, name: string) => {
+    let targetType: PropertyType | undefined;
     setPropertyTypes(p => {
-      const updated = p.map(t => t.id === id ? { ...t, name } : t);
+      const updated = p.map(t => {
+        if (t.id === id) {
+          targetType = { ...t, name };
+          return targetType;
+        }
+        return t;
+      });
+      try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
       writeCache({ regions, types: updated, properties, settings });
       return updated;
     });
+    if (targetType) {
+      supabaseService.savePropertyType(targetType).catch(() => {});
+      sendRealtimeSync("TYPE_UPDATE", { propertyType: targetType });
+    }
     try {
       await api.patch(`/property-types/${id}`, { name });
       return true;
     } catch (err) {
-      console.warn("Server sync warning (property type updated in client cache):", err);
       return true;
     }
   };
@@ -1329,31 +1424,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deletePropertyType = async (id: string) => {
     setPropertyTypes(p => {
       const updated = p.filter(t => t.id !== id);
+      try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
       writeCache({ regions, types: updated, properties, settings });
       return updated;
     });
+    supabaseService.deletePropertyType(id).catch(() => {});
+    sendRealtimeSync("TYPE_DELETE", { typeId: id });
     try {
       await api.del(`/property-types/${id}`);
       return true;
     } catch (err) {
-      console.warn("Server sync warning (property type deleted from client cache):", err);
       return true;
     }
   };
 
   const togglePropertyType = async (id: string) => {
-    const current = propertyTypes.find(t => t.id === id);
-    const active = !(current?.active ?? true);
+    let targetType: PropertyType | undefined;
     setPropertyTypes(p => {
-      const updated = p.map(t => t.id === id ? { ...t, active } : t);
+      const updated = p.map(t => {
+        if (t.id === id) {
+          targetType = { ...t, active: !t.active };
+          return targetType;
+        }
+        return t;
+      });
+      try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
       writeCache({ regions, types: updated, properties, settings });
       return updated;
     });
+    if (targetType) {
+      supabaseService.savePropertyType(targetType).catch(() => {});
+      sendRealtimeSync("TYPE_UPDATE", { propertyType: targetType });
+    }
     try {
-      await api.patch(`/property-types/${id}`, { active });
+      await api.patch(`/property-types/${id}`, { active: targetType?.active ?? true });
       return true;
     } catch (err) {
-      console.warn("Server sync warning (property type toggled in client cache):", err);
       return true;
     }
   };

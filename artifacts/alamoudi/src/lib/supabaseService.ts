@@ -333,4 +333,104 @@ export const supabaseService = {
       return null;
     }
   },
+
+  // Fetch Regions
+  async fetchRegions(): Promise<Region[] | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.from("regions").select("*").order("created_at", { ascending: true });
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        active: r.active ?? true,
+        heroImage: r.hero_image || "",
+      }));
+    } catch (e) {
+      console.warn("Supabase fetch regions error:", e);
+      return null;
+    }
+  },
+
+  // Save / upsert Region
+  async saveRegion(region: Region): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const row = {
+        id: region.id,
+        name: region.name,
+        active: region.active ?? true,
+        hero_image: region.heroImage || "",
+      };
+      const { error } = await supabase.from("regions").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save region error:", e);
+      return false;
+    }
+  },
+
+  // Delete Region
+  async deleteRegion(id: string): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase.from("regions").delete().eq("id", id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase delete region error:", e);
+      return false;
+    }
+  },
+
+  // Fetch Property Types
+  async fetchPropertyTypes(): Promise<PropertyType[] | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase.from("property_types").select("*").order("created_at", { ascending: true });
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        active: t.active ?? true,
+      }));
+    } catch (e) {
+      console.warn("Supabase fetch property types error:", e);
+      return null;
+    }
+  },
+
+  // Save / upsert Property Type
+  async savePropertyType(type: PropertyType): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const row = {
+        id: type.id,
+        name: type.name,
+        active: type.active ?? true,
+      };
+      const { error } = await supabase.from("property_types").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save property type error:", e);
+      return false;
+    }
+  },
+
+  // Delete Property Type
+  async deletePropertyType(id: string): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase.from("property_types").delete().eq("id", id);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase delete property type error:", e);
+      return false;
+    }
+  },
 };
