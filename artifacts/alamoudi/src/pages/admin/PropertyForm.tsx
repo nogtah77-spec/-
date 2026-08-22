@@ -426,29 +426,41 @@ export default function PropertyForm() {
               <CardContent className="space-y-4">
 
                 {/* ── Smart Code Tracker Bar ── */}
-                <div className="p-3.5 rounded-xl bg-muted/50 border border-border/80 space-y-2.5">
-                  <div className="flex flex-wrap items-center justify-between gap-1">
-                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-accent" />
-                      تتبع الأكواد واقتراح الكود التالي تلقائياً:
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-accent/15 via-card to-muted/60 border-2 border-accent/40 shadow-sm space-y-3 relative overflow-hidden">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-accent/20 text-accent flex items-center justify-center shadow-xs border border-accent/30">
+                        <Sparkles className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-foreground tracking-tight flex items-center gap-1.5">
+                          الكود التالي لكل فئة
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">تتبع آخر الأكواد المستخدمة وتعبئة الكود المقترح بضغطة زر</p>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold text-accent bg-accent/10 px-2.5 py-1 rounded-lg border border-accent/25">
+                      تعبئة فورية بنقرة واحدة
                     </span>
-                    <span className="text-[10px] text-muted-foreground">انقر على الزر لتعبئة الكود فوراً</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                     {codeStats.map(stat => {
                       const isNext = form.code?.trim().toUpperCase() === stat.nextCode;
                       return (
                         <div
                           key={stat.prefix}
                           className={cn(
-                            "flex items-center justify-between p-2.5 rounded-xl bg-card border text-xs transition-all",
-                            isNext ? "border-accent ring-1 ring-accent/30 shadow-xs" : "border-border/70 hover:border-accent/40"
+                            "relative flex flex-col justify-between p-3 rounded-xl bg-background border transition-all shadow-xs",
+                            isNext
+                              ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-md"
+                              : "border-border/80 hover:border-accent/60 hover:bg-accent/5"
                           )}
                         >
-                          <div className="space-y-0.5">
-                            <span className="font-bold text-foreground text-xs block">{stat.label}</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              آخر كود: <strong className="text-foreground font-mono">{stat.lastCode}</strong>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-extrabold text-xs text-foreground">{stat.label}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/80 font-mono font-medium text-muted-foreground">
+                              آخر مسجل: <strong className="text-foreground font-bold">{stat.lastCode}</strong>
                             </span>
                           </div>
                           <Button
@@ -456,20 +468,24 @@ export default function PropertyForm() {
                             size="sm"
                             variant={isNext ? "default" : "outline"}
                             className={cn(
-                              "h-7 px-2.5 text-xs font-mono font-bold rounded-lg gap-1 transition-all cursor-pointer",
+                              "w-full h-8 text-xs font-mono font-extrabold rounded-lg gap-1.5 transition-all cursor-pointer",
                               isNext
                                 ? "bg-accent text-accent-foreground shadow-sm hover:bg-accent/90"
-                                : "hover:bg-accent/15 hover:text-accent hover:border-accent/40"
+                                : "border-accent/50 bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                             )}
                             onClick={() => set("code", stat.nextCode)}
-                            title={`تعبئة الكود المقترح ${stat.nextCode}`}
+                            title={`استخدام الكود المقترح ${stat.nextCode}`}
                           >
-                            <span>{stat.nextCode}</span>
-                            <Plus className="h-3 w-3" />
+                            <span>استخدام: {stat.nextCode}</span>
+                            <Plus className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       );
                     })}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/50">
+                    <span>💡 يوضح هذا الدليل آخر كود تم تسجيله لتفادي التكرار وتسهيل عمل الموظفين.</span>
                   </div>
                 </div>
 
