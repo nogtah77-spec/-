@@ -852,9 +852,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const cached = readCache();
+    const storedRegions = (() => {
+      try {
+        const raw = localStorage.getItem("alm_regions");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return sanitizeRegions(parsed);
+        }
+      } catch {}
+      return cached?.regions?.length ? sanitizeRegions(cached.regions) : DEFAULT_REGIONS;
+    })();
+
+    const storedTypes = (() => {
+      try {
+        const raw = localStorage.getItem("alm_types");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+      return cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES;
+    })();
+
+    setRegions(storedRegions);
+    setPropertyTypes(storedTypes);
+
     if (cached) {
-      setRegions(cached.regions);
-      setPropertyTypes(cached.types);
       setProperties(cached.properties);
       setSettings({ ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [], ads: cached.settings.ads ?? [] });
       setReady(true);
@@ -876,12 +899,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
                           ? settingsR.value : null;
 
-      if (newRegions && newRegions.length > 0) setRegions(sanitizeRegions(newRegions));
-      else if (!cached?.regions?.length) setRegions(DEFAULT_REGIONS);
-      else setRegions(sanitizeRegions(cached.regions));
+      if (newRegions && newRegions.length > 0) {
+        const clean = sanitizeRegions(newRegions);
+        setRegions(clean);
+        try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
+      }
 
-      if (newTypes && newTypes.length > 0) setPropertyTypes(newTypes);
-      else if (!cached?.types?.length) setPropertyTypes(DEFAULT_PROPERTY_TYPES);
+      if (newTypes && newTypes.length > 0) {
+        setPropertyTypes(newTypes);
+        try { localStorage.setItem("alm_types", JSON.stringify(newTypes)); } catch {}
+      }
 
       if (newProps && newProps.length > 0) setProperties(newProps);
       else setProperties(mergeWithSeedProperties(cached?.properties));
@@ -894,8 +921,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (gotData) {
         writeCache({
-          regions: (newRegions && newRegions.length > 0) ? sanitizeRegions(newRegions) : (cached?.regions?.length ? sanitizeRegions(cached.regions) : DEFAULT_REGIONS),
-          types: (newTypes && newTypes.length > 0) ? newTypes : (cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES),
+          regions: (newRegions && newRegions.length > 0) ? sanitizeRegions(newRegions) : storedRegions,
+          types: (newTypes && newTypes.length > 0) ? newTypes : storedTypes,
           properties: (newProps && newProps.length > 0) ? newProps : mergeWithSeedProperties(cached?.properties),
           settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
         });
@@ -1188,6 +1215,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }).catch(() => {});
           }
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "regions" },
+          () => {
+            supabaseService.fetchRegions().then(regs => {
+              if (regs && regs.length > 0) {
+                const clean = sanitizeRegions(regs);
+                setRegions(clean);
+                try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
+              }
+            }).catch(() => {});
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "property_types" },
+          () => {
+            supabaseService.fetchPropertyTypes().then(types => {
+              if (types && types.length > 0) {
+                setPropertyTypes(types);
+                try { localStorage.setItem("alm_types", JSON.stringify(types)); } catch {}
+              }
+            }).catch(() => {});
+          }
+        )
         .subscribe();
     }
 
@@ -1212,6 +1264,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (freshUsers && freshUsers.length > 0) {
           setUsers(freshUsers);
           try { localStorage.setItem("alm_users", JSON.stringify(freshUsers)); } catch {}
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchRegions().then(freshRegs => {
+        if (freshRegs && freshRegs.length > 0) {
+          const clean = sanitizeRegions(freshRegs);
+          setRegions(prev => {
+            const prevSig = prev.map(r => `${r.id}_${r.name}_${r.active}_${r.heroImage || ""}`).join("|");
+            const freshSig = clean.map(r => `${r.id}_${r.name}_${r.active}_${r.heroImage || ""}`).join("|");
+            if (prevSig !== freshSig) {
+              try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
+              return clean;
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchPropertyTypes().then(freshTypes => {
+        if (freshTypes && freshTypes.length > 0) {
+          setPropertyTypes(prev => {
+            const prevSig = prev.map(t => `${t.id}_${t.name}_${t.active}`).join("|");
+            const freshSig = freshTypes.map(t => `${t.id}_${t.name}_${t.active}`).join("|");
+            if (prevSig !== freshSig) {
+              try { localStorage.setItem("alm_types", JSON.stringify(freshTypes)); } catch {}
+              return freshTypes;
+            }
+            return prev;
+          });
         }
       }).catch(() => {});
     };
