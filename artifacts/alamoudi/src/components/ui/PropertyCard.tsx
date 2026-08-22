@@ -61,9 +61,9 @@ export function PropertyCard({
   useEffect(() => { setThumbFailed(false); }, [property?.id]);
 
   if (isLoading || !property) {
-    if (size === "compact") {
+    if (size === "compact" && layout === "list") {
       return (
-        <Card className="flex flex-row h-32 overflow-hidden border-border/60 shadow-sm rounded-2xl">
+        <Card className="flex flex-row h-[180px] overflow-hidden border-border/60 shadow-sm rounded-2xl">
           <Skeleton className="w-36 h-full rounded-none flex-shrink-0" />
           <div className="flex-1 p-3 space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-5 w-1/2" /><Skeleton className="h-3 w-full" /></div>
         </Card>
@@ -71,7 +71,7 @@ export function PropertyCard({
     }
     return (
       <Card className="overflow-hidden border-border/60 shadow-sm flex flex-col h-full rounded-2xl">
-        <Skeleton className={cn("w-full rounded-none flex-shrink-0", size === "medium" ? "h-36" : "h-52")} />
+        <Skeleton className="w-full aspect-[16/10] rounded-none flex-shrink-0" />
         <CardContent className="p-4 flex-1 space-y-3"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-6 w-1/2" /><Skeleton className="h-3 w-full" /></CardContent>
         <CardFooter className="p-4 pt-0 flex gap-2"><Skeleton className="h-8 flex-1" /><Skeleton className="h-8 w-8" /></CardFooter>
       </Card>
@@ -128,20 +128,41 @@ export function PropertyCard({
         className={cn(
           "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border border-border/70 bg-card/95 backdrop-blur shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)] hover:border-accent/50 hover:-translate-y-0.5",
           emphasized
-            ? "min-h-[190px] border-accent/40 shadow-[0_10px_26px_rgba(16,32,45,0.14)] hover:border-accent/70"
-            : "min-h-[180px]"
+            ? "h-[185px] sm:h-[195px] border-accent/40 shadow-[0_10px_26px_rgba(16,32,45,0.14)] hover:border-accent/70"
+            : "h-[175px] sm:h-[185px]"
         )}
       >
-        {/* Right Side: Image Box (Same approved size & aspect) */}
-        <div className={cn("relative flex-shrink-0 overflow-hidden bg-muted/80", emphasized ? "w-36 sm:w-44" : "w-32 sm:w-40")}>
-          {showVideoCover
-            ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="160px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            : coverImg
-              ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="160px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              : <div className="w-full h-full bg-gradient-to-br from-accent/15 via-muted to-muted/40 flex items-center justify-center"><Camera className="h-8 w-8 text-muted-foreground/30" /></div>}
+        {/* Right Side: Image Box (Locked size & aspect with absolute image) */}
+        <div className={cn("relative self-stretch shrink-0 overflow-hidden bg-muted/80", emphasized ? "w-36 sm:w-44" : "w-32 sm:w-40")}>
+          {showVideoCover ? (
+            <img
+              src={videoThumb!}
+              alt={property.title}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              sizes="160px"
+              onError={() => setThumbFailed(true)}
+              className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : coverImg ? (
+            <img
+              src={coverImg}
+              alt={property.title}
+              loading="lazy"
+              decoding="async"
+              fetchPriority="low"
+              sizes="160px"
+              className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-accent/15 via-muted to-muted/40 flex items-center justify-center">
+              <Camera className="h-8 w-8 text-muted-foreground/30" />
+            </div>
+          )}
           
           {/* Subtle Dark Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 z-[5]" />
 
           {/* Top-Right Badge inside Image */}
           <div className="absolute top-2 right-2 z-20">
@@ -263,10 +284,6 @@ export function PropertyCard({
   }
 
   // ── 2. STANDARD GRID CARD (Grid Layout on Home & Catalog) ──
-  const imageHeight = emphasized
-    ? size === "large" ? "aspect-[1.55] min-h-64" : size === "medium" ? "aspect-[1.55] min-h-48" : "aspect-[1.75] min-h-36"
-    : size === "large" ? "aspect-[1.55] min-h-52" : size === "medium" ? "aspect-[1.55] min-h-36" : "aspect-[1.75] min-h-28";
-
   return (
     <Card
       dir="rtl"
@@ -276,16 +293,38 @@ export function PropertyCard({
         emphasized && "border-accent/40 shadow-[0_14px_36px_rgba(16,32,45,0.16)]"
       )}
     >
-      {/* Card Header Media Container */}
-      <div className={cn("relative overflow-hidden bg-muted flex-shrink-0", imageHeight)}>
-        {showVideoCover
-          ? <img src={videoThumb!} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 90vw, 400px" onError={() => setThumbFailed(true)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          : coverImg
-            ? <img src={coverImg} alt={property.title} loading="lazy" decoding="async" fetchPriority="low" sizes="(max-width: 640px) 90vw, 400px" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-            : showVideoPoster
-              ? <div className="w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center"><Video className="h-10 w-10 text-accent/50" /></div>
-              : <div className="w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center"><Camera className="h-10 w-10 text-muted-foreground/30" /></div>
-        }
+      {/* Card Header Media Container (Locked 16:10 Aspect Ratio with Absolute Image Fill) */}
+      <div className="relative w-full aspect-[16/10] overflow-hidden bg-muted flex-shrink-0">
+        {showVideoCover ? (
+          <img
+            src={videoThumb!}
+            alt={property.title}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            sizes="(max-width: 640px) 90vw, 400px"
+            onError={() => setThumbFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : coverImg ? (
+          <img
+            src={coverImg}
+            alt={property.title}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            sizes="(max-width: 640px) 90vw, 400px"
+            className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : showVideoPoster ? (
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center">
+            <Video className="h-10 w-10 text-accent/50" />
+          </div>
+        ) : (
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
+            <Camera className="h-10 w-10 text-muted-foreground/30" />
+          </div>
+        )}
         
         {/* Subtle Dark Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 z-[5]" />
