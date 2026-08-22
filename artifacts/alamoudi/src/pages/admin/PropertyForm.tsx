@@ -420,47 +420,40 @@ export default function PropertyForm() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center justify-between">
                   <span>المعلومات الأساسية</span>
-                  <span className="text-[11px] font-normal text-muted-foreground">الحقول المميزة بـ (*) إلزامية</span>
+                  <span className="text-[11px] font-normal text-muted-foreground">
+                    الحقول المميزة بـ (<span className="text-rose-500 font-bold text-xs">*</span>) إلزامية
+                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
 
-                {/* ── Smart Code Tracker Bar ── */}
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-accent/15 via-card to-muted/60 border-2 border-accent/40 shadow-sm space-y-3 relative overflow-hidden">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-accent/20 text-accent flex items-center justify-center shadow-xs border border-accent/30">
-                        <Sparkles className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-foreground tracking-tight flex items-center gap-1.5">
-                          الكود التالي لكل فئة
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground">تتبع آخر الأكواد المستخدمة وتعبئة الكود المقترح بضغطة زر</p>
-                      </div>
+                {/* ── Compact & Professional Next Code Tracker ── */}
+                <div className="p-3 rounded-xl bg-accent/10 border border-accent/35 space-y-2 relative">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-accent" />
+                      <span className="text-xs font-extrabold text-foreground">الكود التالي لكل فئة</span>
                     </div>
-                    <span className="text-[11px] font-semibold text-accent bg-accent/10 px-2.5 py-1 rounded-lg border border-accent/25">
-                      تعبئة فورية بنقرة واحدة
-                    </span>
+                    <span className="text-[10px] text-accent font-semibold bg-accent/15 px-2 py-0.5 rounded-md border border-accent/20">تعبئة فورية بنقرة واحدة</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-0.5">
                     {codeStats.map(stat => {
                       const isNext = form.code?.trim().toUpperCase() === stat.nextCode;
                       return (
                         <div
                           key={stat.prefix}
                           className={cn(
-                            "relative flex flex-col justify-between p-3 rounded-xl bg-background border transition-all shadow-xs",
+                            "flex items-center justify-between p-2 rounded-lg bg-card/95 border transition-all text-xs shadow-xs",
                             isNext
-                              ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-md"
-                              : "border-border/80 hover:border-accent/60 hover:bg-accent/5"
+                              ? "border-accent ring-1 ring-accent/40 bg-accent/15"
+                              : "border-border/70 hover:border-accent/40"
                           )}
                         >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-extrabold text-xs text-foreground">{stat.label}</span>
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted/80 font-mono font-medium text-muted-foreground">
-                              آخر مسجل: <strong className="text-foreground font-bold">{stat.lastCode}</strong>
+                          <div className="space-y-0.5">
+                            <span className="font-extrabold text-foreground text-xs block">{stat.label}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              آخر كود: <strong className="text-foreground font-mono font-bold">{stat.lastCode}</strong>
                             </span>
                           </div>
                           <Button
@@ -468,30 +461,29 @@ export default function PropertyForm() {
                             size="sm"
                             variant={isNext ? "default" : "outline"}
                             className={cn(
-                              "w-full h-8 text-xs font-mono font-extrabold rounded-lg gap-1.5 transition-all cursor-pointer",
+                              "h-7 px-2 text-xs font-mono font-extrabold rounded-md gap-1 transition-all cursor-pointer",
                               isNext
-                                ? "bg-accent text-accent-foreground shadow-sm hover:bg-accent/90"
-                                : "border-accent/50 bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
+                                ? "bg-accent text-accent-foreground shadow-xs hover:bg-accent/90"
+                                : "border-accent/40 hover:bg-accent hover:text-accent-foreground"
                             )}
                             onClick={() => set("code", stat.nextCode)}
                             title={`استخدام الكود المقترح ${stat.nextCode}`}
                           >
-                            <span>استخدام: {stat.nextCode}</span>
-                            <Plus className="h-3.5 w-3.5" />
+                            <span>استخدام {stat.nextCode}</span>
+                            <Plus className="h-3 w-3" />
                           </Button>
                         </div>
                       );
                     })}
                   </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/50">
-                    <span>💡 يوضح هذا الدليل آخر كود تم تسجيله لتفادي التكرار وتسهيل عمل الموظفين.</span>
-                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold">كود العقار *</Label>
+                    <Label className="text-xs font-bold flex items-center gap-1">
+                      <span>كود العقار</span>
+                      <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                    </Label>
                     {form.code.trim() && !duplicateProperty && (
                       <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -534,7 +526,10 @@ export default function PropertyForm() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold">السعر الإجمالي (EGP) *</Label>
+                    <Label className="text-xs font-bold flex items-center gap-1">
+                      <span>السعر الإجمالي (EGP)</span>
+                      <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                    </Label>
                     <Input
                       type="text"
                       inputMode="decimal"
@@ -547,7 +542,10 @@ export default function PropertyForm() {
                     <p className="text-[11px] text-muted-foreground">السعر بالجنيه المصري (يتم تنسيق الفواصل تلقائياً)</p>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold">المساحة الإجمالية (م²) *</Label>
+                    <Label className="text-xs font-bold flex items-center gap-1">
+                      <span>المساحة الإجمالية (م²)</span>
+                      <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                    </Label>
                     <Input
                       type="number"
                       value={form.area || ""}
@@ -737,7 +735,10 @@ export default function PropertyForm() {
               <CardHeader className="pb-3"><CardTitle className="text-sm font-bold">التصنيف ونوع العرض</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold">فئة العقار (الاستخدام) *</Label>
+                  <Label className="text-xs font-bold flex items-center gap-1">
+                    <span>فئة العقار (الاستخدام)</span>
+                    <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                  </Label>
                   <Select value={form.category} onValueChange={(v: PropertyCategory) => set("category", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger>
                     <SelectContent>
@@ -750,7 +751,10 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold">نوع العرض *</Label>
+                  <Label className="text-xs font-bold flex items-center gap-1">
+                    <span>نوع العرض</span>
+                    <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                  </Label>
                   <Select value={form.listingType} onValueChange={(v: "sale" | "rent" | "furnished") => set("listingType", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر نوع العرض" /></SelectTrigger>
                     <SelectContent>
@@ -762,7 +766,10 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold">نوع العقار *</Label>
+                  <Label className="text-xs font-bold flex items-center gap-1">
+                    <span>نوع العقار</span>
+                    <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                  </Label>
                   <Select value={form.typeId} onValueChange={v => set("typeId", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر النوع (شقة، فيلا...)" /></SelectTrigger>
                     <SelectContent>
@@ -774,7 +781,10 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold">المدينة / المنطقة الرئيسية *</Label>
+                  <Label className="text-xs font-bold flex items-center gap-1">
+                    <span>المدينة / المنطقة الرئيسية</span>
+                    <span className="text-rose-500 font-extrabold text-sm leading-none" title="حقل إلزامي">*</span>
+                  </Label>
                   <Select value={form.regionId} onValueChange={v => set("regionId", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر المنطقة (الشروق، مدينتي...)" /></SelectTrigger>
                     <SelectContent>
