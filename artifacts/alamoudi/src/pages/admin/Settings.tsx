@@ -82,6 +82,7 @@ export default function Settings() {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const canEditSettings = isAdmin || checkUserPermission(currentUser, "الإعدادات-تعديل إعدادات الموقع");
+  const canManageQr = isAdmin || checkUserPermission(currentUser, "الإعدادات-إدارة رموز الـ QR") || canEditSettings;
   const { toast } = useToast();
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
@@ -93,7 +94,7 @@ export default function Settings() {
     useState<Omit<TiktokVideo, "id">>(EMPTY_VIDEO);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
 
-  if (!canEditSettings) {
+  if (!canEditSettings && !canManageQr) {
     return (
       <AdminLayout>
         <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 space-y-4">
@@ -102,7 +103,7 @@ export default function Settings() {
           </div>
           <h2 className="text-xl font-bold text-foreground">غير مصرح لك بالوصول</h2>
           <p className="text-sm text-muted-foreground max-w-md">
-            ليس لديك صلاحية تعديل إعدادات الموقع. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
+            ليس لديك صلاحية تعديل إعدادات الموقع أو إدارة رموز الـ QR. يرجى مراجعة مدير النظام للحصول على الصلاحيات المطلوبة.
           </p>
           <Button asChild className="mt-4 bg-accent text-accent-foreground">
             <Link href="/admin">العودة للوحة التحكم</Link>
@@ -448,15 +449,15 @@ export default function Settings() {
           icon={SettingsIcon}
         />
 
-        <Tabs defaultValue="general" className="w-full">
+        <Tabs defaultValue={canEditSettings ? "general" : "qrcodes"} className="w-full">
           <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-7">
-            <TabsTrigger value="general">عام</TabsTrigger>
-            <TabsTrigger value="contact">التواصل</TabsTrigger>
-            <TabsTrigger value="qrcodes">رموز الـ QR</TabsTrigger>
-            <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>
-            <TabsTrigger value="tiktok">تيك توك</TabsTrigger>
-            <TabsTrigger value="system">النظام</TabsTrigger>
-            <TabsTrigger value="carousel">الكاروسيل</TabsTrigger>
+            {canEditSettings && <TabsTrigger value="general">عام</TabsTrigger>}
+            {canEditSettings && <TabsTrigger value="contact">التواصل</TabsTrigger>}
+            {canManageQr && <TabsTrigger value="qrcodes">رموز الـ QR</TabsTrigger>}
+            {canEditSettings && <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>}
+            {canEditSettings && <TabsTrigger value="tiktok">تيك توك</TabsTrigger>}
+            {canEditSettings && <TabsTrigger value="system">النظام</TabsTrigger>}
+            {canEditSettings && <TabsTrigger value="carousel">الكاروسيل</TabsTrigger>}
           </TabsList>
 
           {/* ── General ── */}

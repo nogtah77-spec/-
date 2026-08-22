@@ -116,6 +116,13 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
 
   const isItemAllowed = (item: SidebarItem) => {
     if (item.adminOnly) return isAdmin;
+    if (item.href === "/admin/settings") {
+      return (
+        isAdmin ||
+        checkUserPermission(currentUser, "الإعدادات-تعديل إعدادات الموقع") ||
+        checkUserPermission(currentUser, "الإعدادات-إدارة رموز الـ QR")
+      );
+    }
     if (item.permission) return checkUserPermission(currentUser, item.permission);
     return true;
   };

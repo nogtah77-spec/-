@@ -41,6 +41,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
     category: "الإعدادات",
     items: [
       { key: "الإعدادات-تعديل إعدادات الموقع", label: "تعديل إعدادات الموقع" },
+      { key: "الإعدادات-إدارة رموز الـ QR", label: "إدارة رموز الـ QR" },
       { key: "الإعدادات-إدارة المناطق", label: "إدارة المناطق" },
       { key: "الإعدادات-إدارة الأنواع", label: "إدارة الأنواع" },
     ],
@@ -64,6 +65,7 @@ export const DEFAULT_ROLE_PERMS: Record<string, Record<string, boolean>> = {
     "التقارير-تصدير البيانات": true,
     "التقارير-سجلات النشاط": true,
     "الإعدادات-تعديل إعدادات الموقع": true,
+    "الإعدادات-إدارة رموز الـ QR": true,
     "الإعدادات-إدارة المناطق": true,
     "الإعدادات-إدارة الأنواع": true,
   },
@@ -83,6 +85,7 @@ export const DEFAULT_ROLE_PERMS: Record<string, Record<string, boolean>> = {
     "التقارير-تصدير البيانات": false,
     "التقارير-سجلات النشاط": false,
     "الإعدادات-تعديل إعدادات الموقع": false,
+    "الإعدادات-إدارة رموز الـ QR": false,
     "الإعدادات-إدارة المناطق": false,
     "الإعدادات-إدارة الأنواع": false,
   },
