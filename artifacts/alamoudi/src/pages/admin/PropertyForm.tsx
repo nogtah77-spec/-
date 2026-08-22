@@ -101,7 +101,7 @@ export default function PropertyForm() {
     listingType: (existing?.listingType ?? "sale") as "sale" | "rent" | "furnished",
     status: existing?.status ?? "active" as PropertyStatus,
     featured: existing?.featured ?? false,
-    agentType: existing?.agentType ?? "direct" as "direct" | "broker",
+    agentType: (existing?.agentType ?? "unspecified") as "direct" | "broker" | "unspecified",
     videoUrl: existing?.videoUrl ?? "",
     externalUrl: existing?.externalUrl ?? "",
     mapsUrl: existing?.mapsUrl ?? "",
@@ -653,9 +653,10 @@ export default function PropertyForm() {
 
                 <div className="border-t pt-3 space-y-2">
                   <Label className="text-sm">نوع المصدر</Label>
-                  <Select value={form.agentType || "direct"} onValueChange={(v: "direct" | "broker") => set("agentType", v)}>
+                  <Select value={form.agentType || "unspecified"} onValueChange={(v: "direct" | "broker" | "unspecified") => set("agentType", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="unspecified">- (غير محدد)</SelectItem>
                       <SelectItem value="direct">مباشر (من المالك)</SelectItem>
                       <SelectItem value="broker">بروكر (وسيط عقاري)</SelectItem>
                     </SelectContent>

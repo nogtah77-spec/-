@@ -56,7 +56,7 @@ export default function Sources() {
     sourceLocation: string;
     sourceNotes: string;
     assignedStaffId: string;
-    agentType: "direct" | "broker";
+    agentType: "direct" | "broker" | "unspecified";
   }>({
     source: "",
     sourcePhones: [""],
@@ -96,9 +96,9 @@ export default function Sources() {
     return user.name ? `${accountName} — ${user.name}` : accountName;
   };
 
-  // Counts
+  // Counts based directly on agentType
   const totalDirect = useMemo(
-    () => properties.filter(p => p.agentType !== "broker" && (p.source?.trim() || p.sourcePhones?.some(ph => ph.trim()))).length,
+    () => properties.filter(p => p.agentType === "direct").length,
     [properties]
   );
   const totalBroker = useMemo(
@@ -106,11 +106,7 @@ export default function Sources() {
     [properties]
   );
   const totalMissing = useMemo(
-    () => properties.filter(p => !p.source?.trim() && !p.sourcePhones?.some(ph => ph.trim())).length,
-    [properties]
-  );
-  const totalAllWithSource = useMemo(
-    () => properties.filter(p => p.source?.trim() || p.sourcePhones?.some(ph => ph.trim()) || p.agentType === "broker").length,
+    () => properties.filter(p => !p.agentType || p.agentType === "unspecified" || p.agentType === ("" as any)).length,
     [properties]
   );
 
@@ -120,12 +116,13 @@ export default function Sources() {
 
     return properties.filter(p => {
       const isBroker = p.agentType === "broker";
-      const hasSource = !!(p.source?.trim() || p.sourcePhones?.some(ph => ph.trim()));
+      const isDirect = p.agentType === "direct";
+      const isUnspecified = !p.agentType || p.agentType === "unspecified" || p.agentType === ("" as any);
 
       // 1. Filter by category
-      if (filterType === "direct" && (isBroker || !hasSource)) return false;
+      if (filterType === "direct" && !isDirect) return false;
       if (filterType === "broker" && !isBroker) return false;
-      if (filterType === "missing" && hasSource) return false;
+      if (filterType === "missing" && !isUnspecified) return false;
 
       // 2. Filter by search query
       if (!q) return true;
@@ -153,7 +150,7 @@ export default function Sources() {
       sourceLocation: p.sourceLocation ?? "",
       sourceNotes: p.sourceNotes ?? "",
       assignedStaffId: p.assignedStaffId ?? "",
-      agentType: (p.agentType as "direct" | "broker") || "direct",
+      agentType: (p.agentType as "direct" | "broker" | "unspecified") || "unspecified",
     });
     setEditTarget(id);
   };
@@ -183,7 +180,7 @@ export default function Sources() {
       sourceLocation: "",
       sourceNotes: "",
       assignedStaffId: "",
-      agentType: "direct",
+      agentType: "unspecified",
     });
     if (!cleared) return;
     toast({ title: "تم مسح بيانات المصدر" });
@@ -207,7 +204,7 @@ export default function Sources() {
       const region = regions.find(r => r.id === p.regionId)?.name ?? "";
       rows.push([
         p.code,
-        p.agentType === "broker" ? "بروكر" : "مالك مباشر",
+        p.agentType === "broker" ? "بروكر" : p.agentType === "direct" ? "مالك مباشر" : "غير محدد (-)",
         p.source ?? "",
         (p.sourcePhones ?? []).filter(ph => ph.trim()).join(" / "),
         p.sourceEmail ?? "",
@@ -303,15 +300,15 @@ export default function Sources() {
             onClick={() => setFilterType("missing")}
             className={`p-4 rounded-2xl border text-right transition-all cursor-pointer ${
               filterType === "missing"
-                ? "bg-card border-rose-500 shadow-sm ring-1 ring-rose-500/30"
-                : "bg-card/60 border-border/70 hover:border-rose-500/40"
+                ? "bg-card border-slate-500 shadow-sm ring-1 ring-slate-500/30"
+                : "bg-card/60 border-border/70 hover:border-slate-500/40"
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground font-medium">ينقصها مصدر</span>
-              <AlertCircle className="h-4 w-4 text-rose-500" />
+              <span className="text-xs text-muted-foreground font-medium">غير محدد (-)</span>
+              <AlertCircle className="h-4 w-4 text-slate-400" />
             </div>
-            <p className="text-xl font-bold text-rose-600 mt-2">{totalMissing}</p>
+            <p className="text-xl font-bold text-muted-foreground mt-2">{totalMissing}</p>
           </button>
         </div>
 
@@ -357,11 +354,11 @@ export default function Sources() {
               onClick={() => setFilterType("missing")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 filterType === "missing"
-                  ? "bg-rose-600 text-white shadow-sm"
+                  ? "bg-muted-foreground text-background shadow-sm"
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              ⚠️ ينقصها بيانات ({totalMissing})
+              ⚪ غير محدد ({totalMissing})
             </button>
           </div>
 
@@ -391,6 +388,7 @@ export default function Sources() {
               const region = regions.find(r => r.id === p.regionId)?.name ?? "";
               const staff = staffUsers.find(u => u.id === p.assignedStaffId);
               const isBroker = p.agentType === "broker";
+              const isDirect = p.agentType === "direct";
               const hasContact = p.sourcePhones && p.sourcePhones.some(ph => ph.trim());
 
               return (
@@ -415,9 +413,13 @@ export default function Sources() {
                         <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[10px] font-bold">
                           🤝 بروكر
                         </Badge>
-                      ) : (
+                      ) : isDirect ? (
                         <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] font-bold">
                           🏠 مالك مباشر
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[10px] font-bold">
+                          ⚪ غير محدد (-)
                         </Badge>
                       )}
                     </div>
@@ -512,11 +514,12 @@ export default function Sources() {
               <div className="space-y-2">
                 <Label className="text-xs font-bold">نوع المصدر</Label>
                 <Select
-                  value={editForm.agentType}
-                  onValueChange={v => setEditForm(f => ({ ...f, agentType: v as "direct" | "broker" }))}
+                  value={editForm.agentType || "unspecified"}
+                  onValueChange={v => setEditForm(f => ({ ...f, agentType: v as "direct" | "broker" | "unspecified" }))}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="unspecified">- (غير محدد)</SelectItem>
                     <SelectItem value="direct">🏠 مالك مباشر</SelectItem>
                     <SelectItem value="broker">🤝 بروكر (وسيط عقاري)</SelectItem>
                   </SelectContent>
@@ -525,7 +528,7 @@ export default function Sources() {
 
               <div className="space-y-2">
                 <Label className="text-xs font-bold">
-                  {editForm.agentType === "broker" ? "اسم البروكر / الشركة" : "اسم المالك"}
+                  {editForm.agentType === "broker" ? "اسم البروكر / الشركة" : editForm.agentType === "direct" ? "اسم المالك" : "اسم المصدر"}
                 </Label>
                 <Input
                   value={editForm.source}

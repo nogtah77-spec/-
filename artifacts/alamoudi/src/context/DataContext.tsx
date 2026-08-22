@@ -11,7 +11,7 @@ export interface PropertyType { id: string; name: string; active: boolean; }
 export type PropertyStatus = "active" | "listed" | "draft" | "sold" | "rented" | "reserved";
 export type PropertyCategory = "residential" | "administrative" | "medical" | "commercial" | "sale" | "rent" | "furnished";
 export type PropertyListingType = "sale" | "rent" | "furnished";
-export type PropertySourceType = "direct" | "broker";
+export type PropertySourceType = "direct" | "broker" | "unspecified";
 
 export interface Property {
   id: string;
@@ -32,7 +32,7 @@ export interface Property {
   listingType?: PropertyListingType;
   status: PropertyStatus;
   featured: boolean;
-  agentType?: "direct" | "broker";
+  agentType?: "direct" | "broker" | "unspecified" | string;
   images: string[];
   videoUrl: string;
   externalUrl: string;
