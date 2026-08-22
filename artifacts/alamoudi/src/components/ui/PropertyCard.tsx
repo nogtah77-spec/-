@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Sparkles } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
@@ -126,9 +126,12 @@ export function PropertyCard({
         dir="rtl"
         onClick={goToDetails}
         className={cn(
-          "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border border-border/70 bg-card/95 backdrop-blur shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)] hover:border-accent/50 hover:-translate-y-0.5",
+          "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-0.5",
+          property.featured
+            ? "border-accent/50 shadow-[0_6px_22px_rgba(184,142,75,0.09)] hover:shadow-[0_12px_28px_rgba(184,142,75,0.18)] hover:border-accent"
+            : "border-border/70 shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)] hover:border-accent/50",
           emphasized
-            ? "h-[185px] sm:h-[195px] border-accent/40 shadow-[0_10px_26px_rgba(16,32,45,0.14)] hover:border-accent/70"
+            ? "h-[185px] sm:h-[195px]"
             : "h-[175px] sm:h-[185px]"
         )}
       >
@@ -155,23 +158,27 @@ export function PropertyCard({
               sizes="160px"
               className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
             />
+          ) : showVideoPoster ? (
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-accent/20 via-muted to-muted/40 flex items-center justify-center">
+              <Video className="h-8 w-8 text-accent/50" />
+            </div>
           ) : (
-            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-accent/15 via-muted to-muted/40 flex items-center justify-center">
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-muted to-muted/30 flex items-center justify-center">
               <Camera className="h-8 w-8 text-muted-foreground/30" />
             </div>
           )}
           
-          {/* Subtle Dark Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 z-[5]" />
+          {/* Subtle Dark Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 z-[5]" />
 
-          {/* Top-Right Badge inside Image */}
+          {/* Top Left Listing Type Badge */}
           <div className="absolute top-2 right-2 z-20">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent text-accent-foreground font-black text-[10px] shadow-sm">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent text-accent-foreground shadow-xs">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
           </div>
 
-          {/* Bottom Badges inside Image */}
+          {/* Bottom Indicators inside Image */}
           <div className="absolute bottom-2 inset-x-2 z-20 flex flex-wrap items-center justify-between gap-1 text-[9px]">
             {property.typeName ? (
               <span className="px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white/95 font-bold border border-white/10">
@@ -186,7 +193,12 @@ export function PropertyCard({
                 </span>
               )}
               {isNew() && <span className="rounded bg-emerald-500/90 text-white font-bold px-1.5 py-0.5">جديد</span>}
-              {property.featured && <span className="rounded bg-amber-500/90 text-white font-bold px-1.5 py-0.5">مميز</span>}
+              {property.featured && (
+                <span className="inline-flex items-center gap-0.5 rounded bg-gradient-to-r from-amber-600 via-[#B88E4B] to-amber-600 text-white font-bold px-1.5 py-0.5 shadow-xs border border-white/20">
+                  <Sparkles className="h-2 w-2 fill-white/80" />
+                  مميز
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -289,8 +301,11 @@ export function PropertyCard({
       dir="rtl"
       onClick={goToDetails}
       className={cn(
-        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl transition-all duration-300 border border-border/70 bg-card/95 backdrop-blur shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)] hover:border-accent/60 hover:-translate-y-1",
-        emphasized && "border-accent/40 shadow-[0_14px_36px_rgba(16,32,45,0.16)]"
+        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-1",
+        property.featured
+          ? "border-accent/55 shadow-[0_8px_24px_rgba(184,142,75,0.09)] hover:shadow-[0_16px_36px_rgba(184,142,75,0.18)] hover:border-accent"
+          : "border-border/70 shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)] hover:border-accent/60",
+        emphasized && "shadow-[0_14px_36px_rgba(16,32,45,0.16)]"
       )}
     >
       {/* Card Header Media Container (Locked 16:10 Aspect Ratio with Absolute Image Fill) */}
@@ -331,10 +346,18 @@ export function PropertyCard({
 
         {/* Top Badges & Actions inside Image */}
         <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-          {/* Listing Type Badge */}
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-foreground font-black text-xs shadow-md">
-            {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
-          </span>
+          {/* Listing Type & Featured Badges */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-foreground font-black text-xs shadow-md">
+              {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
+            </span>
+            {property.featured && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-600 via-[#B88E4B] to-amber-600 text-white font-black text-[11px] shadow-md border border-white/20">
+                <Sparkles className="h-3 w-3 fill-white/80" />
+                مميز VIP
+              </span>
+            )}
+          </div>
 
           {/* Favorite & Share Buttons */}
           <div className="flex items-center gap-1.5">

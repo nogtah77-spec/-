@@ -13,6 +13,7 @@ import {
   Play,
   Building2,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
 import { TikTokIcon } from "@/components/icons/BrandIcons";
 import { Card, CardContent } from "@/components/ui/card";
@@ -548,15 +549,24 @@ export default function Home() {
 
         {!isFiltering && (
           <>
-            {/* ── Featured Properties ── */}
-            <section className="py-12 md:py-14 bg-muted dark:bg-background">
+            {/* ── Featured Properties — VIP Carousel ── */}
+            <section className="py-10 md:py-14 bg-muted/40 dark:bg-background border-b border-border/40">
               <div className="container px-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                   <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 text-[11px] font-bold">
+                        <Sparkles className="h-3 w-3" />
+                        مختارات استثنائية VIP
+                      </span>
+                    </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-0.5 relative inline-block">
                       عقارات مميزة
                       <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
                     </h2>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      فرص استثمارية وسكنية مميزة تم انتقاؤها بعناية
+                    </p>
                   </div>
                 </div>
                 {featuredProps.length === 0 ? (
@@ -564,11 +574,17 @@ export default function Home() {
                     <p className="text-sm">لا توجد عقارات مميزة حالياً.</p>
                   </div>
                 ) : (
-                  <div className={gridClass}>
-                    {featuredProps.map((p) => (
-                      <PropertyCard key={p.id} property={p} size={filters.cardSize} layout={filters.viewMode} detailsScale="home" />
-                    ))}
-                  </div>
+                  <PropertyCarousel
+                    properties={featuredProps}
+                    size={filters.cardSize}
+                    layout={filters.viewMode}
+                    emphasized
+                    detailsScale="home"
+                    autoPlay
+                    autoPlayDelay={(settings.carouselAutoPlayDelay ?? 4) * 1000}
+                    motionSpeed={settings.carouselMotionSpeed}
+                    infinite
+                  />
                 )}
               </div>
             </section>
