@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,6 @@ import { parsePropertyWithGemini } from "@/lib/geminiApi";
 
 import { useAuth } from "@/context/AuthContext";
 import { checkUserPermission } from "@/lib/permissions";
-import { ShieldAlert } from "lucide-react";
 
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 import { compressMultipleImages } from "@/lib/imageOptimizer";
@@ -158,24 +157,20 @@ export default function PropertyForm() {
     }
   };
 
-  // Dynamic code tracker: finds max numeric suffix for each prefix across all existing properties
+  // Smart code tracker: strictly tracks S (Sale), R (Rent), and F (Furnished)
   const codeStats = useMemo(() => {
-    const prefixMap: Record<string, { maxNum: number; count: number; prefix: string }> = {};
+    const prefixMap: Record<string, number> = { S: 0, R: 0, F: 0 };
 
     properties.forEach(p => {
       if (!p.code) return;
       const clean = p.code.trim().toUpperCase();
-      const match = clean.match(/^([A-Za-z]+)(\d+)$/);
+      // Match exact standard prefixes S, R, or F followed strictly by digits (e.g. S81, R100, F50)
+      const match = clean.match(/^([SRF])(\d+)$/);
       if (match) {
         const prefix = match[1];
         const num = parseInt(match[2], 10);
-        if (!prefixMap[prefix]) {
-          prefixMap[prefix] = { maxNum: num, count: 1, prefix };
-        } else {
-          prefixMap[prefix].count += 1;
-          if (num > prefixMap[prefix].maxNum) {
-            prefixMap[prefix].maxNum = num;
-          }
+        if (!isNaN(num)) {
+          prefixMap[prefix] = Math.max(prefixMap[prefix] || 0, num);
         }
       }
     });
@@ -186,9 +181,8 @@ export default function PropertyForm() {
       { key: "F", label: "مفروش (F)" },
     ];
 
-    const result = standardPrefixes.map(std => {
-      const found = prefixMap[std.key];
-      const max = found ? found.maxNum : 0;
+    return standardPrefixes.map(std => {
+      const max = prefixMap[std.key] || 0;
       return {
         prefix: std.key,
         label: std.label,
@@ -196,21 +190,6 @@ export default function PropertyForm() {
         nextCode: `${std.key}${max + 1}`,
       };
     });
-
-    // Add any dynamic custom prefixes found in DB (e.g. C, V, D, etc.)
-    Object.keys(prefixMap).forEach(k => {
-      if (!standardPrefixes.some(std => std.key === k)) {
-        const found = prefixMap[k];
-        result.push({
-          prefix: k,
-          label: `تصنيف (${k})`,
-          lastCode: `${k}${found.maxNum}`,
-          nextCode: `${k}${found.maxNum + 1}`,
-        });
-      }
-    });
-
-    return result;
   }, [properties]);
 
   // Check if typed code already exists on another property

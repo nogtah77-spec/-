@@ -5,8 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UploadCloud, Download, CheckCircle2, AlertCircle, Eye, X, ArrowRight } from "lucide-react";
+import { UploadCloud, Download, CheckCircle2, AlertCircle, Eye, X, ArrowRight, ShieldAlert } from "lucide-react";
 import { useData } from "@/context/DataContext";
+import { useAuth } from "@/context/AuthContext";
+import { checkUserPermission } from "@/lib/permissions";
+import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";

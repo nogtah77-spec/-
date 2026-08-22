@@ -208,7 +208,7 @@ export default function Home() {
   const featuredProps = useMemo(
     () =>
       properties
-        .filter((p) => p.featured && p.status !== "archived")
+        .filter((p) => p.featured && (p.status as string) !== "archived")
         .sort((a, b) => {
           const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
           const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
@@ -221,7 +221,7 @@ export default function Home() {
   const latestProps = useMemo(
     () =>
       [...properties]
-        .filter((p) => p.status !== "archived" && p.status !== "sold" && p.status !== "rented")
+        .filter((p) => (p.status as string) !== "archived" && p.status !== "sold" && p.status !== "rented")
         .sort((a, b) => {
           const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
           const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();

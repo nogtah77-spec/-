@@ -911,7 +911,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       if (newProps && newProps.length > 0) setProperties(newProps);
-      else setProperties(mergeWithSeedProperties(cached?.properties));
+      else if (cached?.properties?.length) setProperties(cached.properties);
 
       if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] });
 
@@ -923,7 +923,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         writeCache({
           regions: (newRegions && newRegions.length > 0) ? sanitizeRegions(newRegions) : storedRegions,
           types: (newTypes && newTypes.length > 0) ? newTypes : storedTypes,
-          properties: (newProps && newProps.length > 0) ? newProps : mergeWithSeedProperties(cached?.properties),
+          properties: (newProps && newProps.length > 0) ? newProps : (cached?.properties ?? []),
           settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
         });
         void Promise.allSettled([
