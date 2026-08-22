@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,9 +158,84 @@ export default function PropertyForm() {
     }
   };
 
+  // Dynamic code tracker: finds max numeric suffix for each prefix across all existing properties
+  const codeStats = useMemo(() => {
+    const prefixMap: Record<string, { maxNum: number; count: number; prefix: string }> = {};
+
+    properties.forEach(p => {
+      if (!p.code) return;
+      const clean = p.code.trim().toUpperCase();
+      const match = clean.match(/^([A-Za-z]+)(\d+)$/);
+      if (match) {
+        const prefix = match[1];
+        const num = parseInt(match[2], 10);
+        if (!prefixMap[prefix]) {
+          prefixMap[prefix] = { maxNum: num, count: 1, prefix };
+        } else {
+          prefixMap[prefix].count += 1;
+          if (num > prefixMap[prefix].maxNum) {
+            prefixMap[prefix].maxNum = num;
+          }
+        }
+      }
+    });
+
+    const standardPrefixes = [
+      { key: "S", label: "للبيع (S)" },
+      { key: "R", label: "للإيجار (R)" },
+      { key: "F", label: "مفروش (F)" },
+    ];
+
+    const result = standardPrefixes.map(std => {
+      const found = prefixMap[std.key];
+      const max = found ? found.maxNum : 0;
+      return {
+        prefix: std.key,
+        label: std.label,
+        lastCode: max > 0 ? `${std.key}${max}` : "لا يوجد",
+        nextCode: `${std.key}${max + 1}`,
+      };
+    });
+
+    // Add any dynamic custom prefixes found in DB (e.g. C, V, D, etc.)
+    Object.keys(prefixMap).forEach(k => {
+      if (!standardPrefixes.some(std => std.key === k)) {
+        const found = prefixMap[k];
+        result.push({
+          prefix: k,
+          label: `تصنيف (${k})`,
+          lastCode: `${k}${found.maxNum}`,
+          nextCode: `${k}${found.maxNum + 1}`,
+        });
+      }
+    });
+
+    return result;
+  }, [properties]);
+
+  // Check if typed code already exists on another property
+  const duplicateProperty = useMemo(() => {
+    const clean = form.code.trim().toUpperCase();
+    if (!clean) return null;
+    return properties.find(p => {
+      if (isEdit && (p.id === existing?.id || p.id === params.id || (p.code && p.code.toLowerCase() === params.id?.toLowerCase()))) {
+        return false;
+      }
+      return p.code?.trim().toUpperCase() === clean;
+    });
+  }, [form.code, properties, isEdit, existing, params.id]);
+
   const handleSave = async () => {
     if (!form.code.trim() || !form.typeId || !form.regionId) {
       toast({ title: "يرجى ملء الحقول المطلوبة (الكود، النوع، المنطقة)", variant: "destructive" });
+      return;
+    }
+    if (duplicateProperty) {
+      toast({
+        title: `كود العقار (${form.code.trim().toUpperCase()}) مستخدم مسبقاً!`,
+        description: "يرجى اختيار كود فريد وغير مكرر لحفظ العقار.",
+        variant: "destructive",
+      });
       return;
     }
     if (saving) return;
@@ -362,94 +437,199 @@ export default function PropertyForm() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             {/* Basic info */}
-            <Card>
-              <CardHeader><CardTitle className="text-sm">المعلومات الأساسية</CardTitle></CardHeader>
+            <Card className="border-border/80 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold flex items-center justify-between">
+                  <span>المعلومات الأساسية</span>
+                  <span className="text-[11px] font-normal text-muted-foreground">الحقول المميزة بـ (*) إلزامية</span>
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>كود العقار *</Label>
-                  <Input value={form.code} onChange={e => set("code", e.target.value)} placeholder="مثال: S50" dir="ltr" className="text-right" />
+
+                {/* ── Smart Code Tracker Bar ── */}
+                <div className="p-3.5 rounded-xl bg-muted/50 border border-border/80 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-accent" />
+                      تتبع الأكواد واقتراح الكود التالي تلقائياً:
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">انقر على الزر لتعبئة الكود فوراً</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {codeStats.map(stat => {
+                      const isNext = form.code?.trim().toUpperCase() === stat.nextCode;
+                      return (
+                        <div
+                          key={stat.prefix}
+                          className={cn(
+                            "flex items-center justify-between p-2.5 rounded-xl bg-card border text-xs transition-all",
+                            isNext ? "border-accent ring-1 ring-accent/30 shadow-xs" : "border-border/70 hover:border-accent/40"
+                          )}
+                        >
+                          <div className="space-y-0.5">
+                            <span className="font-bold text-foreground text-xs block">{stat.label}</span>
+                            <span className="text-[10px] text-muted-foreground">
+                              آخر كود: <strong className="text-foreground font-mono">{stat.lastCode}</strong>
+                            </span>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={isNext ? "default" : "outline"}
+                            className={cn(
+                              "h-7 px-2.5 text-xs font-mono font-bold rounded-lg gap-1 transition-all cursor-pointer",
+                              isNext
+                                ? "bg-accent text-accent-foreground shadow-sm hover:bg-accent/90"
+                                : "hover:bg-accent/15 hover:text-accent hover:border-accent/40"
+                            )}
+                            onClick={() => set("code", stat.nextCode)}
+                            title={`تعبئة الكود المقترح ${stat.nextCode}`}
+                          >
+                            <span>{stat.nextCode}</span>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+
                 <div className="space-y-2">
-                  <Label>وصف العقار</Label>
-                  <Textarea value={form.description} onChange={e => set("description", e.target.value)} placeholder="اكتب وصفاً مفصلاً..." className="min-h-[100px]" />
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold">كود العقار *</Label>
+                    {form.code.trim() && !duplicateProperty && (
+                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        كود فريد ومتاح للاستخدام
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    value={form.code}
+                    onChange={e => set("code", e.target.value.toUpperCase())}
+                    placeholder="مثال: S82 أو R101 أو F51"
+                    dir="ltr"
+                    className={cn(
+                      "text-right font-mono font-bold tracking-wider uppercase h-10",
+                      duplicateProperty && "border-destructive text-destructive focus-visible:ring-destructive"
+                    )}
+                  />
+                  {duplicateProperty ? (
+                    <div className="p-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-xs font-medium flex items-center gap-2 animate-in fade-in-50">
+                      <ShieldAlert className="h-4 w-4 shrink-0" />
+                      <span>
+                        تنبيه: الكود <strong>({duplicateProperty.code})</strong> مستخدم مسبقاً لعقار مسجل في المنصة! يُرجى اختيار كود آخر غير مكرر.
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground">الكود التعريفي المميز للعقار (S للبيع، R للإيجار، F للمفروش)</p>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold">وصف العقار</Label>
+                  <Textarea
+                    value={form.description}
+                    onChange={e => set("description", e.target.value)}
+                    placeholder="مثال: شقة فاخرة للبيع 180م² تشطيب ألترا سوبر لوكس، فيو مفتوح لاندسكيب بحري غير مجروحة، الدور الثالث، تتكون من 3 غرف نوم منها غرفة ماستر..."
+                    className="min-h-[110px] text-xs sm:text-sm leading-relaxed"
+                  />
+                  <p className="text-[11px] text-muted-foreground">اكتب وصفاً تسويقياً جذاباً ومفصلاً يبرز مميزات الوحدة وموقعها</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>السعر (EGP)</Label>
-                    <Input type="text" inputMode="decimal" dir="ltr" value={form.price ? formatNumber(form.price) : ""} onChange={e => set("price", Number(toNumericString(e.target.value)) || 0)} placeholder="0" />
+                    <Label className="text-xs font-bold">السعر الإجمالي (EGP) *</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      dir="ltr"
+                      value={form.price ? formatNumber(form.price) : ""}
+                      onChange={e => set("price", Number(toNumericString(e.target.value)) || 0)}
+                      placeholder="مثال: 3,500,000"
+                      className="text-right font-mono"
+                    />
+                    <p className="text-[11px] text-muted-foreground">السعر بالجنيه المصري (يتم تنسيق الفواصل تلقائياً)</p>
                   </div>
                   <div className="space-y-2">
-                    <Label>المساحة (م²)</Label>
-                    <Input type="number" value={form.area || ""} onChange={e => set("area", Number(e.target.value))} placeholder="0" />
+                    <Label className="text-xs font-bold">المساحة الإجمالية (م²) *</Label>
+                    <Input
+                      type="number"
+                      value={form.area || ""}
+                      onChange={e => set("area", Number(e.target.value))}
+                      placeholder="مثال: 180"
+                      className="font-mono"
+                    />
+                    <p className="text-[11px] text-muted-foreground">المساحة بالمتر المربع الصافي/الإجمالي</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Rooms & extras */}
-            <Card>
-              <CardHeader><CardTitle className="text-sm">المرافق والتفاصيل</CardTitle></CardHeader>
+            <Card className="border-border/80 shadow-sm">
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-bold">المرافق والمواصفات التفصيلية</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>غرف النوم</Label>
-                    <Input type="number" value={form.beds || ""} onChange={e => set("beds", Number(e.target.value))} placeholder="0" />
+                    <Label className="text-xs font-bold">غرف النوم</Label>
+                    <Input type="number" value={form.beds || ""} onChange={e => set("beds", Number(e.target.value))} placeholder="مثال: 3" />
                   </div>
                   <div className="space-y-2">
-                    <Label>الحمامات</Label>
-                    <Input type="number" value={form.baths || ""} onChange={e => set("baths", Number(e.target.value))} placeholder="0" />
+                    <Label className="text-xs font-bold">الحمامات</Label>
+                    <Input type="number" value={form.baths || ""} onChange={e => set("baths", Number(e.target.value))} placeholder="مثال: 2" />
                   </div>
                   <div className="space-y-2">
-                    <Label>عدد طوابق العقار</Label>
-                    <Input type="number" value={form.floors || ""} onChange={e => set("floors", Number(e.target.value))} placeholder="0" />
+                    <Label className="text-xs font-bold">عدد طوابق العمارة/الفيلا</Label>
+                    <Input type="number" value={form.floors || ""} onChange={e => set("floors", Number(e.target.value))} placeholder="مثال: 5" />
                   </div>
                   <div className="space-y-2">
-                    <Label>الدور</Label>
+                    <Label className="text-xs font-bold">الدور</Label>
                     <Input
                       type="text"
                       value={form.floor}
                       onChange={e => set("floor", e.target.value)}
-                      placeholder="مثال: أرضي / الأول / الثالث / أخير / متكرر..."
+                      placeholder="مثال: 3 أو أرضي أو أخير"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>الدريسنج</Label>
-                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="يوجد / غرفة دريسنج / لا..." />
+                    <Label className="text-xs font-bold">الدريسنج</Label>
+                    <Input value={form.floorText} onChange={e => set("floorText", e.target.value)} placeholder="مثال: يوجد غرفة دريسنج / لا يوجد" />
                   </div>
                   <div className="space-y-2">
-                    <Label>التشطيب</Label>
+                    <Label className="text-xs font-bold">التشطيب</Label>
                     <Select value={form.finishing} onValueChange={v => set("finishing", v)}>
-                      <SelectTrigger><SelectValue placeholder="اختر" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="اختر نوع التشطيب" /></SelectTrigger>
                       <SelectContent>{finishingOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>الواجهة</Label>
-                    <Input value={form.unitType} onChange={e => set("unitType", e.target.value)} placeholder="أمامي / خلفي / بانورامي / ركني..." />
+                    <Label className="text-xs font-bold">الواجهة</Label>
+                    <Input value={form.unitType} onChange={e => set("unitType", e.target.value)} placeholder="مثال: بحري / أمامي / ناصية / بانورامي" />
                   </div>
                   <div className="space-y-2">
-                    <Label>الفيو</Label>
-                    <Input value={form.view} onChange={e => set("view", e.target.value)} placeholder="فيو حديقة / مفتوح / مول / مسبح / نيل..." />
+                    <Label className="text-xs font-bold">الفيو والإطلالة</Label>
+                    <Input value={form.view} onChange={e => set("view", e.target.value)} placeholder="مثال: فيو لاندسكيب / شارع رئيسي / حديقة" />
                   </div>
                   <div className="space-y-2">
-                    <Label>ماستر</Label>
-                    <Input value={form.master} onChange={e => set("master", e.target.value)} placeholder="نعم / ماستر + دريسنج..." />
+                    <Label className="text-xs font-bold">ماستر روم</Label>
+                    <Input value={form.master} onChange={e => set("master", e.target.value)} placeholder="مثال: غرفة ماستر بحمام / ماستر ودريسنج" />
                   </div>
                   <div className="space-y-2">
-                    <Label>أسانسير</Label>
-                    <Input value={form.elevator} onChange={e => set("elevator", e.target.value)} placeholder="نعم / لا" />
+                    <Label className="text-xs font-bold">أسانسير</Label>
+                    <Input value={form.elevator} onChange={e => set("elevator", e.target.value)} placeholder="مثال: يوجد أسانسير / لا يوجد" />
                   </div>
                   <div className="space-y-2">
-                    <Label>موقف سيارة</Label>
-                    <Input value={form.parking} onChange={e => set("parking", e.target.value)} placeholder="يوجد / لا يوجد / خاص / مشترك" />
+                    <Label className="text-xs font-bold">موقف سيارة / جراج</Label>
+                    <Input value={form.parking} onChange={e => set("parking", e.target.value)} placeholder="مثال: باكو جراج خاص / مكان مخصص" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold">الموقع التفصيلي</Label>
+                    <Input value={form.location} onChange={e => set("location", e.target.value)} placeholder="مثال: الحي الأول، المجاورة ٢، الشروق" />
                   </div>
                   <div className="space-y-2 col-span-2 sm:col-span-3">
-                    <Label>المميزات الإضافية</Label>
-                    <Input value={form.additionalFeatures} onChange={e => set("additionalFeatures", e.target.value)} placeholder="جراج، أمن، جيم، مسبح، حديقة..." />
-                  </div>
-                  <div className="space-y-2 col-span-2 sm:col-span-3">
-                    <Label>الموقع</Label>
-                    <Input value={form.location} onChange={e => set("location", e.target.value)} placeholder="وصف الموقع التفصيلي..." />
+                    <Label className="text-xs font-bold">المميزات الإضافية</Label>
+                    <Input value={form.additionalFeatures} onChange={e => set("additionalFeatures", e.target.value)} placeholder="مثال: غاز طبيعي، عداد كهرباء قديم، حصة في الأرض، أمن وحراسة 24 ساعة، إنتركم مرئي..." />
                   </div>
                 </div>
               </CardContent>
@@ -503,17 +683,18 @@ export default function PropertyForm() {
             </Card>
 
             {/* Links */}
-            <Card>
-              <CardHeader><CardTitle className="text-sm flex items-center gap-2"><LinkIcon className="h-4 w-4 text-accent" />روابط إضافية</CardTitle></CardHeader>
+            <Card className="border-border/80 shadow-sm">
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-bold flex items-center gap-2"><LinkIcon className="h-4 w-4 text-accent" />الروابط والفيديو والموقع</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>رابط فيديو خارجي</Label>
-                  <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} placeholder="أي رابط — YouTube، TikTok، Telegram، وغيره" dir="ltr" />
+                  <Label className="text-xs font-bold">رابط فيديو للعقار</Label>
+                  <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} placeholder="مثال: رابط YouTube، TikTok، Telegram، Drive..." dir="ltr" />
+                  <p className="text-[11px] text-muted-foreground">يدعم جميع منصات الفيديو لعرض المعاينة للعميل</p>
                 </div>
 
                 {/* Cover Priority */}
                 <div className="space-y-2">
-                  <Label className="text-sm">أولوية غلاف البطاقة</Label>
+                  <Label className="text-xs font-bold">أولوية غلاف البطاقة</Label>
                   <div className="flex rounded-lg border border-border overflow-hidden text-sm">
                     <button
                       type="button"
@@ -543,12 +724,13 @@ export default function PropertyForm() {
                   <p className="text-[11px] text-muted-foreground">اختر ما يظهر كغلاف للبطاقة عند توفّر الاثنين معاً</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>رابط خارجي للعقار</Label>
-                  <Input value={form.externalUrl} onChange={e => set("externalUrl", e.target.value)} placeholder="أي رابط خارجي للعقار" dir="ltr" />
+                  <Label className="text-xs font-bold">رابط خارجي للعقار</Label>
+                  <Input value={form.externalUrl} onChange={e => set("externalUrl", e.target.value)} placeholder="مثال: https://alamoudi-realestate.com/..." dir="ltr" />
                 </div>
                 <div className="space-y-2">
-                  <Label>رابط الموقع على الخريطة</Label>
-                  <Input value={form.mapsUrl} onChange={e => set("mapsUrl", e.target.value)} placeholder="رابط Google Maps أو أي خريطة" dir="ltr" />
+                  <Label className="text-xs font-bold">رابط الموقع على الخريطة</Label>
+                  <Input value={form.mapsUrl} onChange={e => set("mapsUrl", e.target.value)} placeholder="مثال: https://maps.app.goo.gl/..." dir="ltr" />
+                  <p className="text-[11px] text-muted-foreground">رابط خرائط جوجل لتسهيل الوصول للمعاينة</p>
                 </div>
               </CardContent>
             </Card>
@@ -556,11 +738,11 @@ export default function PropertyForm() {
 
           <div className="space-y-6">
             {/* Classification */}
-            <Card>
-              <CardHeader><CardTitle className="text-sm">التصنيف والبيانات الأساسية</CardTitle></CardHeader>
+            <Card className="border-border/80 shadow-sm">
+              <CardHeader className="pb-3"><CardTitle className="text-sm font-bold">التصنيف ونوع العرض</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>فئة العقار (الاستخدام) *</Label>
+                  <Label className="text-xs font-bold">فئة العقار (الاستخدام) *</Label>
                   <Select value={form.category} onValueChange={(v: PropertyCategory) => set("category", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر الفئة" /></SelectTrigger>
                     <SelectContent>
@@ -573,7 +755,7 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>نوع العرض *</Label>
+                  <Label className="text-xs font-bold">نوع العرض *</Label>
                   <Select value={form.listingType} onValueChange={(v: "sale" | "rent" | "furnished") => set("listingType", v)}>
                     <SelectTrigger><SelectValue placeholder="اختر نوع العرض" /></SelectTrigger>
                     <SelectContent>
@@ -585,9 +767,9 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>نوع العقار *</Label>
+                  <Label className="text-xs font-bold">نوع العقار *</Label>
                   <Select value={form.typeId} onValueChange={v => set("typeId", v)}>
-                    <SelectTrigger><SelectValue placeholder="اختر النوع" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="اختر النوع (شقة، فيلا...)" /></SelectTrigger>
                     <SelectContent>
                       {propertyTypes.filter(t => t.active).map(t => (
                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
@@ -597,9 +779,9 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>المنطقة *</Label>
+                  <Label className="text-xs font-bold">المدينة / المنطقة الرئيسية *</Label>
                   <Select value={form.regionId} onValueChange={v => set("regionId", v)}>
-                    <SelectTrigger><SelectValue placeholder="اختر المنطقة" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="اختر المنطقة (الشروق، مدينتي...)" /></SelectTrigger>
                     <SelectContent>
                       {regions.filter(r => r.active).map(r => (
                         <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
@@ -609,20 +791,20 @@ export default function PropertyForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>المنطقة الفرعية</Label>
-                  <Input value={form.subArea} onChange={e => set("subArea", e.target.value)} placeholder="مثال: المنطقة ١ / B7" />
+                  <Label className="text-xs font-bold">المنطقة الفرعية / الكمبوند</Label>
+                  <Input value={form.subArea} onChange={e => set("subArea", e.target.value)} placeholder="مثال: الحي الأول، المنطقة التاسعة، سراي..." />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>الحالة</Label>
+                  <Label className="text-xs font-bold">حالة العقار</Label>
                   <Select value={form.status} onValueChange={(v: PropertyStatus) => set("status", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">نشط</SelectItem>
+                      <SelectItem value="active">نشط ومتاح</SelectItem>
                       <SelectItem value="listed">معروض</SelectItem>
-                      <SelectItem value="draft">مسودة</SelectItem>
-                      <SelectItem value="sold">مباعة</SelectItem>
-                      <SelectItem value="rented">مؤجر</SelectItem>
+                      <SelectItem value="draft">مسودة قيد المراجعة</SelectItem>
+                      <SelectItem value="sold">تم البيع</SelectItem>
+                      <SelectItem value="rented">تم التأجير</SelectItem>
                       <SelectItem value="reserved">محجوز</SelectItem>
                     </SelectContent>
                   </Select>
@@ -631,18 +813,18 @@ export default function PropertyForm() {
             </Card>
 
             {/* Featured + Administrative & Source Options */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
+            <Card className="border-border/80 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Star className="h-4 w-4 text-yellow-500" />
                   خيارات إدارية ومصدر العقار
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/70">
                   <div>
-                    <Label className="text-sm font-medium">عقار مميز</Label>
-                    <p className="text-xs text-muted-foreground mt-0.5">يظهر في قسم العقارات المميزة</p>
+                    <Label className="text-xs font-bold">عقار مميز</Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">يظهر في الصدارة وقسم العقارات المميزة</p>
                   </div>
                   <Switch
                     checked={form.featured}
@@ -651,17 +833,17 @@ export default function PropertyForm() {
                   />
                 </div>
 
-                <div className="border-t pt-3 space-y-2">
-                  <Label className="text-sm">نوع المصدر</Label>
+                <div className="border-t border-border/70 pt-3 space-y-2">
+                  <Label className="text-xs font-bold">نوع المصدر</Label>
                   <Select value={form.agentType || "unspecified"} onValueChange={(v: "direct" | "broker" | "unspecified") => set("agentType", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unspecified">- (غير محدد)</SelectItem>
-                      <SelectItem value="direct">مباشر (من المالك)</SelectItem>
-                      <SelectItem value="broker">بروكر (وسيط عقاري)</SelectItem>
+                      <SelectItem value="direct">🏠 مباشر (من المالك)</SelectItem>
+                      <SelectItem value="broker">🤝 بروكر (وسيط عقاري)</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground">يظهر للمدير فقط</p>
+                  <p className="text-[11px] text-muted-foreground">يظهر للإدارة فقط — غير مرئي للزوّار</p>
                 </div>
 
                 {form.agentType === "broker" && (
@@ -702,17 +884,17 @@ export default function PropertyForm() {
                   </div>
                 )}
 
-                <div className="border-t pt-3 space-y-4">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                    {form.agentType === "broker" ? "بيانات البروكر / التواصل" : "بيانات المالك / التواصل"}
+                <div className="border-t border-border/70 pt-3 space-y-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    {form.agentType === "broker" ? "بيانات البروكر / الوسيط" : "بيانات المالك / المصدر"}
                   </p>
                   <div className="space-y-2">
-                    <Label className="text-sm">{form.agentType === "broker" ? "اسم البروكر" : "اسم المالك"}</Label>
-                    <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="اسم المصدر..." />
+                    <Label className="text-xs font-bold">{form.agentType === "broker" ? "اسم البروكر / الشركة" : "اسم المالك"}</Label>
+                    <Input value={form.source} onChange={e => set("source", e.target.value)} placeholder="مثال: م. أحمد عبد العزيز" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm flex items-center gap-1.5">
-                      <Phone className="h-3.5 w-3.5" />
+                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-accent" />
                       أرقام التواصل
                     </Label>
                     <div className="space-y-2">
@@ -720,8 +902,8 @@ export default function PropertyForm() {
                         <div key={i} className="flex gap-2">
                           <Input
                             dir="ltr"
-                            className="flex-1 text-right"
-                            placeholder="+20 10 0000 0000"
+                            className="flex-1 text-right font-mono"
+                            placeholder="مثال: 01012345678"
                             value={ph}
                             onChange={e => {
                               const updated = [...form.sourcePhones];
@@ -744,22 +926,22 @@ export default function PropertyForm() {
                         <button
                           type="button"
                           onClick={() => set("sourcePhones", [...form.sourcePhones, ""])}
-                          className="w-full flex items-center justify-center gap-1.5 h-9 rounded-md border border-dashed border-border text-sm text-muted-foreground hover:text-accent hover:border-accent transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 h-9 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:text-accent hover:border-accent transition-colors"
                         >
                           <Plus className="h-4 w-4" />
-                          أضف رقم
+                          أضف رقم آخر
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm flex items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5" />
+                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                       البريد الإلكتروني
                     </Label>
                     <Input
                       dir="ltr"
-                      className="text-right"
+                      className="text-right font-mono"
                       type="email"
                       placeholder="example@mail.com"
                       value={form.sourceEmail}
@@ -767,23 +949,23 @@ export default function PropertyForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm flex items-center gap-1.5">
-                      <LinkIcon className="h-3.5 w-3.5" />
-                      رابط الموقع (Location)
+                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                      <LinkIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      رابط موقع المصدر / خريطة
                     </Label>
                     <Input
                       dir="ltr"
-                      className="text-right text-xs"
+                      className="text-right text-xs font-mono"
                       placeholder="https://maps.google.com/..."
                       value={form.sourceLocation}
                       onChange={e => set("sourceLocation", e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm">ملاحظات إضافية</Label>
+                    <Label className="text-xs font-bold">ملاحظات إدارية خاصة بالمصدر</Label>
                     <Textarea
                       rows={3}
-                      placeholder="تفاصيل إضافية عن المصدر أو موقع العقار..."
+                      placeholder="مثال: المالك متاح للاتصال بعد العصر، نسبة العمولة المتفق عليها 2.5%، المفاتيح مع الحارس..."
                       value={form.sourceNotes}
                       onChange={e => set("sourceNotes", e.target.value)}
                     />
