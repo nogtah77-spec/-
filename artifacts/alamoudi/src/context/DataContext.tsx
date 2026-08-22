@@ -935,6 +935,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       // Sync with Supabase cloud database
+      supabaseService.fetchRegions().then(supabaseRegs => {
+        if (destroyed) return;
+        if (supabaseRegs && supabaseRegs.length > 0) {
+          const clean = sanitizeRegions(supabaseRegs);
+          setRegions(clean);
+          try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchPropertyTypes().then(supabaseTypes => {
+        if (destroyed) return;
+        if (supabaseTypes && supabaseTypes.length > 0) {
+          setPropertyTypes(supabaseTypes);
+          try { localStorage.setItem("alm_types", JSON.stringify(supabaseTypes)); } catch {}
+        }
+      }).catch(() => {});
+
       supabaseService.seedInitialPropertiesIfEmpty().then(() => {
         supabaseService.fetchProperties().then(supabaseProps => {
           if (destroyed) return;
@@ -960,23 +977,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
               try { localStorage.setItem("alm_users", JSON.stringify(merged)); } catch {}
               return merged;
             });
-          }
-        }).catch(() => {});
-
-        supabaseService.fetchRegions().then(supabaseRegs => {
-          if (destroyed) return;
-          if (supabaseRegs && supabaseRegs.length > 0) {
-            const clean = sanitizeRegions(supabaseRegs);
-            setRegions(clean);
-            try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
-          }
-        }).catch(() => {});
-
-        supabaseService.fetchPropertyTypes().then(supabaseTypes => {
-          if (destroyed) return;
-          if (supabaseTypes && supabaseTypes.length > 0) {
-            setPropertyTypes(supabaseTypes);
-            try { localStorage.setItem("alm_types", JSON.stringify(supabaseTypes)); } catch {}
           }
         }).catch(() => {});
       }).catch(() => {});
@@ -1298,7 +1298,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
-    supabaseService.saveRegion(region).catch(() => {});
+    await supabaseService.saveRegion(region).catch(() => {});
     sendRealtimeSync("REGION_ADD", { region });
     try {
       await api.post("/regions", region);
@@ -1323,7 +1323,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return updated;
     });
     if (targetRegion) {
-      supabaseService.saveRegion(targetRegion).catch(() => {});
+      await supabaseService.saveRegion(targetRegion).catch(() => {});
       sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
     }
     try {
@@ -1341,7 +1341,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       writeCache({ regions: updated, types: propertyTypes, properties, settings });
       return updated;
     });
-    supabaseService.deleteRegion(id).catch(() => {});
+    await supabaseService.deleteRegion(id).catch(() => {});
     sendRealtimeSync("REGION_DELETE", { regionId: id });
     try {
       await api.del(`/regions/${id}`);
@@ -1366,7 +1366,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return updated;
     });
     if (targetRegion) {
-      supabaseService.saveRegion(targetRegion).catch(() => {});
+      await supabaseService.saveRegion(targetRegion).catch(() => {});
       sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
     }
     try {

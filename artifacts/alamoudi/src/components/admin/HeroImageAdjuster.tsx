@@ -211,7 +211,7 @@ export function HeroImageAdjuster({
     const img = imgRef.current;
 
     const canvas = document.createElement("canvas");
-    const targetWidth = 1600;
+    const targetWidth = 1400;
     const targetHeight = Math.round(targetWidth / aspectRatio);
     canvas.width = targetWidth;
     canvas.height = targetHeight;
@@ -271,7 +271,10 @@ export function HeroImageAdjuster({
     ctx.drawImage(img, canvasDrawX, canvasDrawY, canvasDrawW, canvasDrawH);
 
     try {
-      const croppedUrl = canvas.toDataURL("image/jpeg", 0.92);
+      let croppedUrl = canvas.toDataURL("image/webp", 0.80);
+      if (!croppedUrl.startsWith("data:image/webp")) {
+        croppedUrl = canvas.toDataURL("image/jpeg", 0.80);
+      }
       onImageAdjusted(croppedUrl);
     } catch {
       onImageAdjusted(imageUrl);
