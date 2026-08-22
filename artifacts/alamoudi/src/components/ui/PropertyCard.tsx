@@ -126,10 +126,10 @@ export function PropertyCard({
         dir="rtl"
         onClick={goToDetails}
         className={cn(
-          "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-0.5",
+          "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)]",
           property.featured
-            ? "border-accent/50 shadow-[0_6px_22px_rgba(184,142,75,0.09)] hover:shadow-[0_12px_28px_rgba(184,142,75,0.18)] hover:border-accent"
-            : "border-border/70 shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)] hover:border-accent/50",
+            ? "border-accent/50 hover:border-accent"
+            : "border-border/70 hover:border-accent/50",
           emphasized
             ? "h-[185px] sm:h-[195px]"
             : "h-[175px] sm:h-[185px]"
@@ -301,10 +301,10 @@ export function PropertyCard({
       dir="rtl"
       onClick={goToDetails}
       className={cn(
-        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-1",
+        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-1 shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)]",
         property.featured
-          ? "border-accent/55 shadow-[0_8px_24px_rgba(184,142,75,0.09)] hover:shadow-[0_16px_36px_rgba(184,142,75,0.18)] hover:border-accent"
-          : "border-border/70 shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)] hover:border-accent/60",
+          ? "border-accent/50 hover:border-accent"
+          : "border-border/70 hover:border-accent/60",
         emphasized && "shadow-[0_14px_36px_rgba(16,32,45,0.16)]"
       )}
     >
