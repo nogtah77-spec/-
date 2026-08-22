@@ -161,19 +161,22 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-2 pl-2 pr-8 " +
-      "text-sm outline-none transition-colors duration-[120ms] " +
-      "hover:bg-accent/10 hover:text-accent " +
-      "focus:bg-accent focus:text-accent-foreground " +
-      "data-[state=checked]:text-accent data-[state=checked]:font-semibold " +
+      "relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-2 pr-8 " +
+      "text-sm font-medium outline-none transition-colors duration-[120ms] " +
+      "text-popover-foreground " +
+      "hover:bg-accent/15 hover:text-foreground " +
+      "focus:bg-accent/15 focus:text-foreground " +
+      "data-[highlighted]:bg-accent/15 data-[highlighted]:text-foreground " +
+      "data-[state=checked]:font-bold data-[state=checked]:text-accent " +
+      "data-[state=checked]:data-[highlighted]:bg-accent/20 data-[state=checked]:data-[highlighted]:text-accent " +
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}
   >
-    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="absolute right-2 flex h-4 w-4 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-3.5 w-3.5 text-accent" />
+        <Check className="h-4 w-4 text-accent stroke-[2.5]" />
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
