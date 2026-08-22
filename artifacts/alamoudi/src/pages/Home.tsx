@@ -310,20 +310,20 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-gradient-to-br from-accent/90 to-accent text-accent-foreground shadow-[0_4px_16px_rgba(185,154,104,0.25)] hover:shadow-[0_8px_24px_rgba(185,154,104,0.4)] hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-accent/40"
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-gradient-to-br from-[#10202D] via-[#183144] to-[#10202D] text-white shadow-[0_6px_20px_rgba(16,32,45,0.22)] hover:shadow-[0_10px_28px_rgba(16,32,45,0.32)] hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C09C5A]/40 hover:border-[#C09C5A]"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-black/15 flex items-center justify-center shrink-0">
-                <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#C09C5A] to-[#A8823E] text-[#10202D] flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <Plus className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.5]" />
               </div>
               <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-bold leading-tight">أعرض عقارك</span>
-                <span className="hidden sm:block text-[10px] text-accent-foreground/80 font-normal mt-0.5">بيع أو تأجير وحدتك</span>
+                <span className="block text-xs sm:text-sm font-black text-white leading-tight">أعرض عقارك</span>
+                <span className="hidden sm:block text-[10px] text-[#E0CEB0] font-medium mt-0.5">بيع أو تأجير وحدتك</span>
               </div>
             </Link>
 
             <Link
               href="/finishing-services"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card/95 hover:bg-card text-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border/80 hover:border-accent/50"
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
             >
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -336,7 +336,7 @@ export default function Home() {
 
             <Link
               href="/consultation"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card/95 hover:bg-card text-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border/80 hover:border-accent/50"
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
             >
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                 <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />

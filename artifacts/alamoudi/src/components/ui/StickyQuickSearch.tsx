@@ -178,7 +178,7 @@ export function StickyQuickSearch({
           <Button
             type="submit"
             size="sm"
-            className="h-9 px-3 sm:px-4 text-xs font-semibold bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-1.5 shadow-sm"
+            className="h-9 px-3 sm:px-4 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl gap-1.5 shadow-sm border border-accent/40 hover:border-accent transition-all"
           >
             <Search className="h-3.5 w-3.5" />
             <span>بحث</span>

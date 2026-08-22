@@ -171,7 +171,7 @@ export function PropertyFilterPanel({
             <Button
               type="button"
               onClick={() => onApply(filters)}
-              className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-accent text-accent-foreground font-bold hover:bg-accent/90 shadow-md gap-1.5 text-xs sm:text-sm"
+              className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-md border border-accent/40 hover:border-accent gap-1.5 text-xs sm:text-sm transition-all"
             >
               <Search className="h-4 w-4" />
               <span>بحث</span>
@@ -199,8 +199,8 @@ export function PropertyFilterPanel({
                   className={cn(
                     "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer select-none",
                     active
-                      ? "bg-accent text-accent-foreground shadow-sm scale-105"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/40"
+                      ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm scale-105"
+                      : "bg-background text-muted-foreground hover:bg-card hover:text-foreground border border-border/70 shadow-2xs"
                   )}
                 >
                   {option.label}
@@ -231,8 +231,8 @@ export function PropertyFilterPanel({
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
                     active
-                      ? "bg-accent/15 text-accent border border-accent/60 shadow-sm"
-                      : "bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground border border-border/40"
+                      ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm"
+                      : "bg-background text-muted-foreground hover:bg-card hover:text-foreground border border-border/70 shadow-2xs"
                   )}
                 >
                   {icon}

@@ -148,70 +148,70 @@
 
 /* ────────────────────────────────────────────────────────────
    Light mode
-   Background: #F5F3EE (Warm Ivory) · Cards: #FFFDF9
-   Primary text: #10202D (Midnight Blue) · Accent: #B99A68 (Warm Brass)
-   Border: #E1DED6
+   Background: #FAF9F5 (Luminous Luxury Ivory) · Cards: #FFFFFF (Pure White)
+   Primary text: #10202D (Midnight Blue) · Accent: #B88E4B (Imperial Gold)
+   Border: #E6E3DB
    ──────────────────────────────────────────────────────────── */
 :root {
-  --button-outline: rgba(0,0,0,.12);
-  --badge-outline: rgba(0,0,0,.08);
+  --button-outline: rgba(0,0,0,.10);
+  --badge-outline: rgba(0,0,0,.06);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0,0,0,.03);
-  --elevate-2: rgba(0,0,0,.06);
+  --elevate-1: rgba(0,0,0,.02);
+  --elevate-2: rgba(0,0,0,.05);
 
   /* Core palette */
-  --background:  45 27% 95%;            /* #F5F3EE Warm Ivory */
+  --background:  40 20% 97.5%;          /* #FAF9F5 Luminous Ivory */
   --foreground:  207 48% 12%;          /* #10202D Midnight Blue */
-  --border:      42 19% 87%;            /* #E1DED6 */
+  --border:      40 14% 88%;           /* #E6E3DB */
 
-  --card:        45 33% 99%;            /* #FFFDF9 */
+  --card:        0 0% 100%;            /* #FFFFFF Pure White */
   --card-foreground: 207 48% 12%;
-  --card-border: 42 19% 87%;
+  --card-border: 40 14% 88%;
 
-  --shadow-luxury:    0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-luxury-lg: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-luxury:    0 2px 10px -2px rgba(16,32,45,0.06), 0 1px 3px -1px rgba(16,32,45,0.04), 0 0 0 1px rgba(16,32,45,0.04);
+  --shadow-luxury-lg: 0 14px 36px -8px rgba(16,32,45,0.11), 0 4px 14px -2px rgba(16,32,45,0.05), 0 0 0 1px rgba(16,32,45,0.05);
   --gradient-hero:    linear-gradient(135deg,#10202D 0%,#173044 52%,#10202D 100%);
 
-  --sidebar: 44 25% 93%;
+  --sidebar: 40 18% 95%;
   --sidebar-foreground: 207 48% 12%;
-  --sidebar-border: 42 19% 87%;
+  --sidebar-border: 40 14% 88%;
   --sidebar-primary: 207 48% 12%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 38 37% 57%;
+  --sidebar-accent: 38 48% 48%;
   --sidebar-accent-foreground: 207 48% 12%;
-  --sidebar-ring: 38 37% 57%;
+  --sidebar-ring: 38 48% 48%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 207 48% 12%;
-  --popover-border: 42 19% 87%;
+  --popover-border: 40 14% 88%;
 
-  --primary: 207 48% 12%;              /* #10202D */
+  --primary: 207 48% 12%;              /* #10202D Midnight Blue */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 42 20% 93%;             /* warm stone */
+  --secondary: 40 15% 94%;             /* soft warm stone */
   --secondary-foreground: 207 48% 12%;
 
-  --muted: 42 20% 93%;
-  --muted-foreground: 205 12% 44%;     /* blue-gray neutral */
+  --muted: 40 15% 94%;
+  --muted-foreground: 205 15% 42%;     /* slate-gray neutral */
 
-  /* ── Warm Brass accent: #B99A68 ── */
-  --accent: 38 37% 57%;                /* #B99A68 */
-  --accent-foreground: 207 48% 12%;
+  /* ── Imperial Gold accent: #B88E4B ── */
+  --accent: 38 48% 48%;                /* #B88E4B */
+  --accent-foreground: 0 0% 100%;
 
-  --status-success: 155 32% 46%;       /* #4F9A7A */
-  --status-warning: 35 61% 56%;        /* #D49A4A */
-  --status-danger: 0 48% 60%;          /* #C96868 */
+  --status-success: 155 42% 42%;       /* Emerald */
+  --status-warning: 35 75% 50%;        /* Warm Amber */
+  --status-danger: 0 65% 55%;          /* Crimson */
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --input: 42 19% 87%;
-  --ring: 38 37% 57%;                  /* Brass focus ring */
+  --input: 40 14% 88%;
+  --ring: 38 48% 48%;                  /* Gold focus ring */
 
   --chart-1: 207 48% 12%;
-  --chart-2: 38 37% 57%;
-  --chart-3: 42 19% 87%;
-  --chart-4: 42 20% 93%;
+  --chart-2: 38 48% 48%;
+  --chart-3: 40 14% 88%;
+  --chart-4: 40 15% 94%;
   --chart-5: 207 15% 50%;
 
   --app-font-sans: 'Cairo','Noto Sans Arabic',sans-serif;
