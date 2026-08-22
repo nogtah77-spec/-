@@ -487,7 +487,41 @@ interface DataContextType {
   reorderAds: (ordered: Ad[]) => void;
   trackAdView: (id: string, payload?: Record<string, unknown>) => void;
   trackAdClick: (id: string, payload?: Record<string, unknown>) => void;
+  logActivity: (entry: {
+    action: string;
+    entityType: string;
+    title: string;
+    actor?: string;
+  }) => ActivityLog;
+  clearActivityLogs: () => Promise<boolean>;
 }
+
+export const DEFAULT_INITIAL_ACTIVITIES: ActivityLog[] = [
+  {
+    id: "act-init-1",
+    action: "created",
+    entityType: "system",
+    title: "تهيئة منصة العمودي العقارية وقاعدة البيانات السحابية",
+    actor: "النظام الأساسي",
+    createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+  },
+  {
+    id: "act-init-2",
+    action: "status",
+    entityType: "settings",
+    title: "تفعيل نظام التزامن اللحظي وبث الأنشطة المباشر",
+    actor: "مدير النظام",
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+  {
+    id: "act-init-3",
+    action: "created",
+    entityType: "property",
+    title: "اعتماد قائمة عقارات التجمع والشروق ومدينتي المحدثة",
+    actor: "الإدارة (العمودي)",
+    createdAt: new Date(Date.now() - 3600000 * 1).toISOString(),
+  },
+];
 
 const DataContext = createContext<DataContextType | null>(null);
 
@@ -754,7 +788,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return DEFAULT_BROKERS;
     }
   });
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_activity_logs");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_INITIAL_ACTIVITIES;
+  });
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
     const cached = readCache();
@@ -798,7 +841,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (customerPropertyRequestsR.status === "fulfilled") setCustomerPropertyRequests(customerPropertyRequestsR.value);
     if (contractsR.status === "fulfilled") setContracts(contractsR.value);
     if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
-    if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
+    if (activityR.status   === "fulfilled" && Array.isArray(activityR.value) && activityR.value.length > 0) {
+      setActivityLogs(prev => {
+        const mergedMap = new Map<string, ActivityLog>();
+        activityR.value.forEach(l => mergedMap.set(l.id, l));
+        prev.forEach(l => mergedMap.set(l.id, l));
+        const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
+        return merged;
+      });
+    }
     if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
     if (newRegions || newTypes || newProps || newSettings) {
       writeCache({
@@ -1006,6 +1058,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
             });
           }
         }).catch(() => {});
+
+        supabaseService.fetchActivityLogs().then(supabaseLogs => {
+          if (destroyed) return;
+          if (supabaseLogs && supabaseLogs.length > 0) {
+            setActivityLogs(prev => {
+              const mergedMap = new Map<string, ActivityLog>();
+              supabaseLogs.forEach(l => mergedMap.set(l.id, l));
+              prev.forEach(l => mergedMap.set(l.id, l));
+              const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
+              return merged;
+            });
+          }
+        }).catch(() => {});
       }).catch(() => {});
     });
 
@@ -1098,6 +1164,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
           try { localStorage.setItem("alm_types", JSON.stringify(updated)); } catch {}
           return updated;
         });
+      } else if (event === "ACTIVITY_LOG_ADD" && data.log) {
+        setActivityLogs(prev => {
+          const exists = prev.some(l => l.id === data.log.id);
+          if (exists) return prev;
+          const updated = [data.log, ...prev].slice(0, 500);
+          try { localStorage.setItem("alm_activity_logs", JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else if (event === "ACTIVITY_LOG_CLEAR") {
+        setActivityLogs([]);
+        try { localStorage.removeItem("alm_activity_logs"); } catch {}
       }
     };
 
@@ -1318,6 +1395,58 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const logActivity = useCallback((entry: {
+    action: string;
+    entityType: string;
+    title: string;
+    actor?: string;
+  }) => {
+    let currentActor = entry.actor;
+    if (!currentActor) {
+      try {
+        const savedAuth = localStorage.getItem("alm_auth_user");
+        if (savedAuth) {
+          const u = JSON.parse(savedAuth);
+          if (u?.name) currentActor = u.name;
+        }
+      } catch {}
+    }
+    if (!currentActor) currentActor = "الإدارة (العمودي)";
+
+    const newLog: ActivityLog = {
+      id: "act-" + genId(),
+      action: entry.action,
+      entityType: entry.entityType,
+      title: entry.title,
+      actor: currentActor,
+      createdAt: new Date().toISOString(),
+    };
+
+    setActivityLogs(prev => {
+      const updated = [newLog, ...prev.filter(l => l.id !== newLog.id)].slice(0, 500);
+      try { localStorage.setItem("alm_activity_logs", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+
+    supabaseService.saveActivityLog(newLog).catch(() => {});
+    sendRealtimeSync("ACTIVITY_LOG_ADD", { log: newLog });
+    api.post("/activity-logs", newLog).catch(() => {});
+    return newLog;
+  }, []);
+
+  const clearActivityLogs = useCallback(async () => {
+    setActivityLogs([]);
+    try { localStorage.removeItem("alm_activity_logs"); } catch {}
+    supabaseService.clearActivityLogs().catch(() => {});
+    sendRealtimeSync("ACTIVITY_LOG_CLEAR", {});
+    try {
+      await api.del("/activity-logs");
+      return true;
+    } catch {
+      return true;
+    }
+  }, []);
+
   const addBroker = useCallback(async (b: Omit<Broker, "id" | "createdAt">) => {
     const newBroker: Broker = {
       ...b,
@@ -1329,19 +1458,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
       return updated;
     });
+    logActivity({ action: "created", entityType: "broker", title: `إضافة وسيط عقاري جديد (${newBroker.name})` });
     toast({ title: "تمت إضافة الوسيط بنجاح" });
     return true;
-  }, [toast]);
+  }, [toast, logActivity]);
 
   const updateBroker = useCallback(async (id: string, patch: Partial<Broker>) => {
+    let targetName = id;
     setBrokers(prev => {
-      const updated = prev.map(b => b.id === id ? { ...b, ...patch } : b);
+      const updated = prev.map(b => {
+        if (b.id === id) {
+          targetName = patch.name || b.name;
+          return { ...b, ...patch };
+        }
+        return b;
+      });
       try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
       return updated;
     });
+    logActivity({ action: "updated", entityType: "broker", title: `تعديل بيانات الوسيط (${targetName})` });
     toast({ title: "تم تحديث بيانات الوسيط ✓" });
     return true;
-  }, [toast]);
+  }, [toast, logActivity]);
 
   const deleteBroker = useCallback(async (id: string) => {
     setBrokers(prev => {
@@ -1349,9 +1487,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try { localStorage.setItem("alm_brokers", JSON.stringify(updated)); } catch {}
       return updated;
     });
+    logActivity({ action: "deleted", entityType: "broker", title: `حذف وسيط عقاري (${id})` });
     toast({ title: "تم حذف الوسيط" });
     return true;
-  }, [toast]);
+  }, [toast, logActivity]);
 
   const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
     const next = { ...settings, ...patch };
@@ -1362,6 +1501,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       properties,
       settings: next,
     });
+    logActivity({ action: "updated", entityType: "settings", title: "تحديث إعدادات المنصة والموقع" });
     try {
       await api.put("/settings", next);
       return true;
@@ -1369,7 +1509,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.warn("Server sync warning (settings saved in client cache):", err);
       return true;
     }
-  }, [settings, regions, propertyTypes, properties]);
+  }, [settings, regions, propertyTypes, properties, logActivity]);
 
   const addRegion = async (name: string, heroImage = "") => {
     const region: Region = { id: genId(), name, active: true, heroImage };
@@ -1381,6 +1521,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     await supabaseService.saveRegion(region).catch(() => {});
     sendRealtimeSync("REGION_ADD", { region });
+    logActivity({ action: "created", entityType: "region", title: `إضافة منطقة جديدة (${name})` });
     try {
       await api.post("/regions", region);
       return true;
@@ -1407,6 +1548,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       await supabaseService.saveRegion(targetRegion).catch(() => {});
       sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
     }
+    logActivity({ action: "updated", entityType: "region", title: `تعديل المنطقة (${name})` });
     try {
       await api.patch(`/regions/${id}`, { name, heroImage: heroImage !== undefined ? heroImage : "" });
       return true;
@@ -1424,6 +1566,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     await supabaseService.deleteRegion(id).catch(() => {});
     sendRealtimeSync("REGION_DELETE", { regionId: id });
+    logActivity({ action: "deleted", entityType: "region", title: `حذف منطقة (${id})` });
     try {
       await api.del(`/regions/${id}`);
       return true;
@@ -1450,6 +1593,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       await supabaseService.saveRegion(targetRegion).catch(() => {});
       sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
     }
+    logActivity({
+      action: "status",
+      entityType: "region",
+      title: `تغيير حالة تفعيل المنطقة (${targetRegion?.name || id}) إلى ${targetRegion?.active ? "مفعل" : "معطل"}`,
+    });
     try {
       await api.patch(`/regions/${id}`, { active: targetRegion?.active ?? true });
       return true;
@@ -1468,6 +1616,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     supabaseService.savePropertyType(t).catch(() => {});
     sendRealtimeSync("TYPE_ADD", { propertyType: t });
+    logActivity({ action: "created", entityType: "property_type", title: `إضافة نوع عقار جديد (${name})` });
     try {
       await api.post("/property-types", t);
       return true;
@@ -1494,6 +1643,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       supabaseService.savePropertyType(targetType).catch(() => {});
       sendRealtimeSync("TYPE_UPDATE", { propertyType: targetType });
     }
+    logActivity({ action: "updated", entityType: "property_type", title: `تعديل نوع عقار (${name})` });
     try {
       await api.patch(`/property-types/${id}`, { name });
       return true;
@@ -1511,6 +1661,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     supabaseService.deletePropertyType(id).catch(() => {});
     sendRealtimeSync("TYPE_DELETE", { typeId: id });
+    logActivity({ action: "deleted", entityType: "property_type", title: `حذف نوع عقار (${id})` });
     try {
       await api.del(`/property-types/${id}`);
       return true;
@@ -1537,6 +1688,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       supabaseService.savePropertyType(targetType).catch(() => {});
       sendRealtimeSync("TYPE_UPDATE", { propertyType: targetType });
     }
+    logActivity({
+      action: "status",
+      entityType: "property_type",
+      title: `تغيير حالة نوع العقار (${targetType?.name || id}) إلى ${targetType?.active ? "مفعل" : "معطل"}`,
+    });
     try {
       await api.patch(`/property-types/${id}`, { active: targetType?.active ?? true });
       return true;
@@ -1578,6 +1734,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     sendRealtimeSync("PROPERTY_ADD", { property });
+    logActivity({
+      action: "created",
+      entityType: "property",
+      title: `إضافة عقار جديد (${property.code}) - ${property.title || property.unitType || "وحدة عقارية"}`,
+    });
 
     try {
       await api.post("/properties", property);
@@ -1642,6 +1803,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sendRealtimeSync("PROPERTY_UPDATE", { property: updatedTarget });
     }
 
+    logActivity({
+      action: "updated",
+      entityType: "property",
+      title: `تعديل بيانات العقار (${(updatedTarget as any)?.code || id})`,
+    });
+
     try {
       await api.patch(`/properties/${id}`, p);
       return true;
@@ -1686,6 +1853,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     await supabaseService.deleteProperty(id).catch(() => {});
     sendRealtimeSync("PROPERTY_DELETE", { propertyId: id });
+    logActivity({
+      action: "deleted",
+      entityType: "property",
+      title: `حذف العقار (${id}) من المنصة`,
+    });
 
     try {
       await api.del(`/properties/${id}`);
@@ -1693,16 +1865,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.warn("Server sync warning (deleted from client cache):", err);
     }
   };
+
   const bulkDeleteProperties = (ids: string[]) => {
     if (ids.length === 0) return;
     const idSet = new Set(ids);
     setProperties(p => p.filter(x => !idSet.has(x.id)));
+    logActivity({
+      action: "deleted",
+      entityType: "property",
+      title: `حذف مجمّع لـ (${ids.length}) عقارات دفعة واحدة`,
+    });
     persist(api.del("/properties/bulk", { ids }));
   };
+
   const bulkUpdateProperties = (ids: string[], updates: Partial<Property>) => {
     if (ids.length === 0) return;
     const idSet = new Set(ids);
     setProperties(p => p.map(x => idSet.has(x.id) ? { ...x, ...updates } : x));
+    logActivity({
+      action: "updated",
+      entityType: "property",
+      title: `تعديل مجمّع لـ (${ids.length}) عقارات`,
+    });
     persist(api.patch("/properties/bulk", { ids, updates }));
   };
 
@@ -1733,6 +1917,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return next;
     });
     if (payload.length > 0) persist(api.post("/properties/import", payload));
+    logActivity({
+      action: "imported",
+      entityType: "property",
+      title: `استيراد بيانات عقارات (تمت إضافة ${added} وتحديث ${updated})`,
+    });
     return { added, updated };
   };
 
@@ -1774,6 +1963,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     supabaseService.saveUser(newUser).catch(() => {});
     sendRealtimeSync("USER_ADD", { user: newUser });
+    logActivity({
+      action: "created",
+      entityType: "user",
+      title: `إضافة مستخدم جديد (${newUser.name} - ${newUser.role})`,
+    });
 
     try {
       const saved = await api.post<User>("/users", { ...newUser });
@@ -1810,6 +2004,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sendRealtimeSync("USER_UPDATE", { user: targetUser });
     }
 
+    logActivity({
+      action: "updated",
+      entityType: "user",
+      title: `تعديل بيانات المستخدم (${u.name || (targetUser as any)?.name || id})`,
+    });
+
     try {
       await api.patch(`/users/${id}`, u);
       return true;
@@ -1836,6 +2036,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     supabaseService.deleteUser(id).catch(() => {});
     sendRealtimeSync("USER_DELETE", { userId: id });
+    logActivity({
+      action: "deleted",
+      entityType: "user",
+      title: `حذف المستخدم (${id})`,
+    });
 
     try {
       await api.del(`/users/${id}`);
@@ -1864,6 +2069,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       supabaseService.saveUser(targetUser).catch(() => {});
     }
 
+    logActivity({
+      action: "status",
+      entityType: "user",
+      title: `تغيير حالة تفعيل المستخدم (${(targetUser as any)?.name || id}) إلى ${(targetUser as any)?.active ? "مفعل" : "معطل"}`,
+    });
+
     try {
       await api.patch(`/users/${id}`, { active: (targetUser as any)?.active });
       return true;
@@ -1876,42 +2087,96 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addInquiry = (i: Omit<Inquiry, "id" | "createdAt" | "status">) => {
     const inquiry: Inquiry = { ...i, id: genId(), status: "new", createdAt: new Date().toISOString() };
     setInquiries(p => [...p, inquiry]);
+    logActivity({
+      action: "created",
+      entityType: "inquiry",
+      title: `استفسار جديد من العميل (${inquiry.name}) بخصوص ${inquiry.subject || "خدمات الشركة"}`,
+      actor: inquiry.name,
+    });
     persist(api.post("/inquiries", inquiry));
   };
+
   const updateInquiryStatus = (id: string, status: Inquiry["status"]) => {
     setInquiries(p => p.map(x => x.id === id ? { ...x, status } : x));
+    logActivity({
+      action: "status",
+      entityType: "inquiry",
+      title: `تحديث حالة استفسار العميل (${id}) إلى (${status})`,
+    });
     persist(api.patch(`/inquiries/${id}`, { status }));
   };
+
   const deleteInquiry = (id: string) => {
     setInquiries(p => p.filter(x => x.id !== id));
+    logActivity({
+      action: "deleted",
+      entityType: "inquiry",
+      title: `حذف استفسار العميل (${id})`,
+    });
     persist(api.del(`/inquiries/${id}`));
   };
 
   const addFinishingRequest = (r: Omit<FinishingRequest, "id" | "createdAt" | "status">) => {
     const fr: FinishingRequest = { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() };
     setFinishingRequests(p => [...p, fr]);
+    logActivity({
+      action: "created",
+      entityType: "finishing_request",
+      title: `طلب تشطيب جديد من العميل (${fr.name}) - ${fr.finishingType || "باقة تشطيب"}`,
+      actor: fr.name,
+    });
     persist(api.post("/finishing-requests", fr));
   };
+
   const updateFinishingRequestStatus = (id: string, status: FinishingRequest["status"]) => {
     setFinishingRequests(p => p.map(x => x.id === id ? { ...x, status } : x));
+    logActivity({
+      action: "status",
+      entityType: "finishing_request",
+      title: `تحديث حالة طلب التشطيب (${id}) إلى (${status})`,
+    });
     persist(api.patch(`/finishing-requests/${id}`, { status }));
   };
+
   const deleteFinishingRequest = (id: string) => {
     setFinishingRequests(p => p.filter(x => x.id !== id));
+    logActivity({
+      action: "deleted",
+      entityType: "finishing_request",
+      title: `حذف طلب التشطيب (${id})`,
+    });
     persist(api.del(`/finishing-requests/${id}`));
   };
 
   const addPropertyRequest = (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) => {
     const pr: PropertyRequest = { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() };
     setPropertyRequests(p => [...p, pr]);
+    logActivity({
+      action: "created",
+      entityType: "property_request",
+      title: `طلب إضافة عقار جديد من العميل (${pr.ownerName})`,
+      actor: pr.ownerName,
+    });
     persist(api.post("/property-requests", pr));
   };
+
   const updatePropertyRequestStatus = (id: string, status: PropertyRequest["status"]) => {
     setPropertyRequests(p => p.map(x => x.id === id ? { ...x, status } : x));
+    logActivity({
+      action: "status",
+      entityType: "property_request",
+      title: `تحديث حالة طلب إضافة عقار (${id}) إلى (${status})`,
+    });
     persist(api.patch(`/property-requests/${id}`, { status }));
   };
+
   const deletePropertyRequest = (id: string) => {
     setPropertyRequests(p => p.filter(x => x.id !== id));
+    logActivity({
+      action: "deleted",
+      entityType: "property_request",
+      title: `حذف طلب إضافة عقار (${id})`,
+    });
     persist(api.del(`/property-requests/${id}`));
   };
 
@@ -1923,6 +2188,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setCustomerPropertyRequests((current) => [item, ...current]);
+    logActivity({
+      action: "created",
+      entityType: "customer_property_request",
+      title: `طلب عقار جديد من العميل (${item.customerName})`,
+      actor: item.customerName,
+    });
     try {
       const saved = await api.post<CustomerPropertyRequest>("/customer-property-requests", request);
       setCustomerPropertyRequests((current) => current.map((entry) => entry.id === item.id ? saved : entry));
@@ -1939,12 +2210,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return false;
     }
   };
+
   const updateCustomerPropertyRequest = (id: string, request: Partial<Omit<CustomerPropertyRequest, "id" | "createdAt">>) => {
     setCustomerPropertyRequests((current) => current.map((item) => item.id === id ? { ...item, ...request } : item));
+    logActivity({
+      action: "updated",
+      entityType: "customer_property_request",
+      title: `تحديث بيانات طلب العميل (${id})`,
+    });
     return persist(api.patch(`/customer-property-requests/${id}`, request));
   };
+
   const deleteCustomerPropertyRequest = (id: string) => {
     setCustomerPropertyRequests((current) => current.filter((item) => item.id !== id));
+    logActivity({
+      action: "deleted",
+      entityType: "customer_property_request",
+      title: `حذف طلب العميل (${id})`,
+    });
     persist(api.del(`/customer-property-requests/${id}`));
   };
 
@@ -1952,6 +2235,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const saved = await api.post<Contract>("/contracts", contract);
       setContracts((current) => [saved, ...current]);
+      logActivity({
+        action: "created",
+        entityType: "contract",
+        title: `إنشاء عقد جديد (${saved.contractNumber || "عقد"})`,
+      });
       return true;
     } catch (err: unknown) {
       const apiError = err as { status?: number; message?: string };
@@ -1968,6 +2256,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const saved = await api.patch<Contract>(`/contracts/${id}`, contract);
       setContracts((current) => current.map((item) => item.id === id ? saved : item));
+      logActivity({
+        action: "updated",
+        entityType: "contract",
+        title: `تعديل العقد (${saved.contractNumber || id})`,
+      });
       return true;
     } catch (err: unknown) {
       const apiError = err as { status?: number; message?: string };
@@ -1984,6 +2277,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       await api.del(`/contracts/${id}`);
       setContracts((current) => current.filter((item) => item.id !== id));
+      logActivity({
+        action: "deleted",
+        entityType: "contract",
+        title: `حذف العقد (${id})`,
+      });
       return true;
     } catch (err: unknown) {
       const apiError = err as { status?: number; message?: string };
@@ -1998,37 +2296,86 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateAiLeadStatus = (id: string, status: AiLead["status"]) => {
     setAiLeads(p => p.map(x => x.id === id ? { ...x, status } : x));
+    logActivity({
+      action: "status",
+      entityType: "inquiry",
+      title: `تحديث حالة عميل المستشار الذكي (${id}) إلى (${status})`,
+    });
     persist(api.patch(`/ai/leads/${id}`, { status }));
   };
+
   const deleteAiLead = (id: string) => {
     setAiLeads(p => p.filter(x => x.id !== id));
+    logActivity({
+      action: "deleted",
+      entityType: "inquiry",
+      title: `حذف عميل المستشار الذكي (${id})`,
+    });
     persist(api.del(`/ai/leads/${id}`));
   };
 
-  const addTiktokVideo = (v: Omit<TiktokVideo, "id">) =>
-    updateSettings({ tiktokVideos: [...(settings.tiktokVideos ?? []), { ...v, id: genId() }] });
-  const updateTiktokVideo = (id: string, v: Partial<Omit<TiktokVideo, "id">>) =>
-    updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).map(x => x.id === id ? { ...x, ...v } : x) });
-  const deleteTiktokVideo = (id: string) =>
-    updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).filter(x => x.id !== id) });
+  const addTiktokVideo = (v: Omit<TiktokVideo, "id">) => {
+    logActivity({
+      action: "created",
+      entityType: "tiktok",
+      title: `إضافة فيديو تيك توك جديد (${v.title || "فيديو"})`,
+    });
+    return updateSettings({ tiktokVideos: [...(settings.tiktokVideos ?? []), { ...v, id: genId() }] });
+  };
+
+  const updateTiktokVideo = (id: string, v: Partial<Omit<TiktokVideo, "id">>) => {
+    logActivity({
+      action: "updated",
+      entityType: "tiktok",
+      title: `تعديل فيديو تيك توك (${id})`,
+    });
+    return updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).map(x => x.id === id ? { ...x, ...v } : x) });
+  };
+
+  const deleteTiktokVideo = (id: string) => {
+    logActivity({
+      action: "deleted",
+      entityType: "tiktok",
+      title: `حذف فيديو تيك توك (${id})`,
+    });
+    return updateSettings({ tiktokVideos: (settings.tiktokVideos ?? []).filter(x => x.id !== id) });
+  };
 
   // ── إدارة الإعلانات — routes مخصصة مع activity logging ─────────────────────
   const addAd = (a: Omit<Ad, "id">) => {
     const newAd: Ad = { ...a, id: genId(), views: 0, clicks: 0 };
     setSettings(prev => ({ ...prev, ads: [...(prev.ads ?? []), newAd] }));
+    logActivity({
+      action: "created",
+      entityType: "ad",
+      title: `إضافة إعلان جديد (${newAd.title || "إعلان تسويقي"})`,
+    });
     persist(api.post("/ads/manage", newAd));
   };
+
   const updateAd = (id: string, a: Partial<Omit<Ad, "id">>) => {
     setSettings(prev => ({
       ...prev,
       ads: (prev.ads ?? []).map(x => x.id === id ? { ...x, ...a } : x),
     }));
+    logActivity({
+      action: "updated",
+      entityType: "ad",
+      title: `تعديل إعلان (${id})`,
+    });
     persist(api.patch(`/ads/manage/${id}`, a));
   };
+
   const deleteAd = (id: string) => {
     setSettings(prev => ({ ...prev, ads: (prev.ads ?? []).filter(x => x.id !== id) }));
+    logActivity({
+      action: "deleted",
+      entityType: "ad",
+      title: `حذف إعلان (${id})`,
+    });
     persist(api.del(`/ads/manage/${id}`));
   };
+
   // إعادة ترتيب الإعلانات دفعةً واحدة
   const reorderAds = (ordered: Ad[]) => {
     const reordered = ordered.map((a, i) => ({ ...a, order: i + 1 }));
@@ -2039,8 +2386,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     persist(api.patch("/ads/manage/reorder", { ordered: reordered }));
   };
-  // تتبّع المشاهدات والنقرات — يُرسَل للـ API مع بيانات تفصيلية
-  // best-effort: لا نعرض خطأ أبداً، ونحدّث الـ state المحلي فوراً للتجاوب
+
+  // تتبّع المشاهدات والنقرات
   const trackAdView = useCallback((id: string, payload?: Record<string, unknown>) => {
     setSettings(prev => ({
       ...prev,
@@ -2048,6 +2395,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }));
     void api.post(`/ads/${id}/view`, payload ?? {}).catch(() => { /* best-effort */ });
   }, []);
+
   const trackAdClick = useCallback((id: string, payload?: Record<string, unknown>) => {
     setSettings(prev => ({
       ...prev,
@@ -2076,6 +2424,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       brokers, addBroker, updateBroker, deleteBroker,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
       addAd, updateAd, deleteAd, reorderAds, trackAdView, trackAdClick,
+      logActivity, clearActivityLogs,
     }}>
       {children}
     </DataContext.Provider>

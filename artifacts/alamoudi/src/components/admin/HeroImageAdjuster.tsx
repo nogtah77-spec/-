@@ -440,7 +440,7 @@ export function HeroImageAdjuster({
               dir="ltr"
               value={[scale]}
               min={0.3}
-              max={3}
+              max={4}
               step={0.05}
               onValueChange={([val]) => setScale(val)}
               className="py-1"
@@ -452,8 +452,8 @@ export function HeroImageAdjuster({
             size="icon"
             variant="outline"
             className="h-7 w-7 shrink-0"
-            onClick={() => setScale((s) => Math.min(3, Number((s + 0.1).toFixed(2))))}
-            title="تكبير"
+            onClick={() => setScale((s) => Math.min(4, Number((s + 0.1).toFixed(2))))}
+            title="تكبير (حتى 400%)"
           >
             <ZoomIn className="h-3.5 w-3.5" />
           </Button>

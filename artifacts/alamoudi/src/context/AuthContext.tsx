@@ -17,7 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { reload, users } = useData();
+  const { reload, users, logActivity } = useData();
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -203,6 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try { localStorage.setItem("alm_users", JSON.stringify(updatedList)); } catch {}
         }
 
+        logActivity({
+          action: "login",
+          entityType: "auth",
+          title: `تسجيل دخول ناجح للمستخدم (${loggedUser.name})`,
+          actor: loggedUser.name,
+        });
+
         await reload().catch(() => {});
         return { ok: true };
       }
@@ -229,6 +236,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setCurrentUser(mockAdmin);
       try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(mockAdmin)); } catch {}
+      logActivity({
+        action: "login",
+        entityType: "auth",
+        title: `تسجيل دخول المدير العام (${mockAdmin.name})`,
+        actor: mockAdmin.name,
+      });
       return { ok: true };
     }
 
@@ -236,6 +249,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    if (currentUser) {
+      logActivity({
+        action: "logout",
+        entityType: "auth",
+        title: `تسجيل خروج للمستخدم (${currentUser.name})`,
+        actor: currentUser.name,
+      });
+    }
     setCurrentUser(null);
     try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
     api.post("/auth/logout").catch(() => {});

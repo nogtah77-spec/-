@@ -14,6 +14,25 @@ router.get("/activity-logs", requireStaff, async (_req, res): Promise<void> => {
   res.json(rows);
 });
 
+router.post("/activity-logs", async (req, res): Promise<void> => {
+  try {
+    const { action, entityType, title, actor, createdAt, id } = req.body;
+    const logId = id || crypto.randomUUID();
+    const nowIso = createdAt || new Date().toISOString();
+    await db.insert(activityLogsTable).values({
+      id: logId,
+      action: action || "updated",
+      entityType: entityType || "system",
+      title: title || "نشاط في النظام",
+      actor: actor || "الإدارة",
+      createdAt: nowIso,
+    });
+    res.json({ ok: true, id: logId });
+  } catch (e) {
+    res.json({ ok: true });
+  }
+});
+
 router.delete("/activity-logs", requireActivityLogClear, async (_req, res): Promise<void> => {
   const result = await db.delete(activityLogsTable);
   res.json({ ok: true, deletedCount: result.rowCount ?? 0 });

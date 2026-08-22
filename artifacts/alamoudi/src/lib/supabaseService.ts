@@ -433,4 +433,63 @@ export const supabaseService = {
       return false;
     }
   },
+
+  // Fetch Activity Logs
+  async fetchActivityLogs(): Promise<any[] | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("activity_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      if (!data || data.length === 0) return null;
+      return data.map((r: any) => ({
+        id: r.id,
+        action: r.action,
+        entityType: r.entity_type || r.entityType || "system",
+        title: r.title,
+        actor: r.actor || "الإدارة",
+        createdAt: r.created_at || r.createdAt || new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.warn("Supabase fetch activity logs warning:", e);
+      return null;
+    }
+  },
+
+  // Save Activity Log
+  async saveActivityLog(log: any): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const row = {
+        id: log.id,
+        action: log.action,
+        entity_type: log.entityType,
+        title: log.title,
+        actor: log.actor || "الإدارة",
+        created_at: log.createdAt || new Date().toISOString(),
+      };
+      const { error } = await supabase.from("activity_logs").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save activity log warning:", e);
+      return false;
+    }
+  },
+
+  // Clear Activity Logs
+  async clearActivityLogs(): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const { error } = await supabase.from("activity_logs").delete().neq("id", "0");
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase clear activity logs warning:", e);
+      return false;
+    }
+  },
 };
