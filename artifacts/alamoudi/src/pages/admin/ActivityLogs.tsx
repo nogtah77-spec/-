@@ -5,10 +5,9 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Download, Search, Activity, RefreshCw, Trash2, ShieldAlert, PlusCircle, Sparkles, CheckCircle2, TrendingUp, Layers, Flame, UserCheck, ShieldCheck } from "lucide-react";
+import { Download, Search, Activity, RefreshCw, Trash2, ShieldAlert, PlusCircle, TrendingUp, Layers, Flame, Radio } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { ActivityItem } from "@/components/admin/ActivityItem";
-import { RecentPropertiesPanel } from "@/components/admin/RecentPropertiesPanel";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -46,7 +45,7 @@ const ENTITY_LABELS: Record<string, string> = {
 };
 
 export default function ActivityLogs() {
-  const { activityLogs, properties, regions, propertyTypes, reload, clearActivityLogs, logActivity } = useData();
+  const { activityLogs, reload, clearActivityLogs, logActivity } = useData();
   const { currentUser, refreshCurrentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const canViewLogs = isAdmin || checkUserPermission(currentUser, "التقارير-سجلات النشاط");
@@ -220,10 +219,11 @@ export default function ActivityLogs() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Header with quick action tools */}
         <AdminPageHeader
           title="سجلات النشاط والمتابعة"
-          subtitle="تتبع حي ومباشر لكافة الإجراءات والعمليات والتعديلات في النظام"
-          eyebrow="المراقبة والتدقيق اللحظي"
+          subtitle="تتبع حي ومباشر لكافة الإجراءات والعمليات والتعديلات المنفذة في النظام"
+          eyebrow="سجل التدقيق والرقابة اللحظي"
           icon={Activity}
           actions={
             <div className="grid w-full grid-cols-2 sm:flex sm:w-auto sm:items-center gap-2">
@@ -268,23 +268,7 @@ export default function ActivityLogs() {
           }
         />
 
-        {/* Live Monitoring Status Pill */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs sm:text-sm font-bold text-emerald-800 dark:text-emerald-300">
-              محرك مراقبة الأنشطة اللحظي متصل ويعمل بنسبة 100% (Realtime Live Streaming)
-            </span>
-          </div>
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-            تزامن سحابي فوري + تخزين محلي
-          </span>
-        </div>
-
-        {/* KPI Metrics Summary Cards */}
+        {/* Top Metric KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-accent/40 transition-colors">
             <div className="flex items-center justify-between text-muted-foreground mb-2">
@@ -292,7 +276,7 @@ export default function ActivityLogs() {
               <Layers className="h-4 w-4 text-accent" />
             </div>
             <div className="text-2xl sm:text-3xl font-black text-foreground">{stats.total}</div>
-            <p className="text-[11px] text-muted-foreground mt-1">سجل تراكمي مسجل</p>
+            <p className="text-[11px] text-muted-foreground mt-1">سجل تراكمي محفوظ</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xs hover:border-emerald-500/40 transition-colors">
@@ -323,38 +307,44 @@ export default function ActivityLogs() {
           </div>
         </div>
 
-        <RecentPropertiesPanel
-          properties={properties}
-          regions={regions}
-          propertyTypes={propertyTypes}
-        />
+        {/* Unified Search & Filters Toolbar */}
+        <div className="bg-card border rounded-2xl p-4 shadow-xs space-y-3">
+          {/* Quick Date Range Filter Buttons + Live Beacon */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-border/60">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
+              <span className="text-xs font-bold text-muted-foreground ml-1 shrink-0">النطاق الزمني:</span>
+              {[
+                { id: "all", label: "كافة السجلات" },
+                { id: "today", label: "أنشطة اليوم" },
+                { id: "week", label: "آخر 7 أيام" },
+                { id: "month", label: "آخر 30 يوم" },
+              ].map((tab) => (
+                <Button
+                  key={tab.id}
+                  variant={timeFilter === tab.id ? "default" : "outline"}
+                  size="sm"
+                  className={`h-8 rounded-xl px-3 text-xs font-bold transition-all ${
+                    timeFilter === tab.id ? "bg-accent text-accent-foreground shadow-xs" : "bg-card hover:bg-accent/10"
+                  }`}
+                  onClick={() => setTimeFilter(tab.id as any)}
+                >
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
 
-        {/* Filters and Search Bar */}
-        <div className="space-y-3">
-          {/* Quick Date Filters */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            <span className="text-xs font-bold text-muted-foreground ml-2 shrink-0">النطاق الزمني:</span>
-            {[
-              { id: "all", label: "كافة السجلات" },
-              { id: "today", label: "أنشطة اليوم" },
-              { id: "week", label: "آخر 7 أيام" },
-              { id: "month", label: "آخر 30 يوم" },
-            ].map((tab) => (
-              <Button
-                key={tab.id}
-                variant={timeFilter === tab.id ? "default" : "outline"}
-                size="sm"
-                className={`h-8 rounded-xl px-3 text-xs font-bold transition-all ${
-                  timeFilter === tab.id ? "bg-accent text-accent-foreground shadow-xs" : "bg-card hover:bg-accent/10"
-                }`}
-                onClick={() => setTimeFilter(tab.id as any)}
-              >
-                {tab.label}
-              </Button>
-            ))}
+            {/* Subtle Live Sync Indicator */}
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>مراقبة حية وتزامن سحابي فوري</span>
+            </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_10rem_11rem]">
+          {/* Search Input and Dropdowns */}
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_11rem_11rem]">
             <div className="relative">
               <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -367,7 +357,7 @@ export default function ActivityLogs() {
             <Select value={actionFilter} onValueChange={setActionFilter}>
               <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="نوع العملية" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">كل العمليات</SelectItem>
+                <SelectItem value="all">كل العمليات ({activityLogs.length})</SelectItem>
                 {actionOptions.map((action) => (
                   <SelectItem key={action} value={action}>{ACTION_LABELS[action] ?? action}</SelectItem>
                 ))}
@@ -385,7 +375,7 @@ export default function ActivityLogs() {
           </div>
         </div>
 
-        {/* Activity Logs List Container */}
+        {/* Activity Logs Timeline List */}
         <div className="bg-card border rounded-2xl p-4 sm:p-6 shadow-xs">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3 text-xs text-muted-foreground">
             <span className="font-semibold">
@@ -406,11 +396,11 @@ export default function ActivityLogs() {
           {filtered.length === 0 ? (
             <EmptyState
               icon={<Activity className="h-10 w-10 text-muted-foreground/60" />}
-              title={query || actionFilter !== "all" || entityFilter !== "all" || timeFilter !== "all" ? "لا توجد نتائج مطابقة للبحث" : "لا توجد سجلات بعد"}
+              title={query || actionFilter !== "all" || entityFilter !== "all" || timeFilter !== "all" ? "لا توجد نتائج مطابقة للبحث" : "لا توجد سجلات نشاط حالياً"}
               description={
                 query || actionFilter !== "all" || entityFilter !== "all" || timeFilter !== "all"
                   ? "جرّب تغيير خيارات البحث أو تصفير الفلاتر."
-                  : "ستظهر جميع أنشطة الإضافة، التعديل، والحذف التي ينفذها الموظفون هنا تلقائياً."
+                  : "جميع عمليات الإضافة والتعديل والحذف التي تتم في النظام ستظهر هنا تلقائياً ولحظياً."
               }
               className="border-none bg-transparent py-14"
             />
@@ -452,3 +442,4 @@ export default function ActivityLogs() {
     </AdminLayout>
   );
 }
+
