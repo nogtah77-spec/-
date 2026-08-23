@@ -9,7 +9,7 @@ interface HomeLuxuryBackgroundProps {
 }
 
 const DEFAULT_DARK_IMG = "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80"; // Luxury Night Skyscrapers & Golden Lights
-const DEFAULT_LIGHT_IMG = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80"; // Luxury Villa with Pool & Palm Trees
+const DEFAULT_LIGHT_IMG = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80"; // Luxury Sunlit Villa with Crystal Pool
 
 export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConfig }: HomeLuxuryBackgroundProps) {
   const { settings } = useData();
@@ -46,10 +46,14 @@ export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConf
   const imgOpacity = Math.max(0, Math.min(100, imageOpacityPercent)) / 100;
   const overlayOpacity = Math.max(0, Math.min(100, overlayOpacityPercent)) / 100;
 
+  // Solid base color behind the image to prevent white bleed-through in dark mode
+  const baseBackdropColor = isDark ? (overlayColor || "#0B131B") : (overlayColor || "#F8FAFC");
+
   return (
     <div
       aria-hidden="true"
       className={`pointer-events-none absolute inset-0 overflow-hidden select-none z-0 ${className}`}
+      style={{ backgroundColor: baseBackdropColor }}
     >
       {/* 1. Underlying High-Definition Image Layer */}
       <div
@@ -58,26 +62,16 @@ export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConf
           backgroundImage: `url("${bgImage}")`,
           opacity: imgOpacity,
           filter: blurAmount > 0 ? `blur(${blurAmount}px)` : undefined,
-          transform: blurAmount > 0 ? "scale(1.05)" : "scale(1)", // Prevent blur clipping at boundaries
+          transform: blurAmount > 0 ? "scale(1.06)" : "scale(1)", // Prevent blur border bleed
         }}
       />
 
       {/* 2. Primary Solid/Translucent Color Overlay Layer */}
       <div
-        className="absolute inset-0 w-full h-full transition-all duration-300"
+        className="absolute inset-0 w-full h-full transition-all duration-300 pointer-events-none"
         style={{
           backgroundColor: overlayColor,
           opacity: overlayOpacity,
-        }}
-      />
-
-      {/* 3. Subtle Ambient Luxury Vignette & Contrast Depth */}
-      <div
-        className="absolute inset-0 w-full h-full"
-        style={{
-          background: isDark
-            ? "radial-gradient(ellipse at 50% 20%, rgba(184, 142, 75, 0.08) 0%, rgba(11, 19, 27, 0.4) 60%, rgba(11, 19, 27, 0.8) 100%)"
-            : "radial-gradient(ellipse at 50% 20%, rgba(184, 142, 75, 0.05) 0%, rgba(248, 250, 252, 0.3) 60%, rgba(248, 250, 252, 0.75) 100%)",
         }}
       />
     </div>
