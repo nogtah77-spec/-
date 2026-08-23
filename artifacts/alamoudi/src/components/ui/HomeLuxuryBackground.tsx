@@ -1,21 +1,23 @@
 import React from "react";
 import { useTheme } from "next-themes";
-import { useData } from "@/context/DataContext";
+import { useData, type HomeBackgroundSettings } from "@/context/DataContext";
 
 interface HomeLuxuryBackgroundProps {
   className?: string;
   forcedTheme?: "dark" | "light";
+  overrideConfig?: Partial<HomeBackgroundSettings>;
 }
 
 const DEFAULT_DARK_IMG = "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80"; // Luxury Night Skyscrapers & Golden Lights
 const DEFAULT_LIGHT_IMG = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80"; // Luxury Villa with Pool & Palm Trees
 
-export function HomeLuxuryBackground({ className = "", forcedTheme }: HomeLuxuryBackgroundProps) {
+export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConfig }: HomeLuxuryBackgroundProps) {
   const { settings } = useData();
   const { resolvedTheme } = useTheme();
 
   const isDark = forcedTheme ? forcedTheme === "dark" : resolvedTheme === "dark";
-  const bgConfig = settings?.homeBackgroundSettings;
+  const baseConfig = settings?.homeBackgroundSettings;
+  const bgConfig = overrideConfig ? { ...(baseConfig || {}), ...overrideConfig } : baseConfig;
 
   if (bgConfig && bgConfig.enabled === false) {
     return null;
@@ -51,18 +53,18 @@ export function HomeLuxuryBackground({ className = "", forcedTheme }: HomeLuxury
     >
       {/* 1. Underlying High-Definition Image Layer */}
       <div
-        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat transition-all duration-700 ease-out transform-gpu"
+        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat transition-all duration-300 ease-out transform-gpu"
         style={{
           backgroundImage: `url("${bgImage}")`,
           opacity: imgOpacity,
           filter: blurAmount > 0 ? `blur(${blurAmount}px)` : undefined,
-          transform: blurAmount > 0 ? "scale(1.04)" : "scale(1)", // Avoid white edges when blurred
+          transform: blurAmount > 0 ? "scale(1.05)" : "scale(1)", // Prevent blur clipping at boundaries
         }}
       />
 
       {/* 2. Primary Solid/Translucent Color Overlay Layer */}
       <div
-        className="absolute inset-0 w-full h-full transition-all duration-500"
+        className="absolute inset-0 w-full h-full transition-all duration-300"
         style={{
           backgroundColor: overlayColor,
           opacity: overlayOpacity,

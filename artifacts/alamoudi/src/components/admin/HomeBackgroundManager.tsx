@@ -25,6 +25,8 @@ import {
   RotateCcw,
   Eye,
   Check,
+  Compass,
+  Waves,
 } from "lucide-react";
 import type { SiteSettings, HomeBackgroundSettings } from "@/context/DataContext";
 import { HomeLuxuryBackground } from "@/components/ui/HomeLuxuryBackground";
@@ -48,100 +50,219 @@ interface PresetCategory {
   }[];
 }
 
-const PRESET_CATEGORIES: PresetCategory[] = [
+// ── 🌙 مكتبة مخصصة حصرياً للوضع الليلي (Dark Mode Presets) ──
+const DARK_PRESET_CATEGORIES: PresetCategory[] = [
   {
-    title: "أبراج وناطحات سحاب ليلية (Night Skylines & Towers)",
+    title: "أبراج وناطحات سحاب ليلية بإضاءات ذهبية (Night Skylines & Towers)",
     icon: Building2,
     items: [
       {
-        id: "towers-1",
-        title: "ناطحات سحاب متوهجة وإضاءات ذهبية",
+        id: "dark-towers-1",
+        title: "ناطحات سحاب دبي المتوهجة ببريق ذهبي",
         url: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80",
-        tag: "أبراج ليلية",
+        tag: "دبي الذهبية",
       },
       {
-        id: "towers-2",
-        title: "أفق مدينة ليلي حديث وأضواء ساحرة",
+        id: "dark-towers-2",
+        title: "أفق مانهاتن الليلي وتلألؤ أضواء المدينة",
         url: "https://images.unsplash.com/photo-1514565131-fce0801e5785?w=1920&q=80",
-        tag: "أفق المدينة",
+        tag: "أفق نيويورك",
       },
       {
-        id: "towers-3",
-        title: "عمارة زجاجية شاهقة وأضواء الشفق",
+        id: "dark-towers-3",
+        title: "عمارة زجاجية حديثة تحت سماء الشفق والليل",
         url: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1920&q=80",
-        tag: "شفق ليل",
+        tag: "أبراج الشفق",
+      },
+      {
+        id: "dark-towers-4",
+        title: "أبراج سكنية وإضاءات كوزموبوليتان متلألئة",
+        url: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1920&q=80",
+        tag: "مدينة الأضواء",
+      },
+      {
+        id: "dark-towers-5",
+        title: "أفق طوكيو الليلي وناطحات سحاب مستقبلية",
+        url: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=1920&q=80",
+        tag: "أبراج طوكيو",
+      },
+      {
+        id: "dark-towers-6",
+        title: "جسور معمارية وأبراج تنعكس على مياه البحر ليلاً",
+        url: "https://images.unsplash.com/photo-1508873696983-2df5293cb32b?w=1920&q=80",
+        tag: "انعكاس البحر",
       },
     ],
   },
   {
-    title: "فيلات ملكية وطبيعة ومسابح (Luxury Villas & Lush Nature)",
+    title: "قصور وفيلات بإضاءات ليلية ومسابح ساحرة (Night Luxury Estates & Pools)",
     icon: Trees,
     items: [
       {
-        id: "villa-1",
-        title: "فيلا مودرن مع مسبح ونخيل وأشجار",
-        url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80",
-        tag: "فيلا ومسبح",
-      },
-      {
-        id: "villa-2",
-        title: "قصر معماري فاخر وسط حدائق غناء",
-        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80",
-        tag: "قصر وحديقة",
-      },
-      {
-        id: "villa-3",
-        title: "مجمع سكني راقي محاط بالمسطحات الخضراء",
+        id: "dark-villa-1",
+        title: "قصر فاخر مع مسبح مضاء ونخيل في سكون الليل",
         url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1920&q=80",
-        tag: "طبيعة وشجر",
+        tag: "قصر ومسبح ليلي",
+      },
+      {
+        id: "dark-villa-2",
+        title: "فيلا معمارية مودرن بإضاءات أرضية ساحرة",
+        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80",
+        tag: "فيلا بإضاءة دافئة",
+      },
+      {
+        id: "dark-villa-3",
+        title: "مجمع سكني راقي بإضاءات حدائق ليلية",
+        url: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80",
+        tag: "كمبوند ليلي",
+      },
+      {
+        id: "dark-villa-4",
+        title: "استراحة ريفية معمارية بإضاءات دافئة في الليل",
+        url: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1920&q=80",
+        tag: "استراحة ريفية",
       },
     ],
   },
   {
-    title: "لوحات رسم معمارية وفن ملون (Artistic Architectural Paintings)",
+    title: "لوحات رسم وفنون معمارية ليلية (Dark Luxury Architectural Art)",
     icon: Palette,
     items: [
       {
-        id: "art-1",
-        title: "لوحة أفق معماري زيتي بألوان غنية ودافئة",
+        id: "dark-art-1",
+        title: "لوحة أفق ليلي زيتي بتدرجات الكحلي والذهب",
         url: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1920&q=80",
-        tag: "لوحة زيتية",
+        tag: "زيتي ليلي ذهبي",
       },
       {
-        id: "art-2",
-        title: "تجريد فني مبهج وديناميكي لعالم العقارات",
+        id: "dark-art-2",
+        title: "فن تجريدي معماري ليلي مع تدرجات ضوئية",
         url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1920&q=80",
-        tag: "ألوان فنية",
+        tag: "تجريد ليلي",
       },
       {
-        id: "art-3",
-        title: "لوحة أكرليك تعبيرية لأبراج وعماير ملونة",
+        id: "dark-art-3",
+        title: "لوحة أكرليك تعبيرية لأبراج المدينة في الليل",
         url: "https://images.unsplash.com/photo-1578925518470-4def7a0f08bb?w=1920&q=80",
-        tag: "رسم أكرليك",
+        tag: "أكرليك ليلي",
+      },
+      {
+        id: "dark-art-4",
+        title: "عمارة سيريالية نيون ليلية بهيبة ملكية",
+        url: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1920&q=80",
+        tag: "نيون سيريالي",
+      },
+    ],
+  },
+];
+
+// ── ☀️ مكتبة مخصصة حصرياً للوضع النهاري (Light Mode Presets) ──
+const LIGHT_PRESET_CATEGORIES: PresetCategory[] = [
+  {
+    title: "عماير وأبراج زجاجية مشرقة تحت الشمس (Sunlit Modern Skylines)",
+    icon: Building,
+    items: [
+      {
+        id: "light-sky-1",
+        title: "أبراج زجاجية شاهقة تحت السماء الزرقاء الصافية",
+        url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80",
+        tag: "أبراج زجاجية",
+      },
+      {
+        id: "light-sky-2",
+        title: "عماير سكنية مودرن مع شرفات خضراء راقية",
+        url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1920&q=80",
+        tag: "عماير وشرفات",
+      },
+      {
+        id: "light-sky-3",
+        title: "أفق ساحلي مشرق وعمارة بحرية حديثة",
+        url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80",
+        tag: "أفق ساحلي",
+      },
+      {
+        id: "light-sky-4",
+        title: "مجمعات عمرانية عصرية تحت أشعة الشمس الذهبية",
+        url: "https://images.unsplash.com/photo-1479839672679-a46483c0e7c8?w=1920&q=80",
+        tag: "مجمع عمراني",
+      },
+      {
+        id: "light-sky-5",
+        title: "أفق مدن مفتوح وعمارة هندسية بيضاء ناصعة",
+        url: "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=1920&q=80",
+        tag: "عمارة بيضاء",
+      },
+      {
+        id: "light-sky-6",
+        title: "ناطحات سحاب معمارية بزاوية صاعدة ساطعة",
+        url: "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1920&q=80",
+        tag: "سماء زرقاء",
       },
     ],
   },
   {
-    title: "عماير وأفق مدن نهارية مشرقة (Sunlit Modern Skylines)",
-    icon: Building,
+    title: "فيلات ملكية وطبيعة خضراء وشجر ومسابح (Sunlit Villas & Tropical Nature)",
+    icon: Trees,
     items: [
       {
-        id: "sun-1",
-        title: "أبراج زجاجية حديثة تحت أشعة الشمس الزرقاء",
-        url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1920&q=80",
-        tag: "أبراج نهارية",
+        id: "light-villa-1",
+        title: "فيلا مودرن مع مسبح كريستالي ونخيل تحت الشمس",
+        url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80",
+        tag: "فيلا ومسبح نهاراً",
       },
       {
-        id: "sun-2",
-        title: "عماير سكنية مودرن مع شرفات زجاجية راقية",
-        url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1920&q=80",
-        tag: "عماير سكنية",
+        id: "light-villa-2",
+        title: "قصر أبيض فاخر وسط حدائق خضراء غناء",
+        url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&q=80",
+        tag: "قصر وحديقة شمسية",
       },
       {
-        id: "sun-3",
-        title: "واجهة معمارية ساحلية مشرقة وأفق مفتوح",
-        url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80",
-        tag: "أفق ساحلي",
+        id: "light-villa-3",
+        title: "كمبوند سكني فاخر مع مسطحات مائية وحدائق",
+        url: "https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?w=1920&q=80",
+        tag: "بحيرات وحدائق",
+      },
+      {
+        id: "light-villa-4",
+        title: "منزل معماري فندقي بين الأشجار والطبيعة المورقة",
+        url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1920&q=80",
+        tag: "طبيعة وشجر نهاراً",
+      },
+      {
+        id: "light-villa-5",
+        title: "إطلالة مسابح شمسية مذهلة واستراحات راقية",
+        url: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=1920&q=80",
+        tag: "مسابح ومنتجعات",
+      },
+    ],
+  },
+  {
+    title: "لوحات رسم معمارية ملونة ومبهجة (Bright Artistic Paintings)",
+    icon: Palette,
+    items: [
+      {
+        id: "light-art-1",
+        title: "لوحة فنية زيتية صيفية بتدرجات الألوان الطبيعية",
+        url: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=1920&q=80",
+        tag: "زيتي نهاري صيفي",
+      },
+      {
+        id: "light-art-2",
+        title: "رسم تجريدي مشرق ومبهج لعالم العقارات والهندسة",
+        url: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=1920&q=80",
+        tag: "تجريد نهاري ملون",
+      },
+      {
+        id: "light-art-3",
+        title: "لوحة مائية تعبيرية لأفق معماري مبهج",
+        url: "https://images.unsplash.com/photo-1578925518470-4def7a0f08bb?w=1920&q=80",
+        tag: "ألوان مائية",
+      },
+      {
+        id: "light-art-4",
+        title: "تدرجات شروق الشمس وألوان الباستيل المعمارية",
+        url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1920&q=80",
+        tag: "شروق وباستيل",
       },
     ],
   },
@@ -240,6 +361,8 @@ export function HomeBackgroundManager({
   const currentBlur = isCurrentDark ? (bgConfig.blurDark ?? 1) : (bgConfig.blurLight ?? 1);
   const currentImgOpacity = isCurrentDark ? (bgConfig.imageOpacityDark ?? 90) : (bgConfig.imageOpacityLight ?? 85);
 
+  const categoriesToShow = isCurrentDark ? DARK_PRESET_CATEGORIES : LIGHT_PRESET_CATEGORIES;
+
   return (
     <div className="space-y-6">
       {/* Master Enable/Disable Bar */}
@@ -252,7 +375,7 @@ export function HomeBackgroundManager({
                 خلفيات الصفحة الرئيسية والمظهر الفني (Luxury Backgrounds & Overlays)
               </CardTitle>
               <CardDescription className="mt-1">
-                اختر أو ارفع خلفيات فاخرة (عماير، أبراج، طبيعة وشجر، أو لوحات رسم) تظهر بكامل سحرها خلف البطاقات، مع تحكم كامل بطبقة الفلتر والبلور والألوان.
+                اختر أو ارفع خلفيات فاخرة (عماير، أبراج، طبيعة وشجر، أو لوحات رسم) مخصصة للوضع الليلي والنهاري، مع تحكم فوري بالطبقة العازلة والبلور والشفافية مع معاينة حية تتغير لحظياً.
               </CardDescription>
             </div>
             <div className="flex items-center gap-3 bg-muted/60 px-4 py-2 rounded-xl border border-border">
@@ -271,52 +394,60 @@ export function HomeBackgroundManager({
 
       {bgConfig.enabled && (
         <>
-          {/* Mode Switcher Buttons */}
-          <div className="flex items-center justify-center sm:justify-start gap-2 border-b border-border/80 pb-3">
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center justify-center sm:justify-start gap-3 border-b border-border/80 pb-3">
             <Button
               type="button"
               variant={isCurrentDark ? "default" : "outline"}
               onClick={() => setActiveTab("dark")}
-              className={`h-10 px-5 rounded-xl font-bold gap-2 text-xs sm:text-sm ${
-                isCurrentDark ? "bg-[#10202D] text-[#D4AF37] border border-[#D4AF37]/50 shadow-md" : ""
+              className={`h-11 px-6 rounded-xl font-bold gap-2 text-xs sm:text-sm transition-all ${
+                isCurrentDark
+                  ? "bg-[#10202D] text-[#D4AF37] border-2 border-[#D4AF37] shadow-lg shadow-black/40 scale-[1.02]"
+                  : "hover:border-[#D4AF37]/50"
               }`}
             >
-              <Moon className="h-4 w-4" />
-              تخصيص خلفية وفلاتر الوضع الليلي (Dark Mode)
+              <Moon className="h-4 w-4 text-[#D4AF37]" />
+              خلفيات وفلاتر الوضع الليلي (Dark Mode Gallery)
             </Button>
             <Button
               type="button"
               variant={!isCurrentDark ? "default" : "outline"}
               onClick={() => setActiveTab("light")}
-              className={`h-10 px-5 rounded-xl font-bold gap-2 text-xs sm:text-sm ${
-                !isCurrentDark ? "bg-accent text-accent-foreground font-bold shadow-md" : ""
+              className={`h-11 px-6 rounded-xl font-bold gap-2 text-xs sm:text-sm transition-all ${
+                !isCurrentDark
+                  ? "bg-accent text-accent-foreground border-2 border-accent shadow-lg shadow-accent/20 scale-[1.02]"
+                  : "hover:border-accent/50"
               }`}
             >
-              <Sun className="h-4 w-4" />
-              تخصيص خلفية وفلاتر الوضع النهاري (Light Mode)
+              <Sun className="h-4 w-4 text-amber-500" />
+              خلفيات وفلاتر الوضع النهاري (Light Mode Gallery)
             </Button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left 7 Columns: Preset Gallery & Upload */}
+            {/* Left 7 Columns: Mode-Specific Presets Gallery & Upload */}
             <div className="lg:col-span-7 space-y-6">
               <Card className="card-luxury">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center justify-between">
                     <span className="flex items-center gap-2">
                       <ImageIcon className="h-4 w-4 text-accent" />
-                      معرض الخلفيات الفنية الفاخرة (اختر بضغطة زر)
+                      {isCurrentDark
+                        ? "مكتبة خلفيات الوضع الليلي الفاخرة (أبراج ليلية، قصور، لوحات)"
+                        : "مكتبة خلفيات الوضع النهاري الفاخرة (عماير شمسية، طبيعة، بحيرات)"}
                     </span>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {isCurrentDark ? "محدد للوضع الليلي" : "محدد للوضع النهاري"}
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                      isCurrentDark ? "bg-[#10202D] text-[#D4AF37] border border-[#D4AF37]/40" : "bg-amber-100 text-amber-900 border border-amber-300"
+                    }`}>
+                      {isCurrentDark ? "🌙 معروض لليلي" : "☀️ معروض للنهاري"}
                     </span>
                   </CardTitle>
                   <CardDescription>
-                    انقر على أي صورة عماير، أبراج، شجر وطبيعة، أو لوحة فنية لتطبيقها فوراً.
+                    انقر على أي بطاقة لتطبيقها ومعاينتها فوراً في صندوق المعاينة الحية.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {PRESET_CATEGORIES.map((cat, idx) => {
+                  {categoriesToShow.map((cat, idx) => {
                     const CatIcon = cat.icon;
                     return (
                       <div key={idx} className="space-y-2.5">
@@ -324,7 +455,7 @@ export function HomeBackgroundManager({
                           <CatIcon className="h-4 w-4 text-accent" />
                           <span>{cat.title}</span>
                         </div>
-                        <div className="grid grid-cols-3 gap-2.5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                           {cat.items.map((item) => {
                             const isSelected = currentImg === item.url;
                             return (
@@ -340,8 +471,8 @@ export function HomeBackgroundManager({
                                 }}
                                 className={`group relative h-24 sm:h-28 rounded-xl overflow-hidden border-2 text-right transition-all duration-300 ${
                                   isSelected
-                                    ? "border-accent ring-2 ring-accent/40 shadow-lg scale-[1.02]"
-                                    : "border-border/60 hover:border-accent/60 opacity-80 hover:opacity-100"
+                                    ? "border-accent ring-2 ring-accent/50 shadow-lg scale-[1.03] z-10"
+                                    : "border-border/60 hover:border-accent/60 opacity-85 hover:opacity-100"
                                 }`}
                               >
                                 <img
@@ -350,12 +481,12 @@ export function HomeBackgroundManager({
                                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                   loading="lazy"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
                                 <div className="absolute bottom-1.5 right-1.5 left-1.5 text-white">
                                   <span className="block text-[10px] font-bold leading-tight truncate">
                                     {item.title}
                                   </span>
-                                  <span className="text-[9px] text-[#E6CC98] opacity-90">
+                                  <span className="text-[9px] text-[#E6CC98] font-medium opacity-90">
                                     {item.tag}
                                   </span>
                                 </div>
@@ -434,10 +565,10 @@ export function HomeBackgroundManager({
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Palette className="h-4 w-4 text-accent" />
-                    الطبقة العازلة والفلاتر (Overlays & Filters)
+                    الطبقة العازلة والفلاتر ({isCurrentDark ? "الوضع الليلي" : "الوضع النهاري"})
                   </CardTitle>
                   <CardDescription>
-                    تحكم بلون وشفافية الطبقة العازلة والبلور فوق صورة الخلفية.
+                    تحكم بلون وشفافية الطبقة العازلة والبلور مع استجابة لحظية في المعاينة.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
@@ -517,7 +648,7 @@ export function HomeBackgroundManager({
                       }}
                     />
                     <div className="flex justify-between text-[10px] text-muted-foreground">
-                      <span>شفافة وخلفية بارزة (20%)</span>
+                      <span>خلفية بارزة وواضحة (20%)</span>
                       <span>متزنة وفخمة (75%)</span>
                       <span>معتمة تماماً (100%)</span>
                     </div>
@@ -560,7 +691,7 @@ export function HomeBackgroundManager({
                       }}
                     />
                     <div className="flex justify-between text-[10px] text-muted-foreground">
-                      <span>صورة واضحة وحادة (0px)</span>
+                      <span>حادة ونقية (0px)</span>
                       <span>تمويه ناعم خفيف (2px)</span>
                       <span>تمويه زجاجي فندقي (10px)</span>
                     </div>
@@ -568,22 +699,30 @@ export function HomeBackgroundManager({
                 </CardContent>
               </Card>
 
-              {/* Live Preview Box */}
-              <Card className="card-luxury">
+              {/* ⚡ Live Instant Interactive Preview Box ⚡ */}
+              <Card className="card-luxury border-accent/40 shadow-lg">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-accent" />
-                    معاينة حية ومباشرة للبطاقات فوق الخلفية
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-accent animate-pulse" />
+                      معاينة حية ومباشرة (تتغير لحظياً مع كل حركة)
+                    </CardTitle>
+                    <span className="text-[10px] bg-accent/15 text-accent font-bold px-2 py-0.5 rounded-md">
+                      تحديث فوري Live ⚡
+                    </span>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div
-                    className={`relative rounded-2xl overflow-hidden p-5 sm:p-6 min-h-[220px] flex items-center justify-center border border-border shadow-inner transition-colors duration-500 ${
+                    className={`relative rounded-2xl overflow-hidden p-5 sm:p-6 min-h-[230px] flex items-center justify-center border border-border shadow-inner transition-colors duration-500 ${
                       isCurrentDark ? "bg-[#0B131B] text-white" : "bg-[#F8FAFC] text-slate-900"
                     }`}
                   >
-                    {/* Live Background Simulator */}
-                    <HomeLuxuryBackground forcedTheme={isCurrentDark ? "dark" : "light"} />
+                    {/* Live Background Simulator with live active config */}
+                    <HomeLuxuryBackground
+                      forcedTheme={isCurrentDark ? "dark" : "light"}
+                      overrideConfig={bgConfig}
+                    />
 
                     {/* Simulated Floating Real Estate Card */}
                     <div
@@ -605,7 +744,7 @@ export function HomeBackgroundManager({
                       <div className="mt-3 pt-2.5 border-t border-current/10 flex items-center justify-between text-xs">
                         <span className="font-bold text-accent">7,850,000 ج.م</span>
                         <span className="text-[9px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold">
-                          معاينة مباشرة
+                          {isCurrentDark ? "معاينة الوضع الليلي" : "معاينة الوضع النهاري"}
                         </span>
                       </div>
                     </div>
