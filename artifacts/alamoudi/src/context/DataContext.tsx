@@ -293,18 +293,20 @@ export interface QrCodeItem {
   order?: number;
 }
 
-export type BackgroundPatternType = "architectural" | "mashrabiya" | "luxury_grid" | "marble_waves" | "ambient_aurora" | "custom";
-
 export interface HomeBackgroundSettings {
   enabled: boolean;
-  patternDark: BackgroundPatternType;
-  patternLight: BackgroundPatternType;
-  opacityDark: number; // 0 - 100
-  opacityLight: number; // 0 - 100
-  blurDark: number; // 0 - 20
-  blurLight: number; // 0 - 20
-  customImageDark?: string;
-  customImageLight?: string;
+  // Dark Mode
+  bgImageDark: string;
+  overlayColorDark: string;
+  overlayOpacityDark: number; // 0 - 100
+  blurDark: number; // 0 - 25
+  imageOpacityDark: number; // 0 - 100
+  // Light Mode
+  bgImageLight: string;
+  overlayColorLight: string;
+  overlayOpacityLight: number; // 0 - 100
+  blurLight: number; // 0 - 25
+  imageOpacityLight: number; // 0 - 100
 }
 
 export interface SiteSettings {
@@ -423,14 +425,16 @@ const DEFAULT_SETTINGS: SiteSettings = {
   ],
   homeBackgroundSettings: {
     enabled: true,
-    patternDark: "architectural",
-    patternLight: "marble_waves",
-    opacityDark: 45,
-    opacityLight: 30,
-    blurDark: 0,
-    blurLight: 0,
-    customImageDark: "",
-    customImageLight: "",
+    bgImageDark: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80",
+    overlayColorDark: "#0B131B",
+    overlayOpacityDark: 75,
+    blurDark: 1,
+    imageOpacityDark: 90,
+    bgImageLight: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80",
+    overlayColorLight: "#F8FAFC",
+    overlayOpacityLight: 80,
+    blurLight: 1,
+    imageOpacityLight: 85,
   },
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
