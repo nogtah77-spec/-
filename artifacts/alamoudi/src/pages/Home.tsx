@@ -25,6 +25,7 @@ import { PropertyCarousel } from "@/components/ui/PropertyCarousel";
 import { PropertyFilterPanel } from "@/components/ui/PropertyFilterPanel";
 import { StickyQuickSearch } from "@/components/ui/StickyQuickSearch";
 import { HomeQrSection } from "@/components/home/HomeQrSection";
+import { HomeLuxuryBackground } from "@/components/ui/HomeLuxuryBackground";
 import {
   DEFAULT_PROPERTY_FILTERS,
   filterProperties,
@@ -304,7 +305,10 @@ export default function Home() {
         onApply={applyFilters}
         onReset={clearFilters}
       />
-      <main className="flex-1">
+      <main className="flex-1 relative overflow-hidden">
+        {/* ── Ambient Luxury Vector & Pattern Background ── */}
+        <HomeLuxuryBackground />
+
         {/* ── 3 Action Buttons — Luxury Quick Actions ── */}
         <div className="container px-3 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
           <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-4xl mx-auto">
@@ -373,7 +377,7 @@ export default function Home() {
 
         {/* ── Filter / Search Results ── */}
         {isFiltering && (
-          <section className="py-10 md:py-12 bg-background">
+          <section className="py-10 md:py-12 bg-transparent relative z-10">
             <div className="container px-3 sm:px-6">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
                 <div>
@@ -423,7 +427,7 @@ export default function Home() {
 
         {/* ── TikTok Section ── */}
         {!isFiltering && (
-          <section className="py-4 md:py-5 bg-background">
+          <section className="py-4 md:py-5 bg-transparent relative z-10">
               <div className="container px-3 sm:px-6">
               <div className="max-w-3xl mx-auto">
                 <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
@@ -549,7 +553,7 @@ export default function Home() {
         {!isFiltering && (
           <>
             {/* ── Featured Properties — VIP Carousel ── */}
-            <section className="py-10 md:py-14 bg-muted/40 dark:bg-background border-b border-border/40">
+            <section className="py-10 md:py-14 bg-transparent border-b border-border/30 relative z-10">
               <div className="container px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                   <div>
@@ -679,7 +683,7 @@ export default function Home() {
             )}
 
             {/* ── Finishing Services Preview ── */}
-            <section className="py-12 md:py-14 bg-muted dark:bg-background">
+            <section className="py-12 md:py-14 bg-transparent relative z-10">
               <div className="container px-6">
                 <div className="text-center mb-5">
                   <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
@@ -708,7 +712,7 @@ export default function Home() {
             </section>
 
             {/* ── Add Property CTA ── */}
-            <section className="py-12 md:py-14 bg-muted dark:bg-background">
+            <section className="py-12 md:py-14 bg-transparent relative z-10">
               <div className="container px-6">
                 <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-lg p-8 card-luxury">
                   <div className="w-14 h-14 bg-accent/10 rounded-md flex items-center justify-center text-accent mx-auto mb-4">

@@ -64,6 +64,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
+import { HomeBackgroundManager } from "@/components/admin/HomeBackgroundManager";
 
 const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = {
   thumbnail: "",
@@ -450,11 +451,12 @@ export default function Settings() {
         />
 
         <Tabs defaultValue={canEditSettings ? "general" : "qrcodes"} className="w-full">
-          <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-7">
+          <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-8">
             {canEditSettings && <TabsTrigger value="general">عام</TabsTrigger>}
             {canEditSettings && <TabsTrigger value="contact">التواصل</TabsTrigger>}
             {canManageQr && <TabsTrigger value="qrcodes">رموز الـ QR</TabsTrigger>}
             {canEditSettings && <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>}
+            {canEditSettings && <TabsTrigger value="appearance">خلفيات ومظهر المنصة</TabsTrigger>}
             {canEditSettings && <TabsTrigger value="tiktok">تيك توك</TabsTrigger>}
             {canEditSettings && <TabsTrigger value="system">النظام</TabsTrigger>}
             {canEditSettings && <TabsTrigger value="carousel">الكاروسيل</TabsTrigger>}
@@ -1468,6 +1470,16 @@ export default function Settings() {
                 </CardFooter>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* ── Home Ambient Backgrounds & Appearance ── */}
+          <TabsContent value="appearance" className="mt-6">
+            <HomeBackgroundManager
+              form={form}
+              setForm={setForm}
+              onSave={handleSave}
+              saving={saving}
+            />
           </TabsContent>
 
           {/* ── TikTok Videos ── */}

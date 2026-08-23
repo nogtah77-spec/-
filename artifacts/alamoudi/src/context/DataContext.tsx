@@ -293,6 +293,20 @@ export interface QrCodeItem {
   order?: number;
 }
 
+export type BackgroundPatternType = "architectural" | "mashrabiya" | "luxury_grid" | "marble_waves" | "ambient_aurora" | "custom";
+
+export interface HomeBackgroundSettings {
+  enabled: boolean;
+  patternDark: BackgroundPatternType;
+  patternLight: BackgroundPatternType;
+  opacityDark: number; // 0 - 100
+  opacityLight: number; // 0 - 100
+  blurDark: number; // 0 - 20
+  blurLight: number; // 0 - 20
+  customImageDark?: string;
+  customImageLight?: string;
+}
+
 export interface SiteSettings {
   companyName: string;
   companyDescription: string;
@@ -325,6 +339,8 @@ export interface SiteSettings {
   regionHeroOverlayOpacity: number;
   /** Strength of the bottom-to-top gradient over region cover images, 0-100. */
   regionHeroGradientOpacity: number;
+  /** Ambient luxury backgrounds for home page sections */
+  homeBackgroundSettings?: HomeBackgroundSettings;
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
   qrCodes?: QrCodeItem[];
@@ -405,6 +421,17 @@ const DEFAULT_SETTINGS: SiteSettings = {
       order: 3,
     },
   ],
+  homeBackgroundSettings: {
+    enabled: true,
+    patternDark: "architectural",
+    patternLight: "marble_waves",
+    opacityDark: 45,
+    opacityLight: 30,
+    blurDark: 0,
+    blurLight: 0,
+    customImageDark: "",
+    customImageLight: "",
+  },
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
   allowCustomerImageDownloads: true,
