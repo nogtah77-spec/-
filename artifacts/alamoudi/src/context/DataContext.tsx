@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { SEED_PROPERTIES } from "@/data/seedProperties";
 import { supabaseService, rowToProperty } from "@/lib/supabaseService";
 import { supabase } from "@/lib/supabaseClient";
+import { enqueueOfflineAction, isOnline, processOfflineQueue } from "@/lib/offlineSync";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -807,6 +808,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
 
   const reload = useCallback(async () => {
+    if (!isOnline()) return;
     const [
       regionsR, typesR, propertiesR, settingsR,
        usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR,
@@ -863,12 +865,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const trackPropertyView = useCallback((id: string) => {
+    if (!isOnline()) return;
     void api.post(`/properties/${id}/view`, {}).catch(() => {
       /* view tracking is best-effort; never surface errors to visitors */
     });
   }, []);
 
   const refreshVisitorStats = useCallback(async () => {
+    if (!isOnline()) return;
     try {
       setVisitorStats(await api.get<VisitorStats>("/visitors/stats"));
     } catch {
@@ -877,6 +881,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reloadAiLeads = useCallback(async () => {
+    if (!isOnline()) return;
     try {
       setAiLeads(await api.get<AiLead[]>("/ai/leads"));
     } catch {
@@ -884,12 +889,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Optimistic writes update local state first; if the server rejects, surface
-  // the error and re-sync from the server so the UI never diverges from truth.
-  const persist = useCallback((p: Promise<unknown>) => {
+  // Optimistic writes update local state first; if the server rejects or is offline,
+  // store in offline queue and re-sync when online.
+  const persist = useCallback((p: Promise<unknown>, offlineAction?: Parameters<typeof enqueueOfflineAction>[0]) => {
     return p
       .then(() => true)
       .catch((err: unknown) => {
+        if (!isOnline() || (err && typeof err === "object" && "status" in err && (err as any).status === 503)) {
+          if (offlineAction) {
+            enqueueOfflineAction(offlineAction);
+            toast({
+              title: "تم الحفظ في وضع الأوفلاين 📶",
+              description: "تم حفظ التغيير محلياً، وسيتم إرساله ومزامنته تلقائياً عند عودة الإنترنت.",
+            });
+            return true;
+          }
+        }
         const apiError = err as { status?: number; message?: string };
         const message = apiError.status === 401
           ? "انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم أعد حفظ العقار."
@@ -1381,6 +1396,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", onVisChange);
     const pollInterval = setInterval(syncFreshData, 10000);
 
+    const handleOnlineResume = () => {
+      void reload();
+      void processOfflineQueue(async (endpoint, opts) => {
+        if (opts.method === "POST") return api.post(endpoint, opts.body ? JSON.parse(opts.body) : {});
+        if (opts.method === "PUT") return api.put(endpoint, opts.body ? JSON.parse(opts.body) : {});
+        if (opts.method === "DELETE") return api.delete(endpoint);
+        return api.get(endpoint);
+      });
+    };
+    window.addEventListener("online", handleOnlineResume);
+
     return () => {
       destroyed = true;
       if (realtimeChannel && supabase) {
@@ -1390,6 +1416,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         localBc.close();
       }
       window.removeEventListener("focus", syncFreshData);
+      window.removeEventListener("online", handleOnlineResume);
       document.removeEventListener("visibilitychange", onVisChange);
       clearInterval(pollInterval);
     };
@@ -1740,10 +1767,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
       title: `إضافة عقار جديد (${property.code}) - ${property.title || property.unitType || "وحدة عقارية"}`,
     });
 
+    if (!isOnline()) {
+      enqueueOfflineAction({
+        type: "property",
+        endpoint: "/properties",
+        method: "POST",
+        payload: property,
+      });
+      toast({
+        title: "تم حفظ العقار في وضع الأوفلاين 📶",
+        description: `تم حفظ العقار (${property.code}) محلياً، وسيتم رفعه ومزامنته تلقائياً فور عودة الاتصال.`,
+      });
+      return true;
+    }
+
     try {
       await api.post("/properties", property);
       return true;
     } catch (err) {
+      if (!isOnline() || (err && typeof err === "object" && "status" in err && (err as any).status === 503)) {
+        enqueueOfflineAction({
+          type: "property",
+          endpoint: "/properties",
+          method: "POST",
+          payload: property,
+        });
+      }
       console.warn("Server sync warning (property saved in client cache):", err);
       return true;
     }
@@ -2087,13 +2136,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addInquiry = (i: Omit<Inquiry, "id" | "createdAt" | "status">) => {
     const inquiry: Inquiry = { ...i, id: genId(), status: "new", createdAt: new Date().toISOString() };
     setInquiries(p => [...p, inquiry]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("alm_inquiries") || "[]");
+      localStorage.setItem("alm_inquiries", JSON.stringify([inquiry, ...stored]));
+    } catch {}
     logActivity({
       action: "created",
       entityType: "inquiry",
       title: `استفسار جديد من العميل (${inquiry.name}) بخصوص ${inquiry.subject || "خدمات الشركة"}`,
       actor: inquiry.name,
     });
-    persist(api.post("/inquiries", inquiry));
+    persist(api.post("/inquiries", inquiry), {
+      type: "inquiry",
+      endpoint: "/inquiries",
+      method: "POST",
+      payload: inquiry,
+    });
   };
 
   const updateInquiryStatus = (id: string, status: Inquiry["status"]) => {
@@ -2119,13 +2177,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addFinishingRequest = (r: Omit<FinishingRequest, "id" | "createdAt" | "status">) => {
     const fr: FinishingRequest = { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() };
     setFinishingRequests(p => [...p, fr]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("alm_finishing_requests") || "[]");
+      localStorage.setItem("alm_finishing_requests", JSON.stringify([fr, ...stored]));
+    } catch {}
     logActivity({
       action: "created",
       entityType: "finishing_request",
       title: `طلب تشطيب جديد من العميل (${fr.name}) - ${fr.finishingType || "باقة تشطيب"}`,
       actor: fr.name,
     });
-    persist(api.post("/finishing-requests", fr));
+    persist(api.post("/finishing-requests", fr), {
+      type: "finishing_request",
+      endpoint: "/finishing-requests",
+      method: "POST",
+      payload: fr,
+    });
   };
 
   const updateFinishingRequestStatus = (id: string, status: FinishingRequest["status"]) => {
@@ -2151,13 +2218,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addPropertyRequest = (r: Omit<PropertyRequest, "id" | "createdAt" | "status">) => {
     const pr: PropertyRequest = { ...r, id: genId(), status: "new", createdAt: new Date().toISOString() };
     setPropertyRequests(p => [...p, pr]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("alm_property_requests") || "[]");
+      localStorage.setItem("alm_property_requests", JSON.stringify([pr, ...stored]));
+    } catch {}
     logActivity({
       action: "created",
       entityType: "property_request",
       title: `طلب إضافة عقار جديد من العميل (${pr.ownerName})`,
       actor: pr.ownerName,
     });
-    persist(api.post("/property-requests", pr));
+    persist(api.post("/property-requests", pr), {
+      type: "property_request",
+      endpoint: "/property-requests",
+      method: "POST",
+      payload: pr,
+    });
   };
 
   const updatePropertyRequestStatus = (id: string, status: PropertyRequest["status"]) => {
@@ -2188,17 +2264,47 @@ export function DataProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     setCustomerPropertyRequests((current) => [item, ...current]);
+    try {
+      const stored = JSON.parse(localStorage.getItem("alm_customer_requests") || "[]");
+      localStorage.setItem("alm_customer_requests", JSON.stringify([item, ...stored]));
+    } catch {}
     logActivity({
       action: "created",
       entityType: "customer_property_request",
       title: `طلب عقار جديد من العميل (${item.customerName})`,
       actor: item.customerName,
     });
+    if (!isOnline()) {
+      enqueueOfflineAction({
+        type: "customer_property_request",
+        endpoint: "/customer-property-requests",
+        method: "POST",
+        payload: request,
+      });
+      toast({
+        title: "تم الحفظ في وضع الأوفلاين 📶",
+        description: "تم حفظ طلبك محلياً وسيتم إرساله ومزامنته تلقائياً عند عودة الإنترنت.",
+      });
+      return true;
+    }
     try {
       const saved = await api.post<CustomerPropertyRequest>("/customer-property-requests", request);
       setCustomerPropertyRequests((current) => current.map((entry) => entry.id === item.id ? saved : entry));
       return true;
     } catch (err: unknown) {
+      if (!isOnline() || (err && typeof err === "object" && "status" in err && (err as any).status === 503)) {
+        enqueueOfflineAction({
+          type: "customer_property_request",
+          endpoint: "/customer-property-requests",
+          method: "POST",
+          payload: request,
+        });
+        toast({
+          title: "تم الحفظ في وضع الأوفلاين 📶",
+          description: "تم حفظ طلبك محلياً وسيتم إرساله ومزامنته تلقائياً عند عودة الإنترنت.",
+        });
+        return true;
+      }
       setCustomerPropertyRequests((current) => current.filter((entry) => entry.id !== item.id));
       const apiError = err as { status?: number; message?: string };
       toast({

@@ -13,7 +13,6 @@ import {
   Play,
   Building2,
   MessageCircle,
-  Sparkles,
 } from "lucide-react";
 import { TikTokIcon } from "@/components/icons/BrandIcons";
 import { Card, CardContent } from "@/components/ui/card";
@@ -554,12 +553,6 @@ export default function Home() {
               <div className="container px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                   <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 text-[11px] font-bold">
-                        <Sparkles className="h-3 w-3" />
-                        مختارات استثنائية VIP
-                      </span>
-                    </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-0.5 relative inline-block">
                       عقارات مميزة
                       <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />

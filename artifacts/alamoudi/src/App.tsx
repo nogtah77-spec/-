@@ -16,6 +16,7 @@ import { LiveVisitorsBubble } from "@/components/ui/LiveVisitorsBubble";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { InstallPwaPrompt } from "@/components/ui/InstallPwaPrompt";
+import { OfflineStatusBar } from "@/components/ui/OfflineStatusBar";
 
 import { lazyWithRetry } from "@/lib/utils";
 
@@ -311,6 +312,9 @@ function App() {
                     </ErrorBoundary>
                     <ErrorBoundary fallback={null}>
                       <InstallPwaPrompt />
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                      <OfflineStatusBar />
                     </ErrorBoundary>
                     {AI_ASSISTANT_ENABLED && (
                       <ErrorBoundary fallback={null}>
