@@ -775,12 +775,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return DEFAULT_STAFF_USERS;
     }
   });
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>([]);
-  const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>([]);
-  const [aiLeads, setAiLeads] = useState<AiLead[]>([]);
-  const [customerPropertyRequests, setCustomerPropertyRequests] = useState<CustomerPropertyRequest[]>([]);
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_inquiries");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [finishingRequests, setFinishingRequests] = useState<FinishingRequest[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_finishing_requests");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [propertyRequests, setPropertyRequests] = useState<PropertyRequest[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_property_requests");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [aiLeads, setAiLeads] = useState<AiLead[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_ai_leads");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [customerPropertyRequests, setCustomerPropertyRequests] = useState<CustomerPropertyRequest[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_customer_requests");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
+  const [contracts, setContracts] = useState<Contract[]>(() => {
+    try {
+      const raw = localStorage.getItem("alm_contracts");
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  });
   const [brokers, setBrokers] = useState<Broker[]>(() => {
     try {
       const raw = localStorage.getItem("alm_brokers");
@@ -836,13 +866,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (newTypes)    setPropertyTypes(newTypes);
     if (newProps)    setProperties(newProps);
     if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
-    if (usersR.status === "fulfilled") setUsers(usersR.value);
-    if (inquiriesR.status === "fulfilled") setInquiries(inquiriesR.value);
-    if (finishingR.status === "fulfilled") setFinishingRequests(finishingR.value);
-    if (requestsR.status === "fulfilled") setPropertyRequests(requestsR.value);
-    if (customerPropertyRequestsR.status === "fulfilled") setCustomerPropertyRequests(customerPropertyRequestsR.value);
-    if (contractsR.status === "fulfilled") setContracts(contractsR.value);
-    if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
+    if (usersR.status === "fulfilled" && usersR.value) {
+      setUsers(usersR.value);
+      try { localStorage.setItem("alm_users", JSON.stringify(usersR.value)); } catch {}
+    }
+    if (inquiriesR.status === "fulfilled" && inquiriesR.value) {
+      setInquiries(inquiriesR.value);
+      try { localStorage.setItem("alm_inquiries", JSON.stringify(inquiriesR.value)); } catch {}
+    }
+    if (finishingR.status === "fulfilled" && finishingR.value) {
+      setFinishingRequests(finishingR.value);
+      try { localStorage.setItem("alm_finishing_requests", JSON.stringify(finishingR.value)); } catch {}
+    }
+    if (requestsR.status === "fulfilled" && requestsR.value) {
+      setPropertyRequests(requestsR.value);
+      try { localStorage.setItem("alm_property_requests", JSON.stringify(requestsR.value)); } catch {}
+    }
+    if (customerPropertyRequestsR.status === "fulfilled" && customerPropertyRequestsR.value) {
+      setCustomerPropertyRequests(customerPropertyRequestsR.value);
+      try { localStorage.setItem("alm_customer_requests", JSON.stringify(customerPropertyRequestsR.value)); } catch {}
+    }
+    if (contractsR.status === "fulfilled" && contractsR.value) {
+      setContracts(contractsR.value);
+      try { localStorage.setItem("alm_contracts", JSON.stringify(contractsR.value)); } catch {}
+    }
+    if (aiLeadsR.status === "fulfilled" && aiLeadsR.value) {
+      setAiLeads(aiLeadsR.value);
+      try { localStorage.setItem("alm_ai_leads", JSON.stringify(aiLeadsR.value)); } catch {}
+    }
     if (activityR.status   === "fulfilled" && Array.isArray(activityR.value) && activityR.value.length > 0) {
       setActivityLogs(prev => {
         const mergedMap = new Map<string, ActivityLog>();
@@ -1017,12 +1068,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
               setUsers(DEFAULT_STAFF_USERS);
             }
           }
-           if (inquiriesR.status === "fulfilled") setInquiries(inquiriesR.value);
-           if (finishingR.status === "fulfilled") setFinishingRequests(finishingR.value);
-           if (requestsR.status === "fulfilled") setPropertyRequests(requestsR.value);
-           if (customerPropertyRequestsR.status === "fulfilled") setCustomerPropertyRequests(customerPropertyRequestsR.value);
-            if (contractsR.status === "fulfilled") setContracts(contractsR.value);
-          if (aiLeadsR.status    === "fulfilled") setAiLeads(aiLeadsR.value);
+          if (inquiriesR.status === "fulfilled" && inquiriesR.value) {
+            setInquiries(inquiriesR.value);
+            try { localStorage.setItem("alm_inquiries", JSON.stringify(inquiriesR.value)); } catch {}
+          }
+          if (finishingR.status === "fulfilled" && finishingR.value) {
+            setFinishingRequests(finishingR.value);
+            try { localStorage.setItem("alm_finishing_requests", JSON.stringify(finishingR.value)); } catch {}
+          }
+          if (requestsR.status === "fulfilled" && requestsR.value) {
+            setPropertyRequests(requestsR.value);
+            try { localStorage.setItem("alm_property_requests", JSON.stringify(requestsR.value)); } catch {}
+          }
+          if (customerPropertyRequestsR.status === "fulfilled" && customerPropertyRequestsR.value) {
+            setCustomerPropertyRequests(customerPropertyRequestsR.value);
+            try { localStorage.setItem("alm_customer_requests", JSON.stringify(customerPropertyRequestsR.value)); } catch {}
+          }
+          if (contractsR.status === "fulfilled" && contractsR.value) {
+            setContracts(contractsR.value);
+            try { localStorage.setItem("alm_contracts", JSON.stringify(contractsR.value)); } catch {}
+          }
+          if (aiLeadsR.status === "fulfilled" && aiLeadsR.value) {
+            setAiLeads(aiLeadsR.value);
+            try { localStorage.setItem("alm_ai_leads", JSON.stringify(aiLeadsR.value)); } catch {}
+          }
           if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
           if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
         });

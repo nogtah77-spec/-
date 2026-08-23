@@ -17,6 +17,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { InstallPwaPrompt } from "@/components/ui/InstallPwaPrompt";
 import { OfflineStatusBar } from "@/components/ui/OfflineStatusBar";
+import { prefetchAppChunks } from "@/lib/chunkPrefetcher";
 
 import { lazyWithRetry } from "@/lib/utils";
 
@@ -283,6 +284,14 @@ function KeepAlive() {
   return null;
 }
 
+// Background chunk warmer for 100% offline coverage across all routes
+function ChunkWarmup() {
+  useEffect(() => {
+    prefetchAppChunks();
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
@@ -294,6 +303,7 @@ function App() {
                 <AIChatProvider>
                   <ThemeEnforcer />
                   <KeepAlive />
+                  <ChunkWarmup />
                   <VisitorTracker />
                   {/* SwipeMenuHandler disabled — keep component, skip render */}
                   {/* <SwipeMenuHandler /> */}

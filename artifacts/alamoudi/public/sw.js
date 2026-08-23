@@ -1,19 +1,19 @@
-﻿const STATIC_CACHE = alamoudi-static-v5;
-const DATA_CACHE = alamoudi-data-v5;
-const MEDIA_CACHE = alamoudi-media-v5;
+const STATIC_CACHE = "alamoudi-static-v6";
+const DATA_CACHE = "alamoudi-data-v6";
+const MEDIA_CACHE = "alamoudi-media-v6";
 
 const APP_SHELL_ASSETS = [
-  /,
-  /index.html,
-  /manifest.json,
-  /logo.png,
-  /icon-192.png,
-  /icon-512.png,
-  /favicon.svg
+  "/",
+  "/index.html",
+  "/manifest.json",
+  "/logo.png",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/favicon.svg"
 ];
 
 // Install: Pre-cache App Shell and activate immediately
-self.addEventListener(install, (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
       return cache.addAll(APP_SHELL_ASSETS).catch(() => {});
@@ -22,7 +22,7 @@ self.addEventListener(install, (event) => {
 });
 
 // Activate: Clean up older legacy caches & take immediate client control
-self.addEventListener(activate, (event) => {
+self.addEventListener("activate", (event) => {
   const currentCaches = [STATIC_CACHE, DATA_CACHE, MEDIA_CACHE];
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -38,24 +38,24 @@ self.addEventListener(activate, (event) => {
 });
 
 // Message listener for skipWaiting / cache busting
-self.addEventListener(message, (event) => {
-  if (event.data && (event.data.type === SKIP_WAITING || event.data.action === skipWaiting)) {
+self.addEventListener("message", (event) => {
+  if (event.data && (event.data.type === "SKIP_WAITING" || event.data.action === "skipWaiting")) {
     self.skipWaiting();
   }
 });
 
 // Fetch routing
-self.addEventListener(fetch, (event) => {
+self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Skip non-GET & non-HTTP(S)
-  if (request.method !== GET || !url.protocol.startsWith(http)) {
+  if (request.method !== "GET" || !url.protocol.startsWith("http")) {
     return;
   }
 
   // 1. Navigation (HTML pages / Deep links): Network-First -> Fallback to cached index.html
-  if (request.mode === navigate) {
+  if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -68,9 +68,9 @@ self.addEventListener(fetch, (event) => {
         .catch(() => {
           return caches.match(request).then((cached) => {
             if (cached) return cached;
-            return caches.match(/index.html).then((indexFallback) => {
+            return caches.match("/index.html").then((indexFallback) => {
               if (indexFallback) return indexFallback;
-              return caches.match(/);
+              return caches.match("/");
             });
           });
         })
@@ -80,7 +80,7 @@ self.addEventListener(fetch, (event) => {
 
   // 2. Images & Media (Property photos, icons, banners): Cache-First -> Network Fallback
   if (
-    request.destination === image ||
+    request.destination === "image" ||
     url.pathname.match(/\.(png|jpg|jpeg|svg|webp|avif|ico)(\?.*)?$/i)
   ) {
     event.respondWith(
@@ -93,8 +93,7 @@ self.addEventListener(fetch, (event) => {
             }
             return networkResponse;
           }).catch(() => {
-            // If offline and image not cached, fallback to logo
-            return caches.match(/logo.png);
+            return caches.match("/logo.png");
           });
         });
       })
@@ -102,8 +101,8 @@ self.addEventListener(fetch, (event) => {
     return;
   }
 
-  // 3. API Requests (/api/*): Network-First -> Fallback to cached JSON
-  if (url.pathname.startsWith(/api/) || url.hostname.includes(supabase.co)) {
+  // 3. API Requests (/api/* or Supabase): Network-First -> Fallback to cached JSON
+  if (url.pathname.startsWith("/api/") || url.hostname.includes("supabase.co")) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -116,9 +115,9 @@ self.addEventListener(fetch, (event) => {
         .catch(() => {
           return caches.open(DATA_CACHE).then((c) => c.match(request)).then((cached) => {
             if (cached) return cached;
-            return new Response(JSON.stringify({ offline: true, error: Network unavailable }), {
+            return new Response(JSON.stringify({ offline: true, error: "Network unavailable" }), {
               status: 503,
-              headers: { Content-Type: application/json },
+              headers: { "Content-Type": "application/json" },
             });
           });
         })
@@ -126,24 +125,27 @@ self.addEventListener(fetch, (event) => {
     return;
   }
 
-  // 4. Static Assets (JS, CSS, Fonts): Stale-While-Revalidate
+  // 4. Static Assets (JS, CSS, Fonts, Vite Chunks): Stale-While-Revalidate with Cache-First Fallback
   if (
-    request.destination === script ||
-    request.destination === style ||
-    request.destination === font ||
-    url.pathname.startsWith(/assets/) ||
-    url.hostname.includes(fonts.googleapis.com) ||
-    url.hostname.includes(fonts.gstatic.com)
+    request.destination === "script" ||
+    request.destination === "style" ||
+    request.destination === "font" ||
+    url.pathname.startsWith("/assets/") ||
+    url.hostname.includes("fonts.googleapis.com") ||
+    url.hostname.includes("fonts.gstatic.com")
   ) {
     event.respondWith(
       caches.open(STATIC_CACHE).then((staticCache) => {
         return staticCache.match(request).then((cached) => {
+          if (cached && !navigator.onLine) {
+            return cached;
+          }
           const fetchPromise = fetch(request).then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
               staticCache.put(request, networkResponse.clone());
             }
             return networkResponse;
-          }).catch(() => null);
+          }).catch(() => cached);
 
           return cached || fetchPromise;
         });
@@ -152,7 +154,7 @@ self.addEventListener(fetch, (event) => {
     return;
   }
 
-  // 5. Default Fallback: Network First
+  // 5. Default Fallback
   event.respondWith(
     fetch(request).catch(() => caches.match(request))
   );
