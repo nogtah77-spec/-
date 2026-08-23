@@ -26,7 +26,7 @@ import {
   Eye,
   Check,
 } from "lucide-react";
-import type { SiteSettings, HomeBackgroundSettings } from "@/context/DataContext";
+import { useData, type SiteSettings, type HomeBackgroundSettings } from "@/context/DataContext";
 import { HomeLuxuryBackground } from "@/components/ui/HomeLuxuryBackground";
 import { useToast } from "@/hooks/use-toast";
 
@@ -283,6 +283,7 @@ export function HomeBackgroundManager({
   saving,
 }: HomeBackgroundManagerProps) {
   const { toast } = useToast();
+  const { updateSettings } = useData();
   const [activeTab, setActiveTab] = useState<"dark" | "light">("dark");
   const darkFileInputRef = useRef<HTMLInputElement>(null);
   const lightFileInputRef = useRef<HTMLInputElement>(null);
@@ -311,6 +312,26 @@ export function HomeBackgroundManager({
     }));
   };
 
+  const handleToggleMaster = async (checked: boolean) => {
+    const updatedBg = {
+      ...(form.homeBackgroundSettings || bgConfig),
+      enabled: checked,
+    };
+    setForm((prev) => ({
+      ...prev,
+      homeBackgroundSettings: updatedBg,
+    }));
+    // Persist immediately to context & storage
+    await updateSettings({
+      ...form,
+      homeBackgroundSettings: updatedBg,
+    });
+    toast({
+      title: checked ? "تم تفعيل خلفيات المنصة بنجاح ✓" : "تم تعطيل خلفيات المنصة بنجاح ✕",
+      description: checked ? "الخلفيات ستظهر الآن في الصفحة الرئيسية." : "تم إخفاء الخلفيات تماماً من الصفحة الرئيسية.",
+    });
+  };
+
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, mode: "dark" | "light") => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -335,8 +356,8 @@ export function HomeBackgroundManager({
     e.target.value = "";
   };
 
-  const handleResetDefaults = () => {
-    updateBg({
+  const handleResetDefaults = async () => {
+    const defaultBg: HomeBackgroundSettings = {
       enabled: true,
       bgImageDark: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80",
       overlayColorDark: "#000000",
@@ -348,6 +369,14 @@ export function HomeBackgroundManager({
       overlayOpacityLight: 80,
       blurLight: 1,
       imageOpacityLight: 85,
+    };
+    setForm((prev) => ({
+      ...prev,
+      homeBackgroundSettings: defaultBg,
+    }));
+    await updateSettings({
+      ...form,
+      homeBackgroundSettings: defaultBg,
     });
     toast({ title: "تمت استعادة الإعدادات الافتراضية الموصى بها ✓" });
   };
@@ -383,395 +412,391 @@ export function HomeBackgroundManager({
               <Switch
                 id="masterHomeBgEnabled"
                 checked={bgConfig.enabled}
-                onCheckedChange={(checked) => updateBg({ enabled: checked })}
+                onCheckedChange={handleToggleMaster}
               />
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {bgConfig.enabled && (
-        <>
-          {/* Mode Switcher Tabs */}
-          <div className="flex items-center justify-start gap-2.5 border-b border-border/80 pb-3">
-            <Button
-              type="button"
-              variant={isCurrentDark ? "default" : "outline"}
-              onClick={() => setActiveTab("dark")}
-              className={`h-10 px-5 rounded-xl font-bold gap-2 text-xs sm:text-sm transition-all ${
-                isCurrentDark
-                  ? "bg-[#10202D] text-[#D4AF37] border-2 border-[#D4AF37] shadow-md scale-[1.02]"
-                  : "hover:border-[#D4AF37]/50"
-              }`}
-            >
-              <Moon className="h-4 w-4 text-[#D4AF37]" />
-              خلفيات وفلاتر الوضع الليلي
-            </Button>
-            <Button
-              type="button"
-              variant={!isCurrentDark ? "default" : "outline"}
-              onClick={() => setActiveTab("light")}
-              className={`h-10 px-5 rounded-xl font-bold gap-2 text-xs sm:text-sm transition-all ${
-                !isCurrentDark
-                  ? "bg-accent text-accent-foreground border-2 border-accent shadow-md scale-[1.02]"
-                  : "hover:border-accent/50"
-              }`}
-            >
-              <Sun className="h-4 w-4 text-amber-500" />
-              خلفيات وفلاتر الوضع النهاري
-            </Button>
-          </div>
+      {/* Mode Switcher Tabs */}
+      <div className="flex items-center justify-start gap-2.5 border-b border-border/80 pb-3">
+        <Button
+          type="button"
+          variant={isCurrentDark ? "default" : "outline"}
+          onClick={() => setActiveTab("dark")}
+          className={`h-10 px-5 rounded-xl font-bold gap-2 text-xs sm:text-sm transition-all ${
+            isCurrentDark
+              ? "bg-[#10202D] text-[#D4AF37] border-2 border-[#D4AF37] shadow-md scale-[1.02]"
+              : "hover:border-[#D4AF37]/50"
+          }`}
+        >
+          <Moon className="h-4 w-4 text-[#D4AF37]" />
+          خلفيات وفلاتر الوضع الليلي
+        </Button>
+        <Button
+          type="button"
+          variant={!isCurrentDark ? "default" : "outline"}
+          onClick={() => setActiveTab("light")}
+          className={`h-10 px-5 rounded-xl font-bold gap-2 text-xs sm:text-sm transition-all ${
+            !isCurrentDark
+              ? "bg-accent text-accent-foreground border-2 border-accent shadow-md scale-[1.02]"
+              : "hover:border-accent/50"
+          }`}
+        >
+          <Sun className="h-4 w-4 text-amber-500" />
+          خلفيات وفلاتر الوضع النهاري
+        </Button>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left 7 Columns: Mode-Specific Presets Gallery & Upload */}
-            <div className="lg:col-span-7 space-y-6">
-              <Card className="card-luxury">
-                <CardHeader className="py-4 px-5">
-                  <div className="flex items-center justify-between w-full">
-                    <CardTitle className="text-sm sm:text-base flex items-center gap-2 font-bold">
-                      <ImageIcon className="h-4 w-4 text-accent shrink-0" />
-                      {isCurrentDark ? "مكتبة خلفيات الوضع الليلي" : "مكتبة خلفيات الوضع النهاري"}
-                    </CardTitle>
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 whitespace-nowrap ${
-                      isCurrentDark ? "bg-[#10202D] text-[#D4AF37] border-[#D4AF37]/40" : "bg-amber-100 text-amber-900 border-amber-300"
-                    }`}>
-                      {isCurrentDark ? "🌙 ليلي" : "☀️ نهاري"}
-                    </span>
-                  </div>
-                  <CardDescription className="text-xs">
-                    انقر على أي خلفية لمعاينتها فوراً.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5 px-5 pb-5">
-                  {categoriesToShow.map((cat, idx) => {
-                    const CatIcon = cat.icon;
-                    return (
-                      <div key={idx} className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-foreground/90">
-                          <CatIcon className="h-3.5 w-3.5 text-accent" />
-                          <span>{cat.title}</span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {cat.items.map((item) => {
-                            const isSelected = currentImg === item.url;
-                            return (
-                              <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => {
-                                  if (isCurrentDark) {
-                                    updateBg({ bgImageDark: item.url });
-                                  } else {
-                                    updateBg({ bgImageLight: item.url });
-                                  }
-                                }}
-                                className={`group relative h-24 rounded-xl overflow-hidden border-2 text-right transition-all duration-200 ${
-                                  isSelected
-                                    ? "border-accent ring-2 ring-accent/50 shadow-md scale-[1.02] z-10"
-                                    : "border-border/60 hover:border-accent/60 opacity-85 hover:opacity-100"
-                                }`}
-                              >
-                                <img
-                                  src={item.url}
-                                  alt={item.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                  loading="lazy"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-                                <div className="absolute bottom-1 right-1.5 left-1.5 text-white">
-                                  <span className="block text-[10px] font-bold leading-tight truncate">
-                                    {item.title}
-                                  </span>
-                                  <span className="text-[9px] text-[#E6CC98] font-medium opacity-90">
-                                    {item.tag}
-                                  </span>
-                                </div>
-                                {isSelected && (
-                                  <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-accent text-white flex items-center justify-center shadow-xs">
-                                    <Check className="h-2.5 w-2.5 stroke-[3]" />
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Upload Custom Image Option */}
-                  <div className="pt-3 border-t border-border/80 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-bold text-foreground">
-                        أو ارفع خلفية من جهازك:
-                      </Label>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (isCurrentDark) darkFileInputRef.current?.click();
-                          else lightFileInputRef.current?.click();
-                        }}
-                        className="h-7 text-xs gap-1.5 border-accent/40 text-accent hover:bg-accent/10 font-bold px-3"
-                      >
-                        <Upload className="h-3 w-3" />
-                        اختيار صورة
-                      </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left 7 Columns: Mode-Specific Presets Gallery & Upload */}
+        <div className="lg:col-span-7 space-y-6">
+          <Card className="card-luxury">
+            <CardHeader className="py-4 px-5">
+              <div className="flex items-center justify-between w-full">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2 font-bold">
+                  <ImageIcon className="h-4 w-4 text-accent shrink-0" />
+                  {isCurrentDark ? "مكتبة خلفيات الوضع الليلي" : "مكتبة خلفيات الوضع النهاري"}
+                </CardTitle>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 whitespace-nowrap ${
+                  isCurrentDark ? "bg-[#10202D] text-[#D4AF37] border-[#D4AF37]/40" : "bg-amber-100 text-amber-900 border-amber-300"
+                }`}>
+                  {isCurrentDark ? "🌙 ليلي" : "☀️ نهاري"}
+                </span>
+              </div>
+              <CardDescription className="text-xs">
+                انقر على أي خلفية لمعاينتها فوراً.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5 px-5 pb-5">
+              {categoriesToShow.map((cat, idx) => {
+                const CatIcon = cat.icon;
+                return (
+                  <div key={idx} className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-foreground/90">
+                      <CatIcon className="h-3.5 w-3.5 text-accent" />
+                      <span>{cat.title}</span>
                     </div>
-
-                    <input
-                      ref={darkFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, "dark")}
-                    />
-                    <input
-                      ref={lightFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, "light")}
-                    />
-
-                    {/* Direct URL Input */}
-                    <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">أو ضع رابط مباشر للصورة:</Label>
-                      <Input
-                        dir="ltr"
-                        placeholder="https://..."
-                        value={currentImg || ""}
-                        onChange={(e) => {
-                          if (isCurrentDark) updateBg({ bgImageDark: e.target.value });
-                          else updateBg({ bgImageLight: e.target.value });
-                        }}
-                        className="h-8 text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right 5 Columns: Filters, Overlay Colors, Sliders & Live Preview */}
-            <div className="lg:col-span-5 space-y-6">
-              {/* Overlay Color & Filter Controls Card */}
-              <Card className="card-luxury">
-                <CardHeader className="py-4 px-5">
-                  <CardTitle className="text-sm sm:text-base flex items-center gap-2 font-bold">
-                    <Palette className="h-4 w-4 text-accent" />
-                    الطبقة العازلة والفلاتر ({isCurrentDark ? "الوضع الليلي" : "الوضع النهاري"})
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    تحكم بلون الفلتر وشفافيته ودرجة البلور والسطوع.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 px-5 pb-5">
-                  {/* Overlay Color Swatches */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <Label className="font-bold">لون الفلتر العازل:</Label>
-                      <span className="font-mono text-accent font-bold">{currentOverlayColor}</span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {LUXURY_OVERLAY_PRESETS.map((p) => {
-                        const isSelected = currentOverlayColor.toLowerCase() === p.color.toLowerCase();
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {cat.items.map((item) => {
+                        const isSelected = currentImg === item.url;
                         return (
                           <button
-                            key={p.color}
+                            key={item.id}
                             type="button"
                             onClick={() => {
-                              if (isCurrentDark) updateBg({ overlayColorDark: p.color });
-                              else updateBg({ overlayColorLight: p.color });
+                              if (isCurrentDark) {
+                                updateBg({ bgImageDark: item.url });
+                              } else {
+                                updateBg({ bgImageLight: item.url });
+                              }
                             }}
-                            className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-right transition-all ${
+                            className={`group relative h-24 rounded-xl overflow-hidden border-2 text-right transition-all duration-200 ${
                               isSelected
-                                ? "border-accent ring-1.5 ring-accent/40 bg-accent/10 shadow-xs font-bold"
-                                : "border-border/70 hover:border-accent/40 bg-card"
+                                ? "border-accent ring-2 ring-accent/50 shadow-md scale-[1.02] z-10"
+                                : "border-border/60 hover:border-accent/60 opacity-85 hover:opacity-100"
                             }`}
                           >
-                            <span
-                              className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs shrink-0"
-                              style={{ backgroundColor: p.color }}
+                            <img
+                              src={item.url}
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              loading="lazy"
                             />
-                            <span className="text-[10px] truncate">{p.label}</span>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                            <div className="absolute bottom-1 right-1.5 left-1.5 text-white">
+                              <span className="block text-[10px] font-bold leading-tight truncate">
+                                {item.title}
+                              </span>
+                              <span className="text-[9px] text-[#E6CC98] font-medium opacity-90">
+                                {item.tag}
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <div className="absolute top-1 left-1 w-4 h-4 rounded-full bg-accent text-white flex items-center justify-center shadow-xs">
+                                <Check className="h-2.5 w-2.5 stroke-[3]" />
+                              </div>
+                            )}
                           </button>
                         );
                       })}
                     </div>
+                  </div>
+                );
+              })}
 
-                    {/* Custom Color Input */}
-                    <div className="flex items-center gap-2 pt-1">
-                      <input
-                        type="color"
-                        value={currentOverlayColor}
-                        onChange={(e) => {
-                          if (isCurrentDark) updateBg({ overlayColorDark: e.target.value });
-                          else updateBg({ overlayColorLight: e.target.value });
+              {/* Upload Custom Image Option */}
+              <div className="pt-3 border-t border-border/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-bold text-foreground">
+                    أو ارفع خلفية من جهازك:
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (isCurrentDark) darkFileInputRef.current?.click();
+                      else lightFileInputRef.current?.click();
+                    }}
+                    className="h-7 text-xs gap-1.5 border-accent/40 text-accent hover:bg-accent/10 font-bold px-3"
+                  >
+                    <Upload className="h-3 w-3" />
+                    اختيار صورة
+                  </Button>
+                </div>
+
+                <input
+                  ref={darkFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, "dark")}
+                />
+                <input
+                  ref={lightFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e, "light")}
+                />
+
+                {/* Direct URL Input */}
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">أو ضع رابط مباشر للصورة:</Label>
+                  <Input
+                    dir="ltr"
+                    placeholder="https://..."
+                    value={currentImg || ""}
+                    onChange={(e) => {
+                      if (isCurrentDark) updateBg({ bgImageDark: e.target.value });
+                      else updateBg({ bgImageLight: e.target.value });
+                    }}
+                    className="h-8 text-xs font-mono"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right 5 Columns: Filters, Overlay Colors, Sliders & Live Preview */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Overlay Color & Filter Controls Card */}
+          <Card className="card-luxury">
+            <CardHeader className="py-4 px-5">
+              <CardTitle className="text-sm sm:text-base flex items-center gap-2 font-bold">
+                <Palette className="h-4 w-4 text-accent" />
+                الطبقة العازلة والفلاتر ({isCurrentDark ? "الوضع الليلي" : "الوضع النهاري"})
+              </CardTitle>
+              <CardDescription className="text-xs">
+                تحكم بلون الفلتر وشفافيته ودرجة البلور والسطوع.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 px-5 pb-5">
+              {/* Overlay Color Swatches */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <Label className="font-bold">لون الفلتر العازل:</Label>
+                  <span className="font-mono text-accent font-bold">{currentOverlayColor}</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {LUXURY_OVERLAY_PRESETS.map((p) => {
+                    const isSelected = currentOverlayColor.toLowerCase() === p.color.toLowerCase();
+                    return (
+                      <button
+                        key={p.color}
+                        type="button"
+                        onClick={() => {
+                          if (isCurrentDark) updateBg({ overlayColorDark: p.color });
+                          else updateBg({ overlayColorLight: p.color });
                         }}
-                        className="w-7 h-7 rounded-md border border-border cursor-pointer shrink-0"
-                      />
-                      <Input
-                        dir="ltr"
-                        value={currentOverlayColor}
-                        onChange={(e) => {
-                          if (isCurrentDark) updateBg({ overlayColorDark: e.target.value });
-                          else updateBg({ overlayColorLight: e.target.value });
-                        }}
-                        className="h-7 text-xs font-mono"
-                        placeholder="#000000"
-                      />
-                      <span className="text-[10px] text-muted-foreground shrink-0">لون حر</span>
+                        className={`flex items-center gap-1.5 p-1.5 rounded-lg border text-right transition-all ${
+                          isSelected
+                            ? "border-accent ring-1.5 ring-accent/40 bg-accent/10 shadow-xs font-bold"
+                            : "border-border/70 hover:border-accent/40 bg-card"
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs shrink-0"
+                          style={{ backgroundColor: p.color }}
+                        />
+                        <span className="text-[10px] truncate">{p.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Color Input */}
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="color"
+                    value={currentOverlayColor}
+                    onChange={(e) => {
+                      if (isCurrentDark) updateBg({ overlayColorDark: e.target.value });
+                      else updateBg({ overlayColorLight: e.target.value });
+                    }}
+                    className="w-7 h-7 rounded-md border border-border cursor-pointer shrink-0"
+                  />
+                  <Input
+                    dir="ltr"
+                    value={currentOverlayColor}
+                    onChange={(e) => {
+                      if (isCurrentDark) updateBg({ overlayColorDark: e.target.value });
+                      else updateBg({ overlayColorLight: e.target.value });
+                    }}
+                    className="h-7 text-xs font-mono"
+                    placeholder="#000000"
+                  />
+                  <span className="text-[10px] text-muted-foreground shrink-0">لون حر</span>
+                </div>
+              </div>
+
+              {/* Overlay Opacity Slider */}
+              <div className="space-y-2 pt-2 border-t border-border/60">
+                <div className="flex items-center justify-between text-xs">
+                  <Label className="font-bold">شفافية طبقة الفلتر (تغطية اللون):</Label>
+                  <span className="font-bold font-mono text-accent">{currentOverlayOpacity}%</span>
+                </div>
+                <Slider
+                  dir="ltr"
+                  value={[currentOverlayOpacity]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={(v) => {
+                    if (isCurrentDark) updateBg({ overlayOpacityDark: v[0] });
+                    else updateBg({ overlayOpacityLight: v[0] });
+                  }}
+                />
+                <div className="flex justify-between text-[9px] text-muted-foreground">
+                  <span>خلفية بارزة (20%)</span>
+                  <span>متزنة (75%)</span>
+                  <span>تعتيم كامل (100%)</span>
+                </div>
+              </div>
+
+              {/* Image Opacity Slider */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-xs">
+                  <Label className="font-bold">سطوع ووضوح صورة الخلفية:</Label>
+                  <span className="font-bold font-mono text-accent">{currentImgOpacity}%</span>
+                </div>
+                <Slider
+                  dir="ltr"
+                  value={[currentImgOpacity]}
+                  min={10}
+                  max={100}
+                  step={1}
+                  onValueChange={(v) => {
+                    if (isCurrentDark) updateBg({ imageOpacityDark: v[0] });
+                    else updateBg({ imageOpacityLight: v[0] });
+                  }}
+                />
+              </div>
+
+              {/* Blur Slider */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-xs">
+                  <Label className="font-bold">درجة البلور والتمويه الزجاجي:</Label>
+                  <span className="font-bold font-mono text-accent">{currentBlur}px</span>
+                </div>
+                <Slider
+                  dir="ltr"
+                  value={[currentBlur]}
+                  min={0}
+                  max={20}
+                  step={1}
+                  onValueChange={(v) => {
+                    if (isCurrentDark) updateBg({ blurDark: v[0] });
+                    else updateBg({ blurLight: v[0] });
+                  }}
+                />
+                <div className="flex justify-between text-[9px] text-muted-foreground">
+                  <span>حادة ونقية (0px)</span>
+                  <span>تمويه ناعم (2px)</span>
+                  <span>تمويه زجاجي (10px)</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ⚡ Live Instant Interactive Preview Box ⚡ */}
+          <Card className="card-luxury border-accent/40 shadow-md">
+            <CardHeader className="py-3 px-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs sm:text-sm flex items-center gap-1.5 font-bold">
+                  <Eye className="h-4 w-4 text-accent animate-pulse" />
+                  معاينة مباشرة للبطاقات فوق الخلفية
+                </CardTitle>
+                <span className="text-[10px] bg-accent/15 text-accent font-bold px-2 py-0.5 rounded-md shrink-0">
+                  تحديث فوري ⚡
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3">
+              <div
+                className={`relative rounded-xl overflow-hidden p-4 sm:p-5 min-h-[200px] flex items-center justify-center border border-border shadow-inner transition-colors duration-300 ${
+                  isCurrentDark ? "bg-black text-white" : "bg-[#F8FAFC] text-slate-900"
+                }`}
+              >
+                {/* Live Background Simulator with active uncommitted config */}
+                <HomeLuxuryBackground
+                  forcedTheme={isCurrentDark ? "dark" : "light"}
+                  overrideConfig={bgConfig}
+                />
+
+                {/* Simulated Floating Real Estate Card */}
+                <div
+                  className={`relative z-10 max-w-[260px] w-full p-3.5 rounded-xl border shadow-xl backdrop-blur-md transition-all ${
+                    isCurrentDark
+                      ? "bg-[#10202D]/95 border-accent/40 text-white shadow-black/80"
+                      : "bg-white/95 border-border/80 text-slate-900 shadow-slate-300/80"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C09C5A] to-[#A8823E] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                      <Building2 className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-xs truncate">برج العاصمة الفاخر</h4>
+                      <p className="text-[9px] opacity-75 truncate">الشيخ زايد • إطلالة بانورامية</p>
                     </div>
                   </div>
-
-                  {/* Overlay Opacity Slider */}
-                  <div className="space-y-2 pt-2 border-t border-border/60">
-                    <div className="flex items-center justify-between text-xs">
-                      <Label className="font-bold">شفافية طبقة الفلتر (تغطية اللون):</Label>
-                      <span className="font-bold font-mono text-accent">{currentOverlayOpacity}%</span>
-                    </div>
-                    <Slider
-                      dir="ltr"
-                      value={[currentOverlayOpacity]}
-                      min={0}
-                      max={100}
-                      step={1}
-                      onValueChange={(v) => {
-                        if (isCurrentDark) updateBg({ overlayOpacityDark: v[0] });
-                        else updateBg({ overlayOpacityLight: v[0] });
-                      }}
-                    />
-                    <div className="flex justify-between text-[9px] text-muted-foreground">
-                      <span>خلفية بارزة (20%)</span>
-                      <span>متزنة (75%)</span>
-                      <span>تعتيم كامل (100%)</span>
-                    </div>
-                  </div>
-
-                  {/* Image Opacity Slider */}
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <Label className="font-bold">سطوع ووضوح صورة الخلفية:</Label>
-                      <span className="font-bold font-mono text-accent">{currentImgOpacity}%</span>
-                    </div>
-                    <Slider
-                      dir="ltr"
-                      value={[currentImgOpacity]}
-                      min={10}
-                      max={100}
-                      step={1}
-                      onValueChange={(v) => {
-                        if (isCurrentDark) updateBg({ imageOpacityDark: v[0] });
-                        else updateBg({ imageOpacityLight: v[0] });
-                      }}
-                    />
-                  </div>
-
-                  {/* Blur Slider */}
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <Label className="font-bold">درجة البلور والتمويه الزجاجي:</Label>
-                      <span className="font-bold font-mono text-accent">{currentBlur}px</span>
-                    </div>
-                    <Slider
-                      dir="ltr"
-                      value={[currentBlur]}
-                      min={0}
-                      max={20}
-                      step={1}
-                      onValueChange={(v) => {
-                        if (isCurrentDark) updateBg({ blurDark: v[0] });
-                        else updateBg({ blurLight: v[0] });
-                      }}
-                    />
-                    <div className="flex justify-between text-[9px] text-muted-foreground">
-                      <span>حادة ونقية (0px)</span>
-                      <span>تمويه ناعم (2px)</span>
-                      <span>تمويه زجاجي (10px)</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ⚡ Live Instant Interactive Preview Box ⚡ */}
-              <Card className="card-luxury border-accent/40 shadow-md">
-                <CardHeader className="py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs sm:text-sm flex items-center gap-1.5 font-bold">
-                      <Eye className="h-4 w-4 text-accent animate-pulse" />
-                      معاينة مباشرة للبطاقات فوق الخلفية
-                    </CardTitle>
-                    <span className="text-[10px] bg-accent/15 text-accent font-bold px-2 py-0.5 rounded-md shrink-0">
-                      تحديث فوري ⚡
+                  <div className="mt-2.5 pt-2 border-t border-current/10 flex items-center justify-between text-xs">
+                    <span className="font-bold text-accent text-[11px]">7,850,000 ج.م</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-accent/20 text-accent font-bold">
+                      {isCurrentDark ? "🌙 ليلي" : "☀️ نهاري"}
                     </span>
                   </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div
-                    className={`relative rounded-xl overflow-hidden p-4 sm:p-5 min-h-[200px] flex items-center justify-center border border-border shadow-inner transition-colors duration-300 ${
-                      isCurrentDark ? "bg-black text-white" : "bg-[#F8FAFC] text-slate-900"
-                    }`}
-                  >
-                    {/* Live Background Simulator with active uncommitted config */}
-                    <HomeLuxuryBackground
-                      forcedTheme={isCurrentDark ? "dark" : "light"}
-                      overrideConfig={bgConfig}
-                    />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-                    {/* Simulated Floating Real Estate Card */}
-                    <div
-                      className={`relative z-10 max-w-[260px] w-full p-3.5 rounded-xl border shadow-xl backdrop-blur-md transition-all ${
-                        isCurrentDark
-                          ? "bg-[#10202D]/95 border-accent/40 text-white shadow-black/80"
-                          : "bg-white/95 border-border/80 text-slate-900 shadow-slate-300/80"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C09C5A] to-[#A8823E] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-                          <Building2 className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-bold text-xs truncate">برج العاصمة الفاخر</h4>
-                          <p className="text-[9px] opacity-75 truncate">الشيخ زايد • إطلالة بانورامية</p>
-                        </div>
-                      </div>
-                      <div className="mt-2.5 pt-2 border-t border-current/10 flex items-center justify-between text-xs">
-                        <span className="font-bold text-accent text-[11px]">7,850,000 ج.م</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-accent/20 text-accent font-bold">
-                          {isCurrentDark ? "🌙 ليلي" : "☀️ نهاري"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
-            <Button
-              onClick={onSave}
-              disabled={saving}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2 px-7 h-10 text-xs sm:text-sm font-bold shadow-md"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? "جارٍ الحفظ..." : "حفظ إعدادات الخلفيات والمظهر"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleResetDefaults}
-              className="gap-1.5 text-muted-foreground hover:text-foreground text-xs h-9"
-            >
-              <RotateCcw className="h-3 w-3" />
-              استعادة الافتراضي
-            </Button>
-          </div>
-        </>
-      )}
+      {/* Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+        <Button
+          onClick={onSave}
+          disabled={saving}
+          className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2 px-7 h-10 text-xs sm:text-sm font-bold shadow-md"
+        >
+          <Save className="h-4 w-4" />
+          {saving ? "جارٍ الحفظ..." : "حفظ إعدادات الخلفيات والمظهر"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleResetDefaults}
+          className="gap-1.5 text-muted-foreground hover:text-foreground text-xs h-9"
+        >
+          <RotateCcw className="h-3 w-3" />
+          استعادة الافتراضي
+        </Button>
+      </div>
     </div>
   );
 }

@@ -451,16 +451,82 @@ export default function Settings() {
         />
 
         <Tabs defaultValue={canEditSettings ? "general" : "qrcodes"} className="w-full">
-          <TabsList className="grid w-full h-auto grid-cols-2 gap-2 sm:grid-cols-4 lg:w-auto lg:grid-cols-8">
-            {canEditSettings && <TabsTrigger value="general">عام</TabsTrigger>}
-            {canEditSettings && <TabsTrigger value="contact">التواصل</TabsTrigger>}
-            {canManageQr && <TabsTrigger value="qrcodes">رموز الـ QR</TabsTrigger>}
-            {canEditSettings && <TabsTrigger value="hero">صورة الغلاف</TabsTrigger>}
-            {canEditSettings && <TabsTrigger value="appearance">خلفيات ومظهر المنصة</TabsTrigger>}
-            {canEditSettings && <TabsTrigger value="tiktok">تيك توك</TabsTrigger>}
-            {canEditSettings && <TabsTrigger value="system">النظام</TabsTrigger>}
-            {canEditSettings && <TabsTrigger value="carousel">الكاروسيل</TabsTrigger>}
-          </TabsList>
+          <div className="w-full overflow-x-auto no-scrollbar pb-1">
+            <TabsList className="inline-flex items-center gap-1.5 p-1.5 bg-card border border-border/80 rounded-2xl shadow-xs min-w-full sm:min-w-0 h-auto">
+              {canEditSettings && (
+                <TabsTrigger
+                  value="general"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <SettingsIcon className="h-4 w-4 shrink-0" />
+                  <span>عام</span>
+                </TabsTrigger>
+              )}
+              {canEditSettings && (
+                <TabsTrigger
+                  value="contact"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <Phone className="h-4 w-4 shrink-0" />
+                  <span>التواصل</span>
+                </TabsTrigger>
+              )}
+              {canManageQr && (
+                <TabsTrigger
+                  value="qrcodes"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <QrCodeIcon className="h-4 w-4 shrink-0" />
+                  <span>رموز الـ QR</span>
+                </TabsTrigger>
+              )}
+              {canEditSettings && (
+                <TabsTrigger
+                  value="hero"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <ImageIcon className="h-4 w-4 shrink-0" />
+                  <span>صورة الغلاف</span>
+                </TabsTrigger>
+              )}
+              {canEditSettings && (
+                <TabsTrigger
+                  value="appearance"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <Sparkles className="h-4 w-4 shrink-0 text-accent" />
+                  <span>خلفيات ومظهر المنصة</span>
+                </TabsTrigger>
+              )}
+              {canEditSettings && (
+                <TabsTrigger
+                  value="tiktok"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <Play className="h-4 w-4 shrink-0" />
+                  <span>تيك توك</span>
+                </TabsTrigger>
+              )}
+              {canEditSettings && (
+                <TabsTrigger
+                  value="system"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <Globe className="h-4 w-4 shrink-0" />
+                  <span>النظام</span>
+                </TabsTrigger>
+              )}
+              {canEditSettings && (
+                <TabsTrigger
+                  value="carousel"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                >
+                  <SunMoon className="h-4 w-4 shrink-0" />
+                  <span>الكاروسيل</span>
+                </TabsTrigger>
+              )}
+            </TabsList>
+          </div>
 
           {/* ── General ── */}
           <TabsContent value="general" className="mt-6">
