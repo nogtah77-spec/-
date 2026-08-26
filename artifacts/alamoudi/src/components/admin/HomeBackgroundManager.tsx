@@ -283,13 +283,18 @@ export function HomeBackgroundManager({
   };
 
   const updateBg = (partial: Partial<HomeBackgroundSettings>) => {
-    setForm((prev) => ({
-      ...prev,
-      homeBackgroundSettings: {
-        ...(prev.homeBackgroundSettings || bgConfig),
+    setForm((prev) => {
+      const current = prev.homeBackgroundSettings || bgConfig;
+      const updated = {
+        ...current,
+        enabled: true,
         ...partial,
-      },
-    }));
+      };
+      return {
+        ...prev,
+        homeBackgroundSettings: updated,
+      };
+    });
   };
 
   const handleToggleMaster = async (checked: boolean) => {
@@ -336,8 +341,12 @@ export function HomeBackgroundManager({
   };
 
   const handleSaveDirect = async () => {
-    const targetBg = form.homeBackgroundSettings || bgConfig;
-    const updatedForm = {
+    const current = form.homeBackgroundSettings || bgConfig;
+    const targetBg: HomeBackgroundSettings = {
+      ...current,
+      enabled: current.enabled !== false,
+    };
+    const updatedForm: SiteSettings = {
       ...form,
       homeBackgroundSettings: targetBg,
     };

@@ -24,8 +24,9 @@ export function HomeLuxuryBackground({
   const baseConfig = settings?.homeBackgroundSettings;
   const bgConfig = overrideConfig ? { ...(baseConfig || {}), ...overrideConfig } : baseConfig;
 
-  // If explicitly disabled by admin, don't render
-  if (bgConfig && bgConfig.enabled === false) {
+  // Simulator preview ALWAYS renders regardless of enabled flag
+  const isSimulator = !!overrideConfig;
+  if (!isSimulator && bgConfig && bgConfig.enabled === false) {
     return null;
   }
 
@@ -52,7 +53,6 @@ export function HomeLuxuryBackground({
   const imgOpacity = Math.max(0.1, Math.min(100, imageOpacityPercent)) / 100;
   const overlayOpacity = Math.max(0, Math.min(100, overlayOpacityPercent)) / 100;
 
-  const isSimulator = !!overrideConfig;
   const positionClass = isSimulator
     ? "absolute inset-0 w-full h-full z-0 pointer-events-none"
     : "fixed inset-0 w-full h-full z-0 pointer-events-none";
@@ -62,7 +62,7 @@ export function HomeLuxuryBackground({
       aria-hidden="true"
       className={`pointer-events-none overflow-hidden select-none ${positionClass} ${className}`}
     >
-      {/* 1. Underlying High-Definition Image Layer via <img> for 100% reliable decoding across all devices */}
+      {/* 1. Underlying High-Definition Image Layer */}
       <img
         key={bgImage}
         src={bgImage}
@@ -86,7 +86,7 @@ export function HomeLuxuryBackground({
         }}
       />
 
-      {/* 3. Subtle luxury vignette to blend edges seamlessly */}
+      {/* 3. Subtle luxury vignette */}
       <div
         className="absolute inset-0 w-full h-full transition-all duration-300 pointer-events-none opacity-30"
         style={{
