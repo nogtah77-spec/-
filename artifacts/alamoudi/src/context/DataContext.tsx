@@ -346,6 +346,7 @@ export interface SiteSettings {
   tiktokVideos: TiktokVideo[];
   ads: Ad[];
   qrCodes?: QrCodeItem[];
+  qrSectionEnabled?: boolean;
   /** Seconds to wait after each card movement before starting the next one. */
   carouselAutoPlayDelay: number;
   /** Movement speed multiplier: 1 is the natural speed. */
@@ -436,6 +437,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
     blurLight: 0,
     imageOpacityLight: 100,
   },
+  qrSectionEnabled: true,
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
   allowCustomerImageDownloads: true,
@@ -912,14 +914,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (newTypes)    setPropertyTypes(newTypes);
     if (newProps)    setProperties(newProps);
     if (newSettings) {
-      const merged = { ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] };
-      setSettings(merged);
-      try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+      setSettings(prev => {
+        const merged = {
+          ...DEFAULT_SETTINGS,
+          ...prev,
+          ...newSettings,
+          qrSectionEnabled: prev.qrSectionEnabled !== undefined ? prev.qrSectionEnabled : (newSettings.qrSectionEnabled ?? true),
+          qrCodes: prev.qrCodes !== undefined ? prev.qrCodes : (newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
+          tiktokVideos: newSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
+          ads: newSettings.ads ?? prev.ads ?? [],
+        };
+        try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+        return merged;
+      });
     }
     supabaseService.fetchSettings().then(cloudSettings => {
       if (cloudSettings && Object.keys(cloudSettings).length > 0) {
         setSettings(prev => {
-          const merged = { ...DEFAULT_SETTINGS, ...prev, ...cloudSettings, tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [], ads: cloudSettings.ads ?? prev.ads ?? [] };
+          const merged = {
+            ...DEFAULT_SETTINGS,
+            ...prev,
+            ...cloudSettings,
+            qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
+            qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
+            tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
+            ads: cloudSettings.ads ?? prev.ads ?? [],
+          };
           try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
           return merged;
         });
@@ -1113,7 +1133,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ...(newSettings.homeBackgroundSettings || {}),
               ...(prev.homeBackgroundSettings || {}),
             },
-            qrCodes: prev.qrCodes ?? newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
+            qrSectionEnabled: prev.qrSectionEnabled !== undefined ? prev.qrSectionEnabled : (newSettings.qrSectionEnabled ?? true),
+            qrCodes: prev.qrCodes !== undefined ? prev.qrCodes : (newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
             tiktokVideos: newSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
             ads: newSettings.ads ?? prev.ads ?? [],
           };

@@ -233,6 +233,18 @@ export default function Settings() {
     toast({ title: "تم حذف الـ QR كود بنجاح" });
   };
 
+  const handleToggleQrSection = async (val: boolean) => {
+    const updatedForm: SiteSettings = {
+      ...form,
+      qrSectionEnabled: val,
+    };
+    setForm(updatedForm);
+    await updateSettings(updatedForm);
+    toast({
+      title: val ? "تم تفعيل ظهور قسم الـ QR كود في الموقع ✓" : "تم إخفاء قسم الـ QR كود بالكامل من الموقع ✕",
+    });
+  };
+
   const handleToggleQr = async (id: string, key: "active" | "showInHome" | "showInPdf", val: boolean) => {
     const currentList = form.qrCodes || settings.qrCodes || [];
     const updatedList = currentList.map((item) =>
@@ -759,15 +771,46 @@ export default function Settings() {
 
           {/* ── QR Codes Management ── */}
           <TabsContent value="qrcodes" className="mt-6 space-y-6">
+            {/* Master Toggle Banner */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-card to-background border border-border/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <QrCodeIcon className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-foreground">ظهور قسم الـ QR Code في الصفحة الرئيسية</h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${(form.qrSectionEnabled ?? true) ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                      {(form.qrSectionEnabled ?? true) ? "ظاهر بالموقع" : "مخفي تماماً"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    التحكم الرئيسي الشامل في إظهار أو إخفاء قسم رموز الـ QR بالكامل من أسفل الصفحة الرئيسية بضغطة زر واحدة.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 self-end sm:self-center">
+                <Switch
+                  checked={form.qrSectionEnabled ?? true}
+                  onCheckedChange={handleToggleQrSection}
+                  id="master-qr-switch"
+                />
+                <Label htmlFor="master-qr-switch" className="text-xs font-bold cursor-pointer">
+                  {(form.qrSectionEnabled ?? true) ? "مفعّل" : "معطّل"}
+                </Label>
+              </div>
+            </div>
+
             <Card className="card-luxury">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <QrCodeIcon className="h-5 w-5 text-accent" />
-                    <span>إدارة رموز الاستجابة السريعة (QR Codes)</span>
+                    <span>قائمة رموز الـ QR المسجلة</span>
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    توليد وإدارة رموز QR متعددة لتسهيل الوصول المباشر عبر كاميرا الهاتف في أسفل الموقع وبروشورات العقارات PDF
+                    توليد وإدارة وتخصيص كل رمز QR على حدة وتحديد مكان ظهوره (الصفحة الرئيسية أو ملفات PDF).
                   </CardDescription>
                 </div>
                 <Button
@@ -852,37 +895,43 @@ export default function Settings() {
 
                         {/* Toggles Footer */}
                         <div className="border-t border-border/60 pt-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 bg-muted/40 px-2.5 py-1 rounded-xl border border-border/50">
                             <Switch
                               checked={qr.active !== false}
                               onCheckedChange={(v) => handleToggleQr(qr.id, "active", v)}
                               id={`active-${qr.id}`}
                             />
-                            <Label htmlFor={`active-${qr.id}`} className="text-xs cursor-pointer">
+                            <Label htmlFor={`active-${qr.id}`} className="text-xs font-bold cursor-pointer">
                               {qr.active !== false ? "مفعّل" : "معطّل"}
                             </Label>
                           </div>
 
-                          <div className="flex items-center gap-4 text-muted-foreground">
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={qr.showInHome !== false}
-                                onChange={(e) => handleToggleQr(qr.id, "showInHome", e.target.checked)}
-                                className="rounded border-border"
-                              />
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleQr(qr.id, "showInHome", !(qr.showInHome !== false))}
+                              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all ${
+                                qr.showInHome !== false
+                                  ? "bg-accent/15 border-accent text-accent shadow-xs"
+                                  : "bg-muted/30 border-border text-muted-foreground line-through opacity-70"
+                              }`}
+                            >
                               <span>الصفحة الرئيسية</span>
-                            </label>
+                              {qr.showInHome !== false ? "✓" : "✕"}
+                            </button>
 
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={qr.showInPdf !== false}
-                                onChange={(e) => handleToggleQr(qr.id, "showInPdf", e.target.checked)}
-                                className="rounded border-border"
-                              />
+                            <button
+                              type="button"
+                              onClick={() => handleToggleQr(qr.id, "showInPdf", !(qr.showInPdf !== false))}
+                              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all ${
+                                qr.showInPdf !== false
+                                  ? "bg-accent/15 border-accent text-accent shadow-xs"
+                                  : "bg-muted/30 border-border text-muted-foreground line-through opacity-70"
+                              }`}
+                            >
                               <span>بروشور PDF</span>
-                            </label>
+                              {qr.showInPdf !== false ? "✓" : "✕"}
+                            </button>
                           </div>
                         </div>
                       </div>

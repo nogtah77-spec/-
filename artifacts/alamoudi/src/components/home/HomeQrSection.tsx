@@ -16,6 +16,9 @@ export function HomeQrSection() {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Respect master switch: if QR section is disabled, return null immediately
+  if (settings.qrSectionEnabled === false) return null;
+
   const qrCodes = (settings.qrCodes || []).filter(
     (q) => q.active !== false && q.showInHome !== false
   );
