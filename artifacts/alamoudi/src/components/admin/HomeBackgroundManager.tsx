@@ -34,6 +34,24 @@ interface HomeBackgroundManagerProps {
   saving?: boolean;
 }
 
+// ── 🎨 قوالب طبقات ألوان التعتيم الملكية الجاهزة (Preset Luxury Overlay Tints) ──
+const DARK_OVERLAY_PRESETS = [
+  { label: "أسود ملكي فاحم", color: "#000000", desc: "أعلى درجات الفخامة والتباين الصريح" },
+  { label: "كحلي ليلي عميق", color: "#07101C", desc: "عمق بحري ملكي متناسق مع هوية المنصة" },
+  { label: "رمادي فحمي هادئ", color: "#18181B", desc: "هدوء عصري وتوازن بصري فائق" },
+  { label: "كحلي إنديغو فاخر", color: "#0B1528", desc: "لمسة زرقاء ملكية ساحرة" },
+  { label: "رمادي جرافيت راقي", color: "#1E293B", desc: "تباين ثلاثي الأبعاد مع إضاءة ناعمة" },
+  { label: "برونزي معتم دافئ", color: "#1A140E", desc: "دفء كلاسيكي فاخر يبرز العناصر الذهبية" },
+];
+
+const LIGHT_OVERLAY_PRESETS = [
+  { label: "أبيض لؤلؤي ناصع", color: "#FFFFFF", desc: "نقاء وإشراق فندقي مبهج" },
+  { label: "أوف وايت عاجي", color: "#FDFBF7", desc: "دفء كلاسيكي مريح للعين" },
+  { label: "رمادي بلاتيني ناعم", color: "#F1F5F9", desc: "لمسة عصرية راقية متناسقة" },
+  { label: "ثلجي بارد منعش", color: "#F8FAFC", desc: "صفاء عالي وإضاءة نهارية نظيفة" },
+  { label: "بيج رملي دافئ", color: "#F7F4EE", desc: "طابع سكني راقي ومريح" },
+];
+
 export function HomeBackgroundManager({
   form,
   setForm,
@@ -148,6 +166,8 @@ export function HomeBackgroundManager({
     });
   };
 
+  const currentPresets = isDark ? DARK_OVERLAY_PRESETS : LIGHT_OVERLAY_PRESETS;
+
   return (
     <div className="space-y-6">
       {/* ── 1. Top Header & Mode Toggle ── */}
@@ -158,7 +178,7 @@ export function HomeBackgroundManager({
             <h3 className="text-base font-bold text-foreground">خلفية الصفحة الرئيسية</h3>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            ارفع صورة من جهازك (الجوال أو الكمبيوتر) لتكون الخلفية الحصرية لمنصتك عبر كافة الأجهزة.
+            ارفع صورة من جهازك (الجوال أو الكمبيوتر) وتحكم بطبقات التعتيم والألوان لتنسيق مظهر المنصة.
           </p>
         </div>
 
@@ -198,7 +218,7 @@ export function HomeBackgroundManager({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Upload className="h-4 w-4 text-accent" />
-                رفع صورة من جهازك
+                رفع صورة الخلفية من جهازك
               </CardTitle>
               <CardDescription className="text-xs">
                 اختر صورة عالية الدقة من هاتفك أو حاسوبك، سيتم ضغطها وتطبيقها تلقائياً.
@@ -280,22 +300,91 @@ export function HomeBackgroundManager({
             </CardContent>
           </Card>
 
-          {/* Display & Overlay Adjustments Card */}
+          {/* ── 🎨 Ready-Made Luxury Color Tint Presets Card ── */}
+          <Card className="border-border/80 shadow-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Palette className="h-4 w-4 text-accent" />
+                قوالب ألوان التعتيم الجاهزة (Luxury Color Tints)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                اختر نغمة اللون الملكي لطبقة التعتيم بضغطة زر واحدة لتتناغم مع صورتك ونصوص المنصة.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {currentPresets.map((preset) => {
+                  const isSelected = currentOverlayColor.toLowerCase() === preset.color.toLowerCase();
+                  return (
+                    <button
+                      key={preset.color}
+                      type="button"
+                      onClick={() => {
+                        if (isDark) updateBgField({ overlayColorDark: preset.color });
+                        else updateBgField({ overlayColorLight: preset.color });
+                        toast({ title: `تم اختيار لون: ${preset.label}` });
+                      }}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-right transition-all ${
+                        isSelected
+                          ? "border-accent bg-accent/10 shadow-xs ring-1 ring-accent/50"
+                          : "border-border/70 hover:border-accent/40 bg-card/60 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div
+                        className="h-7 w-7 rounded-lg border border-white/20 shadow-xs shrink-0 flex items-center justify-center"
+                        style={{ backgroundColor: preset.color }}
+                      >
+                        {isSelected && <Check className="h-3.5 w-3.5 text-white drop-shadow" />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-foreground truncate">{preset.label}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{preset.desc}</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Color Picker */}
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-xs font-bold">أو اختر لون مخصص يدوياً:</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="color"
+                    value={currentOverlayColor}
+                    onChange={(e) => {
+                      if (isDark) updateBgField({ overlayColorDark: e.target.value });
+                      else updateBgField({ overlayColorLight: e.target.value });
+                    }}
+                    className="w-9 h-8 p-0.5 rounded-lg cursor-pointer border-border shrink-0"
+                  />
+                  <span className="text-xs font-mono text-muted-foreground uppercase">
+                    {currentOverlayColor}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ── 🎛️ Full Effect Sliders Card ── */}
           <Card className="border-border/80 shadow-xs">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Sliders className="h-4 w-4 text-accent" />
-                تأثيرات الإضاءة والعتامة (Filters & Overlay)
+                مؤثرات العتامة والتغبيش والوضوح (Filters & Adjustments)
               </CardTitle>
               <CardDescription className="text-xs">
-                تعديل درجة التعتيم واللون لتبرز النصوص والأزرار بوضوح فائق فوق صورتك.
+                تحكم دقيق في نسبة التعتيم والشفافية والتغبيش لجعل محتوى الموقع مقروءاً وفاخراً.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Overlay Opacity Slider */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <Label className="text-xs">طبقة التعتيم اللوني (Overlay Darkening)</Label>
+                  <Label className="text-xs">نسبة التعتيم اللوني (Overlay Darkening)</Label>
                   <span className="text-accent font-mono">{currentOverlayOpacity}%</span>
                 </div>
                 <Slider
@@ -314,7 +403,7 @@ export function HomeBackgroundManager({
               {/* Image Opacity Slider */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <Label className="text-xs">شفافية الصورة (Image Visibility)</Label>
+                  <Label className="text-xs">شفافية وظهور الصورة (Image Visibility)</Label>
                   <span className="text-accent font-mono">{currentImageOpacity}%</span>
                 </div>
                 <Slider
@@ -333,7 +422,7 @@ export function HomeBackgroundManager({
               {/* Blur Slider */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-bold">
-                  <Label className="text-xs">تغبيش الخلفية (Background Blur)</Label>
+                  <Label className="text-xs">تغبيش وضبابية الصورة (Background Blur)</Label>
                   <span className="text-accent font-mono">{currentBlur}px</span>
                 </div>
                 <Slider
@@ -347,28 +436,6 @@ export function HomeBackgroundManager({
                   }}
                   className="py-1"
                 />
-              </div>
-
-              {/* Color Picker */}
-              <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                <div className="flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-xs font-bold">لون طبقة التعتيم:</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="color"
-                    value={currentOverlayColor}
-                    onChange={(e) => {
-                      if (isDark) updateBgField({ overlayColorDark: e.target.value });
-                      else updateBgField({ overlayColorLight: e.target.value });
-                    }}
-                    className="w-9 h-8 p-0.5 rounded-lg cursor-pointer border-border shrink-0"
-                  />
-                  <span className="text-xs font-mono text-muted-foreground uppercase">
-                    {currentOverlayColor}
-                  </span>
-                </div>
               </div>
             </CardContent>
           </Card>
