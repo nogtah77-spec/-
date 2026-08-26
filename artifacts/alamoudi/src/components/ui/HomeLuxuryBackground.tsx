@@ -16,7 +16,7 @@ export function HomeLuxuryBackground({
   className = "",
   forcedTheme,
   overrideConfig,
-  isFixed,
+  isFixed = true,
 }: HomeLuxuryBackgroundProps) {
   const { settings } = useData();
   const { resolvedTheme } = useTheme();
@@ -53,22 +53,27 @@ export function HomeLuxuryBackground({
   const imgOpacity = Math.max(0.1, Math.min(100, imageOpacityPercent)) / 100;
   const overlayOpacity = Math.max(0, Math.min(100, overlayOpacityPercent)) / 100;
 
-  // Determine positioning mode
-  const useFixedPosition = isFixed !== undefined ? isFixed : !overrideConfig;
-  const positionClass = useFixedPosition
-    ? "fixed inset-0 w-screen h-screen -z-10"
-    : "absolute inset-0 w-full h-full z-0";
+  // Determine positioning mode:
+  // When inside simulator (overrideConfig present): absolute
+  // When on main site: fixed inset-0 z-0
+  const isSimulator = !!overrideConfig;
+  const positionClass = isSimulator
+    ? "absolute inset-0 w-full h-full z-0 pointer-events-none"
+    : "fixed inset-0 w-screen h-screen z-0 pointer-events-none";
 
   return (
     <div
       aria-hidden="true"
       className={`pointer-events-none overflow-hidden select-none ${positionClass} ${className}`}
     >
-      {/* 1. Underlying High-Definition Image Layer */}
-      <div
-        className="absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat transition-all duration-300 ease-out transform-gpu"
+      {/* 1. Underlying High-Definition Image Layer via <img> tag for 100% reliable decoding */}
+      <img
+        src={bgImage}
+        alt=""
+        loading="eager"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-all duration-300 transform-gpu"
         style={{
-          backgroundImage: `url("${bgImage}")`,
           opacity: imgOpacity,
           filter: blurAmount > 0 ? `blur(${blurAmount}px)` : undefined,
           transform: blurAmount > 0 ? "scale(1.06)" : "scale(1)",
@@ -86,11 +91,11 @@ export function HomeLuxuryBackground({
 
       {/* 3. Subtle luxury vignette to blend edges seamlessly */}
       <div
-        className="absolute inset-0 w-full h-full transition-all duration-300 pointer-events-none opacity-40"
+        className="absolute inset-0 w-full h-full transition-all duration-300 pointer-events-none opacity-30"
         style={{
           backgroundImage: isDark
-            ? "radial-gradient(ellipse at center, transparent 40%, rgba(11,19,27,0.7) 100%)"
-            : "radial-gradient(ellipse at center, transparent 50%, rgba(248,250,252,0.6) 100%)",
+            ? "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)"
+            : "radial-gradient(ellipse at center, transparent 50%, rgba(255,255,255,0.6) 100%)",
         }}
       />
     </div>
