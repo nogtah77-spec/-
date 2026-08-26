@@ -1697,27 +1697,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [toast, logActivity]);
 
   const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
-    const next = { ...settings, ...patch };
-    setSettings(next);
-    try { localStorage.setItem("alm_settings", JSON.stringify(next)); } catch {}
+    let nextSettings: SiteSettings = DEFAULT_SETTINGS;
+    setSettings(prev => {
+      nextSettings = { ...DEFAULT_SETTINGS, ...prev, ...patch };
+      if (patch.homeBackgroundSettings) {
+        nextSettings.homeBackgroundSettings = {
+          ...(prev.homeBackgroundSettings || DEFAULT_SETTINGS.homeBackgroundSettings!),
+          ...patch.homeBackgroundSettings,
+        };
+      }
+      try { localStorage.setItem("alm_settings", JSON.stringify(nextSettings)); } catch {}
+      return nextSettings;
+    });
     writeCache({
       regions,
       types: propertyTypes,
       properties,
-      settings: next,
+      settings: nextSettings,
     });
     // Cloud sync to Supabase (propagates across all devices worldwide)
-    await supabaseService.saveSettings(next).catch(() => {});
+    await supabaseService.saveSettings(nextSettings).catch(() => {});
     // Realtime broadcast (instant cross-tab & cross-device websocket update)
-    sendRealtimeSync("SETTINGS_UPDATE", { settings: next });
+    sendRealtimeSync("SETTINGS_UPDATE", { settings: nextSettings });
     logActivity({ action: "updated", entityType: "settings", title: "تحديث إعدادات المنصة والموقع" });
     try {
-      await api.put("/settings", next);
+      await api.put("/settings", nextSettings);
       return true;
     } catch (err) {
       return true;
     }
-  }, [settings, regions, propertyTypes, properties, logActivity]);
+  }, [regions, propertyTypes, properties, logActivity]);
 
   const addRegion = async (name: string, heroImage = "") => {
     const region: Region = { id: genId(), name, active: true, heroImage };

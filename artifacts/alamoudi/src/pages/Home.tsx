@@ -295,7 +295,8 @@ export default function Home() {
     <div className="min-h-screen flex flex-col relative bg-transparent">
       {/* ── Ambient Luxury Fixed Background (Anchored to Viewport) ── */}
       <HomeLuxuryBackground isFixed />
-      <Navbar />
+      <div className="relative z-10 flex flex-col flex-1">
+        <Navbar />
       <StickyQuickSearch
         filters={filters}
         regions={regions}
@@ -757,7 +758,8 @@ export default function Home() {
           </>
         )}
       </main>
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }
