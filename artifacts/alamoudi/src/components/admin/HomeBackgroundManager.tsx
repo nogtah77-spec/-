@@ -1,4 +1,4 @@
-import React, { useState, useRef, ChangeEvent } from "react";
+import React, { useState, useRef, ChangeEvent, useCallback } from "react";
 import {
   Sparkles,
   Moon,
@@ -58,25 +58,27 @@ export function HomeBackgroundManager({
   onSave,
   saving = false,
 }: HomeBackgroundManagerProps) {
-  const { updateSettings } = useData();
+  const { updateSettings, settings } = useData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"dark" | "light">("dark");
   const [isUploading, setIsUploading] = useState(false);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const bgConfig: HomeBackgroundSettings = form.homeBackgroundSettings || {
+  // Read current background config safely from live settings or form
+  const bgConfig: HomeBackgroundSettings = {
     enabled: true,
-    bgImageDark: "",
-    overlayColorDark: "#000000",
-    overlayOpacityDark: 30,
-    blurDark: 0,
-    imageOpacityDark: 100,
-    bgImageLight: "",
-    overlayColorLight: "#FFFFFF",
-    overlayOpacityLight: 35,
-    blurLight: 0,
-    imageOpacityLight: 100,
+    bgImageDark: form.homeBackgroundSettings?.bgImageDark ?? settings.homeBackgroundSettings?.bgImageDark ?? "",
+    overlayColorDark: form.homeBackgroundSettings?.overlayColorDark ?? settings.homeBackgroundSettings?.overlayColorDark ?? "#000000",
+    overlayOpacityDark: form.homeBackgroundSettings?.overlayOpacityDark ?? settings.homeBackgroundSettings?.overlayOpacityDark ?? 30,
+    blurDark: form.homeBackgroundSettings?.blurDark ?? settings.homeBackgroundSettings?.blurDark ?? 0,
+    imageOpacityDark: form.homeBackgroundSettings?.imageOpacityDark ?? settings.homeBackgroundSettings?.imageOpacityDark ?? 100,
+    bgImageLight: form.homeBackgroundSettings?.bgImageLight ?? settings.homeBackgroundSettings?.bgImageLight ?? "",
+    overlayColorLight: form.homeBackgroundSettings?.overlayColorLight ?? settings.homeBackgroundSettings?.overlayColorLight ?? "#FFFFFF",
+    overlayOpacityLight: form.homeBackgroundSettings?.overlayOpacityLight ?? settings.homeBackgroundSettings?.overlayOpacityLight ?? 35,
+    blurLight: form.homeBackgroundSettings?.blurLight ?? settings.homeBackgroundSettings?.blurLight ?? 0,
+    imageOpacityLight: form.homeBackgroundSettings?.imageOpacityLight ?? settings.homeBackgroundSettings?.imageOpacityLight ?? 100,
   };
 
   const isDark = activeTab === "dark";
@@ -86,19 +88,41 @@ export function HomeBackgroundManager({
   const currentBlur = isDark ? (bgConfig.blurDark ?? 0) : (bgConfig.blurLight ?? 0);
   const currentImageOpacity = isDark ? (bgConfig.imageOpacityDark ?? 100) : (bgConfig.imageOpacityLight ?? 100);
 
-  const updateBgField = (fields: Partial<HomeBackgroundSettings>) => {
+  // Update background fields safely without clearing image, with debounced auto-sync
+  const updateBgField = useCallback((fields: Partial<HomeBackgroundSettings>, immediateSync = false) => {
     const updated: HomeBackgroundSettings = {
       ...bgConfig,
       ...fields,
       enabled: true,
     };
-    const updatedForm: SiteSettings = {
-      ...form,
+    
+    // Always preserve images unless explicitly passed
+    if (fields.bgImageDark === undefined) {
+      updated.bgImageDark = bgConfig.bgImageDark || "";
+    }
+    if (fields.bgImageLight === undefined) {
+      updated.bgImageLight = bgConfig.bgImageLight || "";
+    }
+
+    // Instant local UI state update for 60fps smooth slider drag
+    setForm(prev => ({
+      ...prev,
       homeBackgroundSettings: updated,
-    };
-    setForm(updatedForm);
-    updateSettings({ homeBackgroundSettings: updated });
-  };
+    }));
+
+    // Debounce cloud network persistence so slider movements don't flood the server
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (immediateSync) {
+      updateSettings({ homeBackgroundSettings: updated });
+    } else {
+      debounceTimerRef.current = setTimeout(() => {
+        updateSettings({ homeBackgroundSettings: updated });
+      }, 350);
+    }
+  }, [bgConfig, setForm, updateSettings]);
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -132,9 +156,9 @@ export function HomeBackgroundManager({
       });
 
       if (isDark) {
-        updateBgField({ bgImageDark: optimizedDataUrl, enabled: true });
+        updateBgField({ bgImageDark: optimizedDataUrl, enabled: true }, true);
       } else {
-        updateBgField({ bgImageLight: optimizedDataUrl, enabled: true });
+        updateBgField({ bgImageLight: optimizedDataUrl, enabled: true }, true);
       }
 
       toast({
@@ -156,9 +180,9 @@ export function HomeBackgroundManager({
 
   const handleRemoveImage = () => {
     if (isDark) {
-      updateBgField({ bgImageDark: "" });
+      updateBgField({ bgImageDark: "" }, true);
     } else {
-      updateBgField({ bgImageLight: "" });
+      updateBgField({ bgImageLight: "" }, true);
     }
     toast({
       title: "تم حذف صورة الخلفية",
@@ -320,8 +344,8 @@ export function HomeBackgroundManager({
                       key={preset.color}
                       type="button"
                       onClick={() => {
-                        if (isDark) updateBgField({ overlayColorDark: preset.color });
-                        else updateBgField({ overlayColorLight: preset.color });
+                        if (isDark) updateBgField({ overlayColorDark: preset.color }, true);
+                        else updateBgField({ overlayColorLight: preset.color }, true);
                         toast({ title: `تم اختيار لون: ${preset.label}` });
                       }}
                       className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-right transition-all ${
@@ -356,8 +380,8 @@ export function HomeBackgroundManager({
                     type="color"
                     value={currentOverlayColor}
                     onChange={(e) => {
-                      if (isDark) updateBgField({ overlayColorDark: e.target.value });
-                      else updateBgField({ overlayColorLight: e.target.value });
+                      if (isDark) updateBgField({ overlayColorDark: e.target.value }, true);
+                      else updateBgField({ overlayColorLight: e.target.value }, true);
                     }}
                     className="w-9 h-8 p-0.5 rounded-lg cursor-pointer border-border shrink-0"
                   />

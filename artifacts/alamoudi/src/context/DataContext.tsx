@@ -1737,9 +1737,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setSettings(prev => {
       nextSettings = { ...DEFAULT_SETTINGS, ...prev, ...patch };
       if (patch.homeBackgroundSettings) {
+        const prevBg = prev.homeBackgroundSettings || DEFAULT_SETTINGS.homeBackgroundSettings!;
+        const patchBg = patch.homeBackgroundSettings;
         nextSettings.homeBackgroundSettings = {
-          ...(prev.homeBackgroundSettings || DEFAULT_SETTINGS.homeBackgroundSettings!),
-          ...patch.homeBackgroundSettings,
+          ...prevBg,
+          ...patchBg,
+          bgImageDark: patchBg.bgImageDark !== undefined ? patchBg.bgImageDark : (prevBg.bgImageDark || ""),
+          bgImageLight: patchBg.bgImageLight !== undefined ? patchBg.bgImageLight : (prevBg.bgImageLight || ""),
         };
       }
       try {
