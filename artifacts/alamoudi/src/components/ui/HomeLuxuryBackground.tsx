@@ -1,3 +1,14 @@
+import React from "react";
+import { useTheme } from "next-themes";
+import { useData, type HomeBackgroundSettings } from "@/context/DataContext";
+
+interface HomeLuxuryBackgroundProps {
+  className?: string;
+  forcedTheme?: "dark" | "light";
+  overrideConfig?: Partial<HomeBackgroundSettings>;
+  isFixed?: boolean;
+}
+
 function getInstantBgConfig(): Partial<HomeBackgroundSettings> | null {
   if (typeof window === "undefined") return null;
   try {
@@ -11,20 +22,6 @@ function getInstantBgConfig(): Partial<HomeBackgroundSettings> | null {
   } catch {}
   return null;
 }
-
-import React from "react";
-import { useTheme } from "next-themes";
-import { useData, type HomeBackgroundSettings } from "@/context/DataContext";
-
-interface HomeLuxuryBackgroundProps {
-  className?: string;
-  forcedTheme?: "dark" | "light";
-  overrideConfig?: Partial<HomeBackgroundSettings>;
-  isFixed?: boolean;
-}
-
-const DEFAULT_DARK_IMG = "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80"; // Dubai Gold lights
-const DEFAULT_LIGHT_IMG = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80"; // Luxury Villa pool
 
 export function HomeLuxuryBackground({
   className = "",
@@ -45,9 +42,10 @@ export function HomeLuxuryBackground({
     return null;
   }
 
+  // Purely custom uploaded images - ZERO default images in the entire codebase
   const bgImage = isDark
-    ? (bgConfig?.bgImageDark || DEFAULT_DARK_IMG)
-    : (bgConfig?.bgImageLight || DEFAULT_LIGHT_IMG);
+    ? (bgConfig?.bgImageDark || "")
+    : (bgConfig?.bgImageLight || bgConfig?.bgImageDark || "");
 
   const overlayColor = isDark
     ? (bgConfig?.overlayColorDark || "#000000")
@@ -84,37 +82,39 @@ export function HomeLuxuryBackground({
         WebkitBackfaceVisibility: "hidden",
       }}
     >
-      {/* 1. Underlying High-Definition Image Layer (transition only opacity, not dimensions/transform) */}
-      <img
-        key={bgImage}
-        src={bgImage}
-        alt=""
-        loading="eager"
-        decoding="async"
-        className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-opacity duration-300"
-        style={{
-          opacity: imgOpacity,
-          filter: blurAmount > 0 ? `blur(${blurAmount}px)` : undefined,
-          transform: blurAmount > 0 ? "scale(1.06)" : undefined,
-        }}
-      />
+      {/* 1. Underlying Custom Uploaded Image Layer (renders ONLY if user uploaded a photo) */}
+      {bgImage ? (
+        <img
+          key={bgImage}
+          src={bgImage}
+          alt=""
+          loading="eager"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-opacity duration-300"
+          style={{
+            opacity: imgOpacity,
+            filter: blurAmount > 0 ? `blur(${blurAmount}px)` : undefined,
+            transform: blurAmount > 0 ? "scale(1.06)" : undefined,
+          }}
+        />
+      ) : null}
 
       {/* 2. Primary Solid/Translucent Color Overlay Layer */}
       <div
         className="absolute inset-0 w-full h-full transition-opacity duration-300 pointer-events-none"
         style={{
           backgroundColor: overlayColor,
-          opacity: overlayOpacity,
+          opacity: bgImage ? overlayOpacity : (isDark ? 0.4 : 0.05),
         }}
       />
 
-      {/* 3. Subtle luxury vignette */}
+      {/* 3. Subtle luxury vignette / gradient */}
       <div
-        className="absolute inset-0 w-full h-full transition-opacity duration-300 pointer-events-none opacity-30"
+        className="absolute inset-0 w-full h-full transition-opacity duration-300 pointer-events-none opacity-40"
         style={{
           backgroundImage: isDark
-            ? "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)"
-            : "radial-gradient(ellipse at center, transparent 50%, rgba(255,255,255,0.6) 100%)",
+            ? "radial-gradient(ellipse at top, rgba(200,169,126,0.06) 0%, rgba(10,20,30,0.6) 80%, rgba(5,10,18,0.95) 100%)"
+            : "radial-gradient(ellipse at top, rgba(200,169,126,0.04) 0%, rgba(240,244,248,0.4) 80%, rgba(255,255,255,0.8) 100%)",
         }}
       />
     </div>
