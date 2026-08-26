@@ -292,7 +292,9 @@ export default function Home() {
     "grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2.5";
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative bg-transparent">
+      {/* ── Ambient Luxury Fixed Background (Anchored to Viewport) ── */}
+      <HomeLuxuryBackground isFixed />
       <Navbar />
       <StickyQuickSearch
         filters={filters}
@@ -305,9 +307,7 @@ export default function Home() {
         onApply={applyFilters}
         onReset={clearFilters}
       />
-      <main className="flex-1 relative overflow-hidden">
-        {/* ── Ambient Luxury Vector & Pattern Background ── */}
-        <HomeLuxuryBackground />
+      <main className="flex-1 relative bg-transparent">
 
         {/* ── 3 Action Buttons — Luxury Quick Actions ── */}
         <div className="container px-3 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
