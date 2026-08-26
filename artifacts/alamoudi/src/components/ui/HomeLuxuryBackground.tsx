@@ -1,3 +1,17 @@
+function getInstantBgConfig(): Partial<HomeBackgroundSettings> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const rawBg = localStorage.getItem("alm_home_bg");
+    if (rawBg) return JSON.parse(rawBg);
+    const rawSettings = localStorage.getItem("alm_settings");
+    if (rawSettings) {
+      const parsed = JSON.parse(rawSettings);
+      if (parsed.homeBackgroundSettings) return parsed.homeBackgroundSettings;
+    }
+  } catch {}
+  return null;
+}
+
 import React from "react";
 import { useTheme } from "next-themes";
 import { useData, type HomeBackgroundSettings } from "@/context/DataContext";
@@ -21,8 +35,9 @@ export function HomeLuxuryBackground({
   const { resolvedTheme } = useTheme();
 
   const isDark = forcedTheme ? forcedTheme === "dark" : resolvedTheme === "dark";
-  const baseConfig = settings?.homeBackgroundSettings;
-  const bgConfig = overrideConfig ? { ...(baseConfig || {}), ...overrideConfig } : baseConfig;
+  const instant = getInstantBgConfig();
+  const baseConfig = settings?.homeBackgroundSettings || instant;
+  const bgConfig = overrideConfig ? { ...(baseConfig || {}), ...overrideConfig } : (baseConfig || instant);
 
   // Simulator preview ALWAYS renders regardless of enabled flag
   const isSimulator = !!overrideConfig;

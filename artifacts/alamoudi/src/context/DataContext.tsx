@@ -862,19 +862,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
+    let localCustom: Partial<SiteSettings> | null = null;
     try {
       const raw = localStorage.getItem("alm_settings");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") {
-          return { ...DEFAULT_SETTINGS, ...parsed, tiktokVideos: parsed.tiktokVideos ?? [], ads: parsed.ads ?? [] };
-        }
-      }
+      if (raw) localCustom = JSON.parse(raw);
     } catch {}
     const cached = readCache();
-    return cached?.settings
-      ? { ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [], ads: cached.settings.ads ?? [] }
-      : DEFAULT_SETTINGS;
+    const base = localCustom || cached?.settings || {};
+    return {
+      ...DEFAULT_SETTINGS,
+      ...base,
+      homeBackgroundSettings: {
+        ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+        ...(cached?.settings?.homeBackgroundSettings || {}),
+        ...(localCustom?.homeBackgroundSettings || {}),
+      },
+      qrCodes: localCustom?.qrCodes ?? cached?.settings?.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
+      tiktokVideos: base.tiktokVideos ?? [],
+      ads: base.ads ?? [],
+    };
   });
 
   const reload = useCallback(async () => {
@@ -1050,7 +1056,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (cached) {
       setProperties(cached.properties);
-      setSettings({ ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [], ads: cached.settings.ads ?? [] });
+      setSettings(prev => ({
+        ...DEFAULT_SETTINGS,
+        ...cached.settings,
+        ...prev,
+        homeBackgroundSettings: {
+          ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+          ...(cached.settings?.homeBackgroundSettings || {}),
+          ...(prev.homeBackgroundSettings || {}),
+        },
+        qrCodes: prev.qrCodes ?? cached.settings?.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
+        tiktokVideos: cached.settings?.tiktokVideos ?? prev.tiktokVideos ?? [],
+        ads: cached.settings?.ads ?? prev.ads ?? [],
+      }));
       setReady(true);
     }
 
@@ -1724,7 +1742,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...patch.homeBackgroundSettings,
         };
       }
-      try { localStorage.setItem("alm_settings", JSON.stringify(nextSettings)); } catch {}
+      try {
+        localStorage.setItem("alm_settings", JSON.stringify(nextSettings));
+        if (nextSettings.homeBackgroundSettings) {
+          localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
+        }
+      } catch {}
       return nextSettings;
     });
     writeCache({
