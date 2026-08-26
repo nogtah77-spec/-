@@ -22,6 +22,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/imageOptimizer";
 import { useData, type SiteSettings, type HomeBackgroundSettings } from "@/context/DataContext";
 import { HomeLuxuryBackground } from "@/components/ui/HomeLuxuryBackground";
 
@@ -316,28 +317,44 @@ export function HomeBackgroundManager({
     });
   };
 
-  const handleFileUpload = (e: ChangeEvent<HTMLInputElement>, mode: "dark" | "light") => {
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>, mode: "dark" | "light") => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 20 * 1024 * 1024) {
       toast({
-        title: "الصورة كبيرة جداً (الحد 5 ميجابايت)",
+        title: "الصورة كبيرة جداً (الحد 20 ميجابايت)",
         variant: "destructive",
       });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ev.target?.result as string;
+    try {
+      toast({ title: "جارٍ تجهيز وضغط الصورة للمزامنة السحابية..." });
+      // Compress to high-efficiency WebP/JPEG under 75KB for instant cross-device WebSocket sync
+      const compressedDataUrl = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 900,
+        quality: 0.72,
+      });
+
       if (mode === "dark") {
-        updateBg({ bgImageDark: b64 });
+        updateBg({ bgImageDark: compressedDataUrl });
       } else {
-        updateBg({ bgImageLight: b64 });
+        updateBg({ bgImageLight: compressedDataUrl });
       }
-      toast({ title: "تم رفع الخلفية بنجاح ✓" });
-    };
-    reader.readAsDataURL(file);
-    e.target.value = "";
+      toast({
+        title: "تم رفع وتجهيز الخلفية بنجاح ✓",
+        description: "اضغط على (حفظ إعدادات الخلفيات والمظهر) لتطبيقها على جميع الأجهزة.",
+      });
+    } catch (err) {
+      console.warn("Failed to compress image:", err);
+      toast({
+        title: "تعذر معالجة الصورة",
+        description: "يرجى تجربة صورة أخرى أو رابط مباشر",
+        variant: "destructive",
+      });
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleSaveDirect = async () => {
