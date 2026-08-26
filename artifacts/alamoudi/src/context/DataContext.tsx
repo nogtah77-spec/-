@@ -1084,7 +1084,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (newProps && newProps.length > 0) setProperties(newProps);
       else if (cached?.properties?.length) setProperties(cached.properties);
 
-      if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] });
+      if (newSettings) {
+        setSettings(prev => {
+          const merged: SiteSettings = {
+            ...DEFAULT_SETTINGS,
+            ...newSettings,
+            ...prev,
+            homeBackgroundSettings: {
+              ...(DEFAULT_SETTINGS.homeBackgroundSettings || {}),
+              ...(newSettings.homeBackgroundSettings || {}),
+              ...(prev.homeBackgroundSettings || {}),
+            },
+            qrCodes: prev.qrCodes ?? newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
+            tiktokVideos: newSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
+            ads: newSettings.ads ?? prev.ads ?? [],
+          };
+          try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+          return merged;
+        });
+      }
 
       const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
       setFetching(false);
