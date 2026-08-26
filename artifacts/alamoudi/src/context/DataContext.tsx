@@ -862,6 +862,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
+    try {
+      const raw = localStorage.getItem("alm_settings");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          return { ...DEFAULT_SETTINGS, ...parsed, tiktokVideos: parsed.tiktokVideos ?? [], ads: parsed.ads ?? [] };
+        }
+      }
+    } catch {}
     const cached = readCache();
     return cached?.settings
       ? { ...DEFAULT_SETTINGS, ...cached.settings, tiktokVideos: cached.settings.tiktokVideos ?? [], ads: cached.settings.ads ?? [] }
@@ -896,7 +905,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (newRegions)  setRegions(newRegions);
     if (newTypes)    setPropertyTypes(newTypes);
     if (newProps)    setProperties(newProps);
-    if (newSettings) setSettings({ ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [] });
+    if (newSettings) {
+      const merged = { ...DEFAULT_SETTINGS, ...newSettings, tiktokVideos: newSettings.tiktokVideos ?? [], ads: newSettings.ads ?? [] };
+      setSettings(merged);
+      try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+    }
+    supabaseService.fetchSettings().then(cloudSettings => {
+      if (cloudSettings && Object.keys(cloudSettings).length > 0) {
+        setSettings(prev => {
+          const merged = { ...DEFAULT_SETTINGS, ...prev, ...cloudSettings, tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [], ads: cloudSettings.ads ?? prev.ads ?? [] };
+          try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+          return merged;
+        });
+      }
+    }).catch(() => {});
     if (usersR.status === "fulfilled" && usersR.value) {
       setUsers(usersR.value);
       try { localStorage.setItem("alm_users", JSON.stringify(usersR.value)); } catch {}
@@ -1146,6 +1168,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }).catch(() => {});
 
+      supabaseService.fetchSettings().then(cloudSettings => {
+        if (destroyed) return;
+        if (cloudSettings && Object.keys(cloudSettings).length > 0) {
+          setSettings(prev => {
+            const merged = { ...DEFAULT_SETTINGS, ...prev, ...cloudSettings, tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [], ads: cloudSettings.ads ?? prev.ads ?? [] };
+            try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+            writeCache({
+              regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
+              types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
+              properties: cached?.properties ?? [],
+              settings: merged,
+            });
+            return merged;
+          });
+        }
+      }).catch(() => {});
+
       supabaseService.seedInitialPropertiesIfEmpty().then(() => {
         supabaseService.fetchProperties().then(supabaseProps => {
           if (destroyed) return;
@@ -1290,6 +1329,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } else if (event === "ACTIVITY_LOG_CLEAR") {
         setActivityLogs([]);
         try { localStorage.removeItem("alm_activity_logs"); } catch {}
+      } else if (event === "SETTINGS_UPDATE" && data.settings) {
+        setSettings(prev => {
+          const merged = { ...DEFAULT_SETTINGS, ...prev, ...data.settings };
+          try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+          writeCache({ regions, types: propertyTypes, properties, settings: merged });
+          return merged;
+        });
       }
     };
 
@@ -1432,6 +1478,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }).catch(() => {});
           }
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "site_settings" },
+          (payload) => {
+            const newRow = payload.new as any;
+            if (newRow && newRow.settings_json && typeof newRow.settings_json === "object") {
+              setSettings(prev => {
+                const merged = { ...DEFAULT_SETTINGS, ...prev, ...newRow.settings_json };
+                try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+                writeCache({ regions, types: propertyTypes, properties, settings: merged });
+                return merged;
+              });
+            }
+          }
+        )
         .subscribe();
     }
 
@@ -1482,6 +1543,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (prevSig !== freshSig) {
               try { localStorage.setItem("alm_types", JSON.stringify(freshTypes)); } catch {}
               return freshTypes;
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchSettings().then(freshSettings => {
+        if (freshSettings && Object.keys(freshSettings).length > 0) {
+          setSettings(prev => {
+            const freshSig = JSON.stringify(freshSettings);
+            const prevSig = JSON.stringify(prev);
+            if (freshSig !== prevSig) {
+              const merged = { ...DEFAULT_SETTINGS, ...prev, ...freshSettings };
+              try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+              writeCache({ regions, types: propertyTypes, properties, settings: merged });
+              return merged;
             }
             return prev;
           });
@@ -1622,18 +1699,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
     const next = { ...settings, ...patch };
     setSettings(next);
+    try { localStorage.setItem("alm_settings", JSON.stringify(next)); } catch {}
     writeCache({
       regions,
       types: propertyTypes,
       properties,
       settings: next,
     });
+    // Cloud sync to Supabase (propagates across all devices worldwide)
+    await supabaseService.saveSettings(next).catch(() => {});
+    // Realtime broadcast (instant cross-tab & cross-device websocket update)
+    sendRealtimeSync("SETTINGS_UPDATE", { settings: next });
     logActivity({ action: "updated", entityType: "settings", title: "تحديث إعدادات المنصة والموقع" });
     try {
       await api.put("/settings", next);
       return true;
     } catch (err) {
-      console.warn("Server sync warning (settings saved in client cache):", err);
       return true;
     }
   }, [settings, regions, propertyTypes, properties, logActivity]);

@@ -492,4 +492,45 @@ export const supabaseService = {
       return false;
     }
   },
+
+  // Fetch Site Settings from Supabase Cloud (Sync across all devices)
+  async fetchSettings(): Promise<Partial<SiteSettings> | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("*")
+        .eq("id", "default_settings")
+        .maybeSingle();
+      if (error) {
+        console.warn("Supabase fetch site settings warning:", error);
+        return null;
+      }
+      if (data && data.settings_json && typeof data.settings_json === "object") {
+        return data.settings_json as Partial<SiteSettings>;
+      }
+      return null;
+    } catch (e) {
+      console.warn("Supabase fetch site settings exception:", e);
+      return null;
+    }
+  },
+
+  // Save / Upsert Site Settings to Supabase Cloud
+  async saveSettings(settings: SiteSettings): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const row = {
+        id: "default_settings",
+        settings_json: settings,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("site_settings").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save site settings warning:", e);
+      return false;
+    }
+  },
 };
