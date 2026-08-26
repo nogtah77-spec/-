@@ -587,7 +587,7 @@ export default function Home() {
             </section>
 
             {/* ── Latest Properties — Carousel ── */}
-            <section className="py-12 md:py-14 bg-background">
+            <section className="py-12 md:py-14 bg-transparent relative z-10">
               <div className="container px-6">
                 <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
                   <div>
@@ -628,7 +628,7 @@ export default function Home() {
 
             {/* ── Explore All Properties — grouped by region ── */}
             {propertiesByRegion.length > 0 && (
-              <section className="py-12 md:py-14 bg-muted dark:bg-background">
+              <section className="py-12 md:py-14 bg-transparent relative z-10">
                 <div className="container px-6">
                   <div className="mb-10">
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground relative inline-block">

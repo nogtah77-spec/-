@@ -6,12 +6,18 @@ interface HomeLuxuryBackgroundProps {
   className?: string;
   forcedTheme?: "dark" | "light";
   overrideConfig?: Partial<HomeBackgroundSettings>;
+  isFixed?: boolean;
 }
 
 const DEFAULT_DARK_IMG = "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1920&q=80"; // Luxury Night Skyscrapers & Golden Lights
 const DEFAULT_LIGHT_IMG = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1920&q=80"; // Luxury Sunlit Villa with Crystal Pool
 
-export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConfig }: HomeLuxuryBackgroundProps) {
+export function HomeLuxuryBackground({
+  className = "",
+  forcedTheme,
+  overrideConfig,
+  isFixed,
+}: HomeLuxuryBackgroundProps) {
   const { settings } = useData();
   const { resolvedTheme } = useTheme();
 
@@ -19,6 +25,7 @@ export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConf
   const baseConfig = settings?.homeBackgroundSettings;
   const bgConfig = overrideConfig ? { ...(baseConfig || {}), ...overrideConfig } : baseConfig;
 
+  // If explicitly disabled, do not render
   if (bgConfig && bgConfig.enabled === false) {
     return null;
   }
@@ -32,16 +39,16 @@ export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConf
     : (bgConfig?.overlayColorLight || "#F8FAFC");
 
   const overlayOpacityPercent = isDark
-    ? (bgConfig?.overlayOpacityDark ?? 75)
-    : (bgConfig?.overlayOpacityLight ?? 80);
+    ? (bgConfig?.overlayOpacityDark ?? 55)
+    : (bgConfig?.overlayOpacityLight ?? 65);
 
   const blurAmount = isDark
-    ? (bgConfig?.blurDark ?? 1)
-    : (bgConfig?.blurLight ?? 1);
+    ? (bgConfig?.blurDark ?? 0)
+    : (bgConfig?.blurLight ?? 0);
 
   const imageOpacityPercent = isDark
-    ? (bgConfig?.imageOpacityDark ?? 90)
-    : (bgConfig?.imageOpacityLight ?? 85);
+    ? (bgConfig?.imageOpacityDark ?? 95)
+    : (bgConfig?.imageOpacityLight ?? 90);
 
   const imgOpacity = Math.max(0, Math.min(100, imageOpacityPercent)) / 100;
   const overlayOpacity = Math.max(0, Math.min(100, overlayOpacityPercent)) / 100;
@@ -49,10 +56,16 @@ export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConf
   // Solid base color behind the image to prevent white bleed-through in dark mode
   const baseBackdropColor = isDark ? (overlayColor || "#0B131B") : (overlayColor || "#F8FAFC");
 
+  // Determine positioning: fixed for whole page, absolute for preview box
+  const useFixedPosition = isFixed !== undefined ? isFixed : !overrideConfig;
+  const positionClass = useFixedPosition
+    ? "fixed inset-0 w-screen h-screen z-0"
+    : "absolute inset-0 w-full h-full z-0";
+
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 overflow-hidden select-none z-0 ${className}`}
+      className={`pointer-events-none overflow-hidden select-none ${positionClass} ${className}`}
       style={{ backgroundColor: baseBackdropColor }}
     >
       {/* 1. Underlying High-Definition Image Layer */}
@@ -62,7 +75,7 @@ export function HomeLuxuryBackground({ className = "", forcedTheme, overrideConf
           backgroundImage: `url("${bgImage}")`,
           opacity: imgOpacity,
           filter: blurAmount > 0 ? `blur(${blurAmount}px)` : undefined,
-          transform: blurAmount > 0 ? "scale(1.06)" : "scale(1)", // Prevent blur border bleed
+          transform: blurAmount > 0 ? "scale(1.06)" : "scale(1)",
         }}
       />
 

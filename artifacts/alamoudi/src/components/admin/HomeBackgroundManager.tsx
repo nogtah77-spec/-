@@ -356,6 +356,20 @@ export function HomeBackgroundManager({
     e.target.value = "";
   };
 
+  const handleSaveDirect = async () => {
+    const targetBg = form.homeBackgroundSettings || bgConfig;
+    const updatedForm = {
+      ...form,
+      homeBackgroundSettings: targetBg,
+    };
+    setForm(updatedForm);
+    await updateSettings(updatedForm);
+    toast({
+      title: "تم حفظ إعدادات الخلفيات والمظهر بنجاح ✓",
+      description: "تم تطبيق الخلفية ومزامنتها لحظياً على جميع الأجهزة.",
+    });
+  };
+
   const handleResetDefaults = async () => {
     const defaultBg: HomeBackgroundSettings = {
       enabled: true,
@@ -780,7 +794,7 @@ export function HomeBackgroundManager({
       {/* Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
         <Button
-          onClick={onSave}
+          onClick={handleSaveDirect}
           disabled={saving}
           className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2 px-7 h-10 text-xs sm:text-sm font-bold shadow-md"
         >

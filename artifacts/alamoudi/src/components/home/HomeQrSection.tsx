@@ -48,7 +48,7 @@ export function HomeQrSection() {
   };
 
   return (
-    <section className="py-10 sm:py-14 border-t border-border/70 bg-gradient-to-b from-background via-card/30 to-background relative overflow-hidden">
+    <section className="py-10 sm:py-14 border-t border-border/70 bg-transparent relative overflow-hidden">
       {/* Subtle luxury glow effect */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[200px] bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
