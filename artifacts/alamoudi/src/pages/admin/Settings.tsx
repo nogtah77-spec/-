@@ -87,6 +87,11 @@ export default function Settings() {
   const { toast } = useToast();
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
+
+  // Live sync form with settings state
+  useEffect(() => {
+    setForm(settings);
+  }, [settings]);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loginBackgroundFileRef = useRef<HTMLInputElement>(null);
@@ -228,12 +233,20 @@ export default function Settings() {
     toast({ title: "تم حذف الـ QR كود بنجاح" });
   };
 
-  const handleToggleQr = (id: string, key: "active" | "showInHome" | "showInPdf", val: boolean) => {
-    const updatedList = (form.qrCodes || []).map((item) =>
+  const handleToggleQr = async (id: string, key: "active" | "showInHome" | "showInPdf", val: boolean) => {
+    const currentList = form.qrCodes || settings.qrCodes || [];
+    const updatedList = currentList.map((item) =>
       item.id === id ? { ...item, [key]: val } : item
     );
-    setForm((prev) => ({ ...prev, qrCodes: updatedList }));
-    updateSettings({ qrCodes: updatedList });
+    const updatedForm: SiteSettings = {
+      ...form,
+      qrCodes: updatedList,
+    };
+    setForm(updatedForm);
+    await updateSettings(updatedForm);
+    toast({
+      title: val ? "تم تفعيل الـ QR كود بنجاح ✓" : "تم تعطيل الـ QR كود بنجاح ✕",
+    });
   };
 
   const markLoginFormDirty = () => {

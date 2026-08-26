@@ -119,7 +119,9 @@ export const supabaseService = {
         .order("created_at", { ascending: false });
       if (error) throw error;
       if (!data || data.length === 0) return null;
-      return data.map(rowToProperty);
+      return data
+        .filter((r: any) => r.id !== "__site_settings_store__" && r.code !== "__SYS_CONFIG__")
+        .map(rowToProperty);
     } catch (e) {
       console.warn("Supabase fetch properties error:", e);
       return null;
@@ -498,16 +500,17 @@ export const supabaseService = {
     if (!supabase) return null;
     try {
       const { data, error } = await supabase
-        .from("site_settings")
-        .select("*")
-        .eq("id", "default_settings")
+        .from("properties")
+        .select("description")
+        .eq("id", "__site_settings_store__")
         .maybeSingle();
       if (error) {
         console.warn("Supabase fetch site settings warning:", error);
         return null;
       }
-      if (data && data.settings_json && typeof data.settings_json === "object") {
-        return data.settings_json as Partial<SiteSettings>;
+      if (data && data.description) {
+        const parsed = JSON.parse(data.description);
+        return parsed as Partial<SiteSettings>;
       }
       return null;
     } catch (e) {
@@ -520,12 +523,18 @@ export const supabaseService = {
   async saveSettings(settings: SiteSettings): Promise<boolean> {
     if (!supabase) return false;
     try {
+      const payloadString = JSON.stringify(settings);
       const row = {
-        id: "default_settings",
-        settings_json: settings,
-        updated_at: new Date().toISOString(),
+        id: "__site_settings_store__",
+        code: "__SYS_CONFIG__",
+        title: "System Settings Store",
+        description: payloadString,
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
       };
-      const { error } = await supabase.from("site_settings").upsert(row);
+      const { error } = await supabase.from("properties").upsert(row);
       if (error) throw error;
       return true;
     } catch (e) {
