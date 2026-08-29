@@ -865,6 +865,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [visitorStats, setVisitorStats] = useState<VisitorStats>({ online: 0, today: 0, week: 0, month: 0 });
   const [settings, setSettings] = useState<SiteSettings>(() => {
+    let localQr: { qrSectionEnabled?: boolean; qrCodes?: QrCodeItem[] } | undefined;
+    try {
+      const rawQr = localStorage.getItem("alm_qr_settings");
+      if (rawQr) localQr = JSON.parse(rawQr);
+    } catch {}
     let localCustom: Partial<SiteSettings> | null = null;
     try {
       const raw = localStorage.getItem("alm_settings");
@@ -880,11 +885,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ...(cached?.settings?.homeBackgroundSettings || {}),
         ...(localCustom?.homeBackgroundSettings || {}),
       },
-      qrCodes: localCustom?.qrCodes ?? cached?.settings?.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
+      qrCodes: localQr?.qrCodes ?? localCustom?.qrCodes ?? cached?.settings?.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
+      qrSectionEnabled: localQr?.qrSectionEnabled !== undefined ? localQr.qrSectionEnabled : (localCustom?.qrSectionEnabled !== undefined ? localCustom.qrSectionEnabled : (cached?.settings?.qrSectionEnabled ?? true)),
       tiktokVideos: base.tiktokVideos ?? [],
       ads: base.ads ?? [],
     };
   });
+
+  const settingsRef = useRef<SiteSettings>(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   const reload = useCallback(async () => {
     if (!isOnline()) return;
@@ -1264,6 +1275,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ...prev,
               homeBackgroundSettings: mergedBg,
             };
+          });
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchQrSettings().then(cloudQr => {
+        if (destroyed) return;
+        if (cloudQr) {
+          setSettings(prev => {
+            const nextEnabled = cloudQr.qrSectionEnabled !== undefined ? cloudQr.qrSectionEnabled : prev.qrSectionEnabled;
+            const nextCodes = cloudQr.qrCodes || prev.qrCodes;
+            const updated = {
+              ...prev,
+              qrSectionEnabled: nextEnabled,
+              qrCodes: nextCodes,
+            };
+            settingsRef.current = updated;
+            try {
+              localStorage.setItem("alm_qr_settings", JSON.stringify({ qrSectionEnabled: nextEnabled, qrCodes: nextCodes }));
+            } catch {}
+            return updated;
           });
         }
       }).catch(() => {});
@@ -1705,15 +1736,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
       supabaseService.fetchSettings().then(freshSettings => {
         if (freshSettings && Object.keys(freshSettings).length > 0) {
           setSettings(prev => {
-            const freshSig = JSON.stringify(freshSettings);
-            const prevSig = JSON.stringify(prev);
-            if (freshSig !== prevSig) {
-              const merged = { ...DEFAULT_SETTINGS, ...prev, ...freshSettings };
-              try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
-              writeCache({ regions, types: propertyTypes, properties, settings: merged });
-              return merged;
-            }
-            return prev;
+            let cachedQr: { qrSectionEnabled?: boolean; qrCodes?: QrCodeItem[] } | undefined;
+            try {
+              const raw = localStorage.getItem("alm_qr_settings");
+              if (raw) cachedQr = JSON.parse(raw);
+            } catch {}
+
+            const effectiveQrEnabled =
+              prev.qrSectionEnabled !== undefined
+                ? prev.qrSectionEnabled
+                : (cachedQr?.qrSectionEnabled !== undefined
+                    ? cachedQr.qrSectionEnabled
+                    : (freshSettings.qrSectionEnabled ?? true));
+
+            const effectiveQrCodes = prev.qrCodes || cachedQr?.qrCodes || freshSettings.qrCodes || DEFAULT_SETTINGS.qrCodes;
+
+            const merged = {
+              ...DEFAULT_SETTINGS,
+              ...freshSettings,
+              ...prev,
+              qrSectionEnabled: effectiveQrEnabled,
+              qrCodes: effectiveQrCodes,
+              homeBackgroundSettings: {
+                ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+                ...(prev.homeBackgroundSettings || {}),
+              },
+            };
+            settingsRef.current = merged;
+            try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+            writeCache({ regions, types: propertyTypes, properties, settings: merged });
+            return merged;
           });
         }
       }).catch(() => {});
@@ -1890,60 +1942,101 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-  const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
-    let nextSettings: SiteSettings = DEFAULT_SETTINGS;
-    setSettings(prev => {
-      // Guaranteed background retrieval from all layers
-      let cachedHomeBg: HomeBackgroundSettings | undefined;
-      try {
-        const rawBg = localStorage.getItem("alm_home_bg");
-        if (rawBg) cachedHomeBg = JSON.parse(rawBg);
-      } catch {}
+    const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
+    const cur = settingsRef.current;
 
-      const prevBg = prev.homeBackgroundSettings || cachedHomeBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
-      const patchBg = patch.homeBackgroundSettings;
+    // Retrieve background from all storage layers
+    let cachedHomeBg: HomeBackgroundSettings | undefined;
+    try {
+      const rawBg = localStorage.getItem("alm_home_bg");
+      if (rawBg) cachedHomeBg = JSON.parse(rawBg);
+    } catch {}
 
-      const mergedBg: HomeBackgroundSettings = {
-        ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-        ...(cachedHomeBg || {}),
-        ...prevBg,
-        ...(patchBg || {}),
-        bgImageDark: patchBg?.bgImageDark !== undefined
-          ? patchBg.bgImageDark
-          : (prevBg.bgImageDark || cachedHomeBg?.bgImageDark || ""),
-        bgImageLight: patchBg?.bgImageLight !== undefined
-          ? patchBg.bgImageLight
-          : (prevBg.bgImageLight || cachedHomeBg?.bgImageLight || ""),
-      };
+    // Retrieve QR settings from dedicated cache
+    let cachedQr: { qrSectionEnabled?: boolean; qrCodes?: QrCodeItem[] } | undefined;
+    try {
+      const rawQr = localStorage.getItem("alm_qr_settings");
+      if (rawQr) cachedQr = JSON.parse(rawQr);
+    } catch {}
 
-      nextSettings = {
-        ...DEFAULT_SETTINGS,
-        ...prev,
-        ...patch,
-        homeBackgroundSettings: mergedBg,
-        qrSectionEnabled: patch.qrSectionEnabled !== undefined ? patch.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
-        qrCodes: patch.qrCodes !== undefined ? patch.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
-      };
+    const prevBg = cur.homeBackgroundSettings || cachedHomeBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
+    const patchBg = patch.homeBackgroundSettings;
 
-      try {
-        localStorage.setItem("alm_settings", JSON.stringify(nextSettings));
-        if (nextSettings.homeBackgroundSettings) {
-          localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
-        }
-      } catch {}
-      return nextSettings;
-    });
+    const mergedBg: HomeBackgroundSettings = {
+      ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+      ...(cachedHomeBg || {}),
+      ...prevBg,
+      ...(patchBg || {}),
+      bgImageDark: patchBg?.bgImageDark !== undefined
+        ? patchBg.bgImageDark
+        : (prevBg.bgImageDark || cachedHomeBg?.bgImageDark || ""),
+      bgImageLight: patchBg?.bgImageLight !== undefined
+        ? patchBg.bgImageLight
+        : (prevBg.bgImageLight || cachedHomeBg?.bgImageLight || ""),
+    };
+
+    const nextQrSectionEnabled =
+      patch.qrSectionEnabled !== undefined
+        ? patch.qrSectionEnabled
+        : (cur.qrSectionEnabled !== undefined
+            ? cur.qrSectionEnabled
+            : (cachedQr?.qrSectionEnabled !== undefined ? cachedQr.qrSectionEnabled : true));
+
+    const nextQrCodes =
+      patch.qrCodes !== undefined
+        ? patch.qrCodes
+        : (cur.qrCodes || cachedQr?.qrCodes || DEFAULT_SETTINGS.qrCodes);
+
+    const nextSettings: SiteSettings = {
+      ...DEFAULT_SETTINGS,
+      ...cur,
+      ...patch,
+      homeBackgroundSettings: mergedBg,
+      qrSectionEnabled: nextQrSectionEnabled,
+      qrCodes: nextQrCodes,
+    };
+
+    // Update memory ref and react state immediately
+    settingsRef.current = nextSettings;
+    setSettings(nextSettings);
+
+    // Save to local storage
+    try {
+      localStorage.setItem("alm_settings", JSON.stringify(nextSettings));
+      localStorage.setItem("alm_qr_settings", JSON.stringify({
+        qrSectionEnabled: nextQrSectionEnabled,
+        qrCodes: nextQrCodes,
+      }));
+      if (nextSettings.homeBackgroundSettings) {
+        localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
+      }
+    } catch {}
+
     writeCache({
       regions,
       types: propertyTypes,
       properties,
       settings: nextSettings,
     });
-    // If patch included background changes, persist to dedicated background store as well
+
+    // If patch included background changes, persist to dedicated background store
     if (patch.homeBackgroundSettings) {
       supabaseService.saveHomeBackground(nextSettings.homeBackgroundSettings!).catch(() => {});
       sendRealtimeSync("HOME_BG_UPDATE", { homeBackgroundSettings: nextSettings.homeBackgroundSettings });
     }
+
+    // If patch included QR changes, persist to dedicated QR store
+    if (patch.qrSectionEnabled !== undefined || patch.qrCodes !== undefined) {
+      supabaseService.saveQrSettings({
+        qrSectionEnabled: nextQrSectionEnabled,
+        qrCodes: nextQrCodes,
+      }).catch(() => {});
+      sendRealtimeSync("QR_UPDATE", {
+        qrSectionEnabled: nextQrSectionEnabled,
+        qrCodes: nextQrCodes,
+      });
+    }
+
     // Cloud sync to Supabase (propagates across all devices worldwide)
     await supabaseService.saveSettings(nextSettings).catch(() => {});
     // Realtime broadcast (instant cross-tab & cross-device websocket update)

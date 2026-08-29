@@ -16,11 +16,27 @@ export function HomeQrSection() {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Respect master switch: if QR section is disabled, return null immediately
-  if (settings.qrSectionEnabled === false) return null;
+  // Instant local lock check to guarantee zero flicker on reload or tab switch
+  let localQrEnabled: boolean | undefined;
+  let localQrCodes: any[] | undefined;
+  try {
+    const raw = localStorage.getItem("alm_qr_settings");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      localQrEnabled = parsed.qrSectionEnabled;
+      localQrCodes = parsed.qrCodes;
+    }
+  } catch {}
 
-  const qrCodes = (settings.qrCodes || []).filter(
-    (q) => q.active !== false && q.showInHome !== false
+  const isEnabled = localQrEnabled !== undefined
+    ? localQrEnabled
+    : (settings.qrSectionEnabled !== undefined ? settings.qrSectionEnabled : true);
+
+  if (isEnabled === false) return null;
+
+  const rawList = settings.qrCodes || localQrCodes || [];
+  const qrCodes = rawList.filter(
+    (q: any) => q.active !== false && q.showInHome !== false
   );
 
   if (qrCodes.length === 0) return null;

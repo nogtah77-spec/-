@@ -495,6 +495,53 @@ export const supabaseService = {
     }
   },
 
+  // Fetch Dedicated QR Settings from Supabase Cloud (Isolated & Immune)
+  async fetchQrSettings(): Promise<{ qrSectionEnabled?: boolean; qrCodes?: any[] } | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__qr_codes_store__")
+        .maybeSingle();
+      if (error) {
+        console.warn("Supabase fetch qr settings warning:", error);
+        return null;
+      }
+      if (data && data.description) {
+        return JSON.parse(data.description);
+      }
+      return null;
+    } catch (e) {
+      console.warn("Supabase fetch qr settings exception:", e);
+      return null;
+    }
+  },
+
+  // Save Dedicated QR Settings to Supabase Cloud (Isolated & Immune)
+  async saveQrSettings(qr: { qrSectionEnabled?: boolean; qrCodes?: any[] }): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const payloadString = JSON.stringify(qr);
+      const row = {
+        id: "__qr_codes_store__",
+        code: "__QR_CONFIG__",
+        title: "QR Codes Store",
+        description: payloadString,
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("properties").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save qr settings warning:", e);
+      return false;
+    }
+  },
+
   // Fetch Dedicated Home Background from Supabase Cloud (Isolated & Immune)
   async fetchHomeBackground(): Promise<any | null> {
     if (!supabase) return null;

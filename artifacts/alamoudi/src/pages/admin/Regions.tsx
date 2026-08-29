@@ -28,9 +28,9 @@ export default function Regions() {
   const [newName, setNewName] = useState("");
   const [heroImage, setHeroImage] = useState("");
   const [rawHeroImage, setRawHeroImage] = useState("");
-  const [overlayColor, setOverlayColor] = useState(settings.regionHeroOverlayColor || "#000000");
-  const [overlayOpacity, setOverlayOpacity] = useState(settings.regionHeroOverlayOpacity ?? 25);
-  const [gradientOpacity, setGradientOpacity] = useState(settings.regionHeroGradientOpacity ?? 60);
+  const [overlayColor, setOverlayColor] = useState("#000000");
+  const [overlayOpacity, setOverlayOpacity] = useState(25);
+  const [gradientOpacity, setGradientOpacity] = useState(60);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
