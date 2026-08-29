@@ -495,6 +495,53 @@ export const supabaseService = {
     }
   },
 
+  // Fetch Dedicated Home Background from Supabase Cloud (Isolated & Immune)
+  async fetchHomeBackground(): Promise<any | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__home_background_store__")
+        .maybeSingle();
+      if (error) {
+        console.warn("Supabase fetch home background warning:", error);
+        return null;
+      }
+      if (data && data.description) {
+        return JSON.parse(data.description);
+      }
+      return null;
+    } catch (e) {
+      console.warn("Supabase fetch home background exception:", e);
+      return null;
+    }
+  },
+
+  // Save Dedicated Home Background to Supabase Cloud (Isolated & Immune)
+  async saveHomeBackground(bg: any): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const payloadString = JSON.stringify(bg);
+      const row = {
+        id: "__home_background_store__",
+        code: "__HOME_BG__",
+        title: "Home Background Store",
+        description: payloadString,
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("properties").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save home background warning:", e);
+      return false;
+    }
+  },
+
   // Fetch Site Settings from Supabase Cloud (Sync across all devices)
   async fetchSettings(): Promise<Partial<SiteSettings> | null> {
     if (!supabase) return null;

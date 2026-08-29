@@ -473,6 +473,7 @@ interface DataContextType {
   trackPropertyView: (id: string) => void;
   refreshVisitorStats: () => Promise<void>;
   updateSettings: (s: Partial<SiteSettings>) => Promise<boolean>;
+  updateHomeBackground: (bg: Partial<HomeBackgroundSettings>) => Promise<boolean>;
   addBroker: (b: Omit<Broker, "id" | "createdAt">) => Promise<boolean>;
   updateBroker: (id: string, b: Partial<Broker>) => Promise<boolean>;
   deleteBroker: (id: string) => Promise<boolean>;
@@ -1247,6 +1248,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }).catch(() => {});
 
+      supabaseService.fetchHomeBackground().then(cloudBg => {
+        if (destroyed) return;
+        if (cloudBg && (cloudBg.bgImageDark || cloudBg.bgImageLight)) {
+          setSettings(prev => {
+            const mergedBg = {
+              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+              ...(prev.homeBackgroundSettings || {}),
+              ...cloudBg,
+            };
+            try {
+              localStorage.setItem("alm_home_bg", JSON.stringify(mergedBg));
+            } catch {}
+            return {
+              ...prev,
+              homeBackgroundSettings: mergedBg,
+            };
+          });
+        }
+      }).catch(() => {});
+
       supabaseService.fetchSettings().then(cloudSettings => {
         if (destroyed) return;
         if (cloudSettings && Object.keys(cloudSettings).length > 0) {
@@ -1607,6 +1628,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     // 4. Smart Foreground & Focus & Polling Sync (Memory Shield Protected)
     const syncFreshData = () => {
+      supabaseService.fetchHomeBackground().then(freshBg => {
+        if (freshBg && (freshBg.bgImageDark || freshBg.bgImageLight)) {
+          setSettings(prev => {
+            const curDark = prev.homeBackgroundSettings?.bgImageDark || "";
+            const curLight = prev.homeBackgroundSettings?.bgImageLight || "";
+            if (freshBg.bgImageDark !== curDark || freshBg.bgImageLight !== curLight) {
+              const updated = {
+                ...prev,
+                homeBackgroundSettings: {
+                  ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+                  ...prev.homeBackgroundSettings,
+                  ...freshBg,
+                },
+              };
+              try {
+                localStorage.setItem("alm_home_bg", JSON.stringify(updated.homeBackgroundSettings));
+              } catch {}
+              return updated;
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
       supabaseService.fetchProperties().then(freshProps => {
         if (freshProps && freshProps.length > 0) {
           setProperties(prev => {
@@ -1805,6 +1849,47 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return true;
   }, [toast, logActivity]);
 
+  const updateHomeBackground = useCallback(async (bgPatch: Partial<HomeBackgroundSettings>) => {
+    let nextBg: HomeBackgroundSettings = DEFAULT_SETTINGS.homeBackgroundSettings!;
+    setSettings(prev => {
+      let cachedBg: HomeBackgroundSettings | undefined;
+      try {
+        const rawBg = localStorage.getItem("alm_home_bg");
+        if (rawBg) cachedBg = JSON.parse(rawBg);
+      } catch {}
+
+      const prevBg = prev.homeBackgroundSettings || cachedBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
+      nextBg = {
+        ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+        ...(cachedBg || {}),
+        ...prevBg,
+        ...bgPatch,
+        bgImageDark: bgPatch.bgImageDark !== undefined ? bgPatch.bgImageDark : (prevBg.bgImageDark || cachedBg?.bgImageDark || ""),
+        bgImageLight: bgPatch.bgImageLight !== undefined ? bgPatch.bgImageLight : (prevBg.bgImageLight || cachedBg?.bgImageLight || ""),
+      };
+
+      try {
+        localStorage.setItem("alm_home_bg", JSON.stringify(nextBg));
+        const currentSet = localStorage.getItem("alm_settings");
+        if (currentSet) {
+          const parsed = JSON.parse(currentSet);
+          parsed.homeBackgroundSettings = nextBg;
+          localStorage.setItem("alm_settings", JSON.stringify(parsed));
+        }
+      } catch {}
+
+      return {
+        ...prev,
+        homeBackgroundSettings: nextBg,
+      };
+    });
+
+    // Save directly to dedicated Supabase store
+    await supabaseService.saveHomeBackground(nextBg).catch(() => {});
+    sendRealtimeSync("HOME_BG_UPDATE", { homeBackgroundSettings: nextBg });
+    return true;
+  }, []);
+
   const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
     let nextSettings: SiteSettings = DEFAULT_SETTINGS;
     setSettings(prev => {
@@ -1813,13 +1898,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try {
         const rawBg = localStorage.getItem("alm_home_bg");
         if (rawBg) cachedHomeBg = JSON.parse(rawBg);
-        if (!cachedHomeBg?.bgImageDark) {
-          const rawSet = localStorage.getItem("alm_settings");
-          if (rawSet) {
-            const pSet = JSON.parse(rawSet);
-            if (pSet.homeBackgroundSettings?.bgImageDark) cachedHomeBg = pSet.homeBackgroundSettings;
-          }
-        }
       } catch {}
 
       const prevBg = prev.homeBackgroundSettings || cachedHomeBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
@@ -1861,6 +1939,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       properties,
       settings: nextSettings,
     });
+    // If patch included background changes, persist to dedicated background store as well
+    if (patch.homeBackgroundSettings) {
+      supabaseService.saveHomeBackground(nextSettings.homeBackgroundSettings!).catch(() => {});
+      sendRealtimeSync("HOME_BG_UPDATE", { homeBackgroundSettings: nextSettings.homeBackgroundSettings });
+    }
     // Cloud sync to Supabase (propagates across all devices worldwide)
     await supabaseService.saveSettings(nextSettings).catch(() => {});
     // Realtime broadcast (instant cross-tab & cross-device websocket update)
@@ -2853,6 +2936,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       visitorStats,
       trackPropertyView, refreshVisitorStats,
       updateSettings,
+    updateHomeBackground,
       reloadAiLeads, updateAiLeadStatus, deleteAiLead,
       addRegion, updateRegion, deleteRegion, toggleRegion,
       addPropertyType, updatePropertyType, deletePropertyType, togglePropertyType,

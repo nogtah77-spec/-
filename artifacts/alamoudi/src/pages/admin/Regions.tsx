@@ -17,7 +17,7 @@ import { checkUserPermission } from "@/lib/permissions";
 import { Link } from "wouter";
 
 export default function Regions() {
-  const { regions, addRegion, updateRegion, deleteRegion, toggleRegion, settings, updateSettings } = useData();
+  const { regions, addRegion, updateRegion, deleteRegion, toggleRegion } = useData();
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const canManageRegions = isAdmin || checkUserPermission(currentUser, "الإعدادات-إدارة المناطق");
@@ -54,29 +54,14 @@ export default function Regions() {
     );
   }
 
-  useEffect(() => {
-    if (settings.regionHeroOverlayColor) setOverlayColor(settings.regionHeroOverlayColor);
-    if (settings.regionHeroOverlayOpacity !== undefined) setOverlayOpacity(settings.regionHeroOverlayOpacity);
-    if (settings.regionHeroGradientOpacity !== undefined) setGradientOpacity(settings.regionHeroGradientOpacity);
-  }, [settings]);
 
-  const handleAdd = async () => {
+
+    const handleAdd = async () => {
     if (!newName.trim()) return;
     setSaving(true);
     try {
       const saved = await addRegion(newName.trim(), heroImage.trim());
       if (!saved) return;
-      if (
-        overlayColor !== settings.regionHeroOverlayColor ||
-        overlayOpacity !== settings.regionHeroOverlayOpacity ||
-        gradientOpacity !== settings.regionHeroGradientOpacity
-      ) {
-        await updateSettings({
-          regionHeroOverlayColor: overlayColor,
-          regionHeroOverlayOpacity: overlayOpacity,
-          regionHeroGradientOpacity: gradientOpacity,
-        }).catch(() => {});
-      }
       setNewName("");
       setHeroImage("");
       setRawHeroImage("");
@@ -87,23 +72,12 @@ export default function Regions() {
     }
   };
 
-  const handleEdit = async () => {
+    const handleEdit = async () => {
     if (!editTarget || !newName.trim()) return;
     setSaving(true);
     try {
       const saved = await updateRegion(editTarget.id, newName.trim(), heroImage.trim());
       if (!saved) return;
-      if (
-        overlayColor !== settings.regionHeroOverlayColor ||
-        overlayOpacity !== settings.regionHeroOverlayOpacity ||
-        gradientOpacity !== settings.regionHeroGradientOpacity
-      ) {
-        await updateSettings({
-          regionHeroOverlayColor: overlayColor,
-          regionHeroOverlayOpacity: overlayOpacity,
-          regionHeroGradientOpacity: gradientOpacity,
-        }).catch(() => {});
-      }
       setEditTarget(null);
       setNewName("");
       setHeroImage("");

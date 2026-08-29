@@ -58,7 +58,7 @@ export function HomeBackgroundManager({
   onSave,
   saving = false,
 }: HomeBackgroundManagerProps) {
-  const { updateSettings, settings } = useData();
+  const { updateSettings, updateHomeBackground, settings } = useData();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"dark" | "light">("dark");
   const [isUploading, setIsUploading] = useState(false);
@@ -116,10 +116,10 @@ export function HomeBackgroundManager({
     }
 
     if (immediateSync) {
-      updateSettings({ homeBackgroundSettings: updated });
+      updateHomeBackground(updated);
     } else {
       debounceTimerRef.current = setTimeout(() => {
-        updateSettings({ homeBackgroundSettings: updated });
+        updateHomeBackground(updated);
       }, 350);
     }
   }, [bgConfig, setForm, updateSettings]);
