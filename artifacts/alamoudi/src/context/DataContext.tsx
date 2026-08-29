@@ -915,16 +915,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (newProps)    setProperties(newProps);
     if (newSettings) {
       setSettings(prev => {
+        let cachedHomeBg: HomeBackgroundSettings | undefined;
+        try {
+          const rawBg = localStorage.getItem("alm_home_bg");
+          if (rawBg) cachedHomeBg = JSON.parse(rawBg);
+        } catch {}
+
+        const activeDark = prev.homeBackgroundSettings?.bgImageDark || newSettings.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || "";
+        const activeLight = prev.homeBackgroundSettings?.bgImageLight || newSettings.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || "";
+
         const merged = {
           ...DEFAULT_SETTINGS,
           ...prev,
           ...newSettings,
+          homeBackgroundSettings: {
+            ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+            ...(cachedHomeBg || {}),
+            ...(prev.homeBackgroundSettings || {}),
+            ...(newSettings.homeBackgroundSettings || {}),
+            bgImageDark: activeDark,
+            bgImageLight: activeLight,
+          },
           qrSectionEnabled: prev.qrSectionEnabled !== undefined ? prev.qrSectionEnabled : (newSettings.qrSectionEnabled ?? true),
           qrCodes: prev.qrCodes !== undefined ? prev.qrCodes : (newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
           tiktokVideos: newSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
           ads: newSettings.ads ?? prev.ads ?? [],
         };
-        try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+        try {
+          localStorage.setItem("alm_settings", JSON.stringify(merged));
+          if (merged.homeBackgroundSettings) {
+            localStorage.setItem("alm_home_bg", JSON.stringify(merged.homeBackgroundSettings));
+          }
+        } catch {}
         return merged;
       });
     }
@@ -1229,8 +1251,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (destroyed) return;
         if (cloudSettings && Object.keys(cloudSettings).length > 0) {
           setSettings(prev => {
-            const merged = { ...DEFAULT_SETTINGS, ...prev, ...cloudSettings, tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [], ads: cloudSettings.ads ?? prev.ads ?? [] };
-            try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+            let cachedHomeBg: HomeBackgroundSettings | undefined;
+            try {
+              const rawBg = localStorage.getItem("alm_home_bg");
+              if (rawBg) cachedHomeBg = JSON.parse(rawBg);
+            } catch {}
+
+            const activeDark = cloudSettings.homeBackgroundSettings?.bgImageDark || prev.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || "";
+            const activeLight = cloudSettings.homeBackgroundSettings?.bgImageLight || prev.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || "";
+
+            const merged = {
+              ...DEFAULT_SETTINGS,
+              ...prev,
+              ...cloudSettings,
+              homeBackgroundSettings: {
+                ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+                ...(cachedHomeBg || {}),
+                ...(prev.homeBackgroundSettings || {}),
+                ...(cloudSettings.homeBackgroundSettings || {}),
+                bgImageDark: activeDark,
+                bgImageLight: activeLight,
+              },
+              qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
+              qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
+              tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
+              ads: cloudSettings.ads ?? prev.ads ?? [],
+            };
+            try {
+              localStorage.setItem("alm_settings", JSON.stringify(merged));
+              if (merged.homeBackgroundSettings) {
+                localStorage.setItem("alm_home_bg", JSON.stringify(merged.homeBackgroundSettings));
+              }
+            } catch {}
             writeCache({
               regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
               types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
@@ -1756,17 +1808,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
     let nextSettings: SiteSettings = DEFAULT_SETTINGS;
     setSettings(prev => {
-      nextSettings = { ...DEFAULT_SETTINGS, ...prev, ...patch };
-      if (patch.homeBackgroundSettings) {
-        const prevBg = prev.homeBackgroundSettings || DEFAULT_SETTINGS.homeBackgroundSettings!;
-        const patchBg = patch.homeBackgroundSettings;
-        nextSettings.homeBackgroundSettings = {
-          ...prevBg,
-          ...patchBg,
-          bgImageDark: patchBg.bgImageDark !== undefined ? patchBg.bgImageDark : (prevBg.bgImageDark || ""),
-          bgImageLight: patchBg.bgImageLight !== undefined ? patchBg.bgImageLight : (prevBg.bgImageLight || ""),
-        };
-      }
+      // Guaranteed background retrieval from all layers
+      let cachedHomeBg: HomeBackgroundSettings | undefined;
+      try {
+        const rawBg = localStorage.getItem("alm_home_bg");
+        if (rawBg) cachedHomeBg = JSON.parse(rawBg);
+        if (!cachedHomeBg?.bgImageDark) {
+          const rawSet = localStorage.getItem("alm_settings");
+          if (rawSet) {
+            const pSet = JSON.parse(rawSet);
+            if (pSet.homeBackgroundSettings?.bgImageDark) cachedHomeBg = pSet.homeBackgroundSettings;
+          }
+        }
+      } catch {}
+
+      const prevBg = prev.homeBackgroundSettings || cachedHomeBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
+      const patchBg = patch.homeBackgroundSettings;
+
+      const mergedBg: HomeBackgroundSettings = {
+        ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+        ...(cachedHomeBg || {}),
+        ...prevBg,
+        ...(patchBg || {}),
+        bgImageDark: patchBg?.bgImageDark !== undefined
+          ? patchBg.bgImageDark
+          : (prevBg.bgImageDark || cachedHomeBg?.bgImageDark || ""),
+        bgImageLight: patchBg?.bgImageLight !== undefined
+          ? patchBg.bgImageLight
+          : (prevBg.bgImageLight || cachedHomeBg?.bgImageLight || ""),
+      };
+
+      nextSettings = {
+        ...DEFAULT_SETTINGS,
+        ...prev,
+        ...patch,
+        homeBackgroundSettings: mergedBg,
+        qrSectionEnabled: patch.qrSectionEnabled !== undefined ? patch.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
+        qrCodes: patch.qrCodes !== undefined ? patch.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
+      };
+
       try {
         localStorage.setItem("alm_settings", JSON.stringify(nextSettings));
         if (nextSettings.homeBackgroundSettings) {

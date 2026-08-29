@@ -66,16 +66,22 @@ export default function Regions() {
     try {
       const saved = await addRegion(newName.trim(), heroImage.trim());
       if (!saved) return;
-      await updateSettings({
-        regionHeroOverlayColor: overlayColor,
-        regionHeroOverlayOpacity: overlayOpacity,
-        regionHeroGradientOpacity: gradientOpacity,
-      }).catch(() => {});
+      if (
+        overlayColor !== settings.regionHeroOverlayColor ||
+        overlayOpacity !== settings.regionHeroOverlayOpacity ||
+        gradientOpacity !== settings.regionHeroGradientOpacity
+      ) {
+        await updateSettings({
+          regionHeroOverlayColor: overlayColor,
+          regionHeroOverlayOpacity: overlayOpacity,
+          regionHeroGradientOpacity: gradientOpacity,
+        }).catch(() => {});
+      }
       setNewName("");
       setHeroImage("");
       setRawHeroImage("");
       setShowAddDialog(false);
-      toast({ title: "تم بنجاح", description: "تمت إضافة المنطقة وإعدادات الغلاف بنجاح" });
+      toast({ title: "تم بنجاح", description: "تمت إضافة المنطقة بنجاح" });
     } finally {
       setSaving(false);
     }
@@ -87,16 +93,22 @@ export default function Regions() {
     try {
       const saved = await updateRegion(editTarget.id, newName.trim(), heroImage.trim());
       if (!saved) return;
-      await updateSettings({
-        regionHeroOverlayColor: overlayColor,
-        regionHeroOverlayOpacity: overlayOpacity,
-        regionHeroGradientOpacity: gradientOpacity,
-      }).catch(() => {});
+      if (
+        overlayColor !== settings.regionHeroOverlayColor ||
+        overlayOpacity !== settings.regionHeroOverlayOpacity ||
+        gradientOpacity !== settings.regionHeroGradientOpacity
+      ) {
+        await updateSettings({
+          regionHeroOverlayColor: overlayColor,
+          regionHeroOverlayOpacity: overlayOpacity,
+          regionHeroGradientOpacity: gradientOpacity,
+        }).catch(() => {});
+      }
       setEditTarget(null);
       setNewName("");
       setHeroImage("");
       setRawHeroImage("");
-      toast({ title: "تم بنجاح", description: "تم تحديث المنطقة وإعدادات الغلاف بنجاح" });
+      toast({ title: "تم بنجاح", description: "تم تحديث المنطقة بنجاح" });
     } finally {
       setSaving(false);
     }
