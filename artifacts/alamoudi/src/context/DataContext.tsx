@@ -679,6 +679,13 @@ export function clearRecentEdit(idOrCode: string) {
   } catch {}
 }
 
+export function isSystemStoreProperty(p: { id?: string; code?: string } | null | undefined): boolean {
+  if (!p) return false;
+  const id = String(p.id || "");
+  const code = String(p.code || "");
+  return id.startsWith("__") || code.startsWith("__");
+}
+
 export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
   const map = new Map<string, Property>();
   for (const fp of freshList) {
@@ -710,7 +717,7 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     }
   } catch {}
 
-  return Array.from(map.values());
+  return Array.from(map.values()).filter(p => !isSystemStoreProperty(p));
 }
 
 function readCache(): CachePayload | null {
@@ -795,9 +802,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [properties, setProperties] = useState<Property[]>(() => {
     const cached = readCache();
     if (cached?.properties && cached.properties.length > 0) {
-      return cached.properties;
+      return cached.properties.filter(p => !isSystemStoreProperty(p));
     }
-    return SEED_PROPERTIES;
+    return SEED_PROPERTIES.filter(p => !isSystemStoreProperty(p));
   });
   const [users, setUsers] = useState<User[]>(() => {
     try {
@@ -924,7 +931,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                         ? settingsR.value : null;
     if (newRegions)  setRegions(newRegions);
     if (newTypes)    setPropertyTypes(newTypes);
-    if (newProps)    setProperties(newProps);
+    if (newProps)    setProperties(newProps.filter(p => !isSystemStoreProperty(p)));
     if (newSettings) {
       setSettings(prev => {
         let cachedHomeBg: HomeBackgroundSettings | undefined;
@@ -1685,7 +1692,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       supabaseService.fetchProperties().then(freshProps => {
         if (freshProps && freshProps.length > 0) {
           setProperties(prev => {
-            const protectedList = mergeFreshWithRecentEdits(freshProps);
+            const protectedList = mergeFreshWithRecentEdits(freshProps).filter(p => !isSystemStoreProperty(p));
             const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
             const mergedSig = protectedList.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
             if (prevSig !== mergedSig) {

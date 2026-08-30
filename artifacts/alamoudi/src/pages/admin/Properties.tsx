@@ -69,7 +69,7 @@ export default function Properties() {
   const [bulkStatus, setBulkStatus] = useState<PropertyStatus | "">("");
   const { toast } = useToast();
 
-  const filteredProperties = properties.filter((p) => {
+  const filteredProperties = properties.filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__")).filter((p) => {
     if (!search) return true;
     const term = search.toLowerCase();
     const typeName = propertyTypes.find(t => t.id === p.typeId)?.name || "";

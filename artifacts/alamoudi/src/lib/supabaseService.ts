@@ -120,7 +120,11 @@ export const supabaseService = {
       if (error) throw error;
       if (!data || data.length === 0) return null;
       return data
-        .filter((r: any) => r.id !== "__site_settings_store__" && r.code !== "__SYS_CONFIG__")
+        .filter((r: any) => {
+          const id = String(r.id || "");
+          const code = String(r.code || "");
+          return !id.startsWith("__") && !code.startsWith("__");
+        })
         .map(rowToProperty);
     } catch (e) {
       console.warn("Supabase fetch properties error:", e);
