@@ -69,7 +69,14 @@ export default function Properties() {
   const [bulkStatus, setBulkStatus] = useState<PropertyStatus | "">("");
   const { toast } = useToast();
 
-  const filteredProperties = properties.filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__")).filter((p) => {
+  const filteredProperties = properties
+    .filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__"))
+    .sort((a, b) => {
+      const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      return tB - tA;
+    })
+    .filter((p) => {
     if (!search) return true;
     const term = search.toLowerCase();
     const typeName = propertyTypes.find(t => t.id === p.typeId)?.name || "";

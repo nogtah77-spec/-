@@ -717,7 +717,24 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     }
   } catch {}
 
-  return Array.from(map.values()).filter(p => !isSystemStoreProperty(p));
+  let deletedIds: string[] = [];
+  try {
+    const rawDeleted = localStorage.getItem("alm_deleted_properties");
+    if (rawDeleted) deletedIds = JSON.parse(rawDeleted);
+  } catch {}
+
+  return Array.from(map.values())
+    .filter(p => {
+      if (!p || isSystemStoreProperty(p)) return false;
+      const id = (p.id || "").toLowerCase().trim();
+      const code = (p.code || "").toLowerCase().trim();
+      return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
+    })
+    .sort((a, b) => {
+      const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      return tB - tA;
+    });
 }
 
 function readCache(): CachePayload | null {
@@ -800,11 +817,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES;
   });
   const [properties, setProperties] = useState<Property[]>(() => {
+    let deletedIds: string[] = [];
+    try {
+      const rawDeleted = localStorage.getItem("alm_deleted_properties");
+      if (rawDeleted) deletedIds = JSON.parse(rawDeleted);
+    } catch {}
+    const isClean = (p: Property) => {
+      if (!p || isSystemStoreProperty(p)) return false;
+      const id = (p.id || "").toLowerCase().trim();
+      const code = (p.code || "").toLowerCase().trim();
+      return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
+    };
     const cached = readCache();
     if (cached?.properties && cached.properties.length > 0) {
-      return cached.properties.filter(p => !isSystemStoreProperty(p));
+      return cached.properties.filter(isClean).sort((a, b) => {
+        const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return tB - tA;
+      });
     }
-    return SEED_PROPERTIES.filter(p => !isSystemStoreProperty(p));
+    return SEED_PROPERTIES.filter(isClean).sort((a, b) => {
+      const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+      const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+      return tB - tA;
+    });
   });
   const [users, setUsers] = useState<User[]>(() => {
     try {
