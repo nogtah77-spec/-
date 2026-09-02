@@ -1540,6 +1540,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           writeCache({ regions, types: propertyTypes, properties, settings: merged });
           return merged;
         });
+      } else if (event === "PUSH_NOTIFICATION") {
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+          import("@/lib/pushNotificationService").then(mod => {
+            mod.showLocalNotification(data).catch(() => {});
+          }).catch(() => {});
+        }
       }
     };
 

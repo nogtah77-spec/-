@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +83,7 @@ export default function PropertyForm() {
     );
   }
 
+  const [notifySubscribers, setNotifySubscribers] = useState(!isEdit);
   const [form, setForm] = useState({
     code: existing?.code ?? "",
     description: existing?.description ?? "",
@@ -241,7 +242,27 @@ export default function PropertyForm() {
         ? await updateProperty(targetId, payload)
         : await addProperty(payload);
       if (!saved) return;
-      toast({ title: "تم الحفظ بنجاح", description: isEdit ? "تم تحديث بيانات العقار." : "تم إضافة العقار الجديد." });
+
+      if (!isEdit && notifySubscribers) {
+        import("@/lib/pushNotificationService").then(({ broadcastPushNotification }) => {
+          const typeName = propertyTypes.find(t => t.id === form.typeId)?.name || "عقار فاخر";
+          const regionName = regions.find(r => r.id === form.regionId)?.name || "المنصة";
+          broadcastPushNotification({
+            title: `عقار جديد: ${form.code.trim()} (${typeName})`,
+            body: `تم طرح وحدة جديدة في ${regionName} بسعر ${formatNumber(numericValue(form.price))} ج.م. اضغط للمعاينة الفورية.`,
+            url: `/property/${(saved as any)?.id || ""}`,
+            tag: "new_property",
+            sentBy: currentUser?.name || "إدارة العقارات",
+          }).catch(() => {});
+        }).catch(() => {});
+      }
+
+      toast({
+        title: "تم الحفظ بنجاح",
+        description: isEdit
+          ? "تم تحديث بيانات العقار."
+          : (notifySubscribers ? "تم إضافة العقار الجديد وبث التنبيه لجميع المشتركين." : "تم إضافة العقار الجديد بنجاح."),
+      });
       setLocation("/admin/properties");
     } finally {
       setSaving(false);
@@ -339,7 +360,19 @@ export default function PropertyForm() {
             <h1 className="text-2xl font-bold text-foreground">{isEdit ? "تعديل عقار" : "إضافة عقار جديد"}</h1>
             <p className="text-muted-foreground mt-1 text-sm">أدخل تفاصيل العقار لنشره على المنصة</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {!isEdit && (
+              <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-accent bg-accent/10 px-3 py-2 rounded-lg border border-accent/25 hover:bg-accent/15 transition-colors select-none">
+                <input
+                  type="checkbox"
+                  checked={notifySubscribers}
+                  onChange={(e) => setNotifySubscribers(e.target.checked)}
+                  className="rounded border-accent text-accent accent-accent cursor-pointer h-4 w-4"
+                />
+                <Bell className="h-3.5 w-3.5" />
+                <span>إشعار فوري للمشتركين</span>
+              </label>
+            )}
             <Button variant="outline" asChild><Link href="/admin/properties">إلغاء</Link></Button>
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave} disabled={saving}>
               <Save className="ml-2 h-4 w-4" />{saving ? "جارٍ الحفظ..." : "حفظ ونشر"}

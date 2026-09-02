@@ -159,3 +159,70 @@ self.addEventListener("fetch", (event) => {
     fetch(request).catch(() => caches.match(request))
   );
 });
+
+// ==========================================
+// Web Push Notifications Engine
+// ==========================================
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    try {
+      data = { title: "العمودي للتسويق العقاري", body: event.data ? event.data.text() : "فرصة عقارية جديدة" };
+    } catch {}
+  }
+
+  const title = data.title || "العمودي للتسويق العقاري";
+  const options = {
+    body: data.body || "فرصة عقارية جديدة وحصرية متاحة الآن في المنصة.",
+    icon: data.icon || "/icon-192.png",
+    badge: data.badge || "/logo.png",
+    image: data.image || undefined,
+    dir: "rtl",
+    lang: "ar",
+    tag: data.tag || "alamoudi-property-alert",
+    renotify: true,
+    data: {
+      url: data.url || "/",
+      timestamp: Date.now(),
+    },
+    vibrate: [200, 100, 200],
+    actions: [
+      { action: "explore", title: "معاينة العرض الآن ↗" },
+      { action: "close", title: "إغلاق" }
+    ]
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  if (event.action === "close") {
+    return;
+  }
+
+  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : "/";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      // If a tab is already open, focus it and navigate
+      for (const client of windowClients) {
+        if ("focus" in client) {
+          if (client.url.includes(self.location.origin)) {
+            client.navigate(targetUrl);
+            return client.focus();
+          }
+        }
+      }
+      // Otherwise open new window
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+

@@ -59,7 +59,9 @@ const AiAgents             = lazyWithRetry(() => import("@/pages/admin/AiAgents"
 const WhatsAppBot          = lazyWithRetry(() => import("@/pages/admin/WhatsAppBot"));
 const MortgageCalculatorPage = lazyWithRetry(() => import("@/pages/admin/MortgageCalculatorPage"));
 const FinishingGallery     = lazyWithRetry(() => import("@/pages/admin/FinishingGallery"));
+const PushNotifications    = lazyWithRetry(() => import("@/pages/admin/PushNotifications"));
 const AIChatWidget = lazyWithRetry(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
+import { PushNotificationPrompt } from "@/components/ui/PushNotificationPrompt";
 
 const queryClient = new QueryClient();
 
@@ -225,6 +227,7 @@ function Router() {
       <Route path="/admin/ads">{() => <Protected component={AdsAdmin} />}</Route>
       <Route path="/admin/ads/:id/analytics">{() => <Protected component={AdAnalytics} />}</Route>
       <Route path="/admin/smart-banners">{() => <Protected component={SmartBanners} />}</Route>
+      <Route path="/admin/notifications">{() => <Protected component={PushNotifications} />}</Route>
       <Route path="/admin/sources">{() => <Protected component={Sources} />}</Route>
       <Route path="/admin/agents">{() => <Protected component={AiAgents} adminOnly />}</Route>
       <Route path="/admin/whatsapp">{() => <Protected component={WhatsAppBot} adminOnly />}</Route>
@@ -322,6 +325,9 @@ function App() {
                     </ErrorBoundary>
                     <ErrorBoundary fallback={null}>
                       <InstallPwaPrompt />
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                      <PushNotificationPrompt />
                     </ErrorBoundary>
                     <ErrorBoundary fallback={null}>
                       <OfflineStatusBar />
