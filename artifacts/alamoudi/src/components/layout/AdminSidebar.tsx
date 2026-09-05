@@ -141,15 +141,15 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
         {visibleSections.map((section, sectionIndex) => (
           <div
             key={section.title ?? "home"}
-            className={cn(sectionIndex > 0 && "mt-5")}
+            className={cn(sectionIndex > 0 && "mt-5 pt-3.5 border-t border-sidebar-border/40")}
             role="group"
             aria-label={section.title}
           >
             {section.title && (
-              <div className="mb-2 flex items-center gap-2 px-3 text-xs font-bold leading-6 tracking-wide text-sidebar-foreground/80">
-                <span className="h-px flex-1 bg-sidebar-border/80" />
+              <div className="mb-2 flex items-center gap-2 px-2.5 text-[11.5px] font-black tracking-wider text-accent select-none">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0 shadow-xs shadow-accent/60" />
                 <span className="shrink-0">{section.title}</span>
-                <span className="h-px flex-1 bg-sidebar-border/80" />
+                <span className="h-px flex-1 bg-gradient-to-l from-transparent via-sidebar-border/70 to-accent/30 mr-1.5" />
               </div>
             )}
             <div className="space-y-0.5">
@@ -161,13 +161,13 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-xs"
+                        : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     )}
                   >
-                    <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-sidebar-accent-foreground" : "text-sidebar-foreground opacity-70")} />
+                    <item.icon className={cn("h-4 w-4 flex-shrink-0", isActive ? "text-accent" : "text-sidebar-foreground/60")} />
                     <span className="flex-1">{item.label}</span>
                     {count > 0 && (
                       <span className="bg-accent text-accent-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
