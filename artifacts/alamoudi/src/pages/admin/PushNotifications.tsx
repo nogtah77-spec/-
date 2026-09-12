@@ -70,11 +70,11 @@ export default function PushNotifications() {
       setCustomUrl("/");
       return;
     }
-    const prop = properties.find((p) => p.id === propId);
+    const prop = properties.find((p) => p.id === propId || p.code === propId);
     if (prop) {
-      setTitle(`${prop.title} (${prop.code})`);
+      setTitle(`${prop.title || prop.code} (${prop.code})`);
       setBody(`${prop.category === "rent" ? "للإيجار" : "للبيع"} بسعر ${formatNumber(prop.price)} ج.م • اضغط لمشاهدة الصور والتفاصيل الكاملة.`);
-      setCustomUrl(`/property/${prop.id}`);
+      setCustomUrl(`/property/${prop.code || prop.id}`);
     }
   };
 

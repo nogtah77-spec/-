@@ -250,7 +250,7 @@ export default function PropertyForm() {
           broadcastPushNotification({
             title: `عقار جديد: ${form.code.trim()} (${typeName})`,
             body: `تم طرح وحدة جديدة في ${regionName} بسعر ${formatNumber(numericValue(form.price))} ج.م. اضغط للمعاينة الفورية.`,
-            url: `/property/${(saved as any)?.id || ""}`,
+            url: `/property/${form.code.trim()}`,
             tag: "new_property",
             sentBy: currentUser?.name || "إدارة العقارات",
           }).catch(() => {});

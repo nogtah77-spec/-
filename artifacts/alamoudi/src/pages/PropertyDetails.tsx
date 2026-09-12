@@ -52,17 +52,65 @@ const finishingLabels: Record<string, string> = {
   "under-construction": "تحت الإنشاء", "core-shell": "تحت الإنشاء",
 };
 
+import { supabaseService, rowToProperty } from "@/lib/supabaseService";
+import { supabase } from "@/lib/supabaseClient";
+
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { properties, propertyTypes, regions, settings, trackPropertyView, fetching, users } = useData();
+  const { properties, propertyTypes, regions, settings, trackPropertyView, ready, users } = useData();
   const { isStaff, currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const canViewBrochure = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-بروشور العقار PDF");
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
-  const property = properties.find(p => p.id === id);
+  const cleanId = useMemo(() => (id ? decodeURIComponent(id).trim() : ""), [id]);
+  const [directProperty, setDirectProperty] = useState<any>(null);
+  const [directLoading, setDirectLoading] = useState(false);
+
+  // 1. Find by ID or by Code (case-insensitive)
+  const property = useMemo(() => {
+    if (!cleanId) return null;
+    const found = properties.find(
+      (p) =>
+        p.id === cleanId ||
+        p.code?.trim().toUpperCase() === cleanId.toUpperCase() ||
+        p.id?.toLowerCase() === cleanId.toLowerCase()
+    );
+    return found || directProperty;
+  }, [properties, cleanId, directProperty]);
+
+  // 2. Direct fallback to Supabase if not in memory
+  useEffect(() => {
+    if (!property && cleanId && ready) {
+      let cancelled = false;
+      setDirectLoading(true);
+      if (supabase) {
+        supabase
+          .from("properties")
+          .select("*")
+          .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
+          .maybeSingle()
+          .then(({ data, error }) => {
+            if (cancelled) return;
+            setDirectLoading(false);
+            if (data && !error) {
+              setDirectProperty(rowToProperty(data));
+            }
+          })
+          .catch(() => {
+            if (!cancelled) setDirectLoading(false);
+          });
+      } else {
+        setDirectLoading(false);
+      }
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [property, cleanId, ready]);
+
   const images = property?.images?.length ? property.images : [];
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
@@ -89,23 +137,27 @@ export default function PropertyDetails() {
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
   useEffect(() => {
-    if (id) trackPropertyView(id);
+    if (property?.id) trackPropertyView(property.id);
+    else if (id) trackPropertyView(id);
     if (property) {
       updatePageMeta({
-        title: `${property.title} (${property.code})`,
-        description: property.description || `${property.title} - السعر: ${formatNumber(property.price)} ج.م`,
+        title: `${property.title || property.code} (${property.code})`,
+        description: property.description || `${property.title || property.code} - السعر: ${formatNumber(property.price)} ج.م`,
         image: property.images?.[0],
       });
     }
   }, [id, property, trackPropertyView]);
 
   if (!property) {
-    if (fetching) {
+    if (!ready || directLoading) {
       return (
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <main className="flex-1 flex items-center justify-center bg-background">
-            <div className="w-9 h-9 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+              <p className="text-sm text-muted-foreground animate-pulse">جارٍ تحميل بيانات العقار…</p>
+            </div>
           </main>
           <Footer />
         </div>
