@@ -1,6 +1,6 @@
-const STATIC_CACHE = "alamoudi-static-v6";
-const DATA_CACHE = "alamoudi-data-v6";
-const MEDIA_CACHE = "alamoudi-media-v6";
+const STATIC_CACHE = "alamoudi-static-v7";
+const DATA_CACHE = "alamoudi-data-v7";
+const MEDIA_CACHE = "alamoudi-media-v7";
 
 const APP_SHELL_ASSETS = [
   "/",

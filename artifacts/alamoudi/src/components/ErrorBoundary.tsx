@@ -56,9 +56,23 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
-  handleReload = () => {
-    this.setState({ hasError: false });
-    window.location.reload();
+  handleReload = async () => {
+    this.setState({ hasError: false, error: undefined });
+    if (typeof window !== "undefined") {
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const reg of regs) {
+            await reg.unregister();
+          }
+        }
+      } catch {}
+      window.location.reload();
+    }
   };
 
   handleHome = () => {

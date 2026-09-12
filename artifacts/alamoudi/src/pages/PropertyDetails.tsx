@@ -27,8 +27,8 @@ import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
 import { PropertyShareModal } from "@/components/property/PropertyShareModal";
 import { updatePageMeta } from "@/lib/meta";
-import { checkUserPermission } from "@/lib/permissions";
-
+import { supabaseService, rowToProperty } from "@/lib/supabaseService";
+import { supabase } from "@/lib/supabaseClient";
 
 const categoryLabels: Record<string, string> = {
   residential: "سكني",
@@ -52,9 +52,6 @@ const finishingLabels: Record<string, string> = {
   "under-construction": "تحت الإنشاء", "core-shell": "تحت الإنشاء",
 };
 
-import { supabaseService, rowToProperty } from "@/lib/supabaseService";
-import { supabase } from "@/lib/supabaseClient";
-
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -65,53 +62,79 @@ export default function PropertyDetails() {
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
-  const cleanId = useMemo(() => (id ? decodeURIComponent(id).trim() : ""), [id]);
+  const cleanId = useMemo(() => {
+    if (!id) return "";
+    try {
+      return decodeURIComponent(id).trim();
+    } catch {
+      return String(id).trim();
+    }
+  }, [id]);
+
   const [directProperty, setDirectProperty] = useState<any>(null);
   const [directLoading, setDirectLoading] = useState(false);
 
   // 1. Find by ID or by Code (case-insensitive)
   const property = useMemo(() => {
     if (!cleanId) return null;
-    const found = properties.find(
+    const cleanLower = cleanId.toLowerCase();
+    const found = (properties || []).find(
       (p) =>
         p.id === cleanId ||
-        p.code?.trim().toUpperCase() === cleanId.toUpperCase() ||
-        p.id?.toLowerCase() === cleanId.toLowerCase()
+        (p.code && p.code.trim().toLowerCase() === cleanLower) ||
+        (p.id && p.id.toLowerCase() === cleanLower)
     );
     return found || directProperty;
   }, [properties, cleanId, directProperty]);
 
   // 2. Direct fallback to Supabase if not in memory
   useEffect(() => {
-    if (!property && cleanId && ready) {
+    if (!property && cleanId && ready && supabase) {
       let cancelled = false;
       setDirectLoading(true);
-      if (supabase) {
-        supabase
-          .from("properties")
-          .select("*")
-          .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
-          .maybeSingle()
-          .then(({ data, error }) => {
-            if (cancelled) return;
-            setDirectLoading(false);
-            if (data && !error) {
-              setDirectProperty(rowToProperty(data));
-            }
-          })
-          .catch(() => {
-            if (!cancelled) setDirectLoading(false);
-          });
-      } else {
+      const safeId = cleanId.replace(/[^a-zA-Z0-9_-]/g, "");
+      if (!safeId) {
         setDirectLoading(false);
+        return;
       }
+      supabase
+        .from("properties")
+        .select("*")
+        .or(`id.eq.${safeId},code.ilike.${safeId}`)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (cancelled) return;
+          setDirectLoading(false);
+          if (data && !error) {
+            try {
+              setDirectProperty(rowToProperty(data));
+            } catch (e) {
+              console.warn("Error mapping property:", e);
+            }
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setDirectLoading(false);
+        });
+
       return () => {
         cancelled = true;
       };
     }
   }, [property, cleanId, ready]);
 
-  const images = property?.images?.length ? property.images : [];
+  const images = useMemo(() => {
+    if (!property?.images) return [];
+    if (Array.isArray(property.images)) return property.images.filter(Boolean);
+    if (typeof property.images === "string") {
+      try {
+        const parsed = JSON.parse(property.images);
+        if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      } catch {}
+      return [property.images];
+    }
+    return [];
+  }, [property?.images]);
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
@@ -181,14 +204,14 @@ export default function PropertyDetails() {
     );
   }
 
-  const typeName = propertyTypes.find(t => t.id === property.typeId)?.name;
-  const regionName = regions.find(r => r.id === property.regionId)?.name;
+  const typeName = propertyTypes?.find(t => t.id === property?.typeId)?.name || "";
+  const regionName = regions?.find(r => r.id === property?.regionId)?.name || "";
 
   // Smart Multi-Factor Similarity Algorithm
   const similar = useMemo(() => {
-    if (!property || properties.length <= 1) return [];
+    if (!property || !properties || properties.length <= 1) return [];
 
-    const candidates = properties.filter(p => p.id !== property.id);
+    const candidates = properties.filter(p => p && p.id !== property.id);
 
     const scored = candidates.map(p => {
       let score = 0;
@@ -199,12 +222,10 @@ export default function PropertyDetails() {
       }
 
       // 2. Same Sub-area / District (+30 pts)
-      if (property.subArea && p.subArea && property.subArea.trim() && p.subArea.trim()) {
-        const pSub = p.subArea.toLowerCase().trim();
-        const curSub = property.subArea.toLowerCase().trim();
-        if (pSub === curSub || pSub.includes(curSub) || curSub.includes(pSub)) {
-          score += 30;
-        }
+      const pSub = typeof p.subArea === "string" ? p.subArea.toLowerCase().trim() : "";
+      const curSub = typeof property.subArea === "string" ? property.subArea.toLowerCase().trim() : "";
+      if (pSub && curSub && (pSub === curSub || pSub.includes(curSub) || curSub.includes(pSub))) {
+        score += 30;
       }
 
       // 3. Same Listing Type (Sale with Sale, Rent with Rent: +25 pts)
@@ -218,14 +239,18 @@ export default function PropertyDetails() {
       }
 
       // 5. Price proximity (within price range: up to +15 pts)
-      if (property.price > 0 && p.price > 0) {
-        const priceRatio = Math.min(property.price, p.price) / Math.max(property.price, p.price);
+      const propPrice = Number(property.price) || 0;
+      const pPrice = Number(p.price) || 0;
+      if (propPrice > 0 && pPrice > 0) {
+        const priceRatio = Math.min(propPrice, pPrice) / Math.max(propPrice, pPrice);
         score += Math.round(priceRatio * 15);
       }
 
       // 6. Area proximity (up to +10 pts)
-      if (property.area > 0 && p.area > 0) {
-        const areaRatio = Math.min(property.area, p.area) / Math.max(property.area, p.area);
+      const propArea = Number(property.area) || 0;
+      const pArea = Number(p.area) || 0;
+      if (propArea > 0 && pArea > 0) {
+        const areaRatio = Math.min(propArea, pArea) / Math.max(propArea, pArea);
         score += Math.round(areaRatio * 10);
       }
 
@@ -248,8 +273,8 @@ export default function PropertyDetails() {
     return scored.slice(0, 6).map(s => s.property);
   }, [property, properties]);
 
-  const waNum = normalizePhoneForWa(settings.whatsapp || settings.phone1 || "");
-  const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code}).`);
+  const waNum = normalizePhoneForWa(settings?.whatsapp || settings?.phone1 || "");
+  const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code || ""}).`);
   const waHref = waNum ? `https://wa.me/${waNum}?text=${waMsg}` : null;
 
   const handleShare = async () => {
