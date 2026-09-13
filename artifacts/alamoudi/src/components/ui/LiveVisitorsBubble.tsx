@@ -140,9 +140,10 @@ export function LiveVisitorsBubble() {
 
   if (!pos) return null;
 
+  const realProperties = properties.filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__"));
   const totalLeads   = inquiries.length + finishingRequests.length + propertyRequests.length;
-  const totalViews   = properties.reduce((s, p) => s + (p.views ?? 0), 0);
-  const activeCount  = properties.filter(p => p.status === "active" || p.status === "listed").length;
+  const totalViews   = realProperties.reduce((s, p) => s + (p.views ?? 0), 0);
+  const activeCount  = realProperties.filter(p => p.status === "active" || p.status === "listed").length;
 
   const metrics = [
     { icon: Eye,          label: "إجمالي المشاهدات",   value: totalViews },

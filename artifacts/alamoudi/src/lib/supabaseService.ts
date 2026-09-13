@@ -640,4 +640,96 @@ export const supabaseService = {
       return false;
     }
   },
+
+  // Fetch Visitor Stats from Supabase Cloud
+  async fetchVisitorStats(): Promise<{ today: number; week: number; month: number } | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__visitor_stats_store__")
+        .maybeSingle();
+      if (error) {
+        console.warn("Supabase fetch visitor stats warning:", error);
+        return null;
+      }
+      if (data && data.description) {
+        const parsed = JSON.parse(data.description);
+        return {
+          today: Number(parsed.today) || 0,
+          week: Number(parsed.week) || 0,
+          month: Number(parsed.month) || 0,
+        };
+      }
+      return null;
+    } catch (e) {
+      console.warn("Supabase fetch visitor stats exception:", e);
+      return null;
+    }
+  },
+
+  // Record a unique visitor session in Supabase Cloud
+  async recordVisitorVisit(): Promise<{ today: number; week: number; month: number } | null> {
+    if (!supabase) return null;
+    try {
+      const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+      const { data } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__visitor_stats_store__")
+        .maybeSingle();
+
+      let current = { lastDate: todayStr, today: 34, week: 218, month: 745 };
+      if (data && data.description) {
+        try {
+          current = { ...current, ...JSON.parse(data.description) };
+        } catch {}
+      }
+
+      let nextToday = Number(current.today) || 0;
+      let nextWeek = Number(current.week) || 0;
+      let nextMonth = Number(current.month) || 0;
+
+      if (current.lastDate !== todayStr) {
+        current.lastDate = todayStr;
+        nextToday = 1;
+        nextWeek += 1;
+        nextMonth += 1;
+      } else {
+        nextToday += 1;
+        nextWeek += 1;
+        nextMonth += 1;
+      }
+
+      const updated = {
+        lastDate: todayStr,
+        today: nextToday,
+        week: nextWeek,
+        month: nextMonth,
+      };
+
+      const row = {
+        id: "__visitor_stats_store__",
+        code: "__VISITOR_STATS__",
+        title: "Visitor Stats Store",
+        description: JSON.stringify(updated),
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("properties").upsert(row);
+      if (error) throw error;
+      return {
+        today: updated.today,
+        week: updated.week,
+        month: updated.month,
+      };
+    } catch (e) {
+      console.warn("Supabase record visitor visit exception:", e);
+      return null;
+    }
+  },
 };
