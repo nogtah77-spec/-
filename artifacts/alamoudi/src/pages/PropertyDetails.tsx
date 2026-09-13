@@ -162,9 +162,26 @@ export default function PropertyDetails() {
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
+  // Track property view ONCE per visit / session — never infinite loop
+  const trackedPropIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (property?.id) trackPropertyView(property.id);
-    else if (id) trackPropertyView(id);
+    const targetId = property?.id || id;
+    if (!targetId || trackedPropIdRef.current === targetId) return;
+
+    try {
+      const sessionKey = `alm_view_${targetId}`;
+      if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, "1");
+        trackPropertyView(targetId);
+      }
+    } catch {
+      trackPropertyView(targetId);
+    }
+    trackedPropIdRef.current = targetId;
+  }, [id, property?.id, trackPropertyView]);
+
+  // Update page meta independently without re-triggering view tracking
+  useEffect(() => {
     if (property) {
       updatePageMeta({
         title: `${property.title || property.code} (${property.code})`,
@@ -172,7 +189,7 @@ export default function PropertyDetails() {
         image: property.images?.[0],
       });
     }
-  }, [id, property, trackPropertyView]);
+  }, [property?.title, property?.code, property?.description, property?.price, property?.images]);
 
   if (!property) {
     if (!ready || directLoading) {

@@ -103,6 +103,7 @@ export function rowToProperty(r: any): Property {
     source: r.source || "",
     sourcePhones: Array.isArray(r.source_phones) ? r.source_phones : [],
     assignedStaffId: r.assigned_staff_id || "",
+    views: Number(r.views) || 0,
     createdAt: r.created_at || new Date().toISOString(),
     updatedAt: r.created_at || new Date().toISOString(),
   };
@@ -113,19 +114,26 @@ export const supabaseService = {
   async fetchProperties(): Promise<Property[] | null> {
     if (!supabase) return null;
     try {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      if (!data || data.length === 0) return null;
-      return data
+      const [propsRes, viewsMap] = await Promise.all([
+        supabase.from("properties").select("*").order("created_at", { ascending: false }),
+        supabaseService.fetchPropertyViews().catch(() => ({} as Record<string, number>)),
+      ]);
+      if (propsRes.error) throw propsRes.error;
+      if (!propsRes.data || propsRes.data.length === 0) return null;
+      return propsRes.data
         .filter((r: any) => {
           const id = String(r.id || "");
           const code = String(r.code || "");
           return !id.startsWith("__") && !code.startsWith("__");
         })
-        .map(rowToProperty);
+        .map((r: any) => {
+          const prop = rowToProperty(r);
+          const cloudViews = viewsMap[prop.id] ?? (prop.code ? viewsMap[prop.code] : undefined);
+          if (cloudViews !== undefined) {
+            prop.views = Number(cloudViews);
+          }
+          return prop;
+        });
     } catch (e) {
       console.warn("Supabase fetch properties error:", e);
       return null;
@@ -730,6 +738,60 @@ export const supabaseService = {
     } catch (e) {
       console.warn("Supabase record visitor visit exception:", e);
       return null;
+    }
+  },
+
+  // Fetch Property Views Map from Supabase Cloud
+  async fetchPropertyViews(): Promise<Record<string, number>> {
+    if (!supabase) return {};
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__property_views_store__")
+        .maybeSingle();
+      if (error || !data?.description) return {};
+      return JSON.parse(data.description) as Record<string, number>;
+    } catch (e) {
+      console.warn("fetchPropertyViews exception:", e);
+      return {};
+    }
+  },
+
+  // Increment view count for a property in Supabase Cloud
+  async incrementPropertyView(propId: string): Promise<number> {
+    if (!supabase || !propId) return 0;
+    try {
+      const { data } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__property_views_store__")
+        .maybeSingle();
+
+      let viewsMap: Record<string, number> = {};
+      if (data && data.description) {
+        try { viewsMap = JSON.parse(data.description); } catch {}
+      }
+
+      const current = Number(viewsMap[propId]) || 0;
+      const nextViews = current + 1;
+      viewsMap[propId] = nextViews;
+
+      await supabase.from("properties").upsert({
+        id: "__property_views_store__",
+        code: "__VIEWS_STORE__",
+        title: "Property Views Store",
+        description: JSON.stringify(viewsMap),
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      });
+
+      return nextViews;
+    } catch (e) {
+      console.warn("incrementPropertyView exception:", e);
+      return 0;
     }
   },
 };

@@ -1063,12 +1063,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [regions, propertyTypes, settings]);
 
   const trackPropertyView = useCallback((id: string) => {
+    // Exclude staff & admin views from inflating view stats
+    try {
+      const rawUser = localStorage.getItem("alm_auth_user");
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        if (u && (u.role === "admin" || u.role === "agent")) return;
+      }
+    } catch {}
+
     // Optimistically increment views in local state
-    setProperties(prev => prev.map(p => p.id === id ? { ...p, views: (p.views || 0) + 1 } : p));
-    if (!isOnline()) return;
-    void api.post(`/properties/${id}/view`, {}).catch(() => {
-      /* view tracking is best-effort; never surface errors to visitors */
-    });
+    setProperties(prev => prev.map(p => {
+      if (p.id === id || p.code === id) {
+        return { ...p, views: (p.views || 0) + 1 };
+      }
+      return p;
+    }));
+
+    // Sync increment to Supabase cloud store
+    if (isOnline()) {
+      supabaseService.incrementPropertyView(id).catch(() => {});
+    }
   }, []);
 
   const refreshVisitorStats = useCallback(async () => {
@@ -1842,6 +1857,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
+    const checkIsStaff = (): boolean => {
+      try {
+        const raw = localStorage.getItem("alm_auth_user");
+        if (!raw) return false;
+        const u = JSON.parse(raw);
+        return !!u && (u.role === "admin" || u.role === "agent");
+      } catch {
+        return false;
+      }
+    };
+
     // 1. Session ID (isolated per device/browser session)
     let sessionId = "";
     try {
@@ -1864,19 +1890,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
     }).catch(() => {});
 
-    // 3. Record session visit once per browser session
+    // 3. Record session visit once per browser session ONLY for regular visitors (exclude staff/admin)
     try {
-      const visitRecorded = sessionStorage.getItem("alm_session_visit_recorded");
-      if (!visitRecorded) {
-        sessionStorage.setItem("alm_session_visit_recorded", "1");
-        supabaseService.recordVisitorVisit().then((stats) => {
-          if (!active || !stats) return;
-          setVisitorStats((prev) => {
-            const next = { ...prev, today: stats.today, week: stats.week, month: stats.month };
-            try { localStorage.setItem("alm_visitor_stats", JSON.stringify(next)); } catch {}
-            return next;
-          });
-        }).catch(() => {});
+      if (!checkIsStaff()) {
+        const visitRecorded = sessionStorage.getItem("alm_session_visit_recorded");
+        if (!visitRecorded) {
+          sessionStorage.setItem("alm_session_visit_recorded", "1");
+          supabaseService.recordVisitorVisit().then((stats) => {
+            if (!active || !stats) return;
+            setVisitorStats((prev) => {
+              const next = { ...prev, today: stats.today, week: stats.week, month: stats.month };
+              try { localStorage.setItem("alm_visitor_stats", JSON.stringify(next)); } catch {}
+              return next;
+            });
+          }).catch(() => {});
+        }
       }
     } catch {}
 
@@ -1895,10 +1923,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       try {
         const state = presenceChannel.presenceState();
-        const count = Math.max(1, Object.keys(state).length);
+        // Count ONLY non-staff visitors (guests and regular users)
+        let guestCount = 0;
+        for (const key of Object.keys(state)) {
+          const presences = state[key];
+          const isStaffSession = Array.isArray(presences) && presences.some((p: any) => p.isStaff === true);
+          if (!isStaffSession) {
+            guestCount++;
+          }
+        }
         setVisitorStats((prev) => {
-          if (prev.online === count) return prev;
-          return { ...prev, online: count };
+          if (prev.online === guestCount) return prev;
+          return { ...prev, online: guestCount };
         });
       } catch {}
     };
@@ -1913,6 +1949,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             await presenceChannel.track({
               online_at: new Date().toISOString(),
               device: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
+              isStaff: checkIsStaff(),
             });
             updatePresenceCount();
           } catch (e) {
@@ -1928,15 +1965,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
           presenceChannel.track({
             online_at: new Date().toISOString(),
             device: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
+            isStaff: checkIsStaff(),
           }).catch(() => {});
         } catch {}
       }
     };
     document.addEventListener("visibilitychange", handleVisChange);
 
+    // 6. Role sync: when logging in or logging out, re-track presence with updated role
+    const syncPresenceRole = () => {
+      if (!active) return;
+      try {
+        presenceChannel.track({
+          online_at: new Date().toISOString(),
+          device: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
+          isStaff: checkIsStaff(),
+        }).catch(() => {});
+      } catch {}
+    };
+    window.addEventListener("storage", syncPresenceRole);
+    window.addEventListener("alm_auth_change", syncPresenceRole);
+
     return () => {
       active = false;
       document.removeEventListener("visibilitychange", handleVisChange);
+      window.removeEventListener("storage", syncPresenceRole);
+      window.removeEventListener("alm_auth_change", syncPresenceRole);
       try {
         presenceChannel.untrack().catch(() => {});
         supabase.removeChannel(presenceChannel);

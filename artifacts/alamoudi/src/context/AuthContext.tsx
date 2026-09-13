@@ -88,6 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setAuthReady(true));
   }, [refreshCurrentUser]);
 
+  useEffect(() => {
+    try {
+      window.dispatchEvent(new CustomEvent("alm_auth_change"));
+    } catch {}
+  }, [currentUser]);
+
   const isStaff = !!currentUser && (currentUser.role === "admin" || currentUser.role === "agent");
 
   const login = async (identifier: string, password: string): Promise<{ ok: boolean; error?: string }> => {
