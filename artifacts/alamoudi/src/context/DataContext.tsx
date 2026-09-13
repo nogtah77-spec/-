@@ -564,7 +564,7 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v4";
+const CACHE_KEY = "alm_cache_v5";
 // الـ cache بيُعرض فوراً حتى لو قديم، والـ API دايماً بيرفّش في الخلفية
 // TTL طويل جداً (7 أيام) كـ safety net بس للـ cache القديم جداً
 const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -883,14 +883,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
     };
     const cached = readCache();
-    if (cached?.properties && cached.properties.length > 0) {
-      return cached.properties.filter(isClean).sort((a, b) => {
-        const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
-        const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-        return tB - tA;
-      });
+    const map = new Map<string, Property>();
+    // 1. First add all master seed properties (guaranteeing all 71 current listings exist)
+    for (const p of SEED_PROPERTIES) {
+      if (p && p.id) map.set(p.id, p);
     }
-    return SEED_PROPERTIES.filter(isClean).sort((a, b) => {
+    // 2. Overlay any cached updates/edits
+    if (cached?.properties && cached.properties.length > 0) {
+      for (const p of cached.properties) {
+        if (p && p.id) {
+          const existing = map.get(p.id);
+          if (existing) {
+            const tExist = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+            const tCache = new Date(p.updatedAt || p.createdAt || 0).getTime();
+            if (tCache >= tExist) {
+              map.set(p.id, { ...existing, ...p });
+            }
+          } else {
+            map.set(p.id, p);
+          }
+        }
+      }
+    }
+    return Array.from(map.values()).filter(isClean).sort((a, b) => {
       const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
       const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
       return tB - tA;
@@ -1114,7 +1129,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPropertyTypes(storedTypes);
 
     if (cached) {
-      setProperties(cached.properties);
+      if (cached.properties && cached.properties.length > 0) {
+        setProperties(prev => {
+          const map = new Map<string, Property>();
+          prev.forEach(p => { if (p?.id) map.set(p.id, p); });
+          cached.properties.forEach(p => {
+            if (p?.id) {
+              const existing = map.get(p.id);
+              if (!existing) map.set(p.id, p);
+              else {
+                const tE = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+                const tC = new Date(p.updatedAt || p.createdAt || 0).getTime();
+                if (tC >= tE) map.set(p.id, { ...existing, ...p });
+              }
+            }
+          });
+          return Array.from(map.values()).sort((a, b) => {
+            const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+            const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+            return tB - tA;
+          });
+        });
+      }
       setSettings(prev => ({
         ...DEFAULT_SETTINGS,
         ...cached.settings,
