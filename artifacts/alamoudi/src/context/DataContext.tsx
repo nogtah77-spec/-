@@ -5,6 +5,7 @@ import { SEED_PROPERTIES } from "@/data/seedProperties";
 import { supabaseService, rowToProperty } from "@/lib/supabaseService";
 import { supabase } from "@/lib/supabaseClient";
 import { enqueueOfflineAction, isOnline, processOfflineQueue } from "@/lib/offlineSync";
+import { savePropertiesToIndexedDb, getPropertiesFromIndexedDb } from "@/lib/indexedDbStorage";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -755,8 +756,47 @@ function readCache(): CachePayload | null {
   } catch { return null; }
 }
 
+function toLeanProperties(props: Property[]): Property[] {
+  return (props || []).map(p => {
+    const firstImg = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : "";
+    return {
+      ...p,
+      images: firstImg ? [firstImg] : [],
+    };
+  });
+}
+
 function writeCache(payload: Omit<CachePayload, "ts">) {
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), ...payload })); } catch {}
+  try {
+    const leanProps = toLeanProperties(payload.properties || []);
+    const leanPayload = {
+      ts: Date.now(),
+      regions: payload.regions,
+      types: payload.types,
+      properties: leanProps,
+      settings: payload.settings,
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(leanPayload));
+  } catch {
+    try {
+      const ultraLean = {
+        ts: Date.now(),
+        regions: payload.regions,
+        types: payload.types,
+        properties: (payload.properties || []).slice(0, 50).map(p => ({
+          ...p,
+          images: p.images?.slice(0, 1) || [],
+        })),
+        settings: payload.settings,
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(ultraLean));
+    } catch {}
+  }
+
+  // Also save FULL multi-image properties to IndexedDB (unlimited quota)
+  if (payload.properties && payload.properties.length > 0) {
+    savePropertiesToIndexedDb(payload.properties).catch(() => {});
+  }
 }
 
 // Global broadcast channel for instant multi-device live sync
@@ -764,11 +804,25 @@ const globalBroadcastChannel = supabase ? supabase.channel("alm_global_sync", { 
 if (globalBroadcastChannel) globalBroadcastChannel.subscribe();
 
 export function sendRealtimeSync(event: string, payload: any) {
+  // Sanitize payload for Supabase Realtime WebSocket (strict 250KB limit)
+  let safePayload = payload;
+  if (payload && payload.property) {
+    const p = payload.property;
+    safePayload = {
+      ...payload,
+      property: {
+        ...p,
+        // Broadcast single image to guarantee payload stays < 50KB
+        images: Array.isArray(p.images) && p.images.length > 0 ? [p.images[0]] : [],
+      },
+    };
+  }
+
   if (globalBroadcastChannel) {
     globalBroadcastChannel.send({
       type: "broadcast",
       event: "sync_event",
-      payload: { event, ...payload },
+      payload: { event, ...safePayload },
     }).catch(() => {});
   }
   if (typeof window !== "undefined" && "BroadcastChannel" in window) {
@@ -1166,8 +1220,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         tiktokVideos: cached.settings?.tiktokVideos ?? prev.tiktokVideos ?? [],
         ads: cached.settings?.ads ?? prev.ads ?? [],
       }));
-      setReady(true);
     }
+    setReady(true);
 
     let destroyed = false;
 
@@ -1389,47 +1443,78 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }).catch(() => {});
 
-      supabaseService.seedInitialPropertiesIfEmpty().then(() => {
-        supabaseService.fetchProperties().then(supabaseProps => {
-          if (destroyed) return;
-          if (supabaseProps && supabaseProps.length > 0) {
-            const protectedList = mergeFreshWithRecentEdits(supabaseProps);
-            setProperties(protectedList);
-            writeCache({
-              regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
-              types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
-              properties: protectedList,
-              settings: cached?.settings ?? DEFAULT_SETTINGS,
+      // 1. Immediately restore full multi-image properties from IndexedDB (<10ms)
+      getPropertiesFromIndexedDb().then(idbProps => {
+        if (destroyed) return;
+        if (idbProps && idbProps.length > 0) {
+          setProperties(prev => {
+            const idbMap = new Map<string, Property>();
+            idbProps.forEach(p => idbMap.set(p.id, p));
+            const updated = prev.map(p => {
+              const full = idbMap.get(p.id);
+              if (full && (full.images?.length || 0) > (p.images?.length || 0)) {
+                return { ...p, images: full.images };
+              }
+              return p;
             });
-          }
-        });
-        supabaseService.fetchUsers().then(supabaseUsers => {
-          if (destroyed) return;
-          if (supabaseUsers && supabaseUsers.length > 0) {
-            setUsers(prev => {
-              const mergedMap = new Map<string, User>();
-              prev.forEach(u => mergedMap.set(u.id, u));
-              supabaseUsers.forEach(u => mergedMap.set(u.id, u));
-              const merged = Array.from(mergedMap.values());
-              try { localStorage.setItem("alm_users", JSON.stringify(merged)); } catch {}
-              return merged;
+            idbProps.forEach(p => {
+              if (!updated.some(u => u.id === p.id)) {
+                updated.push(p);
+              }
             });
-          }
-        }).catch(() => {});
+            return updated.sort((a, b) => {
+              const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+              const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+              return tB - tA;
+            });
+          });
+        }
+      }).catch(() => {});
 
-        supabaseService.fetchActivityLogs().then(supabaseLogs => {
-          if (destroyed) return;
-          if (supabaseLogs && supabaseLogs.length > 0) {
-            setActivityLogs(prev => {
-              const mergedMap = new Map<string, ActivityLog>();
-              supabaseLogs.forEach(l => mergedMap.set(l.id, l));
-              prev.forEach(l => mergedMap.set(l.id, l));
-              const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-              try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
-              return merged;
-            });
-          }
-        }).catch(() => {});
+      // 2. Fetch fresh properties from Supabase in parallel with ZERO delay
+      supabaseService.fetchProperties().then(supabaseProps => {
+        if (destroyed) return;
+        if (supabaseProps && supabaseProps.length > 0) {
+          const protectedList = mergeFreshWithRecentEdits(supabaseProps);
+          setProperties(protectedList);
+          writeCache({
+            regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
+            types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
+            properties: protectedList,
+            settings: cached?.settings ?? DEFAULT_SETTINGS,
+          });
+        } else if (supabaseProps && supabaseProps.length === 0) {
+          supabaseService.seedInitialPropertiesIfEmpty().catch(() => {});
+        }
+      }).catch(() => {});
+
+      // 3. Fetch users and logs in parallel
+      supabaseService.fetchUsers().then(supabaseUsers => {
+        if (destroyed) return;
+        if (supabaseUsers && supabaseUsers.length > 0) {
+          setUsers(prev => {
+            const mergedMap = new Map<string, User>();
+            prev.forEach(u => mergedMap.set(u.id, u));
+            supabaseUsers.forEach(u => mergedMap.set(u.id, u));
+            const merged = Array.from(mergedMap.values());
+            try { localStorage.setItem("alm_users", JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
+      }).catch(() => {});
+
+      supabaseService.fetchActivityLogs().then(supabaseLogs => {
+        if (destroyed) return;
+        if (supabaseLogs && supabaseLogs.length > 0) {
+          setActivityLogs(prev => {
+            const mergedMap = new Map<string, ActivityLog>();
+            supabaseLogs.forEach(l => mergedMap.set(l.id, l));
+            prev.forEach(l => mergedMap.set(l.id, l));
+            const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
+            return merged;
+          });
+        }
       }).catch(() => {});
     });
 
@@ -1459,6 +1544,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
           writeCache({ regions, types: propertyTypes, properties: updated, settings });
           return updated;
         });
+        supabaseService.fetchProperties().then(props => {
+          if (props && props.length > 0) {
+            const protectedList = mergeFreshWithRecentEdits(props);
+            setProperties(protectedList);
+            writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
+          }
+        }).catch(() => {});
       } else if (event === "PROPERTY_UPDATE" && property) {
         recordRecentEdit(property);
         setProperties(prev => {

@@ -1,6 +1,6 @@
-const STATIC_CACHE = "alamoudi-static-v7";
-const DATA_CACHE = "alamoudi-data-v7";
-const MEDIA_CACHE = "alamoudi-media-v7";
+const STATIC_CACHE = "alamoudi-static-v8";
+const DATA_CACHE = "alamoudi-data-v8";
+const MEDIA_CACHE = "alamoudi-media-v8";
 
 const APP_SHELL_ASSETS = [
   "/",
@@ -101,8 +101,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3. API Requests (/api/* or Supabase): Network-First -> Fallback to cached JSON
-  if (url.pathname.startsWith("/api/") || url.hostname.includes("supabase.co")) {
+  // 3. API Requests (/api/*): Network-First -> Fallback to cached JSON
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
