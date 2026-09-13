@@ -1,6 +1,6 @@
-const STATIC_CACHE = "alamoudi-static-v8";
-const DATA_CACHE = "alamoudi-data-v8";
-const MEDIA_CACHE = "alamoudi-media-v8";
+const STATIC_CACHE = "alamoudi-static-v9";
+const DATA_CACHE = "alamoudi-data-v9";
+const MEDIA_CACHE = "alamoudi-media-v9";
 
 const APP_SHELL_ASSETS = [
   "/",
@@ -54,26 +54,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Navigation (HTML pages / Deep links): Network-First -> Fallback to cached index.html
+  // 1. Navigation: Stale-While-Revalidate with Instant Cache Return (<5ms!)
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(STATIC_CACHE).then((c) => c.put(request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(request).then((cached) => {
-            if (cached) return cached;
-            return caches.match("/index.html").then((indexFallback) => {
-              if (indexFallback) return indexFallback;
-              return caches.match("/");
-            });
-          });
-        })
+      caches.open(STATIC_CACHE).then((staticCache) => {
+        return staticCache.match("/index.html").then((cachedIndex) => {
+          const networkFetch = fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse && networkResponse.status === 200) {
+                staticCache.put("/index.html", networkResponse.clone());
+              }
+              return networkResponse;
+            })
+            .catch(() => cachedIndex);
+
+          // Return cached index.html immediately in 0ms, revalidate in background
+          return cachedIndex || networkFetch;
+        });
+      })
     );
     return;
   }
@@ -101,31 +99,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3. API Requests (/api/*): Network-First -> Fallback to cached JSON
+  // 3. API Requests: Let pass directly to network without SW interception
   if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(DATA_CACHE).then((c) => c.put(request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.open(DATA_CACHE).then((c) => c.match(request)).then((cached) => {
-            if (cached) return cached;
-            return new Response(JSON.stringify({ offline: true, error: "Network unavailable" }), {
-              status: 503,
-              headers: { "Content-Type": "application/json" },
-            });
-          });
-        })
-    );
     return;
   }
 
-  // 4. Static Assets (JS, CSS, Fonts, Vite Chunks): Stale-While-Revalidate with Cache-First Fallback
+  // 4. Static Assets (JS, CSS, Fonts, Vite Chunks): Instant Cache-First (<5ms!)
   if (
     request.destination === "script" ||
     request.destination === "style" ||
@@ -137,17 +116,15 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.open(STATIC_CACHE).then((staticCache) => {
         return staticCache.match(request).then((cached) => {
-          if (cached && !navigator.onLine) {
+          if (cached) {
             return cached;
           }
-          const fetchPromise = fetch(request).then((networkResponse) => {
+          return fetch(request).then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
               staticCache.put(request, networkResponse.clone());
             }
             return networkResponse;
-          }).catch(() => cached);
-
-          return cached || fetchPromise;
+          });
         });
       })
     );

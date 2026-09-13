@@ -996,134 +996,42 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const reload = useCallback(async () => {
     if (!isOnline()) return;
-    const [
-      regionsR, typesR, propertiesR, settingsR,
-       usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR,
-    ] = await Promise.allSettled([
-      api.get<Region[]>("/regions"),
-      api.get<PropertyType[]>("/property-types"),
-      api.get<Property[]>("/properties"),
-      api.get<SiteSettings>("/settings"),
-      api.get<User[]>("/users"),
-      api.get<Inquiry[]>("/inquiries"),
-      api.get<FinishingRequest[]>("/finishing-requests"),
-      api.get<PropertyRequest[]>("/property-requests"),
-      api.get<CustomerPropertyRequest[]>("/customer-property-requests"),
-      api.get<Contract[]>("/contracts"),
-      api.get<AiLead[]>("/ai/leads"),
-      api.get<ActivityLog[]>("/activity-logs"),
-      api.get<VisitorStats>("/visitors/stats"),
-    ]);
-    const newRegions  = regionsR.status   === "fulfilled" ? regionsR.value   : null;
-    const newTypes    = typesR.status     === "fulfilled" ? typesR.value     : null;
-    const newProps    = propertiesR.status === "fulfilled" ? propertiesR.value : null;
-    const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
-                        ? settingsR.value : null;
-    if (newRegions)  setRegions(newRegions);
-    if (newTypes)    setPropertyTypes(newTypes);
-    if (newProps)    setProperties(newProps.filter(p => !isSystemStoreProperty(p)));
-    if (newSettings) {
-      setSettings(prev => {
-        let cachedHomeBg: HomeBackgroundSettings | undefined;
-        try {
-          const rawBg = localStorage.getItem("alm_home_bg");
-          if (rawBg) cachedHomeBg = JSON.parse(rawBg);
-        } catch {}
-
-        const activeDark = prev.homeBackgroundSettings?.bgImageDark || newSettings.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || "";
-        const activeLight = prev.homeBackgroundSettings?.bgImageLight || newSettings.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || "";
-
-        const merged = {
-          ...DEFAULT_SETTINGS,
-          ...prev,
-          ...newSettings,
-          homeBackgroundSettings: {
-            ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-            ...(cachedHomeBg || {}),
-            ...(prev.homeBackgroundSettings || {}),
-            ...(newSettings.homeBackgroundSettings || {}),
-            bgImageDark: activeDark,
-            bgImageLight: activeLight,
-          },
-          qrSectionEnabled: prev.qrSectionEnabled !== undefined ? prev.qrSectionEnabled : (newSettings.qrSectionEnabled ?? true),
-          qrCodes: prev.qrCodes !== undefined ? prev.qrCodes : (newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
-          tiktokVideos: newSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
-          ads: newSettings.ads ?? prev.ads ?? [],
-        };
-        try {
-          localStorage.setItem("alm_settings", JSON.stringify(merged));
-          if (merged.homeBackgroundSettings) {
-            localStorage.setItem("alm_home_bg", JSON.stringify(merged.homeBackgroundSettings));
-          }
-        } catch {}
-        return merged;
-      });
-    }
-    supabaseService.fetchSettings().then(cloudSettings => {
-      if (cloudSettings && Object.keys(cloudSettings).length > 0) {
-        setSettings(prev => {
-          const merged = {
-            ...DEFAULT_SETTINGS,
-            ...prev,
-            ...cloudSettings,
-            qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
-            qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
-            tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
-            ads: cloudSettings.ads ?? prev.ads ?? [],
-          };
-          try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
-          return merged;
-        });
+    try {
+      const [freshProps, freshRegs, freshTypes, freshSettings, freshUsers, freshInqs, freshCustomerReqs, freshLogs] = await Promise.allSettled([
+        supabaseService.fetchProperties(),
+        supabaseService.fetchRegions(),
+        supabaseService.fetchPropertyTypes(),
+        supabaseService.fetchSettings(),
+        supabaseService.fetchUsers(),
+        supabaseService.fetchInquiries(),
+        supabaseService.fetchCustomerRequests(),
+        supabaseService.fetchActivityLogs(),
+      ]);
+      if (freshRegs.status === "fulfilled" && freshRegs.value) {
+        const clean = sanitizeRegions(freshRegs.value);
+        setRegions(clean);
+        try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
       }
-    }).catch(() => {});
-    if (usersR.status === "fulfilled" && usersR.value) {
-      setUsers(usersR.value);
-      try { localStorage.setItem("alm_users", JSON.stringify(usersR.value)); } catch {}
+      if (freshTypes.status === "fulfilled" && freshTypes.value) {
+        setPropertyTypes(freshTypes.value);
+        try { localStorage.setItem("alm_types", JSON.stringify(freshTypes.value)); } catch {}
+      }
+      if (freshProps.status === "fulfilled" && freshProps.value) {
+        const protectedList = mergeFreshWithRecentEdits(freshProps.value);
+        setProperties(protectedList);
+        writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
+      }
+      if (freshSettings.status === "fulfilled" && freshSettings.value) {
+        setSettings(prev => ({ ...prev, ...freshSettings.value }));
+      }
+      if (freshUsers.status === "fulfilled" && freshUsers.value) setUsers(freshUsers.value);
+      if (freshInqs.status === "fulfilled" && freshInqs.value) setInquiries(freshInqs.value);
+      if (freshCustomerReqs.status === "fulfilled" && freshCustomerReqs.value) setCustomerPropertyRequests(freshCustomerReqs.value);
+      if (freshLogs.status === "fulfilled" && freshLogs.value) setActivityLogs(freshLogs.value);
+    } catch (e) {
+      console.warn("Reload error:", e);
     }
-    if (inquiriesR.status === "fulfilled" && inquiriesR.value) {
-      setInquiries(inquiriesR.value);
-      try { localStorage.setItem("alm_inquiries", JSON.stringify(inquiriesR.value)); } catch {}
-    }
-    if (finishingR.status === "fulfilled" && finishingR.value) {
-      setFinishingRequests(finishingR.value);
-      try { localStorage.setItem("alm_finishing_requests", JSON.stringify(finishingR.value)); } catch {}
-    }
-    if (requestsR.status === "fulfilled" && requestsR.value) {
-      setPropertyRequests(requestsR.value);
-      try { localStorage.setItem("alm_property_requests", JSON.stringify(requestsR.value)); } catch {}
-    }
-    if (customerPropertyRequestsR.status === "fulfilled" && customerPropertyRequestsR.value) {
-      setCustomerPropertyRequests(customerPropertyRequestsR.value);
-      try { localStorage.setItem("alm_customer_requests", JSON.stringify(customerPropertyRequestsR.value)); } catch {}
-    }
-    if (contractsR.status === "fulfilled" && contractsR.value) {
-      setContracts(contractsR.value);
-      try { localStorage.setItem("alm_contracts", JSON.stringify(contractsR.value)); } catch {}
-    }
-    if (aiLeadsR.status === "fulfilled" && aiLeadsR.value) {
-      setAiLeads(aiLeadsR.value);
-      try { localStorage.setItem("alm_ai_leads", JSON.stringify(aiLeadsR.value)); } catch {}
-    }
-    if (activityR.status   === "fulfilled" && Array.isArray(activityR.value) && activityR.value.length > 0) {
-      setActivityLogs(prev => {
-        const mergedMap = new Map<string, ActivityLog>();
-        activityR.value.forEach(l => mergedMap.set(l.id, l));
-        prev.forEach(l => mergedMap.set(l.id, l));
-        const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
-        return merged;
-      });
-    }
-    if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
-    if (newRegions || newTypes || newProps || newSettings) {
-      writeCache({
-        regions:    newRegions  ?? [],
-        types:      newTypes    ?? [],
-        properties: newProps    ?? [],
-        settings:   newSettings ?? DEFAULT_SETTINGS,
-      });
-    }
-  }, []);
+  }, [regions, propertyTypes, settings]);
 
   const trackPropertyView = useCallback((id: string) => {
     if (!isOnline()) return;
@@ -1224,299 +1132,220 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setReady(true);
 
     let destroyed = false;
+    setFetching(false);
+    setReady(true);
 
-    void Promise.allSettled([
-      api.get<Region[]>("/regions"),
-      api.get<PropertyType[]>("/property-types"),
-      api.get<Property[]>("/properties"),
-      api.get<SiteSettings>("/settings"),
-    ]).then(([regionsR, typesR, propertiesR, settingsR]) => {
+    // 1. Immediately restore full multi-image properties from IndexedDB (<10ms)
+    getPropertiesFromIndexedDb().then(idbProps => {
       if (destroyed) return;
+      if (idbProps && idbProps.length > 0) {
+        setProperties(prev => {
+          const idbMap = new Map<string, Property>();
+          idbProps.forEach(p => idbMap.set(p.id, p));
+          const updated = prev.map(p => {
+            const full = idbMap.get(p.id);
+            if (full && (full.images?.length || 0) > (p.images?.length || 0)) {
+              return { ...p, images: full.images };
+            }
+            return p;
+          });
+          idbProps.forEach(p => {
+            if (!updated.some(u => u.id === p.id)) {
+              updated.push(p);
+            }
+          });
+          return updated.sort((a, b) => {
+            const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+            const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+            return tB - tA;
+          });
+        });
+      }
+    }).catch(() => {});
 
-      const newRegions  = regionsR.status   === "fulfilled" ? regionsR.value   : null;
-      const newTypes    = typesR.status     === "fulfilled" ? typesR.value     : null;
-      const newProps    = propertiesR.status === "fulfilled" ? propertiesR.value : null;
-      const newSettings = settingsR.status  === "fulfilled" && settingsR.value && Object.keys(settingsR.value).length > 0
-                          ? settingsR.value : null;
+    // 2. Fetch fresh properties from Supabase in parallel with ZERO delay
+    supabaseService.fetchProperties().then(supabaseProps => {
+      if (destroyed) return;
+      if (supabaseProps && supabaseProps.length > 0) {
+        const protectedList = mergeFreshWithRecentEdits(supabaseProps);
+        setProperties(protectedList);
+        writeCache({
+          regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
+          types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
+          properties: protectedList,
+          settings: cached?.settings ?? DEFAULT_SETTINGS,
+        });
+      } else if (supabaseProps && supabaseProps.length === 0) {
+        supabaseService.seedInitialPropertiesIfEmpty().catch(() => {});
+      }
+    }).catch(() => {});
 
-      if (newRegions && newRegions.length > 0) {
-        const clean = sanitizeRegions(newRegions);
+    // 3. Sync regions from Supabase
+    supabaseService.fetchRegions().then(supabaseRegs => {
+      if (destroyed) return;
+      if (supabaseRegs && supabaseRegs.length > 0) {
+        const clean = sanitizeRegions(supabaseRegs);
         setRegions(clean);
         try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
       }
+    }).catch(() => {});
 
-      if (newTypes && newTypes.length > 0) {
-        setPropertyTypes(newTypes);
-        try { localStorage.setItem("alm_types", JSON.stringify(newTypes)); } catch {}
+    // 4. Sync property types from Supabase
+    supabaseService.fetchPropertyTypes().then(supabaseTypes => {
+      if (destroyed) return;
+      if (supabaseTypes && supabaseTypes.length > 0) {
+        setPropertyTypes(supabaseTypes);
+        try { localStorage.setItem("alm_types", JSON.stringify(supabaseTypes)); } catch {}
       }
+    }).catch(() => {});
 
-      if (newProps && newProps.length > 0) setProperties(newProps);
-      else if (cached?.properties?.length) setProperties(cached.properties);
-
-      if (newSettings) {
+    // 5. Sync background settings from Supabase
+    supabaseService.fetchHomeBackground().then(cloudBg => {
+      if (destroyed) return;
+      if (cloudBg && (cloudBg.bgImageDark || cloudBg.bgImageLight)) {
         setSettings(prev => {
-          const merged: SiteSettings = {
-            ...DEFAULT_SETTINGS,
-            ...newSettings,
-            ...prev,
-            homeBackgroundSettings: {
-              ...(DEFAULT_SETTINGS.homeBackgroundSettings || {}),
-              ...(newSettings.homeBackgroundSettings || {}),
-              ...(prev.homeBackgroundSettings || {}),
-            },
-            qrSectionEnabled: prev.qrSectionEnabled !== undefined ? prev.qrSectionEnabled : (newSettings.qrSectionEnabled ?? true),
-            qrCodes: prev.qrCodes !== undefined ? prev.qrCodes : (newSettings.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
-            tiktokVideos: newSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
-            ads: newSettings.ads ?? prev.ads ?? [],
+          const mergedBg = {
+            ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+            ...(prev.homeBackgroundSettings || {}),
+            ...cloudBg,
           };
-          try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+          try {
+            localStorage.setItem("alm_home_bg", JSON.stringify(mergedBg));
+          } catch {}
+          return {
+            ...prev,
+            homeBackgroundSettings: mergedBg,
+          };
+        });
+      }
+    }).catch(() => {});
+
+    // 6. Sync QR settings from Supabase
+    supabaseService.fetchQrSettings().then(cloudQr => {
+      if (destroyed) return;
+      if (cloudQr) {
+        setSettings(prev => {
+          const nextEnabled = cloudQr.qrSectionEnabled !== undefined ? cloudQr.qrSectionEnabled : prev.qrSectionEnabled;
+          const nextCodes = cloudQr.qrCodes || prev.qrCodes;
+          const updated = {
+            ...prev,
+            qrSectionEnabled: nextEnabled,
+            qrCodes: nextCodes,
+          };
+          settingsRef.current = updated;
+          try {
+            localStorage.setItem("alm_qr_settings", JSON.stringify({ qrSectionEnabled: nextEnabled, qrCodes: nextCodes }));
+          } catch {}
+          return updated;
+        });
+      }
+    }).catch(() => {});
+
+    // 7. Sync general site settings from Supabase
+    supabaseService.fetchSettings().then(cloudSettings => {
+      if (destroyed) return;
+      if (cloudSettings && Object.keys(cloudSettings).length > 0) {
+        setSettings(prev => {
+          let cachedHomeBg: HomeBackgroundSettings | undefined;
+          try {
+            const rawBg = localStorage.getItem("alm_home_bg");
+            if (rawBg) cachedHomeBg = JSON.parse(rawBg);
+          } catch {}
+
+          const activeDark = cloudSettings.homeBackgroundSettings?.bgImageDark || prev.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || "";
+          const activeLight = cloudSettings.homeBackgroundSettings?.bgImageLight || prev.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || "";
+
+          const merged = {
+            ...DEFAULT_SETTINGS,
+            ...prev,
+            ...cloudSettings,
+            homeBackgroundSettings: {
+              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+              ...(cachedHomeBg || {}),
+              ...(prev.homeBackgroundSettings || {}),
+              ...(cloudSettings.homeBackgroundSettings || {}),
+              bgImageDark: activeDark,
+              bgImageLight: activeLight,
+            },
+            qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
+            qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
+            tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
+            ads: cloudSettings.ads ?? prev.ads ?? [],
+          };
+          try {
+            localStorage.setItem("alm_settings", JSON.stringify(merged));
+            if (merged.homeBackgroundSettings) {
+              localStorage.setItem("alm_home_bg", JSON.stringify(merged.homeBackgroundSettings));
+            }
+          } catch {}
           return merged;
         });
       }
+    }).catch(() => {});
 
-      const gotData = newRegions !== null || newTypes !== null || newProps !== null || newSettings !== null;
-      setFetching(false);
-      setReady(true);
-
-      if (gotData) {
-        writeCache({
-          regions: (newRegions && newRegions.length > 0) ? sanitizeRegions(newRegions) : storedRegions,
-          types: (newTypes && newTypes.length > 0) ? newTypes : storedTypes,
-          properties: (newProps && newProps.length > 0) ? newProps : (cached?.properties ?? []),
-          settings: newSettings ?? cached?.settings ?? DEFAULT_SETTINGS,
+    // 8. Fetch users from Supabase with fallback to local storage
+    supabaseService.fetchUsers().then(supabaseUsers => {
+      if (destroyed) return;
+      if (supabaseUsers && supabaseUsers.length > 0) {
+        setUsers(prev => {
+          const mergedMap = new Map<string, User>();
+          prev.forEach(u => mergedMap.set(u.id, u));
+          supabaseUsers.forEach(u => mergedMap.set(u.id, u));
+          const merged = Array.from(mergedMap.values());
+          try { localStorage.setItem("alm_users", JSON.stringify(merged)); } catch {}
+          return merged;
         });
-        void Promise.allSettled([
-          api.get<User[]>("/users"),
-          api.get<Inquiry[]>("/inquiries"),
-          api.get<FinishingRequest[]>("/finishing-requests"),
-           api.get<PropertyRequest[]>("/property-requests"),
-           api.get<CustomerPropertyRequest[]>("/customer-property-requests"),
-           api.get<Contract[]>("/contracts"),
-          api.get<AiLead[]>("/ai/leads"),
-          api.get<ActivityLog[]>("/activity-logs"),
-          api.get<VisitorStats>("/visitors/stats"),
-         ]).then(([usersR, inquiriesR, finishingR, requestsR, customerPropertyRequestsR, contractsR, aiLeadsR, activityR, visitorStatsR]) => {
-          if (destroyed) return;
-          if (usersR.status === "fulfilled" && usersR.value?.length) {
-            setUsers(usersR.value);
-            try { localStorage.setItem("alm_users", JSON.stringify(usersR.value)); } catch {}
-          } else {
-            try {
-              const raw = localStorage.getItem("alm_users");
-              if (raw) setUsers(JSON.parse(raw));
-              else setUsers(DEFAULT_STAFF_USERS);
-            } catch {
-              setUsers(DEFAULT_STAFF_USERS);
-            }
-          }
-          if (inquiriesR.status === "fulfilled" && inquiriesR.value) {
-            setInquiries(inquiriesR.value);
-            try { localStorage.setItem("alm_inquiries", JSON.stringify(inquiriesR.value)); } catch {}
-          }
-          if (finishingR.status === "fulfilled" && finishingR.value) {
-            setFinishingRequests(finishingR.value);
-            try { localStorage.setItem("alm_finishing_requests", JSON.stringify(finishingR.value)); } catch {}
-          }
-          if (requestsR.status === "fulfilled" && requestsR.value) {
-            setPropertyRequests(requestsR.value);
-            try { localStorage.setItem("alm_property_requests", JSON.stringify(requestsR.value)); } catch {}
-          }
-          if (customerPropertyRequestsR.status === "fulfilled" && customerPropertyRequestsR.value) {
-            setCustomerPropertyRequests(customerPropertyRequestsR.value);
-            try { localStorage.setItem("alm_customer_requests", JSON.stringify(customerPropertyRequestsR.value)); } catch {}
-          }
-          if (contractsR.status === "fulfilled" && contractsR.value) {
-            setContracts(contractsR.value);
-            try { localStorage.setItem("alm_contracts", JSON.stringify(contractsR.value)); } catch {}
-          }
-          if (aiLeadsR.status === "fulfilled" && aiLeadsR.value) {
-            setAiLeads(aiLeadsR.value);
-            try { localStorage.setItem("alm_ai_leads", JSON.stringify(aiLeadsR.value)); } catch {}
-          }
-          if (activityR.status   === "fulfilled") setActivityLogs(activityR.value);
-          if (visitorStatsR.status === "fulfilled") setVisitorStats(visitorStatsR.value);
+      } else {
+        try {
+          const raw = localStorage.getItem("alm_users");
+          if (raw) setUsers(JSON.parse(raw));
+          else setUsers(DEFAULT_STAFF_USERS);
+        } catch {
+          setUsers(DEFAULT_STAFF_USERS);
+        }
+      }
+    }).catch(() => {
+      try {
+        const raw = localStorage.getItem("alm_users");
+        if (raw) setUsers(JSON.parse(raw));
+        else setUsers(DEFAULT_STAFF_USERS);
+      } catch {
+        setUsers(DEFAULT_STAFF_USERS);
+      }
+    });
+
+    // 9. Fetch inquiries from Supabase
+    supabaseService.fetchInquiries().then(inquiries => {
+      if (destroyed) return;
+      if (inquiries && inquiries.length > 0) {
+        setInquiries(inquiries);
+        try { localStorage.setItem("alm_inquiries", JSON.stringify(inquiries)); } catch {}
+      }
+    }).catch(() => {});
+
+    // 10. Fetch customer requests from Supabase
+    supabaseService.fetchCustomerRequests().then(requests => {
+      if (destroyed) return;
+      if (requests && requests.length > 0) {
+        setCustomerPropertyRequests(requests);
+        try { localStorage.setItem("alm_customer_requests", JSON.stringify(requests)); } catch {}
+      }
+    }).catch(() => {});
+
+    // 11. Fetch activity logs from Supabase
+    supabaseService.fetchActivityLogs().then(supabaseLogs => {
+      if (destroyed) return;
+      if (supabaseLogs && supabaseLogs.length > 0) {
+        setActivityLogs(prev => {
+          const mergedMap = new Map<string, ActivityLog>();
+          supabaseLogs.forEach(l => mergedMap.set(l.id, l));
+          prev.forEach(l => mergedMap.set(l.id, l));
+          const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
+          return merged;
         });
       }
-
-      // Sync with Supabase cloud database
-      supabaseService.fetchRegions().then(supabaseRegs => {
-        if (destroyed) return;
-        if (supabaseRegs && supabaseRegs.length > 0) {
-          const clean = sanitizeRegions(supabaseRegs);
-          setRegions(clean);
-          try { localStorage.setItem("alm_regions", JSON.stringify(clean)); } catch {}
-        }
-      }).catch(() => {});
-
-      supabaseService.fetchPropertyTypes().then(supabaseTypes => {
-        if (destroyed) return;
-        if (supabaseTypes && supabaseTypes.length > 0) {
-          setPropertyTypes(supabaseTypes);
-          try { localStorage.setItem("alm_types", JSON.stringify(supabaseTypes)); } catch {}
-        }
-      }).catch(() => {});
-
-      supabaseService.fetchHomeBackground().then(cloudBg => {
-        if (destroyed) return;
-        if (cloudBg && (cloudBg.bgImageDark || cloudBg.bgImageLight)) {
-          setSettings(prev => {
-            const mergedBg = {
-              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-              ...(prev.homeBackgroundSettings || {}),
-              ...cloudBg,
-            };
-            try {
-              localStorage.setItem("alm_home_bg", JSON.stringify(mergedBg));
-            } catch {}
-            return {
-              ...prev,
-              homeBackgroundSettings: mergedBg,
-            };
-          });
-        }
-      }).catch(() => {});
-
-      supabaseService.fetchQrSettings().then(cloudQr => {
-        if (destroyed) return;
-        if (cloudQr) {
-          setSettings(prev => {
-            const nextEnabled = cloudQr.qrSectionEnabled !== undefined ? cloudQr.qrSectionEnabled : prev.qrSectionEnabled;
-            const nextCodes = cloudQr.qrCodes || prev.qrCodes;
-            const updated = {
-              ...prev,
-              qrSectionEnabled: nextEnabled,
-              qrCodes: nextCodes,
-            };
-            settingsRef.current = updated;
-            try {
-              localStorage.setItem("alm_qr_settings", JSON.stringify({ qrSectionEnabled: nextEnabled, qrCodes: nextCodes }));
-            } catch {}
-            return updated;
-          });
-        }
-      }).catch(() => {});
-
-      supabaseService.fetchSettings().then(cloudSettings => {
-        if (destroyed) return;
-        if (cloudSettings && Object.keys(cloudSettings).length > 0) {
-          setSettings(prev => {
-            let cachedHomeBg: HomeBackgroundSettings | undefined;
-            try {
-              const rawBg = localStorage.getItem("alm_home_bg");
-              if (rawBg) cachedHomeBg = JSON.parse(rawBg);
-            } catch {}
-
-            const activeDark = cloudSettings.homeBackgroundSettings?.bgImageDark || prev.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || "";
-            const activeLight = cloudSettings.homeBackgroundSettings?.bgImageLight || prev.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || "";
-
-            const merged = {
-              ...DEFAULT_SETTINGS,
-              ...prev,
-              ...cloudSettings,
-              homeBackgroundSettings: {
-                ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-                ...(cachedHomeBg || {}),
-                ...(prev.homeBackgroundSettings || {}),
-                ...(cloudSettings.homeBackgroundSettings || {}),
-                bgImageDark: activeDark,
-                bgImageLight: activeLight,
-              },
-              qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
-              qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
-              tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
-              ads: cloudSettings.ads ?? prev.ads ?? [],
-            };
-            try {
-              localStorage.setItem("alm_settings", JSON.stringify(merged));
-              if (merged.homeBackgroundSettings) {
-                localStorage.setItem("alm_home_bg", JSON.stringify(merged.homeBackgroundSettings));
-              }
-            } catch {}
-            writeCache({
-              regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
-              types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
-              properties: cached?.properties ?? [],
-              settings: merged,
-            });
-            return merged;
-          });
-        }
-      }).catch(() => {});
-
-      // 1. Immediately restore full multi-image properties from IndexedDB (<10ms)
-      getPropertiesFromIndexedDb().then(idbProps => {
-        if (destroyed) return;
-        if (idbProps && idbProps.length > 0) {
-          setProperties(prev => {
-            const idbMap = new Map<string, Property>();
-            idbProps.forEach(p => idbMap.set(p.id, p));
-            const updated = prev.map(p => {
-              const full = idbMap.get(p.id);
-              if (full && (full.images?.length || 0) > (p.images?.length || 0)) {
-                return { ...p, images: full.images };
-              }
-              return p;
-            });
-            idbProps.forEach(p => {
-              if (!updated.some(u => u.id === p.id)) {
-                updated.push(p);
-              }
-            });
-            return updated.sort((a, b) => {
-              const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
-              const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-              return tB - tA;
-            });
-          });
-        }
-      }).catch(() => {});
-
-      // 2. Fetch fresh properties from Supabase in parallel with ZERO delay
-      supabaseService.fetchProperties().then(supabaseProps => {
-        if (destroyed) return;
-        if (supabaseProps && supabaseProps.length > 0) {
-          const protectedList = mergeFreshWithRecentEdits(supabaseProps);
-          setProperties(protectedList);
-          writeCache({
-            regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
-            types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
-            properties: protectedList,
-            settings: cached?.settings ?? DEFAULT_SETTINGS,
-          });
-        } else if (supabaseProps && supabaseProps.length === 0) {
-          supabaseService.seedInitialPropertiesIfEmpty().catch(() => {});
-        }
-      }).catch(() => {});
-
-      // 3. Fetch users and logs in parallel
-      supabaseService.fetchUsers().then(supabaseUsers => {
-        if (destroyed) return;
-        if (supabaseUsers && supabaseUsers.length > 0) {
-          setUsers(prev => {
-            const mergedMap = new Map<string, User>();
-            prev.forEach(u => mergedMap.set(u.id, u));
-            supabaseUsers.forEach(u => mergedMap.set(u.id, u));
-            const merged = Array.from(mergedMap.values());
-            try { localStorage.setItem("alm_users", JSON.stringify(merged)); } catch {}
-            return merged;
-          });
-        }
-      }).catch(() => {});
-
-      supabaseService.fetchActivityLogs().then(supabaseLogs => {
-        if (destroyed) return;
-        if (supabaseLogs && supabaseLogs.length > 0) {
-          setActivityLogs(prev => {
-            const mergedMap = new Map<string, ActivityLog>();
-            supabaseLogs.forEach(l => mergedMap.set(l.id, l));
-            prev.forEach(l => mergedMap.set(l.id, l));
-            const merged = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
-            return merged;
-          });
-        }
-      }).catch(() => {});
-    });
+    }).catch(() => {});
 
     // Multi-Layer Realtime Live Sync Engine
     const handleSyncPayload = (data: any) => {
@@ -2183,12 +2012,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Realtime broadcast (instant cross-tab & cross-device websocket update)
     sendRealtimeSync("SETTINGS_UPDATE", { settings: nextSettings });
     logActivity({ action: "updated", entityType: "settings", title: "تحديث إعدادات المنصة والموقع" });
-    try {
-      await api.put("/settings", nextSettings);
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   }, [regions, propertyTypes, properties, logActivity]);
 
   const addRegion = async (name: string, heroImage = "") => {
@@ -2202,12 +2026,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await supabaseService.saveRegion(region).catch(() => {});
     sendRealtimeSync("REGION_ADD", { region });
     logActivity({ action: "created", entityType: "region", title: `إضافة منطقة جديدة (${name})` });
-    try {
-      await api.post("/regions", region);
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const updateRegion = async (id: string, name: string, heroImage?: string) => {
@@ -2229,12 +2048,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sendRealtimeSync("REGION_UPDATE", { region: targetRegion });
     }
     logActivity({ action: "updated", entityType: "region", title: `تعديل المنطقة (${name})` });
-    try {
-      await api.patch(`/regions/${id}`, { name, heroImage: heroImage !== undefined ? heroImage : "" });
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const deleteRegion = async (id: string) => {
@@ -2247,12 +2061,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await supabaseService.deleteRegion(id).catch(() => {});
     sendRealtimeSync("REGION_DELETE", { regionId: id });
     logActivity({ action: "deleted", entityType: "region", title: `حذف منطقة (${id})` });
-    try {
-      await api.del(`/regions/${id}`);
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const toggleRegion = async (id: string) => {
@@ -2278,12 +2087,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityType: "region",
       title: `تغيير حالة تفعيل المنطقة (${targetRegion?.name || id}) إلى ${targetRegion?.active ? "مفعل" : "معطل"}`,
     });
-    try {
-      await api.patch(`/regions/${id}`, { active: targetRegion?.active ?? true });
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const addPropertyType = async (name: string) => {
@@ -2297,12 +2101,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     supabaseService.savePropertyType(t).catch(() => {});
     sendRealtimeSync("TYPE_ADD", { propertyType: t });
     logActivity({ action: "created", entityType: "property_type", title: `إضافة نوع عقار جديد (${name})` });
-    try {
-      await api.post("/property-types", t);
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const updatePropertyType = async (id: string, name: string) => {
@@ -2324,12 +2123,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sendRealtimeSync("TYPE_UPDATE", { propertyType: targetType });
     }
     logActivity({ action: "updated", entityType: "property_type", title: `تعديل نوع عقار (${name})` });
-    try {
-      await api.patch(`/property-types/${id}`, { name });
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const deletePropertyType = async (id: string) => {
@@ -2342,12 +2136,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     supabaseService.deletePropertyType(id).catch(() => {});
     sendRealtimeSync("TYPE_DELETE", { typeId: id });
     logActivity({ action: "deleted", entityType: "property_type", title: `حذف نوع عقار (${id})` });
-    try {
-      await api.del(`/property-types/${id}`);
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const togglePropertyType = async (id: string) => {
@@ -2373,12 +2162,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityType: "property_type",
       title: `تغيير حالة نوع العقار (${targetType?.name || id}) إلى ${targetType?.active ? "مفعل" : "معطل"}`,
     });
-    try {
-      await api.patch(`/property-types/${id}`, { active: targetType?.active ?? true });
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const addProperty = async (p: Omit<Property, "id" | "createdAt" | "code"> & { code?: string }) => {
@@ -2420,35 +2204,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       title: `إضافة عقار جديد (${property.code}) - ${property.title || property.unitType || "وحدة عقارية"}`,
     });
 
-    if (!isOnline()) {
-      enqueueOfflineAction({
-        type: "property",
-        endpoint: "/properties",
-        method: "POST",
-        payload: property,
-      });
-      toast({
-        title: "تم حفظ العقار في وضع الأوفلاين 📶",
-        description: `تم حفظ العقار (${property.code}) محلياً، وسيتم رفعه ومزامنته تلقائياً فور عودة الاتصال.`,
-      });
-      return true;
-    }
-
-    try {
-      await api.post("/properties", property);
-      return true;
-    } catch (err) {
-      if (!isOnline() || (err && typeof err === "object" && "status" in err && (err as any).status === 503)) {
-        enqueueOfflineAction({
-          type: "property",
-          endpoint: "/properties",
-          method: "POST",
-          payload: property,
-        });
-      }
-      console.warn("Server sync warning (property saved in client cache):", err);
-      return true;
-    }
+    return true;
   };
 
   const updateProperty = async (id: string, p: Partial<Property>) => {
@@ -2511,12 +2267,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       title: `تعديل بيانات العقار (${(updatedTarget as any)?.code || id})`,
     });
 
-    try {
-      await api.patch(`/properties/${id}`, p);
-      return true;
-    } catch (err) {
-      return true;
-    }
+    return true;
   };
 
   const deleteProperty = async (id: string) => {
@@ -2560,12 +2311,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityType: "property",
       title: `حذف العقار (${id}) من المنصة`,
     });
-
-    try {
-      await api.del(`/properties/${id}`);
-    } catch (err) {
-      console.warn("Server sync warning (deleted from client cache):", err);
-    }
+    return true;
   };
 
   const bulkDeleteProperties = (ids: string[]) => {

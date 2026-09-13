@@ -80,28 +80,6 @@ function Protected({ component: Component, adminOnly = false }: { component: Com
 }
 
 function VisitorTracker() {
-  const { authReady, isStaff } = useAuth();
-  useEffect(() => {
-    // Only count real visitors: skip until auth is resolved, and never track
-    // logged-in staff (admins/agents) so they're excluded from all analytics.
-    if (!authReady || isStaff) return;
-    const send = () => {
-      if (document.visibilityState !== "visible") return;
-      void api.post("/track/heartbeat", { visitorId: getVisitorId() }).catch(() => {
-        /* best-effort presence tracking; never surface errors to visitors */
-      });
-    };
-    send();
-    const interval = setInterval(send, 60_000);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") send();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [authReady, isStaff]);
   return null;
 }
 
@@ -276,14 +254,7 @@ function ThemeEnforcer() {
   return null;
 }
 
-// بينج الـ API كل 4 دقايق علشان الـ server ميدخلش في نوم
 function KeepAlive() {
-  useEffect(() => {
-    const ping = () => { void fetch("/api/healthz", { method: "GET" }).catch(() => {}); };
-    ping(); // أول بينج فوري لما الـ app يفتح
-    const id = setInterval(ping, 4 * 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
   return null;
 }
 
