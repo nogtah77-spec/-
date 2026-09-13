@@ -11,6 +11,7 @@ export interface PushNotificationPayload {
   icon?: string;
   badge?: string;
   createdAt?: string;
+  timestamp?: number;
   sentBy?: string;
 }
 
@@ -68,7 +69,7 @@ export async function showLocalNotification(payload: PushNotificationPayload): P
   if (Notification.permission !== "granted") return false;
 
   const title = payload.title || "العمودي للتسويق العقاري";
-  const options: NotificationOptions = {
+  const options: any = {
     body: payload.body || "فرصة عقارية جديدة متاحة الآن في المنصة.",
     icon: payload.icon || "/icon-192.png",
     badge: payload.badge || "/logo.png",
@@ -80,7 +81,7 @@ export async function showLocalNotification(payload: PushNotificationPayload): P
       url: payload.url || "/",
       timestamp: Date.now(),
     },
-    vibrate: [200, 100, 200] as any,
+    vibrate: [200, 100, 200],
   };
 
   try {
@@ -91,55 +92,65 @@ export async function showLocalNotification(payload: PushNotificationPayload): P
         return true;
       }
     }
-
     new Notification(title, options);
     return true;
   } catch (err) {
-    console.warn("Error showing local notification:", err);
+    console.warn("Failed to show native notification:", err);
     return false;
   }
 }
 
+export const showSystemPushNotification = showLocalNotification;
+
 /**
- * Broadcast a push notification to all subscribers worldwide via Realtime Cloud WebSocket
+ * Broadcast an announcement or property alert to all subscribed clients
  */
 export async function broadcastPushNotification(payload: PushNotificationPayload): Promise<boolean> {
-  const fullPayload: PushNotificationPayload = {
-    ...payload,
-    id: payload.id || `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    icon: payload.icon || "/icon-192.png",
-    badge: payload.badge || "/logo.png",
-    createdAt: new Date().toISOString(),
-    url: payload.url || "/",
-  };
+  // 1. Trigger local system notification on current device
+  await showSystemPushNotification(payload);
 
-  // 1. Show locally immediately on the sender's device if permitted
-  if (getNotificationPermission() === "granted") {
-    showLocalNotification(fullPayload).catch(() => {});
+  // 2. Broadcast across all active tabs and devices via Supabase Realtime channel
+  if (supabase) {
+    try {
+      const channel = supabase.channel("alm_push_broadcast", {
+        config: { broadcast: { self: true } },
+      });
+      await channel.subscribe();
+      await channel.send({
+        type: "broadcast",
+        event: "push_alert",
+        payload,
+      });
+      supabase.removeChannel(channel);
+    } catch (e) {
+      console.warn("Push realtime broadcast warning:", e);
+    }
   }
 
-  // 2. Realtime Broadcast across all connected devices and browser instances
-  sendRealtimeSync("PUSH_NOTIFICATION", fullPayload);
-
-  // 3. Save to History (LocalStorage + Supabase Store)
+  // 3. Save notification to history
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
-    const history: PushNotificationPayload[] = raw ? JSON.parse(raw) : [];
-    history.unshift(fullPayload);
-    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history.slice(0, 50)));
+    const history = await fetchNotificationsHistory();
+    history.unshift({
+      ...payload,
+      timestamp: Date.now(),
+      id: payload.id || `notif_${Date.now()}`,
+    });
+    localStorage.setItem("alm_push_history", JSON.stringify(history.slice(0, 50)));
 
     // Save to Supabase
     if (supabase) {
-      supabase.from("properties").upsert({
-        id: "__notifications_history_store__",
-        code: "__NOTIF_STORE__",
-        title: "Notifications History Store",
-        description: JSON.stringify(history.slice(0, 50)),
-        price: 0,
-        area: 0,
-        status: "archived",
-        created_at: new Date().toISOString(),
-      }).catch(() => {});
+      void Promise.resolve(
+        supabase.from("properties").upsert({
+          id: "__notifications_history_store__",
+          code: "__NOTIF_STORE__",
+          title: "Notifications History Store",
+          description: JSON.stringify(history.slice(0, 50)),
+          price: 0,
+          area: 0,
+          status: "archived",
+          created_at: new Date().toISOString(),
+        })
+      ).catch(() => {});
     }
   } catch {}
 

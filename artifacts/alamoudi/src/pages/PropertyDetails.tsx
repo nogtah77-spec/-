@@ -17,6 +17,7 @@ import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
+import { checkUserPermission } from "@/lib/permissions";
 import { useData } from "@/context/DataContext";
 import { formatNumber } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
@@ -97,12 +98,13 @@ export default function PropertyDetails() {
         setDirectLoading(false);
         return;
       }
-      supabase
-        .from("properties")
-        .select("*")
-        .or(`id.eq.${safeId},code.ilike.${safeId}`)
-        .maybeSingle()
-        .then(({ data, error }) => {
+      void (async () => {
+        try {
+          const { data, error } = await supabase
+            .from("properties")
+            .select("*")
+            .or(`id.eq.${safeId},code.ilike.${safeId}`)
+            .maybeSingle();
           if (cancelled) return;
           setDirectLoading(false);
           if (data && !error) {
@@ -112,15 +114,16 @@ export default function PropertyDetails() {
               console.warn("Error mapping property:", e);
             }
           }
-        })
-        .catch(() => {
+        } catch {
           if (!cancelled) setDirectLoading(false);
-        });
+        }
+      })();
 
       return () => {
         cancelled = true;
       };
     }
+    return;
   }, [property, cleanId, ready]);
 
   const images = useMemo(() => {
@@ -626,7 +629,7 @@ export default function PropertyDetails() {
               {/* Source info — admin only */}
               {isStaff && (
                 Boolean(
-                  property.sourcePhones?.some(ph => ph.trim()) ||
+                  property.sourcePhones?.some((ph: string) => ph.trim()) ||
                   property.sourceEmail?.trim() ||
                   property.sourceLocation?.trim() ||
                   property.sourceNotes?.trim() ||
@@ -659,7 +662,7 @@ export default function PropertyDetails() {
                           <span className="font-medium">{property.source}</span>
                         </div>
                       )}
-                      {(property.sourcePhones ?? []).filter(ph => ph.trim()).map((ph, i) => (
+                      {(property.sourcePhones ?? []).filter((ph: string) => ph.trim()).map((ph: string, i: number) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
                           <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline font-medium transition-colors" dir="ltr">

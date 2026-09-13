@@ -1789,7 +1789,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       void processOfflineQueue(async (endpoint, opts) => {
         if (opts.method === "POST") return api.post(endpoint, opts.body ? JSON.parse(opts.body) : {});
         if (opts.method === "PUT") return api.put(endpoint, opts.body ? JSON.parse(opts.body) : {});
-        if (opts.method === "DELETE") return api.delete(endpoint);
+        if (opts.method === "DELETE") return api.del(endpoint);
         return api.get(endpoint);
       });
     };

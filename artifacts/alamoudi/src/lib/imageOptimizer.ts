@@ -7,6 +7,7 @@ export interface CompressOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number;
+  format?: string;
 }
 
 export async function compressImage(
