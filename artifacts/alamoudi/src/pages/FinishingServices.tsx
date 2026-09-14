@@ -251,7 +251,7 @@ export default function FinishingServices() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F3EE] dark:bg-background">
+      <main className="flex-1 bg-background">
 
         {/* Hero */}
         <div className="bg-card border-b border-border py-12 md:py-16">

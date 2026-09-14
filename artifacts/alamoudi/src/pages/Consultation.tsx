@@ -61,7 +61,7 @@ export default function Consultation() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F3EE] dark:bg-background">
+      <main className="flex-1 bg-background">
         <div className="bg-card border-b border-border py-12 md:py-16">
           <div className="container px-6 text-center">
             <p className="text-accent text-xs font-medium tracking-widest mb-3 uppercase">خدماتنا</p>

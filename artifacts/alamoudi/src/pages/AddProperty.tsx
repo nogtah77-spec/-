@@ -149,7 +149,7 @@ export default function AddProperty() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center bg-[#F5F3EE] dark:bg-background px-6 py-20">
+        <main className="flex-1 flex items-center justify-center bg-background px-6 py-20">
           <div className="text-center max-w-md">
             <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center text-accent mx-auto mb-6">
               <CheckCircle2 className="h-10 w-10" />
@@ -176,7 +176,7 @@ export default function AddProperty() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-        <main className="flex-1 bg-[#F5F3EE] dark:bg-background py-12 md:py-16">
+        <main className="flex-1 bg-background py-12 md:py-16">
         <div className="container px-6 max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">أعرض عقارك لدينا</h1>

@@ -20,7 +20,7 @@ export default function Favorites() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F3EE] dark:bg-background py-12">
+      <main className="flex-1 bg-background py-12">
         <div className="container px-3 sm:px-6">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-foreground mb-1">المفضلة</h1>

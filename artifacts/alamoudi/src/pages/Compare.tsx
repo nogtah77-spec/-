@@ -46,7 +46,7 @@ export default function Compare() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-1 bg-[#F5F3EE] dark:bg-background py-12">
+      <main className="flex-1 bg-background py-12">
         <div className="container px-6">
           <div className="flex items-center justify-between mb-8">
             <div>

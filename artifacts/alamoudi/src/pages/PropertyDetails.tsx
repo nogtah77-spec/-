@@ -379,9 +379,9 @@ export default function PropertyDetails() {
             <div className="flex-1">
               <div className="flex flex-wrap gap-2 mb-3">
                 {typeName && <Badge className="bg-primary/10 text-primary">{typeName}</Badge>}
-                <Badge className="bg-accent/10 text-accent">{categoryLabels[property.category]}</Badge>
-                {property.featured && <Badge className="bg-yellow-100 text-yellow-700">مميز</Badge>}
-                {property.status === "reserved" && <Badge className="bg-amber-100 text-amber-700">محجوز</Badge>}
+                {categoryLabels[property.category] && <Badge className="bg-accent/15 text-accent border border-accent/30 font-bold">{categoryLabels[property.category]}</Badge>}
+                {property.featured && <Badge className="bg-accent text-accent-foreground font-black shadow-xs">مميز VIP</Badge>}
+                {property.status === "reserved" && <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">محجوز</Badge>}
               </div>
               <div className="mb-2">
                 <h1 className="text-2xl md:text-3xl font-bold font-mono tracking-widest text-accent">{property.code}</h1>
@@ -652,12 +652,12 @@ export default function PropertyDetails() {
                   property.sourceNotes?.trim() ||
                   property.source?.trim()
                 ) && (
-                  <Card className="card-luxury border-amber-300/40 bg-amber-50/30 dark:bg-amber-950/10">
+                  <Card className="card-luxury border-accent/30 bg-accent/5">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2 text-amber-800 dark:text-amber-300">
-                        <FileText className="h-4 w-4" />
+                      <CardTitle className="text-base flex items-center gap-2 text-foreground">
+                        <FileText className="h-4 w-4 text-accent" />
                         بيانات المصدر
-                        <span className="text-[10px] font-normal bg-amber-200/60 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">للمدير فقط</span>
+                        <span className="text-[10px] font-bold bg-accent/20 text-accent border border-accent/30 px-2 py-0.5 rounded-full">للمدير فقط</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -834,7 +834,7 @@ export default function PropertyDetails() {
                             className={cn(
                               "text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm",
                               isSale
-                                ? "bg-amber-500 text-white"
+                                ? "bg-accent text-accent-foreground font-black"
                                 : "bg-blue-600 text-white"
                             )}
                           >

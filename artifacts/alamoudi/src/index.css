@@ -534,6 +534,10 @@ html[data-theme="charcoal"]:not(.light) {
   --accent: 40 50% 56%;                /* #C5A059 ذهب ساتان متزن وواضح */
   --accent-foreground: 210 14% 11%;     /* #181C20 تباين فحمي داكن فائق الوضوح للقراءة */
 
+  --gradient-hero: linear-gradient(135deg, #181C20 0%, #22272D 55%, #14171A 100%);
+  --shadow-luxury: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(197, 160, 89, 0.15);
+  --shadow-luxury-lg: 0 14px 36px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(197, 160, 89, 0.25);
+
   --secondary: 216 14% 19%;            /* #2A3038 */
   --secondary-foreground: 210 40% 98%;
 
@@ -573,17 +577,71 @@ html[data-theme="charcoal"].light {
   --input: 214 32% 91%;
   --ring: 40 50% 56%;
 }
+/* ── حماية وضمان عدم ظهور أي خلفية صلبة قديمة في الثيم الفحمي ── */
+html[data-theme="charcoal"] .bg-\[\#F5F3EE\],
+html[data-theme="charcoal"] .bg-\[\#f5f3ee\],
+html[data-theme="charcoal"] [class*="bg-[#F5F3EE]"],
+html[data-theme="charcoal"] [class*="bg-[#f5f3ee]"] {
+  background-color: hsl(var(--background)) !important;
+}
 
-/* ── شفافيات وحدّة تفاصيل البطاقات والعناصر ── */
-html[data-theme="charcoal"] .bg-accent\/10 {
-  background-color: rgba(197, 160, 89, 0.13) !important;
+/* ── شفافيات وحدّة تفاصيل البطاقات والعناصر بذهب الساتان الملكي #C5A059 ── */
+html[data-theme="charcoal"] .text-accent {
+  color: #C5A059 !important;
+}
+html[data-theme="charcoal"] .hover\:text-accent:hover {
+  color: #C5A059 !important;
+}
+html[data-theme="charcoal"] .border-accent {
+  border-color: #C5A059 !important;
+}
+html[data-theme="charcoal"] .hover\:border-accent:hover {
+  border-color: #C5A059 !important;
+}
+html[data-theme="charcoal"] .border-accent\/60 {
+  border-color: rgba(197, 160, 89, 0.60) !important;
+}
+html[data-theme="charcoal"] .border-accent\/50 {
+  border-color: rgba(197, 160, 89, 0.50) !important;
 }
 html[data-theme="charcoal"] .border-accent\/40 {
   border-color: rgba(197, 160, 89, 0.40) !important;
 }
-html[data-theme="charcoal"] .border-accent\/20,
-html[data-theme="charcoal"] .border-accent\/25 {
+html[data-theme="charcoal"] .border-accent\/30,
+html[data-theme="charcoal"] .border-accent\/25,
+html[data-theme="charcoal"] .border-accent\/20 {
   border-color: rgba(197, 160, 89, 0.28) !important;
+}
+html[data-theme="charcoal"] .bg-accent\/5 {
+  background-color: rgba(197, 160, 89, 0.08) !important;
+}
+html[data-theme="charcoal"] .bg-accent\/10 {
+  background-color: rgba(197, 160, 89, 0.13) !important;
+}
+html[data-theme="charcoal"] .bg-accent\/15 {
+  background-color: rgba(197, 160, 89, 0.18) !important;
+}
+html[data-theme="charcoal"] .bg-accent\/20 {
+  background-color: rgba(197, 160, 89, 0.24) !important;
+}
+html[data-theme="charcoal"] .hover\:bg-accent\/10:hover {
+  background-color: rgba(197, 160, 89, 0.16) !important;
+}
+html[data-theme="charcoal"] .hover\:bg-accent\/20:hover {
+  background-color: rgba(197, 160, 89, 0.28) !important;
+}
+
+/* ── الأزرار الصلبة ذات الخلفية الذهبية بالثيم الفحمي: تباين فحمي فائق الوضوح ── */
+html[data-theme="charcoal"] .bg-accent {
+  background-color: #C5A059 !important;
+  color: #181C20 !important;
+}
+html[data-theme="charcoal"] .bg-accent:hover {
+  background-color: #B38E47 !important;
+  color: #181C20 !important;
+}
+html[data-theme="charcoal"] .text-accent-foreground {
+  color: #181C20 !important;
 }
 
 /* ── زر "أعرض عقارك" المتفاعل تلقائياً مع الثيم ── */
@@ -661,17 +719,37 @@ html[data-theme="charcoal"] [data-state="active"][class*="bg-[#10202D]"] {
 }
 
 /* ── شارات العقارات المميزة VIP ── */
-html[data-theme="charcoal"] [class*="from-amber-600"] {
+html[data-theme="charcoal"] [class*="from-amber-600"],
+html[data-theme="charcoal"] [class*="via-[#B88E4B]"] {
   background: linear-gradient(135deg, #C5A059 0%, #A8833C 100%) !important;
   color: #181C20 !important;
   border-color: rgba(197, 160, 89, 0.45) !important;
 }
-html[data-theme="charcoal"] [class*="from-amber-600"] svg {
+html[data-theme="charcoal"] [class*="from-amber-600"] *,
+html[data-theme="charcoal"] [class*="via-[#B88E4B]"] * {
+  color: #181C20 !important;
+}
+html[data-theme="charcoal"] [class*="from-amber-600"] svg,
+html[data-theme="charcoal"] [class*="via-[#B88E4B]"] svg {
   fill: #181C20 !important;
+  color: #181C20 !important;
 }
 
 /* ── أزرار الـ CTA السفلية ── */
-html[data-theme="charcoal"] [style*="#A2845A"] {
+html[data-theme="charcoal"] [style*="#A2845A"],
+html[data-theme="charcoal"] [style*="#B99A68"] {
   background: linear-gradient(135deg, #C5A059 0%, #A8833C 100%) !important;
   color: #181C20 !important;
+}
+html[data-theme="charcoal"] [style*="#A2845A"] *,
+html[data-theme="charcoal"] [style*="#B99A68"] * {
+  color: #181C20 !important;
+}
+
+/* ── شريط التمرير بالثيم الفحمي وذهب الساتان ── */
+html[data-theme="charcoal"] {
+  scrollbar-color: #C5A059 rgba(255, 255, 255, 0.08) !important;
+}
+html[data-theme="charcoal"] ::-webkit-scrollbar-thumb {
+  background: #C5A059 !important;
 }
