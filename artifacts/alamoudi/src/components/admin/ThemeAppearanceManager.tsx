@@ -56,7 +56,7 @@ export function ThemeAppearanceManager({
       toast({
         title: "تم تفعيل الثيم بنجاح ✓",
         description: themeId === "charcoal" 
-          ? "تم تطبيق ثيم الفحم والرخام الرملي العصري."
+          ? "تم تطبيق ثيم الفحم وذهب الساتان الملكي العصري."
           : "تم تطبيق الثيم الملكي الكلاسيكي (الكحلي والذهبي).",
       });
     } catch {
@@ -84,35 +84,35 @@ export function ThemeAppearanceManager({
         </div>
 
         <Badge variant="outline" className="px-2.5 py-0.5 bg-accent/10 border-accent/30 text-accent text-[11px] font-bold shrink-0">
-          {currentActiveTheme === "charcoal" ? "الفحم والرخام الرملي نشط" : "الملكي الكلاسيكي نشط"}
+          {currentActiveTheme === "charcoal" ? "الفحم والذهب الملكي نشط" : "الملكي الكلاسيكي نشط"}
         </Badge>
       </div>
 
       {/* ── 2. Compact Theme Cards Grid ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         
-        {/* Theme 1: Modern Dark Charcoal & Deep Teal & Warm Travertine Sand */}
+        {/* Theme 1: Modern Dark Charcoal & Deep Teal & Royal Satin Gold */}
         <div 
           className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
             currentActiveTheme === "charcoal"
-              ? "border-[#BFA888] shadow-sm ring-1 ring-[#BFA888]/30" 
+              ? "border-[#C5A059] shadow-sm ring-1 ring-[#C5A059]/30" 
               : "border-border/70 hover:border-border"
           }`}
           onClick={() => handleApplyTheme("charcoal")}
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#181C20] border border-[#BFA888]/50 flex items-center justify-center text-[#BFA888] shrink-0">
+              <div className="w-6 h-6 rounded-md bg-[#181C20] border border-[#C5A059]/50 flex items-center justify-center text-[#C5A059] shrink-0">
                 <Palette className="h-3.5 w-3.5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-foreground leading-tight">ثيم الفحم والرخام الرملي العصري</h4>
-                <span className="text-[10px] text-muted-foreground font-mono">Dark Charcoal & Travertine Sand</span>
+                <h4 className="text-xs font-bold text-foreground leading-tight">ثيم الفحم والذهب الساتان العصري</h4>
+                <span className="text-[10px] text-muted-foreground font-mono">Dark Charcoal & Royal Satin Gold</span>
               </div>
             </div>
 
             {currentActiveTheme === "charcoal" ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#BFA888] text-[#181C20] text-[10px] font-bold shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C5A059] text-[#181C20] text-[10px] font-bold shrink-0">
                 <Check className="h-2.5 w-2.5 stroke-[3]" />
                 مفعّل
               </span>
@@ -122,7 +122,7 @@ export function ThemeAppearanceManager({
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-snug mb-3">
-            رمادي فحمي هادئ (#181C20)، لوحة فحمية زجاجية (#22272D)، زر تركوازي (#0F766E)، ورخام رملي راقي (#BFA888).
+            رمادي فحمي هادئ (#181C20)، لوحة فحمية زجاجية (#22272D)، زر تركوازي (#0F766E)، ولمسات ذهب ساتان ملكي متزن (#C5A059).
           </p>
 
           {/* Mini Color Dots */}
@@ -131,7 +131,7 @@ export function ThemeAppearanceManager({
               <span className="w-4 h-4 rounded-full bg-[#181C20] border border-white/20 shadow-2xs" title="خلفية #181C20" />
               <span className="w-4 h-4 rounded-full bg-[#22272D] border border-white/20 shadow-2xs" title="لوحة #22272D" />
               <span className="w-4 h-4 rounded-full bg-[#0F766E] border border-white/20 shadow-2xs" title="بحث #0F766E" />
-              <span className="w-4 h-4 rounded-full bg-[#BFA888] border border-white/20 shadow-2xs" title="رخام رملي #BFA888" />
+              <span className="w-4 h-4 rounded-full bg-[#C5A059] border border-white/20 shadow-2xs" title="ذهب ساتان #C5A059" />
             </div>
 
             <Button
@@ -142,7 +142,7 @@ export function ThemeAppearanceManager({
                 e.stopPropagation();
                 handleApplyTheme("charcoal");
               }}
-              className="h-7 px-3 rounded-lg bg-[#BFA888] hover:bg-[#A89273] text-[#181C20] font-bold text-[11px]"
+              className="h-7 px-3 rounded-lg bg-[#C5A059] hover:bg-[#B38E47] text-[#181C20] font-bold text-[11px]"
             >
               {currentActiveTheme === "charcoal" ? "مفعّل حالياً" : "تفعيل الثيم"}
             </Button>
@@ -216,7 +216,7 @@ export function ThemeAppearanceManager({
             <span>معاينة حية سريعة</span>
           </div>
           <span className="text-[11px] text-muted-foreground">
-            {currentActiveTheme === "charcoal" ? "ثيم الفحم والرخام الرملي" : "الثيم الملكي الكلاسيكي"}
+            {currentActiveTheme === "charcoal" ? "ثيم الفحم وذهب الساتان" : "الثيم الملكي الكلاسيكي"}
           </span>
         </div>
 
@@ -224,7 +224,7 @@ export function ThemeAppearanceManager({
           /* Compact Charcoal Mockup */
           <div className="p-2.5 rounded-lg bg-[#181C20] border border-[#333C46] flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
-              <div className="px-2.5 py-1 rounded-md bg-[#BFA888] text-[#181C20] text-[10px] font-bold shadow-2xs flex items-center gap-1">
+              <div className="px-2.5 py-1 rounded-md bg-[#C5A059] text-[#181C20] text-[10px] font-bold shadow-2xs flex items-center gap-1">
                 <Plus className="h-3 w-3 stroke-[2.5]" />
                 أعرض عقارك
               </div>
@@ -235,7 +235,7 @@ export function ThemeAppearanceManager({
 
             <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-[#22272D] border border-[#333C46] flex-1 max-w-sm w-full justify-between">
               <div className="flex items-center gap-1 text-[10px] text-[#94A3B8]">
-                <Search className="h-3 w-3 text-[#BFA888]" />
+                <Search className="h-3 w-3 text-[#C5A059]" />
                 <span>ابحث عن عقار...</span>
               </div>
               <span className="px-2 py-0.5 rounded bg-[#0F766E] text-white text-[9px] font-bold">
