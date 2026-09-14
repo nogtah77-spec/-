@@ -901,15 +901,15 @@ export default function Contracts() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] space-y-6" dir="rtl">
-        <section className="relative isolate overflow-hidden rounded-2xl border border-[#B99A68]/40 bg-[linear-gradient(135deg,#10202D_0%,#173044_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
+        <section className="admin-page-header relative isolate overflow-hidden rounded-2xl border border-[#B99A68]/40 bg-[linear-gradient(135deg,#10202D_0%,#173044_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
           <div className="relative grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0">
               <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B99A68]/45 bg-[#B99A68]/15 text-[#DCC08A]">
+                <span className="header-icon-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B99A68]/45 bg-[#B99A68]/15 text-[#DCC08A]">
                   <ShieldCheck className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="text-[11px] font-bold tracking-[.14em] text-[#DCC08A]">مركز التوثيق والعمليات</p>
+                  <p className="header-eyebrow text-[11px] font-bold tracking-[.14em] text-[#DCC08A]">مركز التوثيق والعمليات</p>
                   <p className="mt-0.5 text-[11px] text-white/55">مساحة عمل آمنة لفريق العمودي</p>
                 </div>
               </div>

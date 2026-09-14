@@ -504,11 +504,11 @@
 
 /* ────────────────────────────────────────────────────────────
    🎨 THEME ENGINE — INDEPENDENT ARCHITECTURE
-   Modern Dark Charcoal & Deep Teal & Warm Bronze
+   Modern Dark Charcoal & Deep Teal & Warm Travertine Sand
    ──────────────────────────────────────────────────────────── */
 html[data-theme="charcoal"] {
-  --theme-btn-accent: #D97706;
-  --theme-btn-accent-hover: #B45309;
+  --theme-btn-accent: #BFA888;
+  --theme-btn-accent-hover: #A89273;
 }
 
 /* Charcoal Theme — Dark Mode & Default Charcoal Atmosphere (No Glare, Comfortable Deep Glass) */
@@ -530,9 +530,9 @@ html[data-theme="charcoal"]:not(.light) {
   --primary: 175 77% 26%;              /* #0F766E */
   --primary-foreground: 0 0% 100%;     /* #FFFFFF */
 
-  /* الأزرار المميزة واللمسات التفاعلية — نحاسي برونزي دافئ ملكي */
-  --accent: 38 92% 44%;                /* #D97706 */
-  --accent-foreground: 0 0% 100%;      /* #FFFFFF */
+  /* الأزرار المميزة واللمسات التفاعلية — رخام رملي دافئ ملكي هادئ */
+  --accent: 35 31% 64%;                /* #BFA888 الرخام الرملي الهادئ */
+  --accent-foreground: 210 14% 11%;     /* #181C20 تباين فحمي راقي وقارئ ممتاز */
 
   --secondary: 216 14% 19%;            /* #2A3038 */
   --secondary-foreground: 210 40% 98%;
@@ -542,16 +542,16 @@ html[data-theme="charcoal"]:not(.light) {
 
   --border: 215 16% 24%;               /* #333C46 */
   --input: 216 14% 19%;                /* #2A3038 */
-  --ring: 175 77% 26%;                 /* #0F766E */
+  --ring: 35 31% 64%;                  /* #BFA888 */
 
   --sidebar: 210 14% 11%;
   --sidebar-foreground: 210 40% 98%;
   --sidebar-border: 215 16% 24%;
   --sidebar-primary: 175 77% 26%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 38 92% 44%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 175 77% 26%;
+  --sidebar-accent: 216 14% 19%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 35 31% 64%;
 }
 
 /* Charcoal Theme — Light Mode */
@@ -564,30 +564,102 @@ html[data-theme="charcoal"].light {
   --card-border: 214 32% 91%;
   --primary: 175 77% 26%;              /* #0F766E */
   --primary-foreground: 0 0% 100%;
-  --accent: 38 92% 44%;                /* #D97706 */
-  --accent-foreground: 0 0% 100%;
+  --accent: 35 31% 64%;                /* #BFA888 */
+  --accent-foreground: 210 14% 11%;
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222 47% 11%;
   --muted: 210 40% 96.1%;
   --muted-foreground: 215 16% 47%;
   --input: 214 32% 91%;
-  --ring: 175 77% 26%;
+  --ring: 35 31% 64%;
 }
 
 /* ── زر "أعرض عقارك" المتفاعل تلقائياً مع الثيم ── */
 html[data-theme="charcoal"] .action-btn-add-property {
-  background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
-  border-color: rgba(245, 158, 11, 0.45) !important;
-  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.28) !important;
+  background: linear-gradient(135deg, #BFA888 0%, #A48D6E 100%) !important;
+  border-color: rgba(191, 168, 136, 0.45) !important;
+  box-shadow: 0 6px 20px rgba(191, 168, 136, 0.22) !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property:hover {
-  border-color: #FBBF24 !important;
-  box-shadow: 0 10px 28px rgba(217, 119, 6, 0.42) !important;
+  border-color: #D2C4B0 !important;
+  box-shadow: 0 10px 28px rgba(191, 168, 136, 0.35) !important;
+}
+html[data-theme="charcoal"] .action-btn-add-property span {
+  color: #181C20 !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property .action-icon-badge {
-  background: rgba(0, 0, 0, 0.22) !important;
-  color: #FFFFFF !important;
+  background: #181C20 !important;
+  color: #BFA888 !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property .action-subtitle {
-  color: rgba(255, 255, 255, 0.88) !important;
+  color: rgba(24, 28, 32, 0.85) !important;
+}
+
+/* ── هيدر صفحات لوحة التحكم بالثيم الفحمي والرملي ── */
+html[data-theme="charcoal"] .admin-page-header,
+html[data-theme="charcoal"] section[class*="linear-gradient(135deg,#10202D"] {
+  background: linear-gradient(135deg, #181C20 0%, #22272D 58%, #14171A 100%) !important;
+  border-color: rgba(191, 168, 136, 0.3) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35) !important;
+}
+html[data-theme="charcoal"] .admin-page-header .header-icon-badge,
+html[data-theme="charcoal"] .admin-page-header span[class*="bg-[#B99A68]/15"] {
+  background: rgba(191, 168, 136, 0.12) !important;
+  border-color: rgba(191, 168, 136, 0.35) !important;
+  color: #BFA888 !important;
+}
+html[data-theme="charcoal"] .admin-page-header .header-eyebrow,
+html[data-theme="charcoal"] .admin-page-header p[class*="text-[#DCC08A]"] {
+  color: #C2B29D !important;
+}
+
+/* ── أزرار لوحة التحكم الرئيسية (حفظ، إضافة، تفاصيل) ── */
+html[data-theme="charcoal"] .bg-\[\#B99A68\],
+html[data-theme="charcoal"] .bg-\[\#b99a68\] {
+  background-color: #BFA888 !important;
+  color: #181C20 !important;
+}
+html[data-theme="charcoal"] .bg-\[\#B99A68\]:hover,
+html[data-theme="charcoal"] .bg-\[\#b99a68\]:hover {
+  background-color: #A89273 !important;
+}
+html[data-theme="charcoal"] .text-\[\#B99A68\],
+html[data-theme="charcoal"] .text-\[\#b99a68\],
+html[data-theme="charcoal"] .text-\[\#DCC08A\],
+html[data-theme="charcoal"] .text-\[\#dcc08a\],
+html[data-theme="charcoal"] .text-\[\#C9AB78\],
+html[data-theme="charcoal"] .text-\[\#c9ab78\],
+html[data-theme="charcoal"] .text-\[\#D4AF37\],
+html[data-theme="charcoal"] .text-\[\#d4af37\] {
+  color: #BFA888 !important;
+}
+html[data-theme="charcoal"] .border-\[\#B99A68\]\/35,
+html[data-theme="charcoal"] .border-\[\#B99A68\]\/40,
+html[data-theme="charcoal"] .border-\[\#B99A68\]\/45,
+html[data-theme="charcoal"] .border-\[\#DCC08A\],
+html[data-theme="charcoal"] .border-\[\#dcc08a\] {
+  border-color: rgba(191, 168, 136, 0.35) !important;
+}
+
+/* ── تبويبات الإعدادات والصفحات النشطة ── */
+html[data-theme="charcoal"] [data-state="active"][class*="bg-[#10202D]"] {
+  background-color: #22272D !important;
+  color: #BFA888 !important;
+  border-color: rgba(191, 168, 136, 0.45) !important;
+}
+
+/* ── شارات العقارات المميزة VIP ── */
+html[data-theme="charcoal"] [class*="from-amber-600"] {
+  background: linear-gradient(135deg, #BFA888 0%, #A48D6E 100%) !important;
+  color: #181C20 !important;
+  border-color: rgba(191, 168, 136, 0.45) !important;
+}
+html[data-theme="charcoal"] [class*="from-amber-600"] svg {
+  fill: #181C20 !important;
+}
+
+/* ── أزرار الـ CTA السفلية ── */
+html[data-theme="charcoal"] [style*="#A2845A"] {
+  background: linear-gradient(135deg, #BFA888 0%, #A48D6E 100%) !important;
+  color: #181C20 !important;
 }
