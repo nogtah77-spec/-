@@ -114,7 +114,7 @@ export function PropertyFilterPanel({
     <section className="rounded-2xl border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
       {/* ── 1. Hero Search Input with Animated Sliding Ticker ── */}
       <div className="relative mb-5 group">
-        <div className="relative flex items-center rounded-2xl border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-11 sm:h-12">
+        <div className="relative flex items-stretch rounded-2xl border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-11 sm:h-12">
           <div className="flex items-center justify-center pr-4 text-accent">
             <Search className="h-5 w-5" />
           </div>
@@ -159,24 +159,22 @@ export function PropertyFilterPanel({
             <button
               type="button"
               aria-label="مسح البحث"
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="px-2.5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => update({ searchText: "" }, true)}
             >
               <X className="h-4 w-4" />
             </button>
           )}
 
-          {/* Search CTA Button */}
-          <div className="pl-1.5 pr-2">
-            <Button
-              type="button"
-              onClick={() => onApply(filters)}
-              className="h-8.5 sm:h-9 px-3.5 sm:px-5 rounded-xl bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-md border border-accent/40 hover:border-accent gap-1.5 text-xs sm:text-sm transition-all"
-            >
-              <Search className="h-4 w-4" />
-              <span>بحث</span>
-            </Button>
-          </div>
+          {/* Seamlessly Merged Search CTA Button */}
+          <button
+            type="button"
+            onClick={() => onApply(filters)}
+            className="h-full px-5 sm:px-7 rounded-none bg-primary text-primary-foreground font-black hover:bg-primary/90 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 border-s border-border/80 hover:border-accent/50 focus:outline-hidden select-none cursor-pointer"
+          >
+            <Search className="h-4 w-4" />
+            <span>بحث</span>
+          </button>
         </div>
       </div>
 
