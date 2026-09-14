@@ -183,8 +183,9 @@ export default function PropertyDetails() {
   // Update page meta independently without re-triggering view tracking
   useEffect(() => {
     if (property) {
+      const propCode = property.code ? `${property.code} | العمودي للتسويق العقاري` : (property.title ? `${property.title} | العمودي للتسويق العقاري` : "العمودي للتسويق العقاري");
       updatePageMeta({
-        title: property.code || property.title || id,
+        title: propCode,
         description: property.description || `${property.title || property.code} - السعر: ${formatNumber(property.price)} ج.م`,
         image: property.images?.[0],
       });

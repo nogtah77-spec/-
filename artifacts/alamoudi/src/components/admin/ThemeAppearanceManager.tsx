@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useData, type SiteSettings } from "@/context/DataContext";
+import { syncThemeColor } from "@/lib/meta";
 
 interface ThemeAppearanceManagerProps {
   form: SiteSettings;
@@ -46,6 +47,7 @@ export function ThemeAppearanceManager({
     try {
       localStorage.setItem("alm_active_theme", themeId);
     } catch {}
+    syncThemeColor(themeId);
 
     // 2. Update parent form state
     setForm((prev) => ({ ...prev, activeThemeId: themeId }));

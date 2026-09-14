@@ -42,12 +42,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-      <!-- Instant Theme Engine Initializer (Anti-flash) -->
+      <!-- Instant Theme Engine Initializer (Anti-flash & Status Bar Sync) -->
     <script>
       (function() {
         try {
           var t = localStorage.getItem("alm_active_theme") || "classic";
           document.documentElement.setAttribute("data-theme", t);
+          var tc = t === "charcoal" ? "#181C20" : "#10202D";
+          var metaThemeColor = document.querySelector('meta[name="theme-color"]');
+          if (metaThemeColor) {
+            metaThemeColor.setAttribute("content", tc);
+          }
+          var msNav = document.querySelector('meta[name="msapplication-navbutton-color"]');
+          if (msNav) {
+            msNav.setAttribute("content", tc);
+          }
         } catch (e) {}
       })();
     </script>

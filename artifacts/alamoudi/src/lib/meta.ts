@@ -63,4 +63,63 @@ export function updatePageMeta({
   if (image) {
     setMeta("twitter:image", image);
   }
+  // Auto-sync top bar theme-color
+  syncThemeColor();
 }
+
+/**
+ * Dynamic Browser Top Bar & Status Bar Theme Color Synchronizer
+ * Updates <meta name="theme-color">, msapplication-navbutton-color,
+ * and apple-mobile-web-app-status-bar-style in real-time.
+ */
+export function syncThemeColor(themeId?: string, isLightMode?: boolean) {
+  if (typeof document === "undefined") return;
+
+  const currentTheme =
+    themeId ||
+    document.documentElement.getAttribute("data-theme") ||
+    (typeof localStorage !== "undefined" ? localStorage.getItem("alm_active_theme") : null) ||
+    "classic";
+
+  const isDark =
+    isLightMode === false ||
+    (isLightMode === undefined && document.documentElement.classList.contains("dark")) ||
+    !document.documentElement.classList.contains("light");
+
+  // Charcoal Theme: #181C20 (dark) or #F8FAFC (light)
+  // Classic Theme: #10202D (Midnight Blue)
+  let targetColor = "#10202D";
+  if (currentTheme === "charcoal") {
+    targetColor = isDark ? "#181C20" : "#F8FAFC";
+  } else {
+    targetColor = isDark ? "#10202D" : "#10202D";
+  }
+
+  // 1. Standard HTML5 theme-color meta tag (Chrome Android, Safari iOS, PWA Titlebar)
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", targetColor);
+
+  // 2. Microsoft Windows PWA / Tile nav button color
+  let msMeta = document.querySelector('meta[name="msapplication-navbutton-color"]');
+  if (!msMeta) {
+    msMeta = document.createElement("meta");
+    msMeta.setAttribute("name", "msapplication-navbutton-color");
+    document.head.appendChild(msMeta);
+  }
+  msMeta.setAttribute("content", targetColor);
+
+  // 3. Apple iOS Safari Status Bar Style
+  let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (!appleMeta) {
+    appleMeta = document.createElement("meta");
+    appleMeta.setAttribute("name", "apple-mobile-web-app-status-bar-style");
+    document.head.appendChild(appleMeta);
+  }
+  appleMeta.setAttribute("content", isDark ? "black-translucent" : "default");
+}
+

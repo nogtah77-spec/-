@@ -18,6 +18,7 @@ import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { InstallPwaPrompt } from "@/components/ui/InstallPwaPrompt";
 import { OfflineStatusBar } from "@/components/ui/OfflineStatusBar";
 import { prefetchAppChunks } from "@/lib/chunkPrefetcher";
+import { syncThemeColor } from "@/lib/meta";
 
 import { lazyWithRetry } from "@/lib/utils";
 
@@ -102,28 +103,29 @@ function ScrollToTop() {
 function RouteTitleManager() {
   const [location] = useLocation();
   useEffect(() => {
+    const brand = "العمودي للتسويق العقاري";
     if (location === "/" || location === "") {
-      document.title = "الرئيسية | العمودي للتسويق العقاري";
+      document.title = `الرئيسية | ${brand}`;
     } else if (location.startsWith("/properties/") || location.startsWith("/property/")) {
-      // PropertyDetails sets exact property code alone
+      // PropertyDetails sets exact property code and brand suffix
     } else if (location === "/about") {
-      document.title = "من نحن";
+      document.title = `من نحن | ${brand}`;
     } else if (location === "/add-property") {
-      document.title = "أضف عقارك";
+      document.title = `أضف عقارك | ${brand}`;
     } else if (location === "/consultation") {
-      document.title = "طلب استشارة عقارية";
+      document.title = `طلب استشارة عقارية | ${brand}`;
     } else if (location === "/finishing-services") {
-      document.title = "خدمات التشطيب والديكور";
+      document.title = `خدمات التشطيب والديكور | ${brand}`;
     } else if (location === "/favorites") {
-      document.title = "العقارات المفضلة";
+      document.title = `العقارات المفضلة | ${brand}`;
     } else if (location === "/compare") {
-      document.title = "مقارنة العقارات";
+      document.title = `مقارنة العقارات | ${brand}`;
     } else if (location === "/privacy") {
-      document.title = "سياسة الخصوصية";
+      document.title = `سياسة الخصوصية | ${brand}`;
     } else if (location === "/login") {
-      document.title = "تسجيل الدخول";
+      document.title = `تسجيل الدخول | ${brand}`;
     } else if (location.startsWith("/admin")) {
-      document.title = "لوحة التحكم";
+      document.title = `لوحة التحكم | ${brand}`;
     }
   }, [location]);
   return null;
@@ -285,6 +287,7 @@ function ThemeEnforcer() {
     try {
       localStorage.setItem("alm_active_theme", activeTheme);
     } catch {}
+    syncThemeColor(activeTheme, mode === "light");
   }, [settings.themeMode, settings.activeThemeId, setTheme]);
   return null;
 }
