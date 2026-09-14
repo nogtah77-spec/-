@@ -273,14 +273,19 @@ function AppReadyGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ── ThemeEnforcer: يطبّق وضع الإضاءة المحدد من لوحة التحكم ──────────────────
+// ── ThemeEnforcer: يطبّق وضع الإضاءة والثيم المحدد من لوحة التحكم ────────────
 function ThemeEnforcer() {
   const { settings } = useData();
   const { setTheme } = useTheme();
   useEffect(() => {
     const mode = settings.themeMode ?? "user";
     if (mode === "light" || mode === "dark") setTheme(mode);
-  }, [settings.themeMode, setTheme]);
+    const activeTheme = settings.activeThemeId || localStorage.getItem("alm_active_theme") || "charcoal";
+    document.documentElement.setAttribute("data-theme", activeTheme);
+    try {
+      localStorage.setItem("alm_active_theme", activeTheme);
+    } catch {}
+  }, [settings.themeMode, settings.activeThemeId, setTheme]);
   return null;
 }
 

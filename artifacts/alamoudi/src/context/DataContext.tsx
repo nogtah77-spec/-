@@ -357,9 +357,11 @@ export interface SiteSettings {
   /** Allow authenticated staff members to download property images. */
   allowStaffImageDownloads: boolean;
   themeMode?: "light" | "dark" | "user";
+  activeThemeId?: "classic" | "charcoal" | string;
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
+  activeThemeId: "charcoal",
   companyName: "العمودي للتسويق العقاري",
   companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
   heroLine1: "شريكك الموثوق في عالم التسويق العقاري والتشطيبات",
@@ -2201,6 +2203,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         qrSectionEnabled: nextQrSectionEnabled,
         qrCodes: nextQrCodes,
       }));
+      if (nextSettings.activeThemeId) {
+        localStorage.setItem("alm_active_theme", nextSettings.activeThemeId);
+        document.documentElement.setAttribute("data-theme", nextSettings.activeThemeId);
+      }
       if (nextSettings.homeBackgroundSettings) {
         localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
       }

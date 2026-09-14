@@ -501,3 +501,93 @@
     margin: 10mm;
   }
 }
+
+/* ────────────────────────────────────────────────────────────
+   🎨 THEME ENGINE — INDEPENDENT ARCHITECTURE
+   Modern Dark Charcoal & Deep Teal & Warm Bronze
+   ──────────────────────────────────────────────────────────── */
+html[data-theme="charcoal"] {
+  --theme-btn-accent: #D97706;
+  --theme-btn-accent-hover: #B45309;
+}
+
+/* Charcoal Theme — Dark Mode & Default Charcoal Atmosphere (No Glare, Comfortable Deep Glass) */
+html[data-theme="charcoal"].dark,
+html[data-theme="charcoal"]:not(.light) {
+  --background: 210 14% 11%;           /* #181C20 الرمادي الحديدي الفحمي الداكن */
+  --foreground: 210 40% 98%;           /* #F8FAFC الأبيض الناعم المريح للعين */
+
+  /* لوحة البحث والبطاقات الفحمية الزجاجية العميقة — راحة بصرية فائقة بدون بياض فاقع */
+  --card: 214 14% 15%;                 /* #22272D فحم زجاجي عميق راقي */
+  --card-foreground: 210 40% 98%;      /* #F8FAFC */
+  --card-border: 215 16% 24%;          /* #333C46 إطار فحمي رفيع */
+
+  --popover: 214 14% 15%;              /* #22272D */
+  --popover-foreground: 210 40% 98%;
+  --popover-border: 215 16% 24%;
+
+  /* زر البحث والتحديدات النشطة — تركواز نيلي عميق مريح للعين */
+  --primary: 175 77% 26%;              /* #0F766E */
+  --primary-foreground: 0 0% 100%;     /* #FFFFFF */
+
+  /* الأزرار المميزة واللمسات التفاعلية — نحاسي برونزي دافئ ملكي */
+  --accent: 38 92% 44%;                /* #D97706 */
+  --accent-foreground: 0 0% 100%;      /* #FFFFFF */
+
+  --secondary: 216 14% 19%;            /* #2A3038 */
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 216 14% 19%;                /* #2A3038 */
+  --muted-foreground: 215 16% 65%;     /* #94A3B8 رمادي متوسط */
+
+  --border: 215 16% 24%;               /* #333C46 */
+  --input: 216 14% 19%;                /* #2A3038 */
+  --ring: 175 77% 26%;                 /* #0F766E */
+
+  --sidebar: 210 14% 11%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-border: 215 16% 24%;
+  --sidebar-primary: 175 77% 26%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 38 92% 44%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-ring: 175 77% 26%;
+}
+
+/* Charcoal Theme — Light Mode */
+html[data-theme="charcoal"].light {
+  --background: 210 20% 98%;           /* #F8FAFC */
+  --foreground: 222 47% 11%;           /* #0F172A */
+  --border: 214 32% 91%;               /* #E2E8F0 */
+  --card: 0 0% 100%;                   /* #FFFFFF */
+  --card-foreground: 222 47% 11%;
+  --card-border: 214 32% 91%;
+  --primary: 175 77% 26%;              /* #0F766E */
+  --primary-foreground: 0 0% 100%;
+  --accent: 38 92% 44%;                /* #D97706 */
+  --accent-foreground: 0 0% 100%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215 16% 47%;
+  --input: 214 32% 91%;
+  --ring: 175 77% 26%;
+}
+
+/* ── زر "أعرض عقارك" المتفاعل تلقائياً مع الثيم ── */
+html[data-theme="charcoal"] .action-btn-add-property {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.28) !important;
+}
+html[data-theme="charcoal"] .action-btn-add-property:hover {
+  border-color: #FBBF24 !important;
+  box-shadow: 0 10px 28px rgba(217, 119, 6, 0.42) !important;
+}
+html[data-theme="charcoal"] .action-btn-add-property .action-icon-badge {
+  background: rgba(0, 0, 0, 0.22) !important;
+  color: #FFFFFF !important;
+}
+html[data-theme="charcoal"] .action-btn-add-property .action-subtitle {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
