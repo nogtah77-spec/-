@@ -65,6 +65,8 @@ import { checkUserPermission } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
 import { HomeBackgroundManager } from "@/components/admin/HomeBackgroundManager";
+import { ThemeAppearanceManager } from "@/components/admin/ThemeAppearanceManager";
+import { Layers } from "lucide-react";
 
 const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = {
   thumbnail: "",
@@ -519,7 +521,7 @@ export default function Settings() {
                 className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <Sparkles className="h-4 w-4 shrink-0 text-accent" />
-                <span className="truncate">خلفيات ومظهر المنصة</span>
+                <span className="truncate">الخلفيات والثيمات</span>
               </TabsTrigger>
             )}
             {canEditSettings && (
@@ -1598,14 +1600,49 @@ export default function Settings() {
             </div>
           </TabsContent>
 
-          {/* ── Home Ambient Backgrounds & Appearance ── */}
+          {/* ── Home Ambient Backgrounds & Themes ── */}
           <TabsContent value="appearance" className="mt-6">
-            <HomeBackgroundManager
-              form={form}
-              setForm={setForm}
-              onSave={handleSave}
-              saving={saving}
-            />
+            <Tabs defaultValue="backgrounds" className="w-full space-y-6">
+              {/* Sub Tabs: الخلفيات & الثيمات */}
+              <div className="flex items-center justify-between gap-3 p-2 bg-card/95 border border-border/80 rounded-2xl shadow-xs">
+                <TabsList className="grid grid-cols-2 gap-2 w-full sm:w-80 h-auto p-1 bg-muted/60 rounded-xl">
+                  <TabsTrigger
+                    value="backgrounds"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                  >
+                    <Layers className="h-4 w-4 shrink-0" />
+                    <span>الخلفيات</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="themes"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                  >
+                    <Palette className="h-4 w-4 shrink-0" />
+                    <span>الثيمات</span>
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+
+              {/* Tab 1: الخلفيات */}
+              <TabsContent value="backgrounds" className="mt-4 focus-visible:outline-none focus-visible:ring-0">
+                <HomeBackgroundManager
+                  form={form}
+                  setForm={setForm}
+                  onSave={handleSave}
+                  saving={saving}
+                />
+              </TabsContent>
+
+              {/* Tab 2: الثيمات */}
+              <TabsContent value="themes" className="mt-4 focus-visible:outline-none focus-visible:ring-0">
+                <ThemeAppearanceManager
+                  form={form}
+                  setForm={setForm}
+                  onSave={handleSave}
+                  saving={saving}
+                />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* ── TikTok Videos ── */}
