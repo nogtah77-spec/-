@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useData } from "@/context/DataContext";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
+import { updatePageMeta } from "@/lib/meta";
 
 function clampPercent(value: number | undefined, fallback: number): number {
   const number = Number(value);
@@ -46,6 +47,17 @@ export default function RegionPage({ params }: { params: { regionId: string } })
   }, []);
 
   const region = regions.find(r => r.id === regionId);
+
+  useEffect(() => {
+    if (region) {
+      updatePageMeta({
+        title: `عقارات ${region.name} | العمودي للتسويق العقاري`,
+        description: `تصفح أفضل العقارات والوحدات المتاحة للبيع والإيجار في ${region.name} من شركة العمودي للتسويق العقاري.`,
+        image: region.heroImage,
+      });
+    }
+  }, [region]);
+
   const getInitialCardSize = () => {
     try {
       const stored = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
@@ -139,11 +151,11 @@ export default function RegionPage({ params }: { params: { regionId: string } })
       />
 
       <main className="flex-1">
-        <section className="relative isolate h-[clamp(220px,25vw,320px)] w-full overflow-hidden bg-primary">
+        <section className="relative isolate h-[clamp(180px,22vw,280px)] w-full overflow-hidden bg-muted shadow-xs">
           {region.heroImage && !heroImageFailed ? (
             <img
               src={region.heroImage}
-              alt=""
+              alt={region.name}
               className="absolute inset-0 h-full w-full object-cover object-center"
               onError={() => setHeroImageFailed(true)}
             />
@@ -151,44 +163,60 @@ export default function RegionPage({ params }: { params: { regionId: string } })
             <div className="absolute inset-0 bg-[var(--gradient-hero)]" />
           )}
           <div
-            className="absolute inset-0"
-            style={{ backgroundColor: hexToRgba(overlayColor, overlayOpacity) }}
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: hexToRgba(overlayColor, Math.min(overlayOpacity, 15)) }}
           />
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 pointer-events-none"
             style={{
-              background: `linear-gradient(to top, ${hexToRgba(overlayColor, gradientOpacity)} 0%, ${hexToRgba(overlayColor, gradientOpacity * 0.25)} 52%, transparent 100%)`,
+              background: `linear-gradient(to top, ${hexToRgba(overlayColor, Math.min(gradientOpacity, 35))} 0%, transparent 100%)`,
             }}
           />
-          <div className="relative z-10 flex h-full items-center justify-center px-4 text-center text-white">
-            <div className="max-w-3xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.75)]">
-              <h1 className="font-sans text-2xl font-black leading-tight tracking-tight text-white sm:text-3xl md:text-5xl">
-                {region.name}
-              </h1>
-              <nav aria-label="التنقل" className="mt-5 flex items-center justify-center gap-2.5 text-xs font-semibold text-white/95 sm:mt-7 sm:gap-3 sm:text-sm">
-                <Link href="/" className="transition-colors hover:text-accent">الرئيسية</Link>
-                <ChevronRight className="h-4 w-4 rotate-180 text-white/75" />
-                <span className="text-white">{region.name}</span>
-              </nav>
-            </div>
-          </div>
         </section>
 
         <section className="py-3 sm:py-4 md:py-5">
           <div className="container px-3 sm:px-6">
 
             <div className="mb-5 sm:mb-7">
-              {/* عنوان النتائج في بطاقة مستقلة عن لوحة الفلاتر */}
-              <div className="rounded-xl border border-border/80 bg-card px-4 py-4 shadow-sm sm:px-6 sm:py-5">
-                <div className="flex flex-wrap items-end justify-between gap-3">
+              {/* عنوان النتائج وبطاقة التنقل */}
+              <div className="rounded-2xl border border-border/80 bg-card px-4 py-4 shadow-sm sm:px-6 sm:py-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="mb-1 text-xs font-medium tracking-wide text-accent">استكشف عقارات المدينة</p>
-                    <h2 className="text-xl font-bold text-foreground sm:text-2xl">
+                    {/* رابط التنقل السريع للرئيسية */}
+                    <nav aria-label="التنقل" className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
+                      <Link
+                        href="/"
+                        className="inline-flex items-center gap-1 text-accent hover:text-accent/80 transition-colors"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+                        <span>الرئيسية</span>
+                      </Link>
+                      <span className="text-muted-foreground/40">/</span>
+                      <span className="text-foreground">{region.name}</span>
+                    </nav>
+
+                    <h1 className="text-xl font-extrabold text-foreground sm:text-2xl tracking-tight">
                       عقارات {region.name}
-                    </h2>
+                    </h1>
                     <div className="mt-2 h-0.5 w-12 rounded-full bg-accent" />
                   </div>
-                  <p className="text-xs text-muted-foreground">استخدم الفلاتر للوصول إلى العقار المناسب</p>
+
+                  <div className="flex items-center gap-3">
+                    <p className="text-xs text-muted-foreground hidden md:block">
+                      استخدم الفلاتر للوصول إلى العقار المناسب
+                    </p>
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="h-8.5 rounded-xl text-xs gap-1.5 border-accent/40 text-accent hover:bg-accent/10"
+                    >
+                      <Link href="/">
+                        <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+                        <span>العودة للرئيسية</span>
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
