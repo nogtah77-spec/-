@@ -182,7 +182,7 @@ export default function Consultation() {
                         </label>
                       </div>
 
-                      <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-bold rounded-lg disabled:opacity-50">
+                      <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-bold rounded-xl disabled:opacity-50">
                         {loading ? "جاري الإرسال..." : "إرسال الاستشارة"}
                       </Button>
                     </form>

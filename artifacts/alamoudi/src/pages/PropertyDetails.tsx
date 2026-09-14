@@ -737,14 +737,14 @@ export default function PropertyDetails() {
               <Card className="card-luxury sticky top-24">
                 <CardHeader className="pb-3"><CardTitle className="text-base">تواصل بشأن العقار</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                  <div className="bg-muted/50 rounded-xl p-3 text-center">
                     <p className="text-xs text-muted-foreground mb-1">كود العقار</p>
                     <p className="font-bold text-accent text-lg tracking-wider">{property.code}</p>
                   </div>
 
                   {waHref && (
                     <a href={waHref} target="_blank" rel="noopener noreferrer">
-                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 rounded-lg">
+                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 rounded-xl">
                         <WhatsAppIcon className="h-4 w-4" />
                         تواصل عبر واتساب
                       </Button>
@@ -752,17 +752,17 @@ export default function PropertyDetails() {
                   )}
                   {settings.phone1 && (
                     <a href={`tel:${settings.phone1.replace(/\s/g, "")}`}>
-                      <Button variant="outline" className="w-full gap-2 rounded-lg mt-2 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30">
+                      <Button variant="outline" className="w-full gap-2 rounded-xl mt-2 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30">
                         <Phone className="h-4 w-4" />
                         {settings.phone1}
                       </Button>
                     </a>
                   )}
-                  <Button variant="outline" className="w-full gap-2 rounded-lg" onClick={handleCopy}>
+                  <Button variant="outline" className="w-full gap-2 rounded-xl" onClick={handleCopy}>
                     <Copy className="h-4 w-4" />
                     نسخ كود العقار
                   </Button>
-                  <Button variant="outline" className="w-full gap-2 rounded-lg" onClick={handleShare}>
+                  <Button variant="outline" className="w-full gap-2 rounded-xl" onClick={handleShare}>
                     <Share2 className="h-4 w-4" />
                     مشاركة العقار
                   </Button>
@@ -770,7 +770,7 @@ export default function PropertyDetails() {
                   {property.externalUrl && (
                     <Button
                       variant="outline"
-                      className="w-full gap-2 rounded-lg text-accent border-accent/30 hover:bg-accent/10 mt-2"
+                      className="w-full gap-2 rounded-xl text-accent border-accent/30 hover:bg-accent/10 mt-2"
                       onClick={() => window.open(property.externalUrl!, "_blank", "noopener,noreferrer")}
                     >
                       <ExternalLink className="h-4 w-4" />

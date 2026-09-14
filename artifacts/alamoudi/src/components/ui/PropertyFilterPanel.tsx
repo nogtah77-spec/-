@@ -171,7 +171,7 @@ export function PropertyFilterPanel({
             <Button
               type="button"
               onClick={() => onApply(filters)}
-              className="h-8.5 sm:h-9 px-3.5 sm:px-5 rounded-lg bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-md border border-accent/40 hover:border-accent gap-1.5 text-xs sm:text-sm transition-all"
+              className="h-8.5 sm:h-9 px-3.5 sm:px-5 rounded-xl bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-md border border-accent/40 hover:border-accent gap-1.5 text-xs sm:text-sm transition-all"
             >
               <Search className="h-4 w-4" />
               <span>بحث</span>
@@ -505,7 +505,7 @@ export function PropertyFilterPanel({
               update({ sort: value as PropertyFilterState["sort"] }, true)
             }
           >
-            <SelectTrigger className="h-8 w-36 rounded-lg text-xs font-medium bg-muted/40">
+            <SelectTrigger className="h-8 w-36 rounded-xl text-xs font-medium bg-muted/40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent dir="rtl" className="rounded-xl">
@@ -525,7 +525,7 @@ export function PropertyFilterPanel({
             </span>
           )}
 
-          <div className="flex items-center gap-1 rounded-lg border border-border/60 bg-muted/30 p-0.5">
+          <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/30 p-0.5">
             <button
               type="button"
               aria-label="عرض شبكي"

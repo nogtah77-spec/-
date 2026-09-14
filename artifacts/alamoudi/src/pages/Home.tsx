@@ -395,7 +395,7 @@ export default function Home() {
                 <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
-                    className="h-8 gap-1.5 border-accent/40 text-accent hover:bg-accent/10 text-sm"
+                    className="h-8 gap-1.5 rounded-xl border-accent/40 text-accent hover:bg-accent/10 text-sm"
                     onClick={clearFilters}
                   >
                     <X className="h-4 w-4" />
@@ -431,7 +431,7 @@ export default function Home() {
           <section className="py-4 md:py-5 bg-transparent relative z-10">
               <div className="container px-3 sm:px-6">
               <div className="max-w-3xl mx-auto">
-                <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
+                <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
                   <div
                     className="absolute inset-0 opacity-[0.04] pointer-events-none"
                     style={{
