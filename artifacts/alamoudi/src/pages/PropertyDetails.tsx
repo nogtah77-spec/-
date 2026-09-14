@@ -184,12 +184,12 @@ export default function PropertyDetails() {
   useEffect(() => {
     if (property) {
       updatePageMeta({
-        title: `${property.title || property.code} (${property.code})`,
+        title: property.code || property.title || id,
         description: property.description || `${property.title || property.code} - السعر: ${formatNumber(property.price)} ج.م`,
         image: property.images?.[0],
       });
     }
-  }, [property?.title, property?.code, property?.description, property?.price, property?.images]);
+  }, [property?.title, property?.code, property?.description, property?.price, property?.images, id]);
 
   if (!property) {
     if (!ready || directLoading) {

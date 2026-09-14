@@ -99,6 +99,36 @@ function ScrollToTop() {
   return null;
 }
 
+function RouteTitleManager() {
+  const [location] = useLocation();
+  useEffect(() => {
+    if (location === "/" || location === "") {
+      document.title = "الرئيسية | العمودي للتسويق العقاري";
+    } else if (location.startsWith("/properties/") || location.startsWith("/property/")) {
+      // PropertyDetails sets exact property code alone
+    } else if (location === "/about") {
+      document.title = "من نحن";
+    } else if (location === "/add-property") {
+      document.title = "أضف عقارك";
+    } else if (location === "/consultation") {
+      document.title = "طلب استشارة عقارية";
+    } else if (location === "/finishing-services") {
+      document.title = "خدمات التشطيب والديكور";
+    } else if (location === "/favorites") {
+      document.title = "العقارات المفضلة";
+    } else if (location === "/compare") {
+      document.title = "مقارنة العقارات";
+    } else if (location === "/privacy") {
+      document.title = "سياسة الخصوصية";
+    } else if (location === "/login") {
+      document.title = "تسجيل الدخول";
+    } else if (location.startsWith("/admin")) {
+      document.title = "لوحة التحكم";
+    }
+  }, [location]);
+  return null;
+}
+
 // Global swipe handler — mounted once in App, never re-mounts on navigation.
 // Dispatches a custom event that Navbar listens for, so the drawer opens
 // from any page without depending on Navbar's own mount cycle.
@@ -285,6 +315,7 @@ function App() {
                     <AppReadyGate>
                       <ErrorBoundary>
                         <ScrollToTop />
+                        <RouteTitleManager />
                         <Router />
                       </ErrorBoundary>
                     </AppReadyGate>

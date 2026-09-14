@@ -19,9 +19,8 @@ export function updatePageMeta({
 }: PageMetaOptions) {
   if (typeof document === "undefined") return;
 
-  const baseTitle = "العمودي للتسويق العقاري";
-  const fullTitle = title ? `${title} | ${baseTitle}` : baseTitle;
-  document.title = fullTitle;
+  const finalTitle = (title || "الرئيسية | العمودي للتسويق العقاري").trim();
+  document.title = finalTitle;
 
   const defaultDesc = "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.";
   const finalDesc = description || defaultDesc;
@@ -46,20 +45,20 @@ export function updatePageMeta({
   setMeta("description", finalDesc);
 
   // OpenGraph (Facebook, WhatsApp, Telegram, LinkedIn)
-  setMeta("og:title", fullTitle, true);
+  setMeta("og:title", finalTitle, true);
   setMeta("og:description", finalDesc, true);
   setMeta("og:url", url, true);
   setMeta("og:type", type, true);
-  setMeta("og:site_name", baseTitle, true);
+  setMeta("og:site_name", "العمودي للتسويق العقاري", true);
 
   if (image) {
     setMeta("og:image", image, true);
-    setMeta("og:image:alt", fullTitle, true);
+    setMeta("og:image:alt", finalTitle, true);
   }
 
   // Twitter Cards
   setMeta("twitter:card", image ? "summary_large_image" : "summary");
-  setMeta("twitter:title", fullTitle);
+  setMeta("twitter:title", finalTitle);
   setMeta("twitter:description", finalDesc);
   if (image) {
     setMeta("twitter:image", image);
