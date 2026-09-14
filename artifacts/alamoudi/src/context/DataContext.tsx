@@ -1285,15 +1285,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // 5. Sync background settings from Supabase
     supabaseService.fetchHomeBackground().then(cloudBg => {
       if (destroyed) return;
-      if (cloudBg && (cloudBg.bgImageDark || cloudBg.bgImageLight)) {
+      if (cloudBg) {
         setSettings(prev => {
-          const mergedBg = {
+          const mergedBg: HomeBackgroundSettings = {
             ...DEFAULT_SETTINGS.homeBackgroundSettings!,
             ...(prev.homeBackgroundSettings || {}),
             ...cloudBg,
+            bgImageDark: cloudBg.bgImageDark !== undefined ? cloudBg.bgImageDark : (prev.homeBackgroundSettings?.bgImageDark ?? ""),
+            bgImageLight: cloudBg.bgImageLight !== undefined ? cloudBg.bgImageLight : (prev.homeBackgroundSettings?.bgImageLight ?? ""),
           };
           try {
             localStorage.setItem("alm_home_bg", JSON.stringify(mergedBg));
+            const currentSet = localStorage.getItem("alm_settings");
+            if (currentSet) {
+              const parsed = JSON.parse(currentSet);
+              parsed.homeBackgroundSettings = mergedBg;
+              localStorage.setItem("alm_settings", JSON.stringify(parsed));
+            }
           } catch {}
           return {
             ...prev,
@@ -1335,21 +1343,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (rawBg) cachedHomeBg = JSON.parse(rawBg);
           } catch {}
 
-          const activeDark = cloudSettings.homeBackgroundSettings?.bgImageDark || prev.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || "";
-          const activeLight = cloudSettings.homeBackgroundSettings?.bgImageLight || prev.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || "";
+          const cloudHomeBg = cloudSettings.homeBackgroundSettings;
+          const activeDark = cloudHomeBg?.bgImageDark !== undefined
+            ? cloudHomeBg.bgImageDark
+            : (prev.homeBackgroundSettings?.bgImageDark !== undefined
+                ? prev.homeBackgroundSettings.bgImageDark
+                : (cachedHomeBg?.bgImageDark ?? ""));
+          const activeLight = cloudHomeBg?.bgImageLight !== undefined
+            ? cloudHomeBg.bgImageLight
+            : (prev.homeBackgroundSettings?.bgImageLight !== undefined
+                ? prev.homeBackgroundSettings.bgImageLight
+                : (cachedHomeBg?.bgImageLight ?? ""));
+
+          const mergedBg: HomeBackgroundSettings = {
+            ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+            ...(prev.homeBackgroundSettings || {}),
+            ...(cloudHomeBg || {}),
+            bgImageDark: activeDark,
+            bgImageLight: activeLight,
+          };
 
           const merged = {
             ...DEFAULT_SETTINGS,
             ...prev,
             ...cloudSettings,
-            homeBackgroundSettings: {
-              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-              ...(cachedHomeBg || {}),
-              ...(prev.homeBackgroundSettings || {}),
-              ...(cloudSettings.homeBackgroundSettings || {}),
-              bgImageDark: activeDark,
-              bgImageLight: activeLight,
-            },
+            homeBackgroundSettings: mergedBg,
             qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
             qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
             tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
@@ -1357,9 +1375,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           };
           try {
             localStorage.setItem("alm_settings", JSON.stringify(merged));
-            if (merged.homeBackgroundSettings) {
-              localStorage.setItem("alm_home_bg", JSON.stringify(merged.homeBackgroundSettings));
-            }
+            localStorage.setItem("alm_home_bg", JSON.stringify(mergedBg));
           } catch {}
           return merged;
         });
@@ -1537,9 +1553,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } else if (event === "ACTIVITY_LOG_CLEAR") {
         setActivityLogs([]);
         try { localStorage.removeItem("alm_activity_logs"); } catch {}
+      } else if (event === "HOME_BG_UPDATE" && data.homeBackgroundSettings) {
+        const newBg = data.homeBackgroundSettings;
+        setSettings(prev => {
+          const updated = {
+            ...prev,
+            homeBackgroundSettings: newBg,
+          };
+          try {
+            localStorage.setItem("alm_home_bg", JSON.stringify(newBg));
+            const currentSet = localStorage.getItem("alm_settings");
+            if (currentSet) {
+              const parsed = JSON.parse(currentSet);
+              parsed.homeBackgroundSettings = newBg;
+              localStorage.setItem("alm_settings", JSON.stringify(parsed));
+            }
+          } catch {}
+          writeCache({ regions, types: propertyTypes, properties, settings: updated });
+          return updated;
+        });
       } else if (event === "SETTINGS_UPDATE" && data.settings) {
         setSettings(prev => {
-          const merged = { ...DEFAULT_SETTINGS, ...prev, ...data.settings };
+          const nextSettings = data.settings;
+          const merged = { ...DEFAULT_SETTINGS, ...prev, ...nextSettings };
+          if (nextSettings.homeBackgroundSettings) {
+            merged.homeBackgroundSettings = nextSettings.homeBackgroundSettings;
+            try {
+              localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
+            } catch {}
+          }
           try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
           writeCache({ regions, types: propertyTypes, properties, settings: merged });
           return merged;
@@ -1713,22 +1755,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // 4. Smart Foreground & Focus & Polling Sync (Memory Shield Protected)
     const syncFreshData = () => {
       supabaseService.fetchHomeBackground().then(freshBg => {
-        if (freshBg && (freshBg.bgImageDark || freshBg.bgImageLight)) {
+        if (freshBg) {
           setSettings(prev => {
             const curDark = prev.homeBackgroundSettings?.bgImageDark || "";
             const curLight = prev.homeBackgroundSettings?.bgImageLight || "";
-            if (freshBg.bgImageDark !== curDark || freshBg.bgImageLight !== curLight) {
+            const freshDark = freshBg.bgImageDark !== undefined ? freshBg.bgImageDark : curDark;
+            const freshLight = freshBg.bgImageLight !== undefined ? freshBg.bgImageLight : curLight;
+            if (freshDark !== curDark || freshLight !== curLight) {
+              const updatedBg = {
+                ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+                ...prev.homeBackgroundSettings,
+                ...freshBg,
+                bgImageDark: freshDark,
+                bgImageLight: freshLight,
+              };
               const updated = {
                 ...prev,
-                homeBackgroundSettings: {
-                  ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-                  ...prev.homeBackgroundSettings,
-                  ...freshBg,
-                },
+                homeBackgroundSettings: updatedBg,
               };
               try {
-                localStorage.setItem("alm_home_bg", JSON.stringify(updated.homeBackgroundSettings));
+                localStorage.setItem("alm_home_bg", JSON.stringify(updatedBg));
+                const currentSet = localStorage.getItem("alm_settings");
+                if (currentSet) {
+                  const parsed = JSON.parse(currentSet);
+                  parsed.homeBackgroundSettings = updatedBg;
+                  localStorage.setItem("alm_settings", JSON.stringify(parsed));
+                }
               } catch {}
+              writeCache({ regions, types: propertyTypes, properties, settings: updated });
               return updated;
             }
             return prev;
@@ -1804,19 +1858,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
             const effectiveQrCodes = prev.qrCodes || cachedQr?.qrCodes || freshSettings.qrCodes || DEFAULT_SETTINGS.qrCodes;
 
+            const cloudHomeBg = freshSettings.homeBackgroundSettings;
+            const mergedHomeBg: HomeBackgroundSettings = cloudHomeBg ? {
+              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+              ...(prev.homeBackgroundSettings || {}),
+              ...cloudHomeBg,
+              bgImageDark: cloudHomeBg.bgImageDark !== undefined ? cloudHomeBg.bgImageDark : (prev.homeBackgroundSettings?.bgImageDark ?? ""),
+              bgImageLight: cloudHomeBg.bgImageLight !== undefined ? cloudHomeBg.bgImageLight : (prev.homeBackgroundSettings?.bgImageLight ?? ""),
+            } : {
+              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+              ...(prev.homeBackgroundSettings || {}),
+            };
+
             const merged = {
               ...DEFAULT_SETTINGS,
               ...freshSettings,
               ...prev,
               qrSectionEnabled: effectiveQrEnabled,
               qrCodes: effectiveQrCodes,
-              homeBackgroundSettings: {
-                ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-                ...(prev.homeBackgroundSettings || {}),
-              },
+              homeBackgroundSettings: mergedHomeBg,
             };
             settingsRef.current = merged;
-            try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+            try {
+              localStorage.setItem("alm_settings", JSON.stringify(merged));
+              if (cloudHomeBg) {
+                localStorage.setItem("alm_home_bg", JSON.stringify(mergedHomeBg));
+              }
+            } catch {}
             writeCache({ regions, types: propertyTypes, properties, settings: merged });
             return merged;
           });
@@ -2108,14 +2176,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (rawBg) cachedBg = JSON.parse(rawBg);
       } catch {}
 
-      const prevBg = prev.homeBackgroundSettings || cachedBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
+      const activeDark = bgPatch.bgImageDark !== undefined
+        ? bgPatch.bgImageDark
+        : (prev.homeBackgroundSettings?.bgImageDark !== undefined
+            ? prev.homeBackgroundSettings.bgImageDark
+            : (cachedBg?.bgImageDark ?? ""));
+      const activeLight = bgPatch.bgImageLight !== undefined
+        ? bgPatch.bgImageLight
+        : (prev.homeBackgroundSettings?.bgImageLight !== undefined
+            ? prev.homeBackgroundSettings.bgImageLight
+            : (cachedBg?.bgImageLight ?? ""));
+
       nextBg = {
         ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-        ...(cachedBg || {}),
-        ...prevBg,
+        ...(prev.homeBackgroundSettings || cachedBg || {}),
         ...bgPatch,
-        bgImageDark: bgPatch.bgImageDark !== undefined ? bgPatch.bgImageDark : (prevBg.bgImageDark || cachedBg?.bgImageDark || ""),
-        bgImageLight: bgPatch.bgImageLight !== undefined ? bgPatch.bgImageLight : (prevBg.bgImageLight || cachedBg?.bgImageLight || ""),
+        bgImageDark: activeDark,
+        bgImageLight: activeLight,
       };
 
       try {
@@ -2140,7 +2217,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-    const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
+  const updateSettings = useCallback(async (patch: Partial<SiteSettings>) => {
     const cur = settingsRef.current;
 
     // Retrieve background from all storage layers
@@ -2157,20 +2234,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (rawQr) cachedQr = JSON.parse(rawQr);
     } catch {}
 
-    const prevBg = cur.homeBackgroundSettings || cachedHomeBg || DEFAULT_SETTINGS.homeBackgroundSettings!;
     const patchBg = patch.homeBackgroundSettings;
+    const activeDark = patchBg?.bgImageDark !== undefined
+      ? patchBg.bgImageDark
+      : (cur.homeBackgroundSettings?.bgImageDark !== undefined
+          ? cur.homeBackgroundSettings.bgImageDark
+          : (cachedHomeBg?.bgImageDark ?? ""));
+    const activeLight = patchBg?.bgImageLight !== undefined
+      ? patchBg.bgImageLight
+      : (cur.homeBackgroundSettings?.bgImageLight !== undefined
+          ? cur.homeBackgroundSettings.bgImageLight
+          : (cachedHomeBg?.bgImageLight ?? ""));
 
     const mergedBg: HomeBackgroundSettings = {
       ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-      ...(cachedHomeBg || {}),
-      ...prevBg,
+      ...(cur.homeBackgroundSettings || cachedHomeBg || {}),
       ...(patchBg || {}),
-      bgImageDark: patchBg?.bgImageDark !== undefined
-        ? patchBg.bgImageDark
-        : (prevBg.bgImageDark || cachedHomeBg?.bgImageDark || ""),
-      bgImageLight: patchBg?.bgImageLight !== undefined
-        ? patchBg.bgImageLight
-        : (prevBg.bgImageLight || cachedHomeBg?.bgImageLight || ""),
+      bgImageDark: activeDark,
+      bgImageLight: activeLight,
     };
 
     const nextQrSectionEnabled =
