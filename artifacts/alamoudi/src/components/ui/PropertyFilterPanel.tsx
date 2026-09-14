@@ -111,10 +111,10 @@ export function PropertyFilterPanel({
   };
 
   return (
-    <section className="rounded-3xl border border-accent/25 bg-card/95 backdrop-blur-xl p-4 sm:p-6 shadow-[0_12px_36px_rgba(16,32,45,0.12)] transition-all duration-300">
+    <section className="rounded-2xl border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
       {/* ── 1. Hero Search Input with Animated Sliding Ticker ── */}
       <div className="relative mb-5 group">
-        <div className="relative flex items-center rounded-2xl border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-13 sm:h-14">
+        <div className="relative flex items-center rounded-2xl border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-11 sm:h-12">
           <div className="flex items-center justify-center pr-4 text-accent">
             <Search className="h-5 w-5" />
           </div>
@@ -171,7 +171,7 @@ export function PropertyFilterPanel({
             <Button
               type="button"
               onClick={() => onApply(filters)}
-              className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-md border border-accent/40 hover:border-accent gap-1.5 text-xs sm:text-sm transition-all"
+              className="h-8.5 sm:h-9 px-3.5 sm:px-5 rounded-lg bg-primary text-primary-foreground font-black hover:bg-primary/90 shadow-md border border-accent/40 hover:border-accent gap-1.5 text-xs sm:text-sm transition-all"
             >
               <Search className="h-4 w-4" />
               <span>بحث</span>
@@ -181,7 +181,7 @@ export function PropertyFilterPanel({
       </div>
 
       {/* ── 2. Segmented Pill Row: نوع العرض (Unified Professional Layout) ── */}
-      <div className="mb-3 pb-3 border-b border-border/50">
+      <div className="mb-2.5 pb-2.5 border-b border-border/50">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-accent" />

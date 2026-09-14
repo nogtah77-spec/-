@@ -315,9 +315,9 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="action-btn-add-property group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-gradient-to-br from-[#10202D] via-[#183144] to-[#10202D] text-white shadow-[0_6px_20px_rgba(16,32,45,0.22)] hover:shadow-[0_10px_28px_rgba(16,32,45,0.32)] hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C09C5A]/40 hover:border-[#C09C5A]"
+              className="action-btn-add-property group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-gradient-to-br from-[#10202D] via-[#183144] to-[#10202D] text-white shadow-[0_6px_20px_rgba(16,32,45,0.22)] hover:shadow-[0_10px_28px_rgba(16,32,45,0.32)] hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C09C5A]/40 hover:border-[#C09C5A]"
             >
-              <div className="action-icon-badge w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#C09C5A] to-[#A8823E] text-[#10202D] flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#C09C5A] to-[#A8823E] text-[#10202D] flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.5]" />
               </div>
               <div className="text-center sm:text-right">
@@ -328,9 +328,9 @@ export default function Home() {
 
             <Link
               href="/finishing-services"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-2xs hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <div className="text-center sm:text-right">
@@ -341,7 +341,7 @@ export default function Home() {
 
             <Link
               href="/consultation"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-3 sm:py-3.5 sm:px-4 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
+              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-2xs hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
             >
               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                 <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />

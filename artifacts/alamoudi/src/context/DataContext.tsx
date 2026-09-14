@@ -361,7 +361,7 @@ export interface SiteSettings {
 }
 
 const DEFAULT_SETTINGS: SiteSettings = {
-  activeThemeId: "charcoal",
+  activeThemeId: "classic",
   companyName: "العمودي للتسويق العقاري",
   companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
   heroLine1: "شريكك الموثوق في عالم التسويق العقاري والتشطيبات",
@@ -1005,9 +1005,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     } catch {}
     const cached = readCache();
     const base = localCustom || cached?.settings || {};
+    const initialThemeId = (typeof window !== "undefined" ? localStorage.getItem("alm_active_theme") : null) || base.activeThemeId || "classic";
     return {
       ...DEFAULT_SETTINGS,
       ...base,
+      activeThemeId: initialThemeId,
       homeBackgroundSettings: {
         ...DEFAULT_SETTINGS.homeBackgroundSettings!,
         ...(cached?.settings?.homeBackgroundSettings || {}),
