@@ -1,6 +1,6 @@
-const STATIC_CACHE = "alamoudi-static-v14";
-const DATA_CACHE = "alamoudi-data-v14";
-const MEDIA_CACHE = "alamoudi-media-v14";
+const STATIC_CACHE = "alamoudi-static-v15";
+const DATA_CACHE = "alamoudi-data-v15";
+const MEDIA_CACHE = "alamoudi-media-v15";
 
 const APP_SHELL_ASSETS = [
   "/",
@@ -54,24 +54,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Navigation: Stale-While-Revalidate with Instant Cache Return (<5ms!)
+  // 1. Navigation: Network-First with Offline Cache Fallback (guarantees fresh index.html)
   if (request.mode === "navigate") {
     event.respondWith(
-      caches.open(STATIC_CACHE).then((staticCache) => {
-        return staticCache.match("/index.html").then((cachedIndex) => {
-          const networkFetch = fetch(request)
-            .then((networkResponse) => {
-              if (networkResponse && networkResponse.status === 200) {
-                staticCache.put("/index.html", networkResponse.clone());
-              }
-              return networkResponse;
-            })
-            .catch(() => cachedIndex);
-
-          // Return cached index.html immediately in 0ms, revalidate in background
-          return cachedIndex || networkFetch;
-        });
-      })
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put("/index.html", networkResponse.clone());
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match("/index.html");
+        })
     );
     return;
   }

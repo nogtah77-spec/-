@@ -113,42 +113,36 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
   };
 
   const isFormDirtyRef = useRef(false);
+  const hasInitializedSettingsRef = useRef(false);
   const [form, setForm] = useState<SiteSettings>(() => ({
     ...settings,
     phone1: sanitizeDummyContact(settings.phone1),
     phone2: sanitizeDummyContact(settings.phone2),
     whatsapp: sanitizeDummyContact(settings.whatsapp),
+    email: settings.email || "",
   }));
 
-  // Live sync form with settings state, preserving uncommitted user input and uploaded backgrounds
+  // One-time initial load from settings if form hasn't been modified yet.
+  // NEVER overwrites user input from background polling!
   useEffect(() => {
-    // If the user has made unsaved edits, do not overwrite them with background polling!
-    if (isFormDirtyRef.current) return;
-
-    // If an input or textarea is currently focused in the document, do not interrupt typing!
-    const activeEl = document.activeElement;
-    if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
-      return;
+    if (hasInitializedSettingsRef.current || isFormDirtyRef.current) return;
+    if (settings && Object.keys(settings).length > 0) {
+      hasInitializedSettingsRef.current = true;
+      setForm((prev) => {
+        if (isFormDirtyRef.current) return prev;
+        return {
+          ...settings,
+          phone1: prev.phone1 || sanitizeDummyContact(settings.phone1),
+          phone2: prev.phone2 || sanitizeDummyContact(settings.phone2),
+          whatsapp: prev.whatsapp || sanitizeDummyContact(settings.whatsapp),
+          email: prev.email || settings.email || "",
+          homeBackgroundSettings: {
+            ...(settings.homeBackgroundSettings || {}),
+            ...(prev.homeBackgroundSettings || {}),
+          },
+        };
+      });
     }
-
-    setForm((prev) => {
-      const prevBg = prev.homeBackgroundSettings;
-      const nextBg = settings.homeBackgroundSettings;
-      const effectiveDark = prevBg?.bgImageDark || nextBg?.bgImageDark || "";
-      const effectiveLight = prevBg?.bgImageLight || nextBg?.bgImageLight || "";
-      return {
-        ...settings,
-        phone1: sanitizeDummyContact(settings.phone1),
-        phone2: sanitizeDummyContact(settings.phone2),
-        whatsapp: sanitizeDummyContact(settings.whatsapp),
-        homeBackgroundSettings: {
-          ...nextBg,
-          ...(prevBg || {}),
-          bgImageDark: effectiveDark,
-          bgImageLight: effectiveLight,
-        },
-      };
-    });
   }, [settings]);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -755,7 +749,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                         id="mapsUrl"
                         dir="ltr"
                         className="text-right text-xs"
-                        value={form.mapsUrl}
+                        value={form.mapsUrl ?? ""}
                         onChange={set("mapsUrl")}
                         placeholder="https://maps.google.com/..."
                       />
@@ -772,7 +766,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                         id="tiktok"
                         dir="ltr"
                         className="text-right text-xs"
-                        value={form.tiktok}
+                        value={form.tiktok ?? ""}
                         onChange={set("tiktok")}
                         placeholder="https://tiktok.com/@..."
                       />
@@ -789,7 +783,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                         id="facebook"
                         dir="ltr"
                         className="text-right text-xs"
-                        value={form.facebook}
+                        value={form.facebook ?? ""}
                         onChange={set("facebook")}
                         placeholder="https://facebook.com/..."
                       />
@@ -806,7 +800,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                         id="instagram"
                         dir="ltr"
                         className="text-right text-xs"
-                        value={form.instagram}
+                        value={form.instagram ?? ""}
                         onChange={set("instagram")}
                         placeholder="https://instagram.com/..."
                       />
