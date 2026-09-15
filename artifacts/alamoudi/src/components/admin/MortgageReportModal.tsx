@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AnnualRow {
   year: number;
+  yearLabel?: string;
   yearlyPayment: number;
   principalPaid: number;
   interestPaid: number;
@@ -74,6 +75,17 @@ export function MortgageReportModal({
     month: "long",
     day: "numeric",
   });
+
+  const durationText = React.useMemo(() => {
+    if (loanYears <= 0) return "0 شهر";
+    if (loanYears === 0.5) return `نصف سنة (6 أقساط)`;
+    if (loanYears === 1) return `1 سنة (12 قسطاً)`;
+    if (loanYears === 1.5) return `1.5 سنة (18 قسطاً)`;
+    if (loanYears === 2) return `سنتان (24 قسطاً)`;
+    if (loanYears === 2.5) return `2.5 سنة (30 قسطاً)`;
+    if (loanYears >= 3 && loanYears <= 10 && loanYears % 1 === 0) return `${loanYears} سنوات (${totalMonths} قسطاً)`;
+    return `${loanYears} سنة (${totalMonths} قسطاً)`;
+  }, [loanYears, totalMonths]);
 
   const getReportStyles = () => `
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -271,7 +283,7 @@ export function MortgageReportModal({
           </div>
           <div class="info-row">
             <span class="info-label">مدة السداد:</span>
-            <span class="info-value">${loanYears} سنوات (${totalMonths} قسطاً شهرياً)</span>
+            <span class="info-value">${durationText}</span>
           </div>
           <div class="info-row">
             <span class="info-label">معدل الفائدة:</span>
@@ -346,7 +358,7 @@ export function MortgageReportModal({
               .map(
                 (row) => `
               <tr>
-                <td><strong>السنة ${row.year}</strong></td>
+                <td><strong>${row.yearLabel || `السنة ${row.year}`}</strong></td>
                 <td class="num">${row.yearlyPayment.toLocaleString("en-US")} ج.م</td>
                 <td class="num green">${row.principalPaid.toLocaleString("en-US")} ج.م</td>
                 <td class="num amber">${row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("en-US")} ج.م` : "0 ج.م"}</td>
@@ -604,7 +616,7 @@ export function MortgageReportModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">مدة السداد:</span>
-                  <span className="font-bold text-slate-900">{loanYears} سنوات ({totalMonths} قسطاً)</span>
+                  <span className="font-bold text-slate-900">{durationText}</span>
                 </div>
               </div>
 
@@ -675,7 +687,7 @@ export function MortgageReportModal({
                   <tbody className="divide-y divide-slate-100">
                     {annualSchedule.slice(0, 5).map((row) => (
                       <tr key={row.year} className="hover:bg-slate-50">
-                        <td className="p-2 font-bold text-slate-900">السنة {row.year}</td>
+                        <td className="p-2 font-bold text-slate-900">{row.yearLabel || `السنة ${row.year}`}</td>
                         <td className="p-2 font-bold text-slate-900">{row.yearlyPayment.toLocaleString("en-US")} ج.م</td>
                         <td className="p-2 text-emerald-600 font-semibold">{row.principalPaid.toLocaleString("en-US")} ج.م</td>
                         <td className="p-2 text-amber-600 font-semibold">{row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("en-US")} ج.م` : "0 ج.م"}</td>

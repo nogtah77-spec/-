@@ -81,6 +81,38 @@ const FINANCING_PROGRAMS = [
   { id: "custom", name: "نسبة فائدة مخصصة", rate: 10, desc: "تحديد نسبة الفائدة يدوياً" },
 ];
 
+const PRESET_DURATIONS = [
+  { val: 0.5, label: "0.5 سنة" },
+  { val: 1, label: "1 سنة" },
+  { val: 1.5, label: "1.5 سنة" },
+  { val: 2, label: "سنتين" },
+  { val: 2.5, label: "2.5 سنة" },
+  { val: 3, label: "3 سنوات" },
+  { val: 3.5, label: "3.5 سنة" },
+  { val: 4, label: "4 سنوات" },
+  { val: 5, label: "5 سنوات" },
+  { val: 7, label: "7 سنوات" },
+  { val: 10, label: "10 سنوات" },
+  { val: 15, label: "15 سنة" },
+  { val: 20, label: "20 سنة" },
+  { val: 25, label: "25 سنة" },
+];
+
+function formatDurationBadge(years: number) {
+  const months = Math.round(years * 12);
+  if (years <= 0) return "0 شهر";
+  if (years === 0.5) return "نصف سنة (6 أشهر)";
+  if (years === 1) return "سنة واحدة (12 شهراً)";
+  if (years === 1.5) return "سنة ونصف (18 شهراً)";
+  if (years === 2) return "سنتان (24 شهراً)";
+  if (years === 2.5) return "سنتان ونصف (30 شهراً)";
+  if (years === 3) return "3 سنوات (36 شهراً)";
+  if (years === 3.5) return "3.5 سنة (42 شهراً)";
+  if (years % 1 !== 0) return `${years} سنة (${months} شهراً)`;
+  if (years >= 3 && years <= 10) return `${years} سنوات (${months} شهراً)`;
+  return `${years} سنة (${months} شهراً)`;
+}
+
 export default function MortgageCalculatorPage() {
   const { toast } = useToast();
   const { properties } = useData();
@@ -159,7 +191,7 @@ export default function MortgageCalculatorPage() {
     return Math.max(0, propertyPrice - downPaymentAmount);
   }, [propertyPrice, downPaymentAmount]);
 
-  const totalMonths = loanYears * 12;
+  const totalMonths = Math.round(loanYears * 12);
 
   // Monthly installment calculation
   const { monthlyInstallment, totalInterest, totalPayment } = useMemo(() => {
@@ -190,18 +222,20 @@ export default function MortgageCalculatorPage() {
     };
   }, [propertyPrice, loanAmount, totalMonths, interestRate, downPaymentAmount]);
 
-  // Annual schedule breakdown
+  // Annual schedule breakdown (supporting fractional / half-year durations)
   const annualSchedule = useMemo(() => {
     if (loanAmount <= 0 || totalMonths <= 0 || loanYears <= 0) return [];
     const schedule = [];
     let balance = loanAmount;
     const monthlyRate = interestRate / 100 / 12;
+    const totalYearsCount = Math.ceil(loanYears);
 
-    for (let year = 1; year <= loanYears; year++) {
+    for (let year = 1; year <= totalYearsCount; year++) {
       let yearInterest = 0;
       let yearPrincipal = 0;
+      const monthsInThisYear = Math.min(12, totalMonths - (year - 1) * 12);
 
-      for (let month = 1; month <= 12; month++) {
+      for (let month = 1; month <= monthsInThisYear; month++) {
         if (balance <= 0) break;
         const interest = interestRate === 0 ? 0 : balance * monthlyRate;
         const principal = monthlyInstallment - interest;
@@ -210,8 +244,14 @@ export default function MortgageCalculatorPage() {
         balance = Math.max(0, balance - principal);
       }
 
+      const isPartial = monthsInThisYear < 12;
+      const yearLabel = isPartial
+        ? `السنة ${year} (${monthsInThisYear} أشهر)`
+        : `السنة ${year}`;
+
       schedule.push({
         year,
+        yearLabel,
         yearlyPayment: Math.round(yearPrincipal + yearInterest),
         principalPaid: Math.round(yearPrincipal),
         interestPaid: Math.round(yearInterest),
@@ -229,7 +269,7 @@ export default function MortgageCalculatorPage() {
       `💰 *سعر العقار:* ${propertyPrice.toLocaleString("en-US")} ج.م\n` +
       `💵 *المقدم (${downPaymentPercent}%):* ${downPaymentAmount.toLocaleString("en-US")} ج.م\n` +
       `🏦 *المبلغ الممول:* ${loanAmount.toLocaleString("en-US")} ج.م\n` +
-      `📅 *مدة السداد:* ${loanYears} سنوات (${totalMonths} شهر)\n` +
+      `📅 *مدة السداد:* ${formatDurationBadge(loanYears)}\n` +
       `📊 *الفائدة:* ${interestRate}%\n` +
       `--------------------------------\n` +
       `🌟 *القسط الشهري:* ${monthlyInstallment.toLocaleString("en-US")} ج.م / شهر\n` +
@@ -450,32 +490,52 @@ export default function MortgageCalculatorPage() {
                 {/* Loan Duration */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-foreground">مدة السداد (سنوات):</Label>
-                    <span className="text-xs font-bold font-mono text-accent">
-                      {loanYears} سنة ({totalMonths} شهر)
-                    </span>
+                    <Label className="text-xs font-bold text-foreground">مدة السداد:</Label>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setLoanYears(prev => Math.max(0, Number((prev - 0.5).toFixed(1))))}
+                        disabled={loanYears <= 0}
+                        className="w-6 h-6 rounded-md bg-muted hover:bg-muted/80 disabled:opacity-30 flex items-center justify-center text-xs font-black text-foreground transition-all"
+                        title="إنقاص نصف سنة (-6 أشهر)"
+                      >
+                        -
+                      </button>
+                      <span className="text-xs font-bold font-mono text-accent px-2 py-0.5 rounded-md bg-accent/10 border border-accent/20">
+                        {formatDurationBadge(loanYears)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setLoanYears(prev => Math.min(30, Number((prev + 0.5).toFixed(1))))}
+                        disabled={loanYears >= 30}
+                        className="w-6 h-6 rounded-md bg-muted hover:bg-muted/80 disabled:opacity-30 flex items-center justify-center text-xs font-black text-foreground transition-all"
+                        title="زيادة نصف سنة (+6 أشهر)"
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                   <Slider
                     value={[loanYears]}
                     min={0}
                     max={30}
-                    step={1}
+                    step={0.5}
                     onValueChange={val => setLoanYears(val[0])}
                     className="py-1"
                   />
                   <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    {[0, 1, 3, 5, 7, 10, 15, 20, 25].map(yrs => (
+                    {PRESET_DURATIONS.map(item => (
                       <button
-                        key={yrs}
+                        key={item.val}
                         type="button"
-                        onClick={() => setLoanYears(yrs)}
+                        onClick={() => setLoanYears(item.val)}
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                          loanYears === yrs
+                          loanYears === item.val
                             ? "bg-accent text-accent-foreground shadow-sm"
                             : "bg-muted text-muted-foreground hover:bg-muted/80"
                         }`}
                       >
-                        {yrs} سنين
+                        {item.label}
                       </button>
                     ))}
                   </div>
@@ -529,7 +589,7 @@ export default function MortgageCalculatorPage() {
                     <CardTitle className="text-base font-bold">جدول السداد السنوي</CardTitle>
                   </div>
                   <Badge variant="outline" className="text-[10px] font-bold border-border">
-                    {loanYears} سنوات سداد
+                    {formatDurationBadge(loanYears)}
                   </Badge>
                 </div>
               </CardHeader>
@@ -554,7 +614,7 @@ export default function MortgageCalculatorPage() {
                     ) : (
                       annualSchedule.map(row => (
                         <tr key={row.year} className="hover:bg-muted/30 transition-colors">
-                          <td className="py-2.5 px-3 font-bold text-foreground">السنة {row.year}</td>
+                          <td className="py-2.5 px-3 font-bold text-foreground">{row.yearLabel || `السنة ${row.year}`}</td>
                           <td className="py-2.5 px-3 font-bold">{row.yearlyPayment.toLocaleString("en-US")} ج.م</td>
                           <td className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium">
                             {row.principalPaid.toLocaleString("en-US")} ج.م
