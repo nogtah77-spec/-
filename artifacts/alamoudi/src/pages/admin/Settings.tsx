@@ -412,7 +412,9 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
         key === "loginBackgroundImageUrl" ||
         key === "loginOverlayColor" ||
         key === "loginOverlayOpacity" ||
-        key === "loginGradientOpacity"
+        key === "loginGradientOpacity" ||
+        key === "loginCardOpacity" ||
+        key === "loginCardBlur"
       ) {
         loginFormDirtyRef.current = true;
       }
@@ -428,6 +430,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
       loginOverlayColor: settings.loginOverlayColor,
       loginOverlayOpacity: settings.loginOverlayOpacity,
       loginGradientOpacity: settings.loginGradientOpacity,
+      loginCardOpacity: settings.loginCardOpacity ?? 88,
+      loginCardBlur: settings.loginCardBlur ?? 20,
     }));
   }, [
     settings.loginBackgroundEnabled,
@@ -435,6 +439,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     settings.loginOverlayColor,
     settings.loginOverlayOpacity,
     settings.loginGradientOpacity,
+    settings.loginCardOpacity,
+    settings.loginCardBlur,
   ]);
 
   const handleHeroFile = (e: ChangeEvent<HTMLInputElement>) => {
@@ -551,6 +557,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
   const loginOverlayColor = form.loginOverlayColor || "#10202D";
   const loginOverlayOpacity = Math.min(100, Math.max(0, Number(form.loginOverlayOpacity ?? 72)));
   const loginGradientOpacity = Math.min(100, Math.max(0, Number(form.loginGradientOpacity ?? 58)));
+  const loginCardOpacity = Math.min(100, Math.max(10, Number(form.loginCardOpacity ?? 88)));
+  const loginCardBlur = Math.min(40, Math.max(0, Number(form.loginCardBlur ?? 20)));
 
   const colorToRgba = (value: string, opacity: number) => {
     const normalized = value.replace(/^#/, "");
@@ -1757,23 +1765,100 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                         }}
                       />
                     </div>
+
+                    {/* Card Customization: Opacity & Glass Blur */}
+                    <div className="space-y-4 border-t border-border/70 pt-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold flex items-center gap-2">
+                          <Palette className="h-4 w-4 text-accent" />
+                          تخصيص صندوق تسجيل الدخول (الشفافية وتأثير الزجاج)
+                        </Label>
+                        <span className="text-xs text-muted-foreground">تحكم دقيق في المظهر</span>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <Label>شفافية صندوق تسجيل الدخول</Label>
+                            <p className="mt-0.5 text-xs text-muted-foreground">تعتيم الصندوق لضمان أعلى تباين وقراءة واضحة للنصوص</p>
+                          </div>
+                          <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">{loginCardOpacity}%</span>
+                        </div>
+                        <Slider
+                          dir="ltr"
+                          value={[loginCardOpacity]}
+                          min={10}
+                          max={100}
+                          step={1}
+                          onValueChange={(value) => {
+                            markLoginFormDirty();
+                            setForm((prev) => ({ ...prev, loginCardOpacity: value[0] }));
+                          }}
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <Label>درجة تمويه وضبابية الزجاج (Glass Blur)</Label>
+                            <p className="mt-0.5 text-xs text-muted-foreground">تأثير الزجاج الفاخر العاكس لتفاصيل الخلفية خلف الصندوق</p>
+                          </div>
+                          <span className="min-w-14 rounded-md bg-muted px-2 py-1 text-center text-sm font-semibold" dir="ltr">{loginCardBlur}px</span>
+                        </div>
+                        <Slider
+                          dir="ltr"
+                          value={[loginCardBlur]}
+                          min={0}
+                          max={40}
+                          step={1}
+                          onValueChange={(value) => {
+                            markLoginFormDirty();
+                            setForm((prev) => ({ ...prev, loginCardBlur: value[0] }));
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-2 border-t border-border pt-4">
                     <div className="flex items-center justify-between gap-3">
-                      <Label>معاينة مباشرة</Label>
+                      <Label>معاينة مباشرة لشاشة تسجيل الدخول</Label>
                       <span className="text-xs text-muted-foreground">لا يتم الحفظ حتى تضغط زر الحفظ</span>
                     </div>
                     <div
-                      className="relative h-48 overflow-hidden rounded-xl border border-border bg-[#10202d] bg-cover bg-center"
+                      className="relative min-h-[220px] overflow-hidden rounded-xl border border-border bg-[#10202d] bg-cover bg-center flex items-center justify-center p-4 sm:p-6"
                       style={{ backgroundImage: form.loginBackgroundImageUrl ? `url("${form.loginBackgroundImageUrl}")` : undefined }}
                     >
                       <div className="absolute inset-0" style={{ backgroundColor: colorToRgba(loginOverlayColor, loginOverlayOpacity) }} />
                       <div className="absolute inset-0" style={{ background: `linear-gradient(to top, ${colorToRgba(loginOverlayColor, loginGradientOpacity)} 0%, ${colorToRgba(loginOverlayColor, 14)} 52%, transparent 100%)` }} />
-                      <div className="relative flex h-full items-end p-5">
-                        <div className="text-right text-white">
-                          <div className="text-lg font-bold">العمودي</div>
-                          <div className="mt-1 text-[10px] tracking-[0.18em] text-[#E6CC98]">للتسويق العقاري</div>
+                      
+                      {/* Mini Live Preview of the Horizontal Login Box */}
+                      <div
+                        className="relative z-10 w-full max-w-[440px] rounded-2xl border border-[#DCC08A]/35 p-3 sm:p-4 shadow-2xl transition-all duration-200"
+                        style={{
+                          background: `linear-gradient(145deg, rgba(16, 32, 45, ${loginCardOpacity / 100}), rgba(9, 18, 26, ${Math.min(1, (loginCardOpacity + 6) / 100)}))`,
+                          backdropFilter: `blur(${loginCardBlur}px) saturate(140%)`,
+                          WebkitBackdropFilter: `blur(${loginCardBlur}px) saturate(140%)`,
+                        }}
+                      >
+                        <div className="grid grid-cols-12 gap-3 items-center">
+                          <div className="col-span-5 border-l border-[#DCC08A]/25 pl-2.5 text-right">
+                            <div className="text-xs font-black text-white">العمودي</div>
+                            <div className="text-[7.5px] text-[#E6CC98] font-semibold border-t border-[#DCC08A]/30 mt-0.5 pt-0.5">للتسويق العقاري</div>
+                            <div className="text-[8.5px] text-white/75 mt-1 font-bold">مرحبًا بعودتك</div>
+                            <div className="text-[7px] text-white/45 mt-0.5">لوحة التحكم</div>
+                          </div>
+                          <div className="col-span-7 space-y-1.5 text-right">
+                            <div className="h-5 rounded-md bg-black/40 border border-[#DCC08A]/20 px-1.5 flex items-center text-[7.5px] text-white/50" dir="ltr">
+                              admin
+                            </div>
+                            <div className="h-5 rounded-md bg-black/40 border border-[#DCC08A]/20 px-1.5 flex items-center text-[7.5px] text-white/50" dir="ltr">
+                              ••••••••
+                            </div>
+                            <div className="h-5 rounded-md bg-[#B99A68] flex items-center justify-center text-[8px] font-bold text-[#10202D]">
+                              تسجيل الدخول
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

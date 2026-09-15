@@ -336,6 +336,10 @@ export interface SiteSettings {
   loginOverlayOpacity: number;
   /** Bottom-to-top contrast gradient strength, 0-100. */
   loginGradientOpacity: number;
+  /** Login form card opacity, 10-100 (default: 88). */
+  loginCardOpacity?: number;
+  /** Login form card glass blur in px, 0-40 (default: 20). */
+  loginCardBlur?: number;
   /** Shared overlay color for region cover heroes. */
   regionHeroOverlayColor: string;
   /** Opacity of the solid overlay over region cover images, 0-100. */
@@ -400,6 +404,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   loginOverlayColor: "#10202D",
   loginOverlayOpacity: 72,
   loginGradientOpacity: 58,
+  loginCardOpacity: 88,
+  loginCardBlur: 20,
   regionHeroOverlayColor: "#000000",
   regionHeroOverlayOpacity: 25,
   regionHeroGradientOpacity: 60,
@@ -1026,6 +1032,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       loginOverlayColor?: string;
       loginOverlayOpacity?: number;
       loginGradientOpacity?: number;
+      loginCardOpacity?: number;
+      loginCardBlur?: number;
     } | undefined;
     try {
       const rawLogin = localStorage.getItem("alm_login_bg");
@@ -1053,6 +1061,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       loginOverlayColor: localLoginBg?.loginOverlayColor || base.loginOverlayColor || "#10202D",
       loginOverlayOpacity: localLoginBg?.loginOverlayOpacity ?? base.loginOverlayOpacity ?? 72,
       loginGradientOpacity: localLoginBg?.loginGradientOpacity ?? base.loginGradientOpacity ?? 58,
+      loginCardOpacity: localLoginBg?.loginCardOpacity ?? base.loginCardOpacity ?? 88,
+      loginCardBlur: localLoginBg?.loginCardBlur ?? base.loginCardBlur ?? 20,
       phone1: sanitizeDummyContact(base.phone1),
       phone2: sanitizeDummyContact(base.phone2),
       whatsapp: sanitizeDummyContact(base.whatsapp),
@@ -1365,6 +1375,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             loginOverlayColor: cloudLoginBg.loginOverlayColor || prev.loginOverlayColor,
             loginOverlayOpacity: cloudLoginBg.loginOverlayOpacity ?? prev.loginOverlayOpacity,
             loginGradientOpacity: cloudLoginBg.loginGradientOpacity ?? prev.loginGradientOpacity,
+            loginCardOpacity: cloudLoginBg.loginCardOpacity ?? prev.loginCardOpacity ?? 88,
+            loginCardBlur: cloudLoginBg.loginCardBlur ?? prev.loginCardBlur ?? 20,
           };
           settingsRef.current = updated;
           try {
@@ -1833,6 +1845,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 loginOverlayColor: freshLoginBg.loginOverlayColor || prev.loginOverlayColor,
                 loginOverlayOpacity: freshLoginBg.loginOverlayOpacity ?? prev.loginOverlayOpacity,
                 loginGradientOpacity: freshLoginBg.loginGradientOpacity ?? prev.loginGradientOpacity,
+                loginCardOpacity: freshLoginBg.loginCardOpacity ?? prev.loginCardOpacity ?? 88,
+                loginCardBlur: freshLoginBg.loginCardBlur ?? prev.loginCardBlur ?? 20,
               };
               settingsRef.current = updated;
               try {
@@ -2450,7 +2464,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       patch.loginBackgroundImageUrl !== undefined ||
       patch.loginOverlayColor !== undefined ||
       patch.loginOverlayOpacity !== undefined ||
-      patch.loginGradientOpacity !== undefined;
+      patch.loginGradientOpacity !== undefined ||
+      patch.loginCardOpacity !== undefined ||
+      patch.loginCardBlur !== undefined;
 
     if (hasLoginBgChange || nextSettings.loginBackgroundImageUrl) {
       const loginBgPayload = {
@@ -2459,6 +2475,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         loginOverlayColor: nextSettings.loginOverlayColor,
         loginOverlayOpacity: nextSettings.loginOverlayOpacity,
         loginGradientOpacity: nextSettings.loginGradientOpacity,
+        loginCardOpacity: nextSettings.loginCardOpacity ?? 88,
+        loginCardBlur: nextSettings.loginCardBlur ?? 20,
       };
       try {
         localStorage.setItem("alm_login_bg", JSON.stringify(loginBgPayload));

@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, ArrowLeft, LockKeyhole, UserRound } from "lucide-react";
+import { AlertCircle, ArrowLeft, LockKeyhole, UserRound, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 import { LOGIN_BACKGROUND_PRESETS } from "@/data/loginPresets";
@@ -26,7 +26,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Synchronous cache read for instantaneous, flicker-free background rendering
+  // Synchronous cache read for instantaneous, flicker-free background and card rendering
   const [cachedLoginBg, setCachedLoginBg] = useState(() => {
     if (typeof window === "undefined") return null;
     try {
@@ -41,7 +41,7 @@ export default function Login() {
     return null;
   });
 
-  // Listen for real-time background changes from admin updates
+  // Listen for real-time background and card style changes from admin updates
   useEffect(() => {
     const handleBgUpdate = (e: CustomEvent) => {
       if (e.detail) {
@@ -77,6 +77,13 @@ export default function Login() {
 
   const overlay = hexToRgba(overlayColor, overlayOpacity);
   const gradient = hexToRgba(overlayColor, gradientOpacity);
+
+  // Card opacity and glass blur controls
+  const cardOpacity = settings.loginCardOpacity ?? cachedLoginBg?.loginCardOpacity ?? 88;
+  const cardBlur = settings.loginCardBlur ?? cachedLoginBg?.loginCardBlur ?? 20;
+
+  const cardBg = `linear-gradient(145deg, rgba(16, 32, 45, ${cardOpacity / 100}), rgba(9, 18, 26, ${Math.min(1, (cardOpacity + 6) / 100)}))`;
+  const cardBackdrop = `blur(${cardBlur}px) saturate(140%)`;
 
   return (
     <main dir="rtl" className="login-shell relative min-h-[100dvh] overflow-hidden text-[#F5F3EE]">
@@ -115,99 +122,132 @@ export default function Login() {
         }}
       />
 
-      <div className="login-content relative z-10 flex min-h-[100dvh] items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
-        <section className="login-card w-full max-w-[438px] rounded-[30px] px-5 py-7 sm:px-9 sm:py-9">
-          <div className="mb-8 text-center">
-            <Link href="/" className="inline-flex flex-col items-center" data-testid="link-login-brand">
-              <span className="login-brand-name text-[#F5F3EE]">العمودي</span>
-              <span className="login-brand-subtitle mt-5 border-t border-[#DCC08A]/55 pt-3 text-[0.82rem] font-semibold tracking-[0.14em] text-[#E6CC98]">
-                للتسويق العقاري
-              </span>
-            </Link>
-          </div>
-
-          <div className="mb-7 text-center">
-            <h1 className="text-[1.65rem] font-semibold tracking-tight text-[#F5F3EE] sm:text-[1.8rem]">
-              مرحبًا بعودتك
-            </h1>
-            <p className="mt-2 text-sm leading-7 text-[#e5e3d9]/75">
-              سجّل الدخول للوصول إلى لوحة التحكم.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-5">
-              {error && (
-                <div
-                  className="flex items-start gap-2 rounded-2xl border border-red-200/30 bg-red-950/25 px-3 py-3 text-sm text-red-100"
-                  data-testid="text-login-error"
-                >
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="identifier" className="text-sm font-semibold text-[#f3ecdd]">
-                  اسم المستخدم أو البريد الإلكتروني
-                </Label>
-                <div className="relative">
-                   <UserRound className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
-                  <Input
-                    id="identifier"
-                    type="text"
-                    placeholder="admin"
-                    autoComplete="username"
-                    dir="ltr"
-                    className="login-field h-12 rounded-2xl pr-10 text-left text-sm shadow-none"
-                    value={identifier}
-                    onChange={(e) => {
-                      setIdentifier(e.target.value);
-                      setError("");
-                    }}
-                    data-testid="input-email"
-                  />
-                </div>
+      <div className="login-content relative z-10 flex min-h-[100dvh] items-center justify-center p-4 sm:p-6 lg:p-8">
+        <section
+          className="login-card w-full max-w-[370px] sm:max-w-[400px] md:max-w-[760px] lg:max-w-[800px] rounded-[24px] sm:rounded-[28px] md:rounded-[32px] p-5 sm:p-7 md:p-8 shadow-2xl transition-all duration-300"
+          style={{
+            background: cardBg,
+            backdropFilter: cardBackdrop,
+            WebkitBackdropFilter: cardBackdrop,
+          }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
+            
+            {/* ── Brand & Welcome Column (Right side on Desktop) ── */}
+            <div className="md:col-span-5 flex flex-col justify-between text-center md:text-right md:border-l md:border-[#DCC08A]/25 md:pl-8 space-y-4 md:space-y-6">
+              <div>
+                <Link href="/" className="inline-flex flex-col items-center md:items-start group transition-transform hover:scale-[1.01]" data-testid="link-login-brand">
+                  <span className="login-brand-name text-[#F5F3EE] text-2xl sm:text-3xl md:text-[2.25rem] font-black tracking-tight">
+                    العمودي
+                  </span>
+                  <span className="login-brand-subtitle mt-2 inline-block border-t border-[#DCC08A]/50 pt-1.5 text-[0.75rem] sm:text-[0.8rem] font-semibold tracking-[0.14em] text-[#E6CC98]">
+                    للتسويق العقاري
+                  </span>
+                </Link>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-semibold text-[#f3ecdd]">
-                  كلمة المرور
-                </Label>
-                <div className="relative">
-                 <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
-                  <Input
-                    id="password"
-                    type="password"
-                    autoComplete="current-password"
-                    dir="ltr"
-                    className="login-field h-12 rounded-2xl pr-10 text-left text-sm shadow-none"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setError("");
-                    }}
-                    data-testid="input-password"
-                  />
-                </div>
+
+              <div className="space-y-1.5">
+                <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-[#F5F3EE]">
+                  مرحبًا بعودتك
+                </h1>
+                <p className="text-xs leading-relaxed text-[#e5e3d9]/70">
+                  لوحة التحكم الإدارية — سجل دخولك لمتابعة العقارات والطلبات والتحليلات العقارية.
+                </p>
+              </div>
+
+              <div className="hidden md:flex items-center gap-2 pt-3 border-t border-white/10 text-[11px] text-[#e8e5d9]/50">
+                <ShieldCheck className="h-3.5 w-3.5 text-[#E6CC98] shrink-0" />
+                <span>اتصال إداري مشفر ومحمي</span>
               </div>
             </div>
-            <Button
-              type="submit"
-              disabled={submitting}
-               className="mt-7 h-12 w-full rounded-2xl border border-[#E6CC98]/70 bg-[#B99A68] text-sm font-bold text-[#10202D] shadow-[0_12px_26px_rgba(5,19,24,0.2)] hover:bg-[#C9AB78]"
-              data-testid="button-login-submit"
-            >
-              {submitting ? "جارٍ تسجيل الدخول…" : <>تسجيل الدخول <ArrowLeft className="h-4 w-4" /></>}
-            </Button>
-              <Link
-              href="/"
-               className="mt-6 flex items-center justify-center gap-2 text-xs text-[#e8e5d9]/65 transition-colors hover:text-[#E6CC98]"
-            >
-              العودة إلى الصفحة الرئيسية
-            </Link>
-          </form>
-          <p className="mt-8 text-center text-[11px] text-[#e8e5d9]/45">
-            هذه الصفحة مخصّصة للإدارة والموظفين فقط
-          </p>
+
+            {/* ── Form Column (Left side on Desktop) ── */}
+            <div className="md:col-span-7 flex flex-col justify-center">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div
+                    className="flex items-start gap-2 rounded-xl border border-red-200/30 bg-red-950/35 px-3 py-2.5 text-xs text-red-100"
+                    data-testid="text-login-error"
+                  >
+                    <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+                
+                <div className="space-y-1.5 text-right">
+                  <Label htmlFor="identifier" className="text-xs font-semibold text-[#f3ecdd]">
+                    اسم المستخدم أو البريد الإلكتروني
+                  </Label>
+                  <div className="relative">
+                    <UserRound className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
+                    <Input
+                      id="identifier"
+                      type="text"
+                      placeholder="admin"
+                      autoComplete="username"
+                      dir="ltr"
+                      className="login-field h-10 sm:h-11 rounded-xl pr-10 text-left text-xs sm:text-sm shadow-none"
+                      value={identifier}
+                      onChange={(e) => {
+                        setIdentifier(e.target.value);
+                        setError("");
+                      }}
+                      data-testid="input-email"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 text-right">
+                  <Label htmlFor="password" className="text-xs font-semibold text-[#f3ecdd]">
+                    كلمة المرور
+                  </Label>
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
+                    <Input
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      dir="ltr"
+                      className="login-field h-10 sm:h-11 rounded-xl pr-10 text-left text-xs sm:text-sm shadow-none"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        setError("");
+                      }}
+                      data-testid="input-password"
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="mt-2 h-10 sm:h-11 w-full rounded-xl border border-[#E6CC98]/70 bg-[#B99A68] text-xs sm:text-sm font-bold text-[#10202D] shadow-[0_8px_20px_rgba(5,19,24,0.25)] hover:bg-[#C9AB78] transition-colors"
+                  data-testid="button-login-submit"
+                >
+                  {submitting ? "جارٍ تسجيل الدخول…" : (
+                    <span className="flex items-center justify-center gap-2">
+                      <span>تسجيل الدخول</span>
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                    </span>
+                  )}
+                </Button>
+
+                <div className="pt-2 flex flex-col items-center gap-1.5">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center justify-center gap-1.5 text-xs text-[#e8e5d9]/65 transition-colors hover:text-[#E6CC98]"
+                  >
+                    العودة إلى الصفحة الرئيسية
+                  </Link>
+                  <p className="md:hidden text-center text-[10px] text-[#e8e5d9]/45 mt-1">
+                    هذه الصفحة مخصّصة للإدارة والموظفين فقط
+                  </p>
+                </div>
+              </form>
+            </div>
+
+          </div>
         </section>
       </div>
     </main>

@@ -357,10 +357,9 @@
 .login-brand-name {
   display: block;
   font-family: "Cairo", "Noto Sans Arabic", sans-serif;
-  font-size: clamp(3rem, 8vw, 3.55rem);
   font-weight: 900;
-  letter-spacing: -0.1em;
-  line-height: 0.95;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
   text-shadow: 0 3px 18px rgba(0, 0, 0, 0.6);
 }
 
