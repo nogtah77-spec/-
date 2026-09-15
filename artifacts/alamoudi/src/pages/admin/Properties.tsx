@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { formatNumber } from "@/lib/utils";
 import { checkUserPermission } from "@/lib/permissions";
+import { matchesSmartPropertySearch } from "@/lib/propertyFilters";
 
 const statusLabels: Record<PropertyStatus, string> = {
   active: "نشط",
@@ -77,20 +78,11 @@ export default function Properties() {
       return tB - tA;
     })
     .filter((p) => {
-    if (!search) return true;
-    const term = search.toLowerCase();
-    const typeName = propertyTypes.find(t => t.id === p.typeId)?.name || "";
-    const regionName = regions.find(r => r.id === p.regionId)?.name || "";
-    return (
-      p.code.toLowerCase().includes(term) ||
-      p.title.toLowerCase().includes(term) ||
-      (p.description || "").toLowerCase().includes(term) ||
-      (p.location || "").toLowerCase().includes(term) ||
-      (p.subArea || "").toLowerCase().includes(term) ||
-      typeName.toLowerCase().includes(term) ||
-      regionName.toLowerCase().includes(term)
-    );
-  });
+      if (!search.trim()) return true;
+      const typeName = propertyTypes.find((t) => t.id === p.typeId)?.name || "";
+      const regionName = regions.find((r) => r.id === p.regionId)?.name || "";
+      return matchesSmartPropertySearch(p, search, regionName, typeName);
+    });
 
   const allSelected = filteredProperties.length > 0 && filteredProperties.every(p => selectedIds.has(p.id));
   const someSelected = filteredProperties.some(p => selectedIds.has(p.id));
@@ -285,9 +277,16 @@ export default function Properties() {
                     />
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-xs font-semibold text-accent bg-accent/10 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap">
-                      {property.code}
-                    </span>
+                    <a
+                      href={`/properties/${property.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="معاينة العقار في تبويب جديد"
+                      className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-accent bg-accent/10 hover:bg-accent/20 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap transition-colors cursor-pointer"
+                    >
+                      <span>{property.code}</span>
+                      <ExternalLink className="h-3 w-3 opacity-60" />
+                    </a>
                   </TableCell>
                   <TableCell>
                     <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium whitespace-nowrap">
@@ -324,7 +323,18 @@ export default function Properties() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        asChild
+                        title="معاينة العقار"
+                        className="text-muted-foreground hover:text-accent hover:bg-accent/10"
+                      >
+                        <a href={`/properties/${property.id}`} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </Button>
                       {canEditProperty && (
                         <Button variant="ghost" size="icon" asChild title="تعديل العقار">
                           <Link href={`/admin/properties/${property.id}/edit`}>

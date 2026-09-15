@@ -110,6 +110,11 @@ export function PropertyFilterPanel({
     }
   };
 
+  const handleSelectPrompt = (prompt: string) => {
+    const cleaned = prompt.replace(/\.{2,}|…/g, "").trim();
+    update({ searchText: cleaned }, true);
+  };
+
   return (
     <section className="rounded-2xl border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
       {/* ── 1. Hero Search Input with Animated Sliding Ticker ── */}
@@ -120,23 +125,30 @@ export function PropertyFilterPanel({
           </div>
 
           <div className="relative flex-1 h-full flex items-center">
-            {/* Animated Ticker Placeholder with STATIC prefix */}
+            {/* Animated Ticker Placeholder with STATIC prefix and clickable prompt */}
             {!filters.searchText && !isFocused && (
               <div className="absolute inset-0 flex items-center pointer-events-none pr-3 pl-4 select-none overflow-hidden">
-                <span className="text-accent/40 font-medium text-xs sm:text-sm ml-2 shrink-0">
+                <span className="text-accent/50 font-medium text-xs sm:text-sm ml-2 shrink-0">
                   جرب البحث عن:
                 </span>
                 <div className="relative overflow-hidden h-6 flex items-center flex-1">
-                  <span
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleSelectPrompt(SEARCH_PROMPTS[promptIndex]);
+                    }}
+                    title="اضغط للبحث عن هذا المثال فوراً"
                     className={cn(
-                      "text-xs sm:text-sm text-muted-foreground/45 font-normal transition-all duration-300 transform truncate block",
+                      "pointer-events-auto text-xs sm:text-sm text-muted-foreground/60 hover:text-accent font-normal transition-all duration-300 transform truncate block text-right cursor-pointer underline-offset-2 hover:underline",
                       isAnimating
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-4 opacity-0"
                     )}
                   >
                     {SEARCH_PROMPTS[promptIndex]}
-                  </span>
+                  </button>
                 </div>
               </div>
             )}
