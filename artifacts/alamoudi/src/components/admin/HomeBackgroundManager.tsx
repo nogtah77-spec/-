@@ -66,23 +66,32 @@ export function HomeBackgroundManager({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Read current background config safely from live settings or form
+  // Read current background config safely from live settings or form or persistent storage
+  const cachedBg = typeof window !== "undefined" ? (() => {
+    try {
+      const raw = localStorage.getItem("alm_home_bg");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })() : null;
+
   const bgConfig: HomeBackgroundSettings = {
     enabled: true,
-    bgImageDark: form.homeBackgroundSettings?.bgImageDark ?? settings.homeBackgroundSettings?.bgImageDark ?? "",
-    overlayColorDark: form.homeBackgroundSettings?.overlayColorDark ?? settings.homeBackgroundSettings?.overlayColorDark ?? "#000000",
-    overlayOpacityDark: form.homeBackgroundSettings?.overlayOpacityDark ?? settings.homeBackgroundSettings?.overlayOpacityDark ?? 30,
-    blurDark: form.homeBackgroundSettings?.blurDark ?? settings.homeBackgroundSettings?.blurDark ?? 0,
-    imageOpacityDark: form.homeBackgroundSettings?.imageOpacityDark ?? settings.homeBackgroundSettings?.imageOpacityDark ?? 100,
-    bgImageLight: form.homeBackgroundSettings?.bgImageLight ?? settings.homeBackgroundSettings?.bgImageLight ?? "",
-    overlayColorLight: form.homeBackgroundSettings?.overlayColorLight ?? settings.homeBackgroundSettings?.overlayColorLight ?? "#FFFFFF",
-    overlayOpacityLight: form.homeBackgroundSettings?.overlayOpacityLight ?? settings.homeBackgroundSettings?.overlayOpacityLight ?? 35,
-    blurLight: form.homeBackgroundSettings?.blurLight ?? settings.homeBackgroundSettings?.blurLight ?? 0,
-    imageOpacityLight: form.homeBackgroundSettings?.imageOpacityLight ?? settings.homeBackgroundSettings?.imageOpacityLight ?? 100,
+    bgImageDark: form.homeBackgroundSettings?.bgImageDark || settings.homeBackgroundSettings?.bgImageDark || cachedBg?.bgImageDark || "",
+    overlayColorDark: form.homeBackgroundSettings?.overlayColorDark || settings.homeBackgroundSettings?.overlayColorDark || cachedBg?.overlayColorDark || "#000000",
+    overlayOpacityDark: form.homeBackgroundSettings?.overlayOpacityDark ?? settings.homeBackgroundSettings?.overlayOpacityDark ?? cachedBg?.overlayOpacityDark ?? 30,
+    blurDark: form.homeBackgroundSettings?.blurDark ?? settings.homeBackgroundSettings?.blurDark ?? cachedBg?.blurDark ?? 0,
+    imageOpacityDark: form.homeBackgroundSettings?.imageOpacityDark ?? settings.homeBackgroundSettings?.imageOpacityDark ?? cachedBg?.imageOpacityDark ?? 100,
+    bgImageLight: form.homeBackgroundSettings?.bgImageLight || settings.homeBackgroundSettings?.bgImageLight || cachedBg?.bgImageLight || "",
+    overlayColorLight: form.homeBackgroundSettings?.overlayColorLight || settings.homeBackgroundSettings?.overlayColorLight || cachedBg?.overlayColorLight || "#FFFFFF",
+    overlayOpacityLight: form.homeBackgroundSettings?.overlayOpacityLight ?? settings.homeBackgroundSettings?.overlayOpacityLight ?? cachedBg?.overlayOpacityLight ?? 35,
+    blurLight: form.homeBackgroundSettings?.blurLight ?? settings.homeBackgroundSettings?.blurLight ?? cachedBg?.blurLight ?? 0,
+    imageOpacityLight: form.homeBackgroundSettings?.imageOpacityLight ?? settings.homeBackgroundSettings?.imageOpacityLight ?? cachedBg?.imageOpacityLight ?? 100,
   };
 
   const isDark = activeTab === "dark";
-  const currentImage = isDark ? bgConfig.bgImageDark : (bgConfig.bgImageLight || bgConfig.bgImageDark);
+  const currentImage = isDark
+    ? (bgConfig.bgImageDark || bgConfig.bgImageLight)
+    : (bgConfig.bgImageLight || bgConfig.bgImageDark);
   const currentOverlayColor = isDark ? (bgConfig.overlayColorDark || "#000000") : (bgConfig.overlayColorLight || "#FFFFFF");
   const currentOverlayOpacity = isDark ? (bgConfig.overlayOpacityDark ?? 30) : (bgConfig.overlayOpacityLight ?? 35);
   const currentBlur = isDark ? (bgConfig.blurDark ?? 0) : (bgConfig.blurLight ?? 0);
@@ -137,10 +146,10 @@ export function HomeBackgroundManager({
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
+    if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "حجم الصورة كبير جداً",
-        description: "يرجى اختيار صورة بحجم أقل من 20 ميجابايت",
+        description: "يرجى اختيار صورة بحجم أقل من 50 ميجابايت",
         variant: "destructive",
       });
       return;
@@ -148,18 +157,28 @@ export function HomeBackgroundManager({
 
     setIsUploading(true);
     try {
+      // Adaptive smart compression supporting any desktop or mobile portrait aspect ratio
       const optimizedDataUrl = await compressImage(file, {
         maxWidth: 1920,
-        maxHeight: 1200,
-        quality: 0.82,
+        maxHeight: 1920,
+        quality: 0.78,
         format: "image/webp",
       });
 
-      if (isDark) {
-        updateBgField({ bgImageDark: optimizedDataUrl, enabled: true }, true);
-      } else {
-        updateBgField({ bgImageLight: optimizedDataUrl, enabled: true }, true);
-      }
+      // Synchronize both modes if counterpart was empty so background is visible across all themes
+      const patch: Partial<HomeBackgroundSettings> = isDark
+        ? {
+            bgImageDark: optimizedDataUrl,
+            bgImageLight: bgConfig.bgImageLight || optimizedDataUrl,
+            enabled: true,
+          }
+        : {
+            bgImageLight: optimizedDataUrl,
+            bgImageDark: bgConfig.bgImageDark || optimizedDataUrl,
+            enabled: true,
+          };
+
+      updateBgField(patch, true);
 
       toast({
         title: "تم رفع وتطبيق الخلفية بنجاح ✓",
@@ -179,11 +198,7 @@ export function HomeBackgroundManager({
   };
 
   const handleRemoveImage = () => {
-    if (isDark) {
-      updateBgField({ bgImageDark: "" }, true);
-    } else {
-      updateBgField({ bgImageLight: "" }, true);
-    }
+    updateBgField({ bgImageDark: "", bgImageLight: "" }, true);
     toast({
       title: "تم حذف صورة الخلفية",
       description: "تمت العودة للخلفية النظيفة الافتراضية بدون صور.",

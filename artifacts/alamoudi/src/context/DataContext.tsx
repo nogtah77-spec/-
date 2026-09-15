@@ -1343,22 +1343,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (rawBg) cachedHomeBg = JSON.parse(rawBg);
           } catch {}
 
-          const cloudHomeBg = cloudSettings.homeBackgroundSettings;
-          const activeDark = cloudHomeBg?.bgImageDark !== undefined
-            ? cloudHomeBg.bgImageDark
-            : (prev.homeBackgroundSettings?.bgImageDark !== undefined
-                ? prev.homeBackgroundSettings.bgImageDark
-                : (cachedHomeBg?.bgImageDark ?? ""));
-          const activeLight = cloudHomeBg?.bgImageLight !== undefined
-            ? cloudHomeBg.bgImageLight
-            : (prev.homeBackgroundSettings?.bgImageLight !== undefined
-                ? prev.homeBackgroundSettings.bgImageLight
-                : (cachedHomeBg?.bgImageLight ?? ""));
+          // Retain homeBackgroundSettings from dedicated store or cache; DO NOT let general site settings wipe it out!
+          const activeDark = prev.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || cloudSettings.homeBackgroundSettings?.bgImageDark || "";
+          const activeLight = prev.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || cloudSettings.homeBackgroundSettings?.bgImageLight || "";
 
           const mergedBg: HomeBackgroundSettings = {
             ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+            ...(cachedHomeBg || {}),
             ...(prev.homeBackgroundSettings || {}),
-            ...(cloudHomeBg || {}),
+            ...(cloudSettings.homeBackgroundSettings || {}),
             bgImageDark: activeDark,
             bgImageLight: activeLight,
           };
@@ -1858,16 +1851,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
             const effectiveQrCodes = prev.qrCodes || cachedQr?.qrCodes || freshSettings.qrCodes || DEFAULT_SETTINGS.qrCodes;
 
-            const cloudHomeBg = freshSettings.homeBackgroundSettings;
-            const mergedHomeBg: HomeBackgroundSettings = cloudHomeBg ? {
+            // PRESERVE background from current state or dedicated cache; DO NOT wipe with empty images
+            let cachedHomeBg: HomeBackgroundSettings | undefined;
+            try {
+              const rawBg = localStorage.getItem("alm_home_bg");
+              if (rawBg) cachedHomeBg = JSON.parse(rawBg);
+            } catch {}
+
+            const activeDark = prev.homeBackgroundSettings?.bgImageDark || cachedHomeBg?.bgImageDark || freshSettings.homeBackgroundSettings?.bgImageDark || "";
+            const activeLight = prev.homeBackgroundSettings?.bgImageLight || cachedHomeBg?.bgImageLight || freshSettings.homeBackgroundSettings?.bgImageLight || "";
+
+            const mergedHomeBg: HomeBackgroundSettings = {
               ...DEFAULT_SETTINGS.homeBackgroundSettings!,
+              ...(cachedHomeBg || {}),
               ...(prev.homeBackgroundSettings || {}),
-              ...cloudHomeBg,
-              bgImageDark: cloudHomeBg.bgImageDark !== undefined ? cloudHomeBg.bgImageDark : (prev.homeBackgroundSettings?.bgImageDark ?? ""),
-              bgImageLight: cloudHomeBg.bgImageLight !== undefined ? cloudHomeBg.bgImageLight : (prev.homeBackgroundSettings?.bgImageLight ?? ""),
-            } : {
-              ...DEFAULT_SETTINGS.homeBackgroundSettings!,
-              ...(prev.homeBackgroundSettings || {}),
+              ...(freshSettings.homeBackgroundSettings || {}),
+              bgImageDark: activeDark,
+              bgImageLight: activeLight,
             };
 
             const merged = {
@@ -1881,9 +1881,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             settingsRef.current = merged;
             try {
               localStorage.setItem("alm_settings", JSON.stringify(merged));
-              if (cloudHomeBg) {
-                localStorage.setItem("alm_home_bg", JSON.stringify(mergedHomeBg));
-              }
             } catch {}
             writeCache({ regions, types: propertyTypes, properties, settings: merged });
             return merged;
@@ -2321,7 +2318,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     // Cloud sync to Supabase (propagates across all devices worldwide)
-    await supabaseService.saveSettings(nextSettings).catch(() => {});
+    // Strip heavy base64 images from general site settings so __site_settings_store__ remains lightweight
+    // and doesn't conflict with or overwrite the dedicated __home_background_store__.
+    const settingsToSave = {
+      ...nextSettings,
+      homeBackgroundSettings: nextSettings.homeBackgroundSettings ? {
+        ...nextSettings.homeBackgroundSettings,
+        bgImageDark: undefined,
+        bgImageLight: undefined,
+      } : undefined,
+    };
+    await supabaseService.saveSettings(settingsToSave).catch(() => {});
     // Realtime broadcast (instant cross-tab & cross-device websocket update)
     sendRealtimeSync("SETTINGS_UPDATE", { settings: nextSettings });
     logActivity({ action: "updated", entityType: "settings", title: "تحديث إعدادات المنصة والموقع" });

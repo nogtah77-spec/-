@@ -33,7 +33,10 @@ export function HomeLuxuryBackground({
 
   const isDark = forcedTheme ? forcedTheme === "dark" : resolvedTheme === "dark";
   const instant = getInstantBgConfig();
-  const baseConfig = settings?.homeBackgroundSettings || instant;
+  const hasSettingsImage = !!(settings?.homeBackgroundSettings?.bgImageDark || settings?.homeBackgroundSettings?.bgImageLight);
+  const baseConfig = hasSettingsImage
+    ? settings.homeBackgroundSettings
+    : (instant || settings?.homeBackgroundSettings);
   const bgConfig = overrideConfig ? { ...(baseConfig || {}), ...overrideConfig } : (baseConfig || instant);
 
   // Simulator preview ALWAYS renders regardless of enabled flag
@@ -44,7 +47,7 @@ export function HomeLuxuryBackground({
 
   // Purely custom uploaded images - ZERO default images in the entire codebase
   const bgImage = isDark
-    ? (bgConfig?.bgImageDark || "")
+    ? (bgConfig?.bgImageDark || bgConfig?.bgImageLight || "")
     : (bgConfig?.bgImageLight || bgConfig?.bgImageDark || "");
 
   const overlayColor = isDark

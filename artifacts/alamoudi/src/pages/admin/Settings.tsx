@@ -90,9 +90,23 @@ export default function Settings() {
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
 
-  // Live sync form with settings state
+  // Live sync form with settings state, preserving uploaded background images
   useEffect(() => {
-    setForm(settings);
+    setForm((prev) => {
+      const prevBg = prev.homeBackgroundSettings;
+      const nextBg = settings.homeBackgroundSettings;
+      const effectiveDark = prevBg?.bgImageDark || nextBg?.bgImageDark || "";
+      const effectiveLight = prevBg?.bgImageLight || nextBg?.bgImageLight || "";
+      return {
+        ...settings,
+        homeBackgroundSettings: {
+          ...nextBg,
+          ...(prevBg || {}),
+          bgImageDark: effectiveDark,
+          bgImageLight: effectiveLight,
+        },
+      };
+    });
   }, [settings]);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
