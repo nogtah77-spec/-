@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +33,46 @@ import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
 import { MortgageReportModal } from "@/components/admin/MortgageReportModal";
 
+const STORAGE_KEY = "alm_mortgage_calculator_state";
+
+interface SavedMortgageState {
+  selectedPropertyId: string;
+  propertyPrice: number;
+  downPaymentPercent: number;
+  loanYears: number;
+  programId: string;
+  customInterestRate: number;
+}
+
+const DEFAULT_MORTGAGE_STATE: SavedMortgageState = {
+  selectedPropertyId: "",
+  propertyPrice: 0,
+  downPaymentPercent: 0,
+  loanYears: 0,
+  programId: "direct",
+  customInterestRate: 0,
+};
+
+function getInitialMortgageState(): SavedMortgageState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.propertyPrice === "number") {
+        return {
+          selectedPropertyId: typeof parsed.selectedPropertyId === "string" ? parsed.selectedPropertyId : "",
+          propertyPrice: typeof parsed.propertyPrice === "number" ? parsed.propertyPrice : 0,
+          downPaymentPercent: typeof parsed.downPaymentPercent === "number" ? parsed.downPaymentPercent : 0,
+          loanYears: typeof parsed.loanYears === "number" ? parsed.loanYears : 0,
+          programId: typeof parsed.programId === "string" ? parsed.programId : "direct",
+          customInterestRate: typeof parsed.customInterestRate === "number" ? parsed.customInterestRate : 0,
+        };
+      }
+    }
+  } catch {}
+  return DEFAULT_MORTGAGE_STATE;
+}
+
 const FINANCING_PROGRAMS = [
   { id: "direct", name: "تقسيط مباشر من المطور (0% بدون فوائد)", rate: 0, desc: "أقساط متساوية بدون فوائد بنكية" },
   { id: "cbe_3", name: "مبادرة التمويل العقاري (3% متناقصة)", rate: 3, desc: "لمحدودي ومتوسطي الدخل حتى 30 سنة" },
@@ -45,14 +85,32 @@ export default function MortgageCalculatorPage() {
   const { toast } = useToast();
   const { properties } = useData();
 
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("");
-  const [propertyPrice, setPropertyPrice] = useState<number>(4500000);
-  const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20);
-  const [loanYears, setLoanYears] = useState<number>(10);
-  const [programId, setProgramId] = useState<string>("direct");
-  const [customInterestRate, setCustomInterestRate] = useState<number>(10);
+  // Load persisted state from localStorage (or clean zeroes if previously reset)
+  const [initialState] = useState<SavedMortgageState>(getInitialMortgageState);
+
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(initialState.selectedPropertyId);
+  const [propertyPrice, setPropertyPrice] = useState<number>(initialState.propertyPrice);
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number>(initialState.downPaymentPercent);
+  const [loanYears, setLoanYears] = useState<number>(initialState.loanYears);
+  const [programId, setProgramId] = useState<string>(initialState.programId);
+  const [customInterestRate, setCustomInterestRate] = useState<number>(initialState.customInterestRate);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
+
+  // Auto-persist any change so state remains permanently until reset
+  useEffect(() => {
+    const stateToSave: SavedMortgageState = {
+      selectedPropertyId,
+      propertyPrice,
+      downPaymentPercent,
+      loanYears,
+      programId,
+      customInterestRate,
+    };
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch {}
+  }, [selectedPropertyId, propertyPrice, downPaymentPercent, loanYears, programId, customInterestRate]);
 
   // Property picker handler
   const handleSelectProperty = (id: string) => {
@@ -64,7 +122,7 @@ export default function MortgageCalculatorPage() {
     }
   };
 
-  // Reset calculator to zeroes
+  // Reset calculator to zeroes and save permanently
   const handleResetCalculator = () => {
     setSelectedPropertyId("");
     setPropertyPrice(0);
@@ -73,9 +131,14 @@ export default function MortgageCalculatorPage() {
     setProgramId("direct");
     setCustomInterestRate(0);
     setShowResetConfirm(false);
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_MORTGAGE_STATE));
+    } catch {}
+
     toast({
       title: "تم تصفير حاسبة التمويل بالكامل ✓",
-      description: "تمت إعادة تعيين جميع قيم وحقول الحاسبة إلى الصفر بنجاح.",
+      description: "تمت إعادة تعيين وحفظ القيم كخانات فارغة بنجاح.",
     });
   };
 
@@ -343,7 +406,7 @@ export default function MortgageCalculatorPage() {
                   </div>
                   <Input
                     type="number"
-                    value={propertyPrice || ""}
+                    value={propertyPrice === 0 ? "" : propertyPrice}
                     onChange={e => setPropertyPrice(Math.max(0, Number(e.target.value)))}
                     className="h-10 text-sm font-bold bg-background/80"
                     placeholder="0"
