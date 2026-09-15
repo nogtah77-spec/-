@@ -1,5 +1,5 @@
 import type { Property, PropertyType, Region } from "@/context/DataContext";
-import { toNumericString } from "@/lib/utils";
+import { toNumericString, formatNumber } from "@/lib/utils";
 
 export type ListingCategory = "all" | "sale" | "rent" | "furnished";
 export type PropertySector = "all" | "residential" | "commercial" | "administrative" | "medical";
@@ -219,99 +219,112 @@ export function buildPropertySearchHaystack(
   regionName?: string,
   typeName?: string
 ): string {
-  const code = property.code || "";
-  const title = property.title || "";
-  const desc = property.description || "";
-  const location = property.location || "";
-  const subArea = property.subArea || "";
-  const view = property.view || "";
-  const unitType = property.unitType || "";
-  const layout = property.layout || "";
-  const master = property.master || "";
-  const finishing = property.finishing || "";
-  const parking = property.parking || "";
-  const elevator = property.elevator || "";
-  const features = property.additionalFeatures || "";
+  if (!property) return "";
+  try {
+    const code = property.code || "";
+    const title = property.title || "";
+    const desc = property.description || "";
+    const location = property.location || "";
+    const subArea = property.subArea || "";
+    const view = property.view || "";
+    const unitType = property.unitType || "";
+    const layout = property.layout || "";
+    const master = property.master || "";
+    const finishing = property.finishing || "";
+    const parking = property.parking || "";
+    const elevator = property.elevator || "";
+    const features = property.additionalFeatures || "";
 
-  // Category labels & synonyms
-  const category = property.category || "";
-  const categoryLabel = category === "residential" ? "سكني"
-    : category === "commercial" ? "تجاري"
-    : category === "administrative" ? "إداري"
-    : category === "medical" ? "طبي" : "";
+    // Category labels & synonyms
+    const category = property.category || "";
+    const categoryLabel = category === "residential" ? "سكني"
+      : category === "commercial" ? "تجاري"
+      : category === "administrative" ? "إداري"
+      : category === "medical" ? "طبي" : "";
 
-  // Listing type labels & synonyms
-  const listingType = property.listingType || "";
-  const listingLabel = listingType === "sale" ? "للبيع بيع تمليك شراء"
-    : listingType === "rent" ? "للإيجار للايجار ايجار تأجير"
-    : listingType === "furnished" ? "مفروش مفروشة للايجار المفروش" : "";
+    // Listing type labels & synonyms
+    const listingType = property.listingType || "";
+    const listingLabel = listingType === "sale" ? "للبيع بيع تمليك شراء"
+      : listingType === "rent" ? "للإيجار للايجار ايجار تأجير"
+      : listingType === "furnished" ? "مفروش مفروشة للايجار المفروش" : "";
 
-  // Bedrooms representations
-  const beds = property.beds || 0;
-  const bedsVariants = beds > 0 ? [
-    `${beds}`,
-    `${beds} غرف`,
-    `${beds}غرف`,
-    `${beds} اوض`,
-    beds === 1 ? "غرفة استوديو اوضة" : "",
-    beds === 2 ? "غرفتين اوضتين غرفتان" : "",
-    beds === 3 ? "ثلاث غرف ثلاثة غرف" : "",
-    beds === 4 ? "أربع غرف اربعة غرف" : "",
-    beds === 5 ? "خمس غرف خمسة غرف" : "",
-  ].filter(Boolean).join(" ") : "";
+    // Bedrooms representations
+    const beds = Number(property.beds) || 0;
+    const bedsVariants = beds > 0 ? [
+      `${beds}`,
+      `${beds} غرف`,
+      `${beds}غرف`,
+      `${beds} اوض`,
+      beds === 1 ? "غرفة استوديو اوضة" : "",
+      beds === 2 ? "غرفتين اوضتين غرفتان" : "",
+      beds === 3 ? "ثلاث غرف ثلاثة غرف" : "",
+      beds === 4 ? "أربع غرف اربعة غرف" : "",
+      beds === 5 ? "خمس غرف خمسة غرف" : "",
+    ].filter(Boolean).join(" ") : "";
 
-  // Baths representations
-  const baths = property.baths || 0;
-  const bathsVariants = baths > 0 ? `${baths} حمام ${baths} حمامات` : "";
+    // Baths representations
+    const baths = Number(property.baths) || 0;
+    const bathsVariants = baths > 0 ? `${baths} حمام ${baths} حمامات` : "";
 
-  // Area representations
-  const area = property.area || 0;
-  const areaVariants = area > 0 ? `${area} ${area}م ${area} متر ${area}متر` : "";
+    // Area representations
+    const area = Number(property.area) || 0;
+    const areaVariants = area > 0 ? `${area} ${area}م ${area} متر ${area}متر` : "";
 
-  // Floor representations
-  const floor = property.floor ? `الدور ${property.floor} ${property.floor}` : "";
-  const floorText = property.floorText || "";
+    // Floor representations
+    const floor = property.floor !== undefined && property.floor !== null ? `الدور ${property.floor} ${property.floor}` : "";
+    const floorText = property.floorText || "";
 
-  // Region synonyms
-  const rName = regionName || "";
-  const rSynonyms = getSynonymsForTerm(rName).join(" ");
+    // Region synonyms
+    const rName = regionName || "";
+    const rSynonyms = getSynonymsForTerm(rName).join(" ");
 
-  // Type synonyms
-  const tName = typeName || "";
-  const tSynonyms = getSynonymsForTerm(tName).join(" ");
+    // Type synonyms
+    const tName = typeName || "";
+    const tSynonyms = getSynonymsForTerm(tName).join(" ");
 
-  // Price representations
-  const price = property.price ? `${property.price} ${formatNumber(property.price)}` : "";
+    // Price representations
+    let priceVariants = "";
+    if (property.price) {
+      try {
+        priceVariants = `${property.price} ${formatNumber(property.price)}`;
+      } catch {
+        priceVariants = `${property.price}`;
+      }
+    }
 
-  return [
-    code,
-    title,
-    desc,
-    location,
-    subArea,
-    view,
-    unitType,
-    layout,
-    master,
-    finishing,
-    parking,
-    elevator,
-    features,
-    category,
-    categoryLabel,
-    listingType,
-    listingLabel,
-    bedsVariants,
-    bathsVariants,
-    areaVariants,
-    floor,
-    floorText,
-    rName,
-    rSynonyms,
-    tName,
-    tSynonyms,
-    price,
-  ].join(" ");
+    return [
+      code,
+      title,
+      desc,
+      location,
+      subArea,
+      view,
+      unitType,
+      layout,
+      master,
+      finishing,
+      parking,
+      elevator,
+      features,
+      category,
+      categoryLabel,
+      listingType,
+      listingLabel,
+      bedsVariants,
+      bathsVariants,
+      areaVariants,
+      floor,
+      floorText,
+      rName,
+      rSynonyms,
+      tName,
+      tSynonyms,
+      priceVariants,
+    ].join(" ");
+  } catch (err) {
+    console.warn("buildPropertySearchHaystack error:", err);
+    return `${property.code || ""} ${property.title || ""} ${property.description || ""}`;
+  }
 }
 
 export function matchesSmartPropertySearch(
@@ -320,95 +333,101 @@ export function matchesSmartPropertySearch(
   regionName?: string,
   typeName?: string
 ): boolean {
-  const trimmed = searchQuery.trim();
+  if (!property) return false;
+  const trimmed = String(searchQuery ?? "").trim();
   if (!trimmed) return true;
 
-  // 1. Exact or prefix code match (case-insensitive)
-  const normQuery = normalizeArabicSearch(trimmed);
-  const codeRaw = (property.code || "").trim().toLowerCase();
-  const cleanCodeQuery = trimmed.toLowerCase().replace(/\s+/g, "");
-  if (cleanCodeQuery && (codeRaw === cleanCodeQuery || codeRaw.startsWith(cleanCodeQuery))) {
+  try {
+    // 1. Exact or prefix code match (case-insensitive)
+    const normQuery = normalizeArabicSearch(trimmed);
+    const codeRaw = String(property.code || "").trim().toLowerCase();
+    const cleanCodeQuery = trimmed.toLowerCase().replace(/\s+/g, "");
+    if (cleanCodeQuery && (codeRaw === cleanCodeQuery || codeRaw.startsWith(cleanCodeQuery))) {
+      return true;
+    }
+
+    // 2. Build full haystack
+    const rawHaystack = buildPropertySearchHaystack(property, regionName, typeName);
+    const normHaystack = normalizeArabicSearch(rawHaystack);
+
+    // Fast path: if unbroken normalized query is in haystack
+    if (normHaystack.includes(normQuery)) {
+      return true;
+    }
+
+    // 3. Extract query tokens
+    const rawTokens = normQuery.split(" ").filter(Boolean);
+    if (rawTokens.length === 0) return true;
+
+    // Detect compound phrase concepts first (e.g., "الترا سوبر لوكس", "سوبر لوكس", "مدينة نصر", "بيت الوطن", "كمبوند وصال", "3 غرف")
+    const compoundCandidates = [
+      "الترا سوبر لوكس",
+      "سوبر لوكس",
+      "نص تشطيب",
+      "طوب احمر",
+      "مدينة نصر",
+      "بيت الوطن",
+      "كمبوند وصال",
+      "القاهرة الجديدة",
+      "التجمع الخامس",
+      "تاون هاوس",
+      "توين هاوس",
+      "حمام سباحة",
+      "3 غرف",
+      "4 غرف",
+      "5 غرف",
+      "2 غرف",
+    ].map(normalizeArabicSearch);
+
+    const matchedCompoundTerms = new Set<string>();
+    let workingQuery = normQuery;
+
+    for (const compound of compoundCandidates) {
+      if (workingQuery.includes(compound)) {
+        matchedCompoundTerms.add(compound);
+        workingQuery = workingQuery.replace(compound, " ");
+      }
+    }
+
+    const remainingTokens = workingQuery.split(" ").filter(Boolean);
+    const allTokens = [...matchedCompoundTerms, ...remainingTokens];
+
+    // Separate core tokens from stop words / qualifiers
+    const coreTokens = allTokens.filter((token) => !SEARCH_STOP_WORDS.has(token));
+    const tokensToMatch = coreTokens.length > 0 ? coreTokens : allTokens;
+
+    // 4. Verify that each concept/token is satisfied in the property haystack
+    return tokensToMatch.every((token) => {
+      // Check direct substring
+      if (normHaystack.includes(token)) return true;
+
+      // Try without leading 'ال'
+      if (token.startsWith("ال") && token.length > 3) {
+        const withoutAl = token.slice(2);
+        if (normHaystack.includes(withoutAl)) return true;
+      }
+
+      // Try with leading 'ال'
+      if (!token.startsWith("ال") && token.length >= 3) {
+        const withAl = "ال" + token;
+        if (normHaystack.includes(withAl)) return true;
+      }
+
+      // Strip leading 'و' or 'ب' prefix if remainder is valid word (e.g., 'بحديقة' -> 'حديقة', 'ومسبح' -> 'مسبح')
+      if ((token.startsWith("و") || token.startsWith("ب")) && token.length > 3) {
+        const rootWord = token.slice(1);
+        if (normHaystack.includes(rootWord)) return true;
+        if (getSynonymsForTerm(rootWord).some((syn) => normHaystack.includes(syn))) return true;
+      }
+
+      // Check all expanded synonyms
+      const synonyms = getSynonymsForTerm(token);
+      return synonyms.some((synonym) => normHaystack.includes(synonym));
+    });
+  } catch (err) {
+    console.warn("matchesSmartPropertySearch error:", err);
     return true;
   }
-
-  // 2. Build full haystack
-  const rawHaystack = buildPropertySearchHaystack(property, regionName, typeName);
-  const normHaystack = normalizeArabicSearch(rawHaystack);
-
-  // Fast path: if unbroken normalized query is in haystack
-  if (normHaystack.includes(normQuery)) {
-    return true;
-  }
-
-  // 3. Extract query tokens
-  const rawTokens = normQuery.split(" ").filter(Boolean);
-  if (rawTokens.length === 0) return true;
-
-  // Detect compound phrase concepts first (e.g., "الترا سوبر لوكس", "سوبر لوكس", "مدينة نصر", "بيت الوطن", "كمبوند وصال", "3 غرف")
-  const compoundCandidates = [
-    "الترا سوبر لوكس",
-    "سوبر لوكس",
-    "نص تشطيب",
-    "طوب احمر",
-    "مدينة نصر",
-    "بيت الوطن",
-    "كمبوند وصال",
-    "القاهرة الجديدة",
-    "التجمع الخامس",
-    "تاون هاوس",
-    "توين هاوس",
-    "حمام سباحة",
-    "3 غرف",
-    "4 غرف",
-    "5 غرف",
-    "2 غرف",
-  ].map(normalizeArabicSearch);
-
-  const matchedCompoundTerms = new Set<string>();
-  let workingQuery = normQuery;
-
-  for (const compound of compoundCandidates) {
-    if (workingQuery.includes(compound)) {
-      matchedCompoundTerms.add(compound);
-      workingQuery = workingQuery.replace(compound, " ");
-    }
-  }
-
-  const remainingTokens = workingQuery.split(" ").filter(Boolean);
-  const allTokens = [...matchedCompoundTerms, ...remainingTokens];
-
-  // Separate core tokens from stop words / qualifiers
-  const coreTokens = allTokens.filter((token) => !SEARCH_STOP_WORDS.has(token));
-  const tokensToMatch = coreTokens.length > 0 ? coreTokens : allTokens;
-
-  // 4. Verify that each concept/token is satisfied in the property haystack
-  return tokensToMatch.every((token) => {
-    // Check direct substring
-    if (normHaystack.includes(token)) return true;
-
-    // Try without leading 'ال'
-    if (token.startsWith("ال") && token.length > 3) {
-      const withoutAl = token.slice(2);
-      if (normHaystack.includes(withoutAl)) return true;
-    }
-
-    // Try with leading 'ال'
-    if (!token.startsWith("ال") && token.length >= 3) {
-      const withAl = "ال" + token;
-      if (normHaystack.includes(withAl)) return true;
-    }
-
-    // Strip leading 'و' or 'ب' prefix if remainder is valid word (e.g., 'بحديقة' -> 'حديقة', 'ومسبح' -> 'مسبح')
-    if ((token.startsWith("و") || token.startsWith("ب")) && token.length > 3) {
-      const rootWord = token.slice(1);
-      if (normHaystack.includes(rootWord)) return true;
-      if (getSynonymsForTerm(rootWord).some((syn) => normHaystack.includes(syn))) return true;
-    }
-
-    // Check all expanded synonyms
-    const synonyms = getSynonymsForTerm(token);
-    return synonyms.some((synonym) => normHaystack.includes(synonym));
-  });
 }
 
 function featureTerms(query: string): string[] {
