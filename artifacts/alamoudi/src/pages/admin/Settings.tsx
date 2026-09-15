@@ -59,7 +59,7 @@ import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
-import type { SiteSettings, TiktokVideo, QrCodeItem } from "@/context/DataContext";
+import { sanitizeDummyContact, type SiteSettings, type TiktokVideo, type QrCodeItem } from "@/context/DataContext";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
@@ -112,10 +112,25 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     } catch {}
   };
 
-  const [form, setForm] = useState<SiteSettings>({ ...settings });
+  const isFormDirtyRef = useRef(false);
+  const [form, setForm] = useState<SiteSettings>(() => ({
+    ...settings,
+    phone1: sanitizeDummyContact(settings.phone1),
+    phone2: sanitizeDummyContact(settings.phone2),
+    whatsapp: sanitizeDummyContact(settings.whatsapp),
+  }));
 
-  // Live sync form with settings state, preserving uploaded background images
+  // Live sync form with settings state, preserving uncommitted user input and uploaded backgrounds
   useEffect(() => {
+    // If the user has made unsaved edits, do not overwrite them with background polling!
+    if (isFormDirtyRef.current) return;
+
+    // If an input or textarea is currently focused in the document, do not interrupt typing!
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+      return;
+    }
+
     setForm((prev) => {
       const prevBg = prev.homeBackgroundSettings;
       const nextBg = settings.homeBackgroundSettings;
@@ -123,6 +138,9 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
       const effectiveLight = prevBg?.bgImageLight || nextBg?.bgImageLight || "";
       return {
         ...settings,
+        phone1: sanitizeDummyContact(settings.phone1),
+        phone2: sanitizeDummyContact(settings.phone2),
+        whatsapp: sanitizeDummyContact(settings.whatsapp),
         homeBackgroundSettings: {
           ...nextBg,
           ...(prevBg || {}),
@@ -392,6 +410,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
   const set =
     (key: keyof SiteSettings) =>
     (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      isFormDirtyRef.current = true;
       if (
         key === "loginBackgroundEnabled" ||
         key === "loginBackgroundImageUrl" ||
@@ -505,6 +524,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
       const saved = await updateSettings(form);
       if (!saved) throw new Error("settings save failed");
       loginFormDirtyRef.current = false;
+      isFormDirtyRef.current = false;
       toast({
         title: "تم الحفظ بنجاح ✓",
         description: "تم تحديث إعدادات المنصة.",
@@ -664,8 +684,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                     <Input
                       id="phone1"
                       dir="ltr"
-                      className="text-right"
-                      value={form.phone1}
+                      className="text-right placeholder:text-muted-foreground/35 placeholder:opacity-60"
+                      value={form.phone1 ?? ""}
                       onChange={set("phone1")}
                       placeholder="+20 10 0000 0000"
                     />
@@ -678,8 +698,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                     <Input
                       id="phone2"
                       dir="ltr"
-                      className="text-right"
-                      value={form.phone2}
+                      className="text-right placeholder:text-muted-foreground/35 placeholder:opacity-60"
+                      value={form.phone2 ?? ""}
                       onChange={set("phone2")}
                       placeholder="+20 11 0000 0000"
                     />
@@ -695,8 +715,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                     <Input
                       id="whatsapp"
                       dir="ltr"
-                      className="text-right"
-                      value={form.whatsapp}
+                      className="text-right placeholder:text-muted-foreground/35 placeholder:opacity-60"
+                      value={form.whatsapp ?? ""}
                       onChange={set("whatsapp")}
                       placeholder="+20 10 0000 0000"
                     />
@@ -710,8 +730,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                       id="email"
                       type="email"
                       dir="ltr"
-                      className="text-right"
-                      value={form.email}
+                      className="text-right placeholder:text-muted-foreground/35 placeholder:opacity-60"
+                      value={form.email ?? ""}
                       onChange={set("email")}
                       placeholder="info@alamoudi.com"
                     />

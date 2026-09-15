@@ -361,16 +361,31 @@ export interface SiteSettings {
   activeThemeId?: "classic" | "charcoal" | string;
 }
 
+export function sanitizeDummyContact(val?: string): string {
+  if (!val) return "";
+  const trimmed = val.trim();
+  if (
+    trimmed === "+20 10 0000 0000" ||
+    trimmed === "+201000000000" ||
+    trimmed === "+20 11 0000 0000" ||
+    trimmed === "+201100000000" ||
+    trimmed === "0000000000"
+  ) {
+    return "";
+  }
+  return trimmed;
+}
+
 const DEFAULT_SETTINGS: SiteSettings = {
   activeThemeId: "classic",
   companyName: "العمودي للتسويق العقاري",
   companyDescription: "شريكك الموثوق في عالم العقارات الفاخرة. نقدم لك أفضل الفرص الاستثمارية في مصر.",
   heroLine1: "شريكك الموثوق في عالم التسويق العقاري والتشطيبات",
   heroLine2: "نقدم لك أفضل الفرص العقارية والاستثمارية في مصر",
-  phone1: "+20 10 0000 0000",
+  phone1: "",
   phone2: "",
-  whatsapp: "+20 10 0000 0000",
-  email: "info@alamoudi.com",
+  whatsapp: "",
+  email: "",
   tiktok: "https://www.tiktok.com/@alamoudi.realestate",
   tiktokName: "Alamoudi | الـعـمـودي",
   tiktokAvatar: "",
@@ -1022,6 +1037,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ...(cached?.settings?.homeBackgroundSettings || {}),
         ...(localCustom?.homeBackgroundSettings || {}),
       },
+      phone1: sanitizeDummyContact(base.phone1),
+      phone2: sanitizeDummyContact(base.phone2),
+      whatsapp: sanitizeDummyContact(base.whatsapp),
       qrCodes: localQr?.qrCodes ?? localCustom?.qrCodes ?? cached?.settings?.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
       qrSectionEnabled: localQr?.qrSectionEnabled !== undefined ? localQr.qrSectionEnabled : (localCustom?.qrSectionEnabled !== undefined ? localCustom.qrSectionEnabled : (cached?.settings?.qrSectionEnabled ?? true)),
       tiktokSectionEnabled: localTiktokEnabled !== undefined ? localTiktokEnabled : (localCustom?.tiktokSectionEnabled !== undefined ? localCustom.tiktokSectionEnabled : (cached?.settings?.tiktokSectionEnabled ?? true)),
@@ -1369,6 +1387,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...prev,
             ...cloudSettings,
             homeBackgroundSettings: mergedBg,
+            phone1: sanitizeDummyContact(cloudSettings.phone1 ?? prev.phone1),
+            phone2: sanitizeDummyContact(cloudSettings.phone2 ?? prev.phone2),
+            whatsapp: sanitizeDummyContact(cloudSettings.whatsapp ?? prev.whatsapp),
             qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
             qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
             tiktokSectionEnabled: cloudSettings.tiktokSectionEnabled !== undefined ? cloudSettings.tiktokSectionEnabled : (prev.tiktokSectionEnabled ?? true),
@@ -1883,6 +1904,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
               ...DEFAULT_SETTINGS,
               ...freshSettings,
               ...prev,
+              phone1: sanitizeDummyContact(prev.phone1 || freshSettings.phone1),
+              phone2: sanitizeDummyContact(prev.phone2 || freshSettings.phone2),
+              whatsapp: sanitizeDummyContact(prev.whatsapp || freshSettings.whatsapp),
               qrSectionEnabled: effectiveQrEnabled,
               qrCodes: effectiveQrCodes,
               homeBackgroundSettings: mergedHomeBg,
