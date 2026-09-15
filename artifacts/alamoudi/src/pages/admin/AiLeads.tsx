@@ -103,7 +103,7 @@ export default function AiLeads() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">{new Date(lead.createdAt).toLocaleDateString("ar-EG")}</span>
+                        <span className="text-xs text-muted-foreground">{new Date(lead.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                           onClick={() => { deleteAiLead(lead.id); toast({ title: "تم الحذف" }); }}>
                           <Trash2 className="h-3.5 w-3.5" />

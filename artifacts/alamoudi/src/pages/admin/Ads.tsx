@@ -1000,8 +1000,8 @@ export default function Ads() {
         {/* ─── بطاقات الإحصائيات ─── */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "المشاهدات",  value: totalViews.toLocaleString(),  icon: Eye,              color: "text-blue-600" },
-            { label: "النقرات",    value: totalClicks.toLocaleString(), icon: MousePointerClick, color: "text-green-600" },
+            { label: "المشاهدات",  value: totalViews.toLocaleString("en-US"),  icon: Eye,              color: "text-blue-600" },
+            { label: "النقرات",    value: totalClicks.toLocaleString("en-US"), icon: MousePointerClick, color: "text-green-600" },
             { label: "معدّل النقر", value: `${avgCTR}%`,               icon: TrendingUp,        color: "text-accent" },
           ].map(s => (
             <div key={s.label} className="rounded-xl border border-border bg-card p-4 flex items-center gap-3">
@@ -1189,10 +1189,10 @@ export default function Ads() {
                     </div>
 
                     <div className="flex justify-center text-sm font-semibold tabular-nums">
-                      {(ad.views ?? 0).toLocaleString()}
+                      {(ad.views ?? 0).toLocaleString("en-US")}
                     </div>
                     <div className="flex justify-center text-sm font-semibold tabular-nums">
-                      {(ad.clicks ?? 0).toLocaleString()}
+                      {(ad.clicks ?? 0).toLocaleString("en-US")}
                     </div>
                     <div className="flex justify-center text-sm font-semibold tabular-nums">{ctr}</div>
                     <div className="flex items-center justify-center gap-0.5">{actions}</div>
@@ -1248,8 +1248,8 @@ export default function Ads() {
 
                     <div className="grid grid-cols-3 gap-px rounded-lg overflow-hidden bg-border pr-6">
                       {[
-                        { label: "مشاهدات", value: (ad.views  ?? 0).toLocaleString() },
-                        { label: "نقرات",   value: (ad.clicks ?? 0).toLocaleString() },
+                        { label: "مشاهدات", value: (ad.views  ?? 0).toLocaleString("en-US") },
+                        { label: "نقرات",   value: (ad.clicks ?? 0).toLocaleString("en-US") },
                         { label: "CTR",     value: ctr },
                       ].map(stat => (
                         <div key={stat.label} className="bg-muted/50 text-center py-1.5">

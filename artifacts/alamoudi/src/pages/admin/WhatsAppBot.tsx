@@ -185,7 +185,7 @@ export default function WhatsAppBot() {
 
     const userText = inputMessage.trim();
     const now = new Date();
-    const timeString = now.toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" });
+    const timeString = now.toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" });
 
     // 1. Add user message with staff name
     const userMsgId = "msg-" + Date.now();
@@ -273,7 +273,7 @@ export default function WhatsAppBot() {
           `✅ *تم إدراج العقار بنجاح وتعيينك كالموظف المسؤول عنه!* 🚀\n\n` +
           `🏷️ *كود العقار:* ${generatedCode}\n` +
           `🏢 *النوع:* ${parsed.typeId === "apartment" ? "شقة سكنية" : parsed.typeId || "عقار"}\n` +
-          `💰 *السعر:* ${parsed.price ? parsed.price.toLocaleString("ar-EG") + " ج.م" : "غير محدد"}\n` +
+          `💰 *السعر:* ${parsed.price ? parsed.price.toLocaleString("en-US") + " ج.م" : "غير محدد"}\n` +
           `📐 *المساحة:* ${parsed.area ? parsed.area + " م²" : "غير محددة"}\n` +
           `🛏️ *الغرف / الحمامات:* ${parsed.beds || 0} غرف | ${parsed.baths || 0} حمام\n` +
           `🚪 *الدور:* ${parsed.floor === 0 ? "أرضي" : (parsed.floor ? "الدور " + parsed.floor : "غير محدد")}\n` +
@@ -311,7 +311,7 @@ export default function WhatsAppBot() {
           id: "bot-" + Date.now(),
           sender: "bot",
           text: botReply,
-          time: new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+          time: new Date().toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" }),
           propertyCode: generatedCode,
         },
       ]);
@@ -322,7 +322,7 @@ export default function WhatsAppBot() {
           id: "bot-err-" + Date.now(),
           sender: "bot",
           text: `⚠️ تعذر معالجة الرسالة: ${err?.message || "خطأ غير متوقع"}`,
-          time: new Date().toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }),
+          time: new Date().toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
     } finally {
@@ -665,7 +665,7 @@ export default function WhatsAppBot() {
                             {log.channelType === "group" ? "جروب الشركة" : "إرسال خاص"}
                           </Badge>
                         </td>
-                        <td className="py-2.5 px-3 font-medium">{log.price ? log.price.toLocaleString("ar-EG") + " ج.م" : "—"}</td>
+                        <td className="py-2.5 px-3 font-medium">{log.price ? log.price.toLocaleString("en-US") + " ج.م" : "—"}</td>
                         <td className="py-2.5 px-3">{log.area ? log.area + " م²" : "—"}</td>
                         <td className="py-2.5 px-3 text-muted-foreground">{log.timestamp}</td>
                         <td className="py-2.5 px-3">

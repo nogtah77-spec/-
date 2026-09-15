@@ -220,7 +220,7 @@ export function PropertyBrochureModal({
                   REF: {property.code || "ALM"}
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  تاريخ الإصدار: {new Date().toLocaleDateString("ar-EG")}
+                  تاريخ الإصدار: {new Date().toLocaleDateString("ar-SA-u-nu-latn")}
                 </p>
               </div>
             </div>

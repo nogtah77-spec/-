@@ -217,7 +217,7 @@ ${testInput}
               `✅ تم الاتصال المباشر بنجاح مع خوادم Google Gemini السحابية.\n` +
               `🏷️ الكود المستخرج: ${parsed.code || "غير محدد"}\n` +
               `🏢 نوع العقار: ${parsed.propertyType || "شقة"}\n` +
-              `💰 السعر المستخرج: ${parsed.price ? Number(parsed.price).toLocaleString("ar-EG") + " ج.م" : "غير محدد"}\n` +
+              `💰 السعر المستخرج: ${parsed.price ? Number(parsed.price).toLocaleString("en-US") + " ج.م" : "غير محدد"}\n` +
               `📐 المساحة: ${parsed.area ? parsed.area + " م²" : "غير محددة"}\n` +
               `🛏️ الغرف / الحمامات: ${parsed.beds || 0} غرف / ${parsed.baths || 0} حمامات\n` +
               `🚪 الدور / التشطيب: الدور ${parsed.floor ?? 0} | ${parsed.finishing || "غير محدد"}\n` +
@@ -242,7 +242,7 @@ ${testInput}
           `✅ تم التحليل عبر القاموس المحلي المدمج بنجاح (وضع الأمان بدون API).\n` +
           `🏷️ الكود المستخرج: ${parsed.code || "غير محدد"}\n` +
           `🏢 نوع العقار: ${parsed.typeId === "apartment" ? "شقة" : parsed.typeId || "عقار"}\n` +
-          `💰 السعر المستخرج: ${parsed.price ? parsed.price.toLocaleString("ar-EG") + " ج.م" : "غير محدد"}\n` +
+          `💰 السعر المستخرج: ${parsed.price ? parsed.price.toLocaleString("en-US") + " ج.م" : "غير محدد"}\n` +
           `📐 المساحة: ${parsed.area ? parsed.area + " م²" : "غير محددة"}\n` +
           `🛏️ الغرف / الحمامات: ${parsed.beds || 0} غرف / ${parsed.baths || 0} حمامات\n` +
           `🚪 الدور: الدور ${parsed.floor ?? 0} | التشطيب: ${parsed.finishing || "غير محدد"}\n` +
@@ -258,7 +258,7 @@ ${testInput}
         `⚠️ تعذر الاتصال بـ Gemini (${err?.message || "تحقق من مفتاح الـ API"}) — تم التحليل بالمحرك المحلي:\n\n` +
         `🏷️ الكود: ${parsed.code || "غير محدد"}\n` +
         `🏢 نوع العقار: ${parsed.typeId || "شقة"}\n` +
-        `💰 السعر: ${parsed.price ? parsed.price.toLocaleString("ar-EG") + " ج.م" : "غير محدد"}\n` +
+        `💰 السعر: ${parsed.price ? parsed.price.toLocaleString("en-US") + " ج.م" : "غير محدد"}\n` +
         `📐 المساحة: ${parsed.area ? parsed.area + " م²" : "غير محددة"}`
       );
     } finally {

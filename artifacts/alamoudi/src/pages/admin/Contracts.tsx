@@ -156,20 +156,20 @@ function formatDate(value?: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? value
-    : date.toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
+    : date.toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatAmount(value?: string, currency = "جنيه مصري") {
   if (!value) return "غير محدد";
   const numeric = Number(String(value).replace(/,/g, ""));
   if (!Number.isFinite(numeric)) return `${value} ${currency}`;
-  return `${numeric.toLocaleString("ar-EG")} ${currency}`;
+  return `${numeric.toLocaleString("en-US")} ${currency}`;
 }
 
 function shortAmount(value?: string) {
   if (!value) return "—";
   const numeric = Number(String(value).replace(/,/g, ""));
-  return Number.isFinite(numeric) ? numeric.toLocaleString("ar-EG") : value;
+  return Number.isFinite(numeric) ? numeric.toLocaleString("en-US") : value;
 }
 
 function cleanPhone(value: string) {
@@ -949,10 +949,10 @@ export default function Contracts() {
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: "إجمالي العقود", value: counts.all.toLocaleString("ar-EG"), icon: FileCheck2, tone: "text-accent", note: "كل الحالات" },
-            { label: "عقود سارية", value: counts.active.toLocaleString("ar-EG"), icon: Check, tone: "text-emerald-600", note: "تحتاج متابعة مستمرة" },
-            { label: "مسودات", value: counts.draft.toLocaleString("ar-EG"), icon: Edit3, tone: "text-slate-600", note: "لم تعتمد بعد" },
-            { label: "إجمالي المتبقي", value: counts.balance.toLocaleString("ar-EG"), icon: CircleDollarSign, tone: "text-amber-600", note: "بالقيم المسجلة" },
+            { label: "إجمالي العقود", value: counts.all.toLocaleString("en-US"), icon: FileCheck2, tone: "text-accent", note: "كل الحالات" },
+            { label: "عقود سارية", value: counts.active.toLocaleString("en-US"), icon: Check, tone: "text-emerald-600", note: "تحتاج متابعة مستمرة" },
+            { label: "مسودات", value: counts.draft.toLocaleString("en-US"), icon: Edit3, tone: "text-slate-600", note: "لم تعتمد بعد" },
+            { label: "إجمالي المتبقي", value: counts.balance.toLocaleString("en-US"), icon: CircleDollarSign, tone: "text-amber-600", note: "بالقيم المسجلة" },
           ].map((stat) => (
             <Card key={stat.label} className="overflow-hidden border-border/80 shadow-[0_5px_18px_rgba(16,32,45,.045)]">
               <CardContent className="relative flex items-start justify-between p-4 sm:p-5">
@@ -977,7 +977,7 @@ export default function Contracts() {
         </Card>
 
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div><h2 className="text-lg font-bold">سجل العقود</h2><p className="mt-1 text-xs text-muted-foreground">{filteredContracts.length.toLocaleString("ar-EG")} عقد ظاهر في العرض الحالي</p></div>
+          <div><h2 className="text-lg font-bold">سجل العقود</h2><p className="mt-1 text-xs text-muted-foreground">{filteredContracts.length.toLocaleString("en-US")} عقد ظاهر في العرض الحالي</p></div>
           {(search || statusFilter !== "all" || typeFilter !== "all") && <Button variant="ghost" size="sm" className="w-fit gap-1.5 text-xs text-muted-foreground" onClick={() => { setSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}><X className="h-3.5 w-3.5" /> مسح الفلاتر</Button>}
         </div>
 

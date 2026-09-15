@@ -132,7 +132,7 @@ export default function ImportExport() {
           رابط_الفيديو: p.videoUrl,
           المنطقة: regions.find((r) => r.id === p.regionId)?.name ?? p.regionId,
           النوع: propertyTypes.find((t) => t.id === p.typeId)?.name ?? p.typeId,
-          تاريخ_الإضافة: new Date(p.createdAt).toLocaleDateString("ar-EG"),
+          تاريخ_الإضافة: new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn"),
         }));
       case "users":
         return users.map((u) => ({
@@ -140,7 +140,7 @@ export default function ImportExport() {
           "البريد الإلكتروني": u.email,
           الدور: u.role,
           نشط: u.active ? "نعم" : "لا",
-          تاريخ_الانضمام: new Date(u.joinedAt).toLocaleDateString("ar-EG"),
+          تاريخ_الانضمام: new Date(u.joinedAt).toLocaleDateString("ar-SA-u-nu-latn"),
         }));
       case "inquiries":
         return inquiries.map((i) => ({
@@ -150,7 +150,7 @@ export default function ImportExport() {
           الموضوع: i.subject,
           الرسالة: i.message,
           الحالة: i.status,
-          التاريخ: new Date(i.createdAt).toLocaleDateString("ar-EG"),
+          التاريخ: new Date(i.createdAt).toLocaleDateString("ar-SA-u-nu-latn"),
         }));
       default:
         return [];

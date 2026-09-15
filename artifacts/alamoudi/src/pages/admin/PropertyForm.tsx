@@ -651,7 +651,7 @@ export default function PropertyForm() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-bold">الموقع التفصيلي</Label>
-                    <Input value={form.location} onChange={e => set("location", e.target.value)} placeholder="مثال: الحي الأول، المجاورة ٢، الشروق" />
+                    <Input value={form.location} onChange={e => set("location", e.target.value)} placeholder="مثال: الحي الأول، المجاورة 2، الشروق" />
                   </div>
                   <div className="space-y-2 col-span-2 sm:col-span-3">
                     <Label className="text-xs font-bold">المميزات الإضافية</Label>

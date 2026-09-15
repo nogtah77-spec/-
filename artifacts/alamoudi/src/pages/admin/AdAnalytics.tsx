@@ -184,7 +184,7 @@ function BreakdownList({ data, total, labelMap }: {
               {labelMap?.[key] ?? key}
             </span>
             <span className="text-muted-foreground tabular-nums">
-              {val.toLocaleString()} ({percent(val, total)})
+              {val.toLocaleString("en-US")} ({percent(val, total)})
             </span>
           </div>
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -237,7 +237,7 @@ function GeoBreakdownList({
                 {sub && <span className="text-xs text-muted-foreground">({sub})</span>}
               </span>
               <span className="text-muted-foreground tabular-nums shrink-0">
-                {val.toLocaleString()} ({percent(val, total)})
+                {val.toLocaleString("en-US")} ({percent(val, total)})
               </span>
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -399,13 +399,13 @@ export default function AdAnalytics() {
                 {ad.startDate && (
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    البداية: {new Date(ad.startDate).toLocaleDateString("ar-EG")}
+                    البداية: {new Date(ad.startDate).toLocaleDateString("ar-SA-u-nu-latn")}
                   </span>
                 )}
                 {ad.endDate && (
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    النهاية: {new Date(ad.endDate).toLocaleDateString("ar-EG")}
+                    النهاية: {new Date(ad.endDate).toLocaleDateString("ar-SA-u-nu-latn")}
                   </span>
                 )}
                 {ad.endDate && new Date(ad.endDate) > new Date() && (
@@ -437,8 +437,8 @@ export default function AdAnalytics() {
         <div>
           <h3 className="text-sm font-semibold text-muted-foreground mb-3">ملخص الفترة المحددة</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            <StatCard icon={Eye} label="مشاهدات الفترة" value={loading ? "—" : periodViews.toLocaleString()} />
-            <StatCard icon={MousePointerClick} label="نقرات الفترة" value={loading ? "—" : periodClicks.toLocaleString()} />
+            <StatCard icon={Eye} label="مشاهدات الفترة" value={loading ? "—" : periodViews.toLocaleString("en-US")} />
+            <StatCard icon={MousePointerClick} label="نقرات الفترة" value={loading ? "—" : periodClicks.toLocaleString("en-US")} />
             <StatCard
               icon={TrendingUp}
               label="معدل النقر (CTR)"
@@ -448,7 +448,7 @@ export default function AdAnalytics() {
             <StatCard
               icon={Users}
               label="زوار فريدون"
-              value={loading ? "—" : (data?.overview.uniqueVisitors ?? 0).toLocaleString()}
+              value={loading ? "—" : (data?.overview.uniqueVisitors ?? 0).toLocaleString("en-US")}
               color="text-blue-600"
             />
             <StatCard
@@ -457,8 +457,8 @@ export default function AdAnalytics() {
               value={loading ? "—" : msToReadable(data?.overview.avgViewDuration ?? 0)}
               color="text-purple-600"
             />
-            <StatCard icon={Eye} label="إجمالي المشاهدات" value={loading ? "—" : totalViews.toLocaleString()} sub="منذ إنشاء الإعلان" />
-            <StatCard icon={MousePointerClick} label="إجمالي النقرات" value={loading ? "—" : totalClicks.toLocaleString()} sub="منذ إنشاء الإعلان" />
+            <StatCard icon={Eye} label="إجمالي المشاهدات" value={loading ? "—" : totalViews.toLocaleString("en-US")} sub="منذ إنشاء الإعلان" />
+            <StatCard icon={MousePointerClick} label="إجمالي النقرات" value={loading ? "—" : totalClicks.toLocaleString("en-US")} sub="منذ إنشاء الإعلان" />
             <StatCard
               icon={TrendingUp}
               label="إجمالي CTR"
@@ -474,13 +474,13 @@ export default function AdAnalytics() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "اليوم",     value: data?.visitors.today ?? 0 },
-              { label: "آخر ٧ أيام", value: data?.visitors.last7d ?? 0 },
-              { label: "آخر ٣٠ يوماً", value: data?.visitors.last30d ?? 0 },
+              { label: "آخر 7 أيام", value: data?.visitors.last7d ?? 0 },
+              { label: "آخر 30 يوماً", value: data?.visitors.last30d ?? 0 },
               { label: "الإجمالي",  value: data?.visitors.all ?? 0 },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-2xl border bg-card p-4 text-center">
                 <p className="text-xs text-muted-foreground mb-1">{label}</p>
-                <p className="text-2xl font-bold">{loading ? "—" : value.toLocaleString()}</p>
+                <p className="text-2xl font-bold">{loading ? "—" : value.toLocaleString("en-US")}</p>
               </div>
             ))}
           </div>

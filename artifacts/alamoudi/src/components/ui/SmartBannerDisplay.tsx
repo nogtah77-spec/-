@@ -667,7 +667,7 @@ function FootballDisplay({ config, hasBg = false }: { config: Record<string, unk
 
           let timeLabel = "";
           if (matchStatus === "TIMED" || matchStatus === "SCHEDULED") {
-            try { timeLabel = new Date(utcDate).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" }); }
+            try { timeLabel = new Date(utcDate).toLocaleTimeString("ar-SA-u-nu-latn", { hour: "2-digit", minute: "2-digit" }); }
             catch { timeLabel = ""; }
           } else if (isLive)                                          { timeLabel = "🔴"; }
           else if (matchStatus === "FINISHED" || matchStatus === "AWARDED") { timeLabel = "انتهت"; }

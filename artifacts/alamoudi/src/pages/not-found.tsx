@@ -12,7 +12,7 @@ export default function NotFound() {
           <div className="w-20 h-20 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mx-auto mb-6">
             <Compass className="h-10 w-10" />
           </div>
-          <p className="text-5xl font-extrabold text-accent mb-3 tracking-tight">٤٠٤</p>
+          <p className="text-5xl font-extrabold text-accent mb-3 tracking-tight">404</p>
           <h1 className="text-2xl font-bold text-foreground mb-3">الصفحة غير موجودة</h1>
           <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
             الصفحة اللي بتدوّر عليها ممكن تكون اتنقلت أو الرابط قديم. تقدر ترجع للرئيسية وتكمّل تصفّح العقارات.

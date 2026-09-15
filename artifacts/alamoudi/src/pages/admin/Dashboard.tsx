@@ -118,7 +118,7 @@ export default function Dashboard() {
                       const createdAt = new Date(request.createdAt);
                       const dateLabel = Number.isNaN(createdAt.getTime())
                         ? "تاريخ غير معروف"
-                        : createdAt.toLocaleDateString("ar-EG", { day: "numeric", month: "short" });
+                        : createdAt.toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short" });
                       return (
                         <Link key={request.id} href="/admin/requests" className="flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-muted/40">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">

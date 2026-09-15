@@ -40,7 +40,7 @@ function formatDate(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? "تاريخ غير معروف"
-    : date.toLocaleDateString("ar-EG", { day: "numeric", month: "short", year: "numeric" });
+    : date.toLocaleDateString("ar-SA-u-nu-latn", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function formatRangeLabel(from: string, to: string) {

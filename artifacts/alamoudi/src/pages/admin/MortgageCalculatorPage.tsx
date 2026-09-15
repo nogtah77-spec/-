@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,33 +9,35 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Calculator,
-  Building2,
-  Calendar,
   Percent,
   Wallet,
   DollarSign,
   TrendingDown,
-  Printer,
-  Share2,
   MessageSquare,
-  Sparkles,
   Layers,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
   FileText,
+  RotateCcw,
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
-import { formatNumber } from "@/lib/utils";
 import { MortgageReportModal } from "@/components/admin/MortgageReportModal";
 
 const FINANCING_PROGRAMS = [
-  { id: "direct", name: "تقسيط مباشر من المطور (0% بدون فوائد)", rate: 0, desc: "أقساط متساوية بدون أي فوائد بنكية" },
+  { id: "direct", name: "تقسيط مباشر من المطور (0% بدون فوائد)", rate: 0, desc: "أقساط متساوية بدون فوائد بنكية" },
   { id: "cbe_3", name: "مبادرة التمويل العقاري (3% متناقصة)", rate: 3, desc: "لمحدودي ومتوسطي الدخل حتى 30 سنة" },
   { id: "cbe_8", name: "مبادرة التمويل العقاري (8% متناقصة)", rate: 8, desc: "للإسكان المتوسط وفوق المتوسط حتى 25 سنة" },
-  { id: "commercial_14", name: "تمويل بنكي تجاري (14% سنوي)", rate: 14, desc: "البرامج التمويلية للوحدات التجارية والإدارية" },
+  { id: "commercial_14", name: "تمويل بنكي تجاري (14% سنوي)", rate: 14, desc: "للوحدات التجارية والإدارية" },
   { id: "custom", name: "نسبة فائدة مخصصة", rate: 10, desc: "تحديد نسبة الفائدة يدوياً" },
 ];
 
@@ -50,6 +52,7 @@ export default function MortgageCalculatorPage() {
   const [programId, setProgramId] = useState<string>("direct");
   const [customInterestRate, setCustomInterestRate] = useState<number>(10);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
 
   // Property picker handler
   const handleSelectProperty = (id: string) => {
@@ -57,8 +60,23 @@ export default function MortgageCalculatorPage() {
     const prop = properties.find(p => p.id === id || p.code === id);
     if (prop && prop.price > 0) {
       setPropertyPrice(prop.price);
-      toast({ title: `تم تعيين سعر العقار ${prop.code}: ${prop.price.toLocaleString("ar-EG")} ج.م` });
+      toast({ title: `تم تعيين سعر العقار ${prop.code}: ${prop.price.toLocaleString("en-US")} ج.م` });
     }
+  };
+
+  // Reset calculator to zeroes
+  const handleResetCalculator = () => {
+    setSelectedPropertyId("");
+    setPropertyPrice(0);
+    setDownPaymentPercent(0);
+    setLoanYears(0);
+    setProgramId("direct");
+    setCustomInterestRate(0);
+    setShowResetConfirm(false);
+    toast({
+      title: "تم تصفير حاسبة التمويل بالكامل ✓",
+      description: "تمت إعادة تعيين جميع قيم وحقول الحاسبة إلى الصفر بنجاح.",
+    });
   };
 
   // Active interest rate
@@ -70,6 +88,7 @@ export default function MortgageCalculatorPage() {
 
   // Calculations
   const downPaymentAmount = useMemo(() => {
+    if (propertyPrice <= 0 || downPaymentPercent <= 0) return 0;
     return Math.round((propertyPrice * downPaymentPercent) / 100);
   }, [propertyPrice, downPaymentPercent]);
 
@@ -82,11 +101,10 @@ export default function MortgageCalculatorPage() {
   // Monthly installment calculation
   const { monthlyInstallment, totalInterest, totalPayment } = useMemo(() => {
     if (loanAmount <= 0 || totalMonths <= 0) {
-      return { monthlyInstallment: 0, totalInterest: 0, totalPayment: 0 };
+      return { monthlyInstallment: 0, totalInterest: 0, totalPayment: propertyPrice };
     }
 
     if (interestRate === 0) {
-      // 0% direct developer installments
       const monthly = Math.round(loanAmount / totalMonths);
       return {
         monthlyInstallment: monthly,
@@ -95,11 +113,10 @@ export default function MortgageCalculatorPage() {
       };
     }
 
-    // Standard reducing balance mortgage formula: M = P * [r(1+r)^n] / [(1+r)^n - 1]
     const monthlyRate = interestRate / 100 / 12;
     const numerator = loanAmount * monthlyRate * Math.pow(1 + monthlyRate, totalMonths);
     const denominator = Math.pow(1 + monthlyRate, totalMonths) - 1;
-    const monthly = Math.round(numerator / denominator);
+    const monthly = denominator > 0 ? Math.round(numerator / denominator) : 0;
     const totalPay = monthly * totalMonths + downPaymentAmount;
     const totalInt = totalPay - propertyPrice;
 
@@ -112,7 +129,7 @@ export default function MortgageCalculatorPage() {
 
   // Annual schedule breakdown
   const annualSchedule = useMemo(() => {
-    if (loanAmount <= 0 || totalMonths <= 0) return [];
+    if (loanAmount <= 0 || totalMonths <= 0 || loanYears <= 0) return [];
     const schedule = [];
     let balance = loanAmount;
     const monthlyRate = interestRate / 100 / 12;
@@ -138,6 +155,7 @@ export default function MortgageCalculatorPage() {
         remainingBalance: Math.round(balance),
       });
     }
+
     return schedule;
   }, [loanAmount, totalMonths, loanYears, interestRate, monthlyInstallment]);
 
@@ -145,15 +163,15 @@ export default function MortgageCalculatorPage() {
   const handleShareWhatsApp = () => {
     const text =
       `*خطة التمويل والأقساط - العمودي للتسويق العقاري* 🏢\n\n` +
-      `💰 *سعر العقار:* ${propertyPrice.toLocaleString("ar-EG")} ج.م\n` +
-      `💵 *المقدم (${downPaymentPercent}%):* ${downPaymentAmount.toLocaleString("ar-EG")} ج.م\n` +
-      `🏦 *المبلغ الممول:* ${loanAmount.toLocaleString("ar-EG")} ج.م\n` +
+      `💰 *سعر العقار:* ${propertyPrice.toLocaleString("en-US")} ج.م\n` +
+      `💵 *المقدم (${downPaymentPercent}%):* ${downPaymentAmount.toLocaleString("en-US")} ج.م\n` +
+      `🏦 *المبلغ الممول:* ${loanAmount.toLocaleString("en-US")} ج.م\n` +
       `📅 *مدة السداد:* ${loanYears} سنوات (${totalMonths} شهر)\n` +
       `📊 *الفائدة:* ${interestRate}%\n` +
       `--------------------------------\n` +
-      `🌟 *القسط الشهري:* ${monthlyInstallment.toLocaleString("ar-EG")} ج.م / شهر\n` +
-      `💳 *إجمالي المدفوع:* ${totalPayment.toLocaleString("ar-EG")} ج.م\n\n` +
-      `للمزيد من التفاصيل: ${window.location.origin}`;
+      `🌟 *القسط الشهري:* ${monthlyInstallment.toLocaleString("en-US")} ج.م / شهر\n` +
+      `💳 *إجمالي المدفوع:* ${totalPayment.toLocaleString("en-US")} ج.م\n\n` +
+      `للمزيد: ${window.location.origin}`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
@@ -171,25 +189,33 @@ export default function MortgageCalculatorPage() {
     <AdminLayout>
       <div className="w-full max-w-7xl mx-auto space-y-6 min-w-0" dir="rtl">
         <AdminPageHeader
-          title="حاسبة التمويل العقاري والأقساط (Mortgage Calculator)"
-          subtitle="حساب الأقساط الشهرية، جدول السداد، نسب الفائدة، ومقارنة خطط التمويل المباشر والبنكي للعملاء"
-          eyebrow="الخدمات المالية والحسابات"
+          title="حاسبة التمويل والأقساط"
+          subtitle="حساب الأقساط الشهرية وجدول السداد السنوي وخطط التمويل"
+          eyebrow="الخدمات المالية"
           icon={Calculator}
           actions={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowResetConfirm(true)}
+                className="border-red-500/40 text-red-500 hover:bg-red-500/10 hover:text-red-600 hover:border-red-500 font-bold gap-1.5 h-10 px-3.5 rounded-xl text-xs sm:text-sm shadow-sm transition-all"
+              >
+                <RotateCcw className="h-4 w-4" />
+                تصفير العدادات
+              </Button>
               <Button
                 onClick={() => setShowReportModal(true)}
                 className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 h-10 px-4 rounded-xl shadow-md text-xs sm:text-sm"
               >
                 <FileText className="h-4 w-4" />
-                معاينة وتصدير تقرير PDF
+                تقرير PDF
               </Button>
               <Button
                 onClick={handleShareWhatsApp}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 h-10 px-4 rounded-xl shadow-md text-xs sm:text-sm"
               >
                 <MessageSquare className="h-4 w-4" />
-                مشاركة سريعة
+                مشاركة
               </Button>
             </div>
           }
@@ -200,55 +226,57 @@ export default function MortgageCalculatorPage() {
           <Card className="border-accent/40 bg-gradient-to-br from-accent/15 via-card to-card shadow-sm">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">القسط الشهري المتوقع</span>
+                <span className="text-xs font-bold text-muted-foreground">القسط الشهري</span>
                 <div className="w-8 h-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center">
                   <Wallet className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {monthlyInstallment.toLocaleString("ar-EG")}
+                  {monthlyInstallment.toLocaleString("en-US")}
                 </span>
                 <span className="text-xs font-bold text-accent">ج.م / شهر</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">على مدار {totalMonths} قسطاً شهرياً</p>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {totalMonths > 0 ? `${totalMonths} قسط شهري` : "—"}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="border-border/80 bg-card shadow-sm">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">مبلغ الدفعة الأولى (المقدم)</span>
+                <span className="text-xs font-bold text-muted-foreground">الدفعة الأولى (المقدم)</span>
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
                   <DollarSign className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {downPaymentAmount.toLocaleString("ar-EG")}
+                  {downPaymentAmount.toLocaleString("en-US")}
                 </span>
                 <span className="text-xs font-bold text-muted-foreground">ج.م ({downPaymentPercent}%)</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">المتبقي للتمويل: {loanAmount.toLocaleString("ar-EG")} ج.م</p>
+              <p className="text-[11px] text-muted-foreground mt-1">المتبقي: {loanAmount.toLocaleString("en-US")} ج.م</p>
             </CardContent>
           </Card>
 
           <Card className="border-border/80 bg-card shadow-sm">
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">إجمالي الفوائد / الأرباح</span>
+                <span className="text-xs font-bold text-muted-foreground">إجمالي الفوائد</span>
                 <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center">
                   <Percent className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {totalInterest.toLocaleString("ar-EG")}
+                  {totalInterest.toLocaleString("en-US")}
                 </span>
                 <span className="text-xs font-bold text-muted-foreground">ج.م</span>
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
-                {interestRate === 0 ? "بدون أي فوائد إضافية ✓" : `بمعدل فائدة ${interestRate}% سنوياً`}
+                {interestRate === 0 ? "بدون فوائد" : `فائدة ${interestRate}% سنوياً`}
               </p>
             </CardContent>
           </Card>
@@ -263,11 +291,11 @@ export default function MortgageCalculatorPage() {
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {totalPayment.toLocaleString("ar-EG")}
+                  {totalPayment.toLocaleString("en-US")}
                 </span>
                 <span className="text-xs font-bold text-muted-foreground">ج.م</span>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-1">شاملاً المقدم وكافة الأقساط</p>
+              <p className="text-[11px] text-muted-foreground mt-1">شاملاً المقدم والأقساط</p>
             </CardContent>
           </Card>
         </div>
@@ -278,29 +306,26 @@ export default function MortgageCalculatorPage() {
           {/* Left Inputs Controls (5 Cols) */}
           <div className="lg:col-span-5 space-y-6">
             <Card className="border-border/80 bg-card shadow-sm">
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Calculator className="h-5 w-5 text-accent" />
-                  <CardTitle className="text-base font-bold">بيانات واختيارات التمويل</CardTitle>
+                  <CardTitle className="text-base font-bold">بيانات التمويل</CardTitle>
                 </div>
-                <CardDescription className="text-xs">
-                  اختر عقاراً من قاعدة البيانات أو أدخل السعر والخيارات يدوياً.
-                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5 text-xs sm:text-sm">
+              <CardContent className="space-y-4 text-xs sm:text-sm">
 
                 {/* Pick Existing Property */}
                 {properties.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-foreground">اختر عقاراً من المنصة (اختياري):</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-foreground">عقار من المنصة (اختياري):</Label>
                     <Select value={selectedPropertyId} onValueChange={handleSelectProperty}>
                       <SelectTrigger className="h-10 text-xs bg-background/80">
-                        <SelectValue placeholder="اختر عقاراً لملء السعر تلقائياً..." />
+                        <SelectValue placeholder="اختر عقاراً لملء السعر..." />
                       </SelectTrigger>
                       <SelectContent>
                         {properties.slice(0, 30).map(p => (
                           <SelectItem key={p.id} value={p.id} className="text-xs">
-                            {p.code} — {p.title} ({p.price ? p.price.toLocaleString("ar-EG") + " ج.م" : "غير محدد"})
+                            {p.code} — {p.title} ({p.price ? p.price.toLocaleString("en-US") + " ج.م" : "غير محدد"})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -309,11 +334,11 @@ export default function MortgageCalculatorPage() {
                 )}
 
                 {/* Property Price Input */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-foreground">سعر العقار الإجمالي (ج.م):</Label>
+                    <Label className="text-xs font-bold text-foreground">سعر العقار (ج.م):</Label>
                     <span className="text-xs font-bold font-mono text-accent">
-                      {propertyPrice.toLocaleString("ar-EG")} ج.م
+                      {propertyPrice.toLocaleString("en-US")} ج.م
                     </span>
                   </div>
                   <Input
@@ -321,16 +346,16 @@ export default function MortgageCalculatorPage() {
                     value={propertyPrice || ""}
                     onChange={e => setPropertyPrice(Math.max(0, Number(e.target.value)))}
                     className="h-10 text-sm font-bold bg-background/80"
-                    placeholder="مثال: 4,500,000"
+                    placeholder="0"
                   />
                 </div>
 
-                {/* Down Payment (المقدم) Slider & Presets */}
-                <div className="space-y-2.5">
+                {/* Down Payment Slider & Presets */}
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-foreground">نسبة الدفعة الأولى (المقدم):</Label>
+                    <Label className="text-xs font-bold text-foreground">نسبة المقدم:</Label>
                     <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                      {downPaymentPercent}% ({downPaymentAmount.toLocaleString("ar-EG")} ج.م)
+                      {downPaymentPercent}% ({downPaymentAmount.toLocaleString("en-US")} ج.م)
                     </span>
                   </div>
                   <Slider
@@ -341,8 +366,8 @@ export default function MortgageCalculatorPage() {
                     onValueChange={val => setDownPaymentPercent(val[0])}
                     className="py-1"
                   />
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    {[10, 15, 20, 25, 30, 50].map(pct => (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {[0, 10, 15, 20, 25, 30, 50].map(pct => (
                       <button
                         key={pct}
                         type="button"
@@ -359,24 +384,24 @@ export default function MortgageCalculatorPage() {
                   </div>
                 </div>
 
-                {/* Loan Duration (مدة السداد) */}
-                <div className="space-y-2.5">
+                {/* Loan Duration */}
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-foreground">مدة السداد / التقسيط (سنوات):</Label>
+                    <Label className="text-xs font-bold text-foreground">مدة السداد (سنوات):</Label>
                     <span className="text-xs font-bold font-mono text-accent">
-                      {loanYears} سنوات ({totalMonths} شهر)
+                      {loanYears} سنة ({totalMonths} شهر)
                     </span>
                   </div>
                   <Slider
                     value={[loanYears]}
-                    min={1}
+                    min={0}
                     max={30}
                     step={1}
                     onValueChange={val => setLoanYears(val[0])}
                     className="py-1"
                   />
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    {[1, 3, 5, 7, 10, 15, 20, 25].map(yrs => (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    {[0, 1, 3, 5, 7, 10, 15, 20, 25].map(yrs => (
                       <button
                         key={yrs}
                         type="button"
@@ -394,8 +419,8 @@ export default function MortgageCalculatorPage() {
                 </div>
 
                 {/* Financing Program Selection */}
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold text-foreground">برنامج التمويل / نوع الفائدة:</Label>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-foreground">برنامج التمويل:</Label>
                   <Select value={programId} onValueChange={setProgramId}>
                     <SelectTrigger className="h-10 text-xs bg-background/80">
                       <SelectValue />
@@ -415,7 +440,7 @@ export default function MortgageCalculatorPage() {
 
                 {/* Custom Rate Input if selected */}
                 {programId === "custom" && (
-                  <div className="space-y-2 bg-muted/40 p-3 rounded-xl border border-border/60">
+                  <div className="space-y-1.5 bg-muted/40 p-3 rounded-xl border border-border/60">
                     <Label className="text-xs font-bold text-foreground">نسبة الفائدة السنوية (%):</Label>
                     <Input
                       type="number"
@@ -423,7 +448,7 @@ export default function MortgageCalculatorPage() {
                       value={customInterestRate || ""}
                       onChange={e => setCustomInterestRate(Number(e.target.value))}
                       className="h-9 text-xs bg-background"
-                      placeholder="مثال: 9.5"
+                      placeholder="9.5"
                     />
                   </div>
                 )}
@@ -438,15 +463,12 @@ export default function MortgageCalculatorPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Layers className="h-5 w-5 text-accent" />
-                    <CardTitle className="text-base font-bold">جدول استهلاك وسداد الأقساط السنوي</CardTitle>
+                    <CardTitle className="text-base font-bold">جدول السداد السنوي</CardTitle>
                   </div>
                   <Badge variant="outline" className="text-[10px] font-bold border-border">
                     {loanYears} سنوات سداد
                   </Badge>
                 </div>
-                <CardDescription className="text-xs">
-                  تفصيل المبالغ المسددة سنوياً من أصل التمويل والفوائد والرصيد المتبقي.
-                </CardDescription>
               </CardHeader>
               <CardContent className="flex-1 overflow-x-auto">
                 <table className="w-full text-xs text-right">
@@ -460,21 +482,29 @@ export default function MortgageCalculatorPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
-                    {annualSchedule.map(row => (
-                      <tr key={row.year} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-2.5 px-3 font-bold text-foreground">السنة {row.year}</td>
-                        <td className="py-2.5 px-3 font-bold">{row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
-                        <td className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium">
-                          {row.principalPaid.toLocaleString("ar-EG")} ج.م
-                        </td>
-                        <td className="py-2.5 px-3 text-amber-600 font-medium">
-                          {row.interestPaid > 0 ? row.interestPaid.toLocaleString("ar-EG") + " ج.م" : "0 ج.م"}
-                        </td>
-                        <td className="py-2.5 px-3 font-mono text-left text-muted-foreground font-semibold">
-                          {row.remainingBalance.toLocaleString("ar-EG")} ج.م
+                    {annualSchedule.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                          لا توجد بيانات سداد حالياً
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      annualSchedule.map(row => (
+                        <tr key={row.year} className="hover:bg-muted/30 transition-colors">
+                          <td className="py-2.5 px-3 font-bold text-foreground">السنة {row.year}</td>
+                          <td className="py-2.5 px-3 font-bold">{row.yearlyPayment.toLocaleString("en-US")} ج.م</td>
+                          <td className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-medium">
+                            {row.principalPaid.toLocaleString("en-US")} ج.م
+                          </td>
+                          <td className="py-2.5 px-3 text-amber-600 font-medium">
+                            {row.interestPaid > 0 ? row.interestPaid.toLocaleString("en-US") + " ج.م" : "0 ج.م"}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-left text-muted-foreground font-semibold">
+                            {row.remainingBalance.toLocaleString("en-US")} ج.م
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </CardContent>
@@ -501,6 +531,31 @@ export default function MortgageCalculatorPage() {
           annualSchedule={annualSchedule}
           selectedProperty={selectedProperty}
         />
+
+        {/* ── Confirmation Modal for Resetting Calculator ── */}
+        <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+          <AlertDialogContent dir="rtl" className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                تصفير حاسبة التمويل العقاري
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs sm:text-sm text-muted-foreground pt-1.5 leading-relaxed">
+                هل أنت متأكد أنك تريد تصفير حاسبة التمويل العقاري؟
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex items-center justify-end gap-2 mt-4">
+              <AlertDialogCancel className="font-semibold text-xs sm:text-sm h-9 px-4">
+                إلغاء
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleResetCalculator}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm h-9 px-4"
+              >
+                نعم، تصفير
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );

@@ -69,7 +69,7 @@ export function MortgageReportModal({
     return `ALM-MORT-${Math.floor(100000 + Math.random() * 900000)}`;
   }, []);
 
-  const issueDate = new Date().toLocaleDateString("ar-EG", {
+  const issueDate = new Date().toLocaleDateString("ar-SA-u-nu-latn", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -295,7 +295,7 @@ export function MortgageReportModal({
           </div>
           <div class="info-row">
             <span class="info-label">سعر العقار الإجمالي:</span>
-            <span class="info-value" style="color:#b99a68;">${propertyPrice.toLocaleString("ar-EG")} ج.م</span>
+            <span class="info-value" style="color:#b99a68;">${propertyPrice.toLocaleString("en-US")} ج.م</span>
           </div>
         </div>
       </div>
@@ -305,26 +305,26 @@ export function MortgageReportModal({
         <div class="metrics-grid">
           <div class="metric-item">
             <div class="metric-label">القسط الشهري</div>
-            <div class="metric-val gold">${monthlyInstallment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-val gold">${monthlyInstallment.toLocaleString("en-US")} <small style="font-size:9px;">ج.م</small></div>
             <div class="metric-sub">ثابت على ${totalMonths} شهر</div>
           </div>
 
           <div class="metric-item">
             <div class="metric-label">الدفعة الأولى (المقدم)</div>
-            <div class="metric-val">${downPaymentAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-val">${downPaymentAmount.toLocaleString("en-US")} <small style="font-size:9px;">ج.م</small></div>
             <div class="metric-sub">بنسبة ${downPaymentPercent}%</div>
           </div>
 
           <div class="metric-item">
             <div class="metric-label">المبلغ الممول</div>
-            <div class="metric-val">${loanAmount.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-val">${loanAmount.toLocaleString("en-US")} <small style="font-size:9px;">ج.م</small></div>
             <div class="metric-sub">أصل التمويل العقاري</div>
           </div>
 
           <div class="metric-item">
             <div class="metric-label">إجمالي المبلغ المسدد</div>
-            <div class="metric-val">${totalPayment.toLocaleString("ar-EG")} <small style="font-size:9px;">ج.م</small></div>
-            <div class="metric-sub">${totalInterest > 0 ? `شاملاً ${totalInterest.toLocaleString("ar-EG")} ج.م فوائد` : "بدون أي فوائد إضافية"}</div>
+            <div class="metric-val">${totalPayment.toLocaleString("en-US")} <small style="font-size:9px;">ج.م</small></div>
+            <div class="metric-sub">${totalInterest > 0 ? `شاملاً ${totalInterest.toLocaleString("en-US")} ج.م فوائد` : "بدون أي فوائد إضافية"}</div>
           </div>
         </div>
       </div>
@@ -347,10 +347,10 @@ export function MortgageReportModal({
                 (row) => `
               <tr>
                 <td><strong>السنة ${row.year}</strong></td>
-                <td class="num">${row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
-                <td class="num green">${row.principalPaid.toLocaleString("ar-EG")} ج.م</td>
-                <td class="num amber">${row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("ar-EG")} ج.م` : "0 ج.م"}</td>
-                <td class="num" style="text-align:left; color:#475569;">${row.remainingBalance.toLocaleString("ar-EG")} ج.م</td>
+                <td class="num">${row.yearlyPayment.toLocaleString("en-US")} ج.م</td>
+                <td class="num green">${row.principalPaid.toLocaleString("en-US")} ج.م</td>
+                <td class="num amber">${row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("en-US")} ج.م` : "0 ج.م"}</td>
+                <td class="num" style="text-align:left; color:#475569;">${row.remainingBalance.toLocaleString("en-US")} ج.م</td>
               </tr>
             `
               )
@@ -499,14 +499,14 @@ export function MortgageReportModal({
       `*العمودي للتسويق العقاري*\n` +
       `رقم التقرير: ${reportId}\n` +
       `العميل: ${clientName.trim() || "العميل المحترم"}\n\n` +
-      `💰 *سعر العقار:* ${propertyPrice.toLocaleString("ar-EG")} ج.م\n` +
-      `💵 *المقدم (${downPaymentPercent}%):* ${downPaymentAmount.toLocaleString("ar-EG")} ج.م\n` +
-      `🏦 *المبلغ الممول:* ${loanAmount.toLocaleString("ar-EG")} ج.م\n` +
+      `💰 *سعر العقار:* ${propertyPrice.toLocaleString("en-US")} ج.م\n` +
+      `💵 *المقدم (${downPaymentPercent}%):* ${downPaymentAmount.toLocaleString("en-US")} ج.م\n` +
+      `🏦 *المبلغ الممول:* ${loanAmount.toLocaleString("en-US")} ج.م\n` +
       `📅 *مدة السداد:* ${loanYears} سنوات (${totalMonths} شهر)\n` +
       `📊 *الفائدة:* ${interestRate}%\n` +
       `--------------------------------\n` +
-      `🌟 *القسط الشهري:* ${monthlyInstallment.toLocaleString("ar-EG")} ج.م / شهر\n` +
-      `💳 *إجمالي المبلغ المسدد:* ${totalPayment.toLocaleString("ar-EG")} ج.م\n\n` +
+      `🌟 *القسط الشهري:* ${monthlyInstallment.toLocaleString("en-US")} ج.م / شهر\n` +
+      `💳 *إجمالي المبلغ المسدد:* ${totalPayment.toLocaleString("en-US")} ج.م\n\n` +
       `تم إعداد التقرير بواسطة: ${advisorName}`;
 
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -620,7 +620,7 @@ export function MortgageReportModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">سعر العقار:</span>
-                  <span className="font-bold text-[#B99A68]">{propertyPrice.toLocaleString("ar-EG")} ج.م</span>
+                  <span className="font-bold text-[#B99A68]">{propertyPrice.toLocaleString("en-US")} ج.م</span>
                 </div>
               </div>
             </div>
@@ -631,28 +631,28 @@ export function MortgageReportModal({
                 <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-[#B99A68]/30">
                   <span className="text-[10px] sm:text-[11px] text-white/70 block">القسط الشهري</span>
                   <span className="text-base sm:text-lg font-black text-[#F1DFBC] block mt-0.5">
-                    {monthlyInstallment.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
+                    {monthlyInstallment.toLocaleString("en-US")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
 
                 <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
                   <span className="text-[10px] sm:text-[11px] text-white/70 block">المقدم ({downPaymentPercent}%)</span>
                   <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                    {downPaymentAmount.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
+                    {downPaymentAmount.toLocaleString("en-US")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
 
                 <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
                   <span className="text-[10px] sm:text-[11px] text-white/70 block">المبلغ الممول</span>
                   <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                    {loanAmount.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
+                    {loanAmount.toLocaleString("en-US")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
 
                 <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-white/10">
                   <span className="text-[10px] sm:text-[11px] text-white/70 block">إجمالي المسدد</span>
                   <span className="text-sm sm:text-base font-black text-white block mt-0.5">
-                    {totalPayment.toLocaleString("ar-EG")} <small className="text-[9px]">ج.م</small>
+                    {totalPayment.toLocaleString("en-US")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
               </div>
@@ -676,10 +676,10 @@ export function MortgageReportModal({
                     {annualSchedule.slice(0, 5).map((row) => (
                       <tr key={row.year} className="hover:bg-slate-50">
                         <td className="p-2 font-bold text-slate-900">السنة {row.year}</td>
-                        <td className="p-2 font-bold text-slate-900">{row.yearlyPayment.toLocaleString("ar-EG")} ج.م</td>
-                        <td className="p-2 text-emerald-600 font-semibold">{row.principalPaid.toLocaleString("ar-EG")} ج.م</td>
-                        <td className="p-2 text-amber-600 font-semibold">{row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("ar-EG")} ج.م` : "0 ج.م"}</td>
-                        <td className="p-2 font-mono text-left text-slate-600">{row.remainingBalance.toLocaleString("ar-EG")} ج.م</td>
+                        <td className="p-2 font-bold text-slate-900">{row.yearlyPayment.toLocaleString("en-US")} ج.م</td>
+                        <td className="p-2 text-emerald-600 font-semibold">{row.principalPaid.toLocaleString("en-US")} ج.م</td>
+                        <td className="p-2 text-amber-600 font-semibold">{row.interestPaid > 0 ? `${row.interestPaid.toLocaleString("en-US")} ج.م` : "0 ج.م"}</td>
+                        <td className="p-2 font-mono text-left text-slate-600">{row.remainingBalance.toLocaleString("en-US")} ج.م</td>
                       </tr>
                     ))}
                     {annualSchedule.length > 5 && (

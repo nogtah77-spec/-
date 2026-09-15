@@ -349,7 +349,7 @@ export default function PushNotifications() {
                     <span className="text-3xl font-light font-mono tracking-tight text-white/90">
                       10:42
                     </span>
-                    <p className="text-[10px] text-white/60">الأربعاء، ٢ سبتمبر</p>
+                    <p className="text-[10px] text-white/60">الأربعاء، 2 سبتمبر</p>
                   </div>
 
                   {/* Notification Card */}
@@ -434,7 +434,7 @@ export default function PushNotifications() {
                     <div className="flex items-center gap-3 shrink-0 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1 text-[11px] font-mono">
                         <Clock className="h-3 w-3 text-accent" />
-                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString("ar-EG", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "مؤخراً"}
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString("ar-SA-u-nu-latn", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "مؤخراً"}
                       </span>
                       {item.url && (
                         <Button asChild variant="ghost" size="sm" className="h-7 text-xs text-accent px-2">

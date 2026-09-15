@@ -233,7 +233,7 @@ export default function Users() {
                       {user.active ? "نشط" : "غير نشط"}
                     </span>
                   </TableCell>
-                  <TableCell>{new Date(user.joinedAt).toLocaleDateString("ar-EG")}</TableCell>
+                  <TableCell>{new Date(user.joinedAt).toLocaleDateString("ar-SA-u-nu-latn")}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {canEdit && (

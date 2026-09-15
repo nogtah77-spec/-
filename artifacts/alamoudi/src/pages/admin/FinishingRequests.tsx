@@ -74,7 +74,7 @@ export default function FinishingRequests() {
                       <Phone className="h-3.5 w-3.5" />{req.phone}
                     </a>
                     <div className="flex items-center gap-2 mr-auto">
-                      <span className="text-xs text-muted-foreground">{new Date(req.createdAt).toLocaleDateString("ar-EG")}</span>
+                      <span className="text-xs text-muted-foreground">{new Date(req.createdAt).toLocaleDateString("ar-SA-u-nu-latn")}</span>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive"
                         onClick={() => { deleteFinishingRequest(req.id); toast({ title: "تم الحذف" }); }}>
                         <Trash2 className="h-3.5 w-3.5" />
