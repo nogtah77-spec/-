@@ -601,6 +601,53 @@ export const supabaseService = {
     }
   },
 
+  // Fetch Dedicated Login Background from Supabase Cloud (Isolated & Immune)
+  async fetchLoginBackground(): Promise<any | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__login_background_store__")
+        .maybeSingle();
+      if (error) {
+        console.warn("Supabase fetch login background warning:", error);
+        return null;
+      }
+      if (data && data.description) {
+        return JSON.parse(data.description);
+      }
+      return null;
+    } catch (e) {
+      console.warn("Supabase fetch login background exception:", e);
+      return null;
+    }
+  },
+
+  // Save Dedicated Login Background to Supabase Cloud (Isolated & Immune)
+  async saveLoginBackground(bg: any): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const payloadString = JSON.stringify(bg);
+      const row = {
+        id: "__login_background_store__",
+        code: "__LOGIN_BG__",
+        title: "Login Background Store",
+        description: payloadString,
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("properties").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save login background warning:", e);
+      return false;
+    }
+  },
+
   // Fetch Finishing Gallery Config from Supabase Cloud (Sync across all devices)
   async fetchFinishingGallery(): Promise<any | null> {
     if (!supabase) return null;

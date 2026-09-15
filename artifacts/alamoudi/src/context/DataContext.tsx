@@ -1020,6 +1020,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const rawTiktok = localStorage.getItem("alm_tiktok_enabled");
       if (rawTiktok !== null) localTiktokEnabled = JSON.parse(rawTiktok);
     } catch {}
+    let localLoginBg: {
+      loginBackgroundEnabled?: boolean;
+      loginBackgroundImageUrl?: string;
+      loginOverlayColor?: string;
+      loginOverlayOpacity?: number;
+      loginGradientOpacity?: number;
+    } | undefined;
+    try {
+      const rawLogin = localStorage.getItem("alm_login_bg");
+      if (rawLogin) localLoginBg = JSON.parse(rawLogin);
+    } catch {}
     let localCustom: Partial<SiteSettings> | null = null;
     try {
       const raw = localStorage.getItem("alm_settings");
@@ -1037,6 +1048,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ...(cached?.settings?.homeBackgroundSettings || {}),
         ...(localCustom?.homeBackgroundSettings || {}),
       },
+      loginBackgroundEnabled: localLoginBg?.loginBackgroundEnabled !== undefined ? localLoginBg.loginBackgroundEnabled : (base.loginBackgroundEnabled ?? false),
+      loginBackgroundImageUrl: localLoginBg?.loginBackgroundImageUrl !== undefined ? localLoginBg.loginBackgroundImageUrl : (base.loginBackgroundImageUrl || ""),
+      loginOverlayColor: localLoginBg?.loginOverlayColor || base.loginOverlayColor || "#10202D",
+      loginOverlayOpacity: localLoginBg?.loginOverlayOpacity ?? base.loginOverlayOpacity ?? 72,
+      loginGradientOpacity: localLoginBg?.loginGradientOpacity ?? base.loginGradientOpacity ?? 58,
       phone1: sanitizeDummyContact(base.phone1),
       phone2: sanitizeDummyContact(base.phone2),
       whatsapp: sanitizeDummyContact(base.whatsapp),
@@ -1337,6 +1353,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }).catch(() => {});
 
+    // 5.5. Sync dedicated login background from Supabase
+    supabaseService.fetchLoginBackground().then(cloudLoginBg => {
+      if (destroyed) return;
+      if (cloudLoginBg) {
+        setSettings(prev => {
+          const updated = {
+            ...prev,
+            loginBackgroundEnabled: cloudLoginBg.loginBackgroundEnabled !== undefined ? cloudLoginBg.loginBackgroundEnabled : prev.loginBackgroundEnabled,
+            loginBackgroundImageUrl: cloudLoginBg.loginBackgroundImageUrl || prev.loginBackgroundImageUrl,
+            loginOverlayColor: cloudLoginBg.loginOverlayColor || prev.loginOverlayColor,
+            loginOverlayOpacity: cloudLoginBg.loginOverlayOpacity ?? prev.loginOverlayOpacity,
+            loginGradientOpacity: cloudLoginBg.loginGradientOpacity ?? prev.loginGradientOpacity,
+          };
+          settingsRef.current = updated;
+          try {
+            localStorage.setItem("alm_login_bg", JSON.stringify(cloudLoginBg));
+          } catch {}
+          return updated;
+        });
+      }
+    }).catch(() => {});
+
     // 6. Sync QR settings from Supabase
     supabaseService.fetchQrSettings().then(cloudQr => {
       if (destroyed) return;
@@ -1390,6 +1428,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             phone1: sanitizeDummyContact(cloudSettings.phone1 ?? prev.phone1),
             phone2: sanitizeDummyContact(cloudSettings.phone2 ?? prev.phone2),
             whatsapp: sanitizeDummyContact(cloudSettings.whatsapp ?? prev.whatsapp),
+            loginBackgroundEnabled: prev.loginBackgroundEnabled !== undefined ? prev.loginBackgroundEnabled : (cloudSettings.loginBackgroundEnabled ?? false),
+            loginBackgroundImageUrl: prev.loginBackgroundImageUrl || cloudSettings.loginBackgroundImageUrl || "",
+            loginOverlayColor: prev.loginOverlayColor || cloudSettings.loginOverlayColor || "#10202D",
+            loginOverlayOpacity: prev.loginOverlayOpacity ?? cloudSettings.loginOverlayOpacity ?? 72,
+            loginGradientOpacity: prev.loginGradientOpacity ?? cloudSettings.loginGradientOpacity ?? 58,
             qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
             qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
             tiktokSectionEnabled: cloudSettings.tiktokSectionEnabled !== undefined ? cloudSettings.tiktokSectionEnabled : (prev.tiktokSectionEnabled ?? true),
@@ -1777,6 +1820,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     // 4. Smart Foreground & Focus & Polling Sync (Memory Shield Protected)
     const syncFreshData = () => {
+      supabaseService.fetchLoginBackground().then(freshLoginBg => {
+        if (freshLoginBg) {
+          setSettings(prev => {
+            const curImg = prev.loginBackgroundImageUrl || "";
+            const freshImg = freshLoginBg.loginBackgroundImageUrl || "";
+            if (freshImg !== curImg || freshLoginBg.loginBackgroundEnabled !== prev.loginBackgroundEnabled) {
+              const updated = {
+                ...prev,
+                loginBackgroundEnabled: freshLoginBg.loginBackgroundEnabled !== undefined ? freshLoginBg.loginBackgroundEnabled : prev.loginBackgroundEnabled,
+                loginBackgroundImageUrl: freshImg || curImg,
+                loginOverlayColor: freshLoginBg.loginOverlayColor || prev.loginOverlayColor,
+                loginOverlayOpacity: freshLoginBg.loginOverlayOpacity ?? prev.loginOverlayOpacity,
+                loginGradientOpacity: freshLoginBg.loginGradientOpacity ?? prev.loginGradientOpacity,
+              };
+              settingsRef.current = updated;
+              try {
+                localStorage.setItem("alm_login_bg", JSON.stringify(freshLoginBg));
+              } catch {}
+              return updated;
+            }
+            return prev;
+          });
+        }
+      }).catch(() => {});
       supabaseService.fetchHomeBackground().then(freshBg => {
         if (freshBg) {
           setSettings(prev => {
@@ -1907,6 +1974,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
               phone1: sanitizeDummyContact(prev.phone1 !== undefined ? prev.phone1 : freshSettings.phone1),
               phone2: sanitizeDummyContact(prev.phone2 !== undefined ? prev.phone2 : freshSettings.phone2),
               whatsapp: sanitizeDummyContact(prev.whatsapp !== undefined ? prev.whatsapp : freshSettings.whatsapp),
+              loginBackgroundEnabled: prev.loginBackgroundEnabled !== undefined ? prev.loginBackgroundEnabled : (freshSettings.loginBackgroundEnabled ?? false),
+              loginBackgroundImageUrl: prev.loginBackgroundImageUrl || freshSettings.loginBackgroundImageUrl || "",
+              loginOverlayColor: prev.loginOverlayColor || freshSettings.loginOverlayColor || "#10202D",
+              loginOverlayOpacity: prev.loginOverlayOpacity ?? freshSettings.loginOverlayOpacity ?? 72,
+              loginGradientOpacity: prev.loginGradientOpacity ?? freshSettings.loginGradientOpacity ?? 58,
               qrSectionEnabled: effectiveQrEnabled,
               qrCodes: effectiveQrCodes,
               homeBackgroundSettings: mergedHomeBg,
@@ -2372,6 +2444,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
     }
 
+    // If patch included login background changes, persist to dedicated login background store
+    const hasLoginBgChange =
+      patch.loginBackgroundEnabled !== undefined ||
+      patch.loginBackgroundImageUrl !== undefined ||
+      patch.loginOverlayColor !== undefined ||
+      patch.loginOverlayOpacity !== undefined ||
+      patch.loginGradientOpacity !== undefined;
+
+    if (hasLoginBgChange || nextSettings.loginBackgroundImageUrl) {
+      const loginBgPayload = {
+        loginBackgroundEnabled: nextSettings.loginBackgroundEnabled,
+        loginBackgroundImageUrl: nextSettings.loginBackgroundImageUrl,
+        loginOverlayColor: nextSettings.loginOverlayColor,
+        loginOverlayOpacity: nextSettings.loginOverlayOpacity,
+        loginGradientOpacity: nextSettings.loginGradientOpacity,
+      };
+      try {
+        localStorage.setItem("alm_login_bg", JSON.stringify(loginBgPayload));
+      } catch {}
+      supabaseService.saveLoginBackground(loginBgPayload).catch(() => {});
+      sendRealtimeSync("LOGIN_BG_UPDATE", { loginBackground: loginBgPayload });
+    }
+
     // Cloud sync to Supabase (propagates across all devices worldwide)
     // Strip heavy base64 images from general site settings so __site_settings_store__ remains lightweight
     // and doesn't conflict with or overwrite the dedicated __home_background_store__.
@@ -2382,6 +2477,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         bgImageDark: undefined,
         bgImageLight: undefined,
       } : undefined,
+      loginBackgroundImageUrl: nextSettings.loginBackgroundImageUrl?.startsWith("data:") ? undefined : nextSettings.loginBackgroundImageUrl,
     };
     await supabaseService.saveSettings(settingsToSave).catch(() => {});
     // Realtime broadcast (instant cross-tab & cross-device websocket update)

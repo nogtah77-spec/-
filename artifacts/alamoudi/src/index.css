@@ -343,16 +343,15 @@
 }
 
 .login-card {
-  /* Real glass: the scene must remain visible through the panel. Keep the
-     dark tint subtle and let the border/shadow define the card instead of a
-     solid gray fill, especially on mobile Safari. */
-  background: linear-gradient(145deg, rgba(9, 10, 10, 0.18), rgba(0, 0, 0, 0.08));
-  border: 1px solid rgba(255, 247, 229, 0.26);
+  /* Ultra-luxury frosted glass card with maximum contrast and crisp readability */
+  background: linear-gradient(145deg, rgba(16, 32, 45, 0.88), rgba(9, 18, 26, 0.94));
+  border: 1px solid rgba(220, 192, 138, 0.38);
   box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 249, 234, 0.16);
-  -webkit-backdrop-filter: blur(12px) saturate(125%);
-  backdrop-filter: blur(12px) saturate(125%);
+    0 24px 70px rgba(0, 0, 0, 0.65),
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 247, 229, 0.22);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
 }
 
 .login-brand-name {
@@ -362,27 +361,27 @@
   font-weight: 900;
   letter-spacing: -0.1em;
   line-height: 0.95;
-  text-shadow: 0 3px 16px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.6);
 }
 
 .login-field {
-  background: rgba(0, 0, 0, 0.24);
-  border-color: rgba(255, 247, 229, 0.25);
-  color: #F5F3EE;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(7, 14, 20, 0.82);
+  border-color: rgba(220, 192, 138, 0.32);
+  color: #FFFFFF;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .login-field::placeholder {
-  color: rgba(244, 239, 226, 0.48);
+  color: rgba(220, 215, 200, 0.55);
 }
 
 .login-field:hover {
-  border-color: rgba(255, 247, 229, 0.42);
+  border-color: rgba(220, 192, 138, 0.6);
 }
 
 .login-field:focus-visible {
-  border-color: rgba(220, 190, 133, 0.9);
-  box-shadow: 0 0 0 3px rgba(220, 190, 133, 0.16);
+  border-color: rgba(220, 190, 133, 1);
+  box-shadow: 0 0 0 3px rgba(220, 190, 133, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes login-content-in {

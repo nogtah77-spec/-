@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, ArrowLeft, LockKeyhole, UserRound } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
+import { LOGIN_BACKGROUND_PRESETS } from "@/data/loginPresets";
 
 function hexToRgba(value: string, opacity: number) {
   const normalized = value.replace(/^#/, "");
@@ -25,6 +26,34 @@ export default function Login() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Synchronous cache read for instantaneous, flicker-free background rendering
+  const [cachedLoginBg, setCachedLoginBg] = useState(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("alm_login_bg");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
+
+  // Listen for real-time background changes from admin updates
+  useEffect(() => {
+    const handleBgUpdate = (e: CustomEvent) => {
+      if (e.detail) {
+        setCachedLoginBg(e.detail);
+      }
+    };
+    window.addEventListener("alm_login_bg_update", handleBgUpdate as EventListener);
+    return () => {
+      window.removeEventListener("alm_login_bg_update", handleBgUpdate as EventListener);
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -37,10 +66,17 @@ export default function Login() {
     }
   };
 
-  const hasBackground = Boolean(settings.loginBackgroundEnabled && settings.loginBackgroundImageUrl);
-  const overlayColor = settings.loginOverlayColor || "#10202D";
-  const overlay = hexToRgba(overlayColor, settings.loginOverlayOpacity ?? 72);
-  const gradient = hexToRgba(overlayColor, settings.loginGradientOpacity ?? 58);
+  // Determine active background settings (live settings or immediate cache fallback)
+  const isBackgroundEnabled = settings.loginBackgroundEnabled ?? cachedLoginBg?.loginBackgroundEnabled ?? true;
+  const backgroundImageUrl = settings.loginBackgroundImageUrl || cachedLoginBg?.loginBackgroundImageUrl || LOGIN_BACKGROUND_PRESETS[0].imageUrl;
+  const hasBackground = Boolean(isBackgroundEnabled && backgroundImageUrl);
+
+  const overlayColor = settings.loginOverlayColor || cachedLoginBg?.loginOverlayColor || "#10202D";
+  const overlayOpacity = settings.loginOverlayOpacity ?? cachedLoginBg?.loginOverlayOpacity ?? 72;
+  const gradientOpacity = settings.loginGradientOpacity ?? cachedLoginBg?.loginGradientOpacity ?? 58;
+
+  const overlay = hexToRgba(overlayColor, overlayOpacity);
+  const gradient = hexToRgba(overlayColor, gradientOpacity);
 
   return (
     <main dir="rtl" className="login-shell relative min-h-[100dvh] overflow-hidden text-[#F5F3EE]">
@@ -49,7 +85,7 @@ export default function Login() {
       />
       {hasBackground && (
         <img
-          src={settings.loginBackgroundImageUrl}
+          src={backgroundImageUrl}
           alt=""
           aria-hidden="true"
           loading="eager"

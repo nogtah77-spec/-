@@ -65,6 +65,8 @@ import { checkUserPermission } from "@/lib/permissions";
 import { ShieldAlert } from "lucide-react";
 import { Link } from "wouter";
 import { HomeBackgroundManager } from "@/components/admin/HomeBackgroundManager";
+import { LOGIN_BACKGROUND_PRESETS, type LoginBackgroundPreset } from "@/data/loginPresets";
+import { compressImage } from "@/lib/imageOptimizer";
 import { ThemeAppearanceManager } from "@/components/admin/ThemeAppearanceManager";
 import { Layers } from "lucide-react";
 
@@ -454,42 +456,87 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     reader.readAsDataURL(file);
   };
 
-  const handleLoginBackgroundFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const [compressingLoginBg, setCompressingLoginBg] = useState(false);
+
+  const handleSelectLoginPreset = (preset: LoginBackgroundPreset) => {
+    loginFormDirtyRef.current = true;
+    isFormDirtyRef.current = true;
+    setForm((prev) => ({
+      ...prev,
+      loginBackgroundEnabled: true,
+      loginBackgroundImageUrl: preset.imageUrl,
+      loginOverlayColor: preset.overlayColor,
+      loginOverlayOpacity: preset.overlayOpacity,
+      loginGradientOpacity: preset.gradientOpacity,
+    }));
+    toast({
+      title: `تم اختيار ${preset.title}`,
+      description: "اضغط على زر الحفظ بالأسفل لتثبيت هذا الغلاف نهائياً.",
+    });
+  };
+
+  const handleRemoveLoginBackground = () => {
+    loginFormDirtyRef.current = true;
+    isFormDirtyRef.current = true;
+    setForm((prev) => ({
+      ...prev,
+      loginBackgroundEnabled: false,
+      loginBackgroundImageUrl: "",
+    }));
+    toast({
+      title: "تم تعطيل خلفية تسجيل الدخول",
+      description: "اضغط على زر الحفظ لتأكيد الإزالة والعودة للنمط الافتراضي.",
+    });
+  };
+
+  const handleLoginBackgroundFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+
     if (!file.type.startsWith("image/")) {
       toast({
-        title: "ملف غير صالح",
-        description: "اختر ملف صورة فقط.",
+        title: "نوع الملف غير صالح",
+        description: "يرجى اختيار ملف صورة صالح (JPG, PNG, WEBP)",
         variant: "destructive",
       });
       return;
     }
-    if (file.size > 4 * 1024 * 1024) {
+
+    if (file.size > 25 * 1024 * 1024) {
       toast({
-        title: "الصورة كبيرة جدًا",
-        description: "يجب ألا يتجاوز حجم الصورة 4 ميجابايت.",
+        title: "حجم الصورة كبير جداً",
+        description: "الحد الأقصى لحجم الصورة هو 25 ميجابايت.",
         variant: "destructive",
       });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
+
+    setCompressingLoginBg(true);
+    try {
+      // Compress adaptive WebP (max 1920x1920, quality 0.80) to ~80-140KB
+      const compressedDataUrl = await compressImage(file, 1920, 1920, 0.80);
       loginFormDirtyRef.current = true;
+      isFormDirtyRef.current = true;
       setForm((prev) => ({
         ...prev,
-        loginBackgroundImageUrl: String(event.target?.result ?? ""),
+        loginBackgroundImageUrl: compressedDataUrl,
         loginBackgroundEnabled: true,
       }));
-    };
-    reader.onerror = () =>
       toast({
-        title: "تعذر قراءة الصورة",
-        description: "حاول اختيار الصورة مرة أخرى.",
+        title: "تم تجهيز وضغط الصورة بنجاح ✓",
+        description: "أصبحت الصورة خفيفة وسريعة التحميل للغاية. اضغط 'حفظ إعدادات تسجيل الدخول' لتثبيتها.",
+      });
+    } catch (err) {
+      console.error("[Settings] Login background compression error:", err);
+      toast({
+        title: "تعذر معالجة الصورة",
+        description: "حدث خطأ أثناء ضغط الصورة، يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
-    reader.readAsDataURL(file);
+    } finally {
+      setCompressingLoginBg(false);
+    }
   };
 
   const regionOverlayColor = form.regionHeroOverlayColor || "#000000";
@@ -1517,10 +1564,10 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                     استخدم صورة مستقلة خلف نموذج الدخول، مع طبقة حماية تحافظ على وضوح الحقول والنصوص.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-5">
+                <CardContent className="space-y-6">
                   <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/30 p-4">
                     <div>
-                      <Label htmlFor="loginBackgroundEnabled">تفعيل صورة الخلفية</Label>
+                      <Label htmlFor="loginBackgroundEnabled" className="font-semibold text-foreground">تفعيل صورة الغلاف والخلفية</Label>
                       <p className="mt-1 text-xs text-muted-foreground">
                         عند التعطيل، تظهر خلفية المنصة الهادئة المتوافقة مع الهوية.
                       </p>
@@ -1535,9 +1582,72 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="loginBackgroundImageUrl">صورة خلفية الدخول</Label>
-                    <div className="flex flex-col gap-2 sm:flex-row">
+                  {/* 6 Luxury Default Presets Gallery */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-semibold flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-accent" />
+                        أغلفة فاخرة جاهزة لصفحة تسجيل الدخول (6 تصاميم راقية)
+                      </Label>
+                      <span className="text-xs text-muted-foreground">اختر غلافك المفضل بضغطة زر</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {LOGIN_BACKGROUND_PRESETS.map((preset) => {
+                        const isSelected = form.loginBackgroundImageUrl === preset.imageUrl;
+                        return (
+                          <div
+                            key={preset.id}
+                            onClick={() => handleSelectLoginPreset(preset)}
+                            className={`group relative cursor-pointer overflow-hidden rounded-xl border-2 transition-all duration-200 hover:shadow-lg ${
+                              isSelected
+                                ? "border-accent ring-2 ring-accent/30 shadow-md"
+                                : "border-border hover:border-accent/50 bg-card"
+                            }`}
+                          >
+                            <div className="relative h-28 w-full overflow-hidden bg-muted">
+                              <img
+                                src={preset.imageUrl}
+                                alt={preset.title}
+                                loading="lazy"
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              />
+                              <div
+                                className="absolute inset-0"
+                                style={{ backgroundColor: colorToRgba(preset.overlayColor, preset.overlayOpacity) }}
+                              />
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  background: `linear-gradient(to top, ${colorToRgba(preset.overlayColor, preset.gradientOpacity)} 0%, transparent 100%)`,
+                                }}
+                              />
+                              <span className="absolute top-2 right-2 rounded-full bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[10px] font-medium text-white/90">
+                                {preset.badge}
+                              </span>
+                              {isSelected && (
+                                <span className="absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-[10px] font-bold text-accent-foreground shadow-sm">
+                                  <Check className="h-3 w-3" /> الغلاف النشط
+                                </span>
+                              )}
+                            </div>
+                            <div className="p-2.5 bg-card">
+                              <p className="text-xs font-bold text-foreground leading-snug">{preset.title}</p>
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{preset.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Upload and Management */}
+                  <div className="space-y-3 rounded-xl border border-border/70 bg-muted/20 p-4">
+                    <Label htmlFor="loginBackgroundImageUrl" className="text-sm font-semibold flex items-center gap-2">
+                      <Upload className="h-4 w-4 text-accent" />
+                      أو ارفع صورة غلاف مخصصة من جهازك
+                    </Label>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                       <input
                         ref={loginBackgroundFileRef}
                         type="file"
@@ -1547,27 +1657,39 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                       />
                       <Button
                         type="button"
-                        variant="outline"
-                        className="shrink-0 gap-2"
+                        variant="default"
+                        className="shrink-0 gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                        disabled={compressingLoginBg}
                         onClick={() => loginBackgroundFileRef.current?.click()}
                       >
                         <Upload className="h-4 w-4" />
-                        رفع صورة
+                        {compressingLoginBg ? "جاري المعالجة والضغط..." : "رفع صورة مخصصة"}
                       </Button>
+                      {form.loginBackgroundImageUrl && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="shrink-0 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={handleRemoveLoginBackground}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          حذف الغلاف
+                        </Button>
+                      )}
                       <Input
                         id="loginBackgroundImageUrl"
                         dir="ltr"
                         className="text-xs"
-                        value={form.loginBackgroundImageUrl?.startsWith("data:") ? "" : form.loginBackgroundImageUrl ?? ""}
+                        value={form.loginBackgroundImageUrl?.startsWith("data:") ? "صورة مخصصة مضغوطة من جهازك" : (form.loginBackgroundImageUrl ?? "")}
                         onChange={set("loginBackgroundImageUrl")}
-                        placeholder="https://example.com/login-background.jpg"
+                        placeholder="أو ضع رابط صورة مباشرة https://..."
                       />
                     </div>
                     {form.loginBackgroundImageUrl?.startsWith("data:") && (
-                      <p className="text-xs text-accent">تم اختيار صورة من الجهاز — اضغط حفظ الإعدادات لتثبيتها.</p>
+                      <p className="text-xs text-accent font-medium">✓ تم ضغط صورتك وتحويلها إلى WebP خفيف للغاية وجاهز للحفظ الدائم.</p>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      PNG أو JPG أو WEBP حتى 4 ميجابايت، أو استخدم رابطًا مباشرًا. يفضّل اختيار صورة أفقية هادئة.
+                      يدعم كافة الصور حتى 25 ميجابايت مع ضغط تكيفي تلقائي لضمان خفة وسرعة صفحة الدخول وعدم ثقلها إطلاقاً.
                     </p>
                   </div>
 
