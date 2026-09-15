@@ -644,28 +644,38 @@ html[data-theme="charcoal"] .text-accent-foreground {
   color: #181C20 !important;
 }
 
-/* ── زر "اعرض عقارك" الفاخر والمتفاعل بانسجام مع الثيم ── */
-html[data-theme="charcoal"] .action-btn-add-property {
+/* ── أزرار الإجراءات السريعة الفاخرة في الصفحة الرئيسية ── */
+html[data-theme="charcoal"] .action-btn-add-property,
+html[data-theme="charcoal"] .action-btn-finishing,
+html[data-theme="charcoal"] .action-btn-consultation {
   background: linear-gradient(135deg, rgba(34, 39, 45, 0.96) 0%, rgba(24, 28, 32, 0.98) 100%) !important;
   border: 1.5px solid rgba(197, 160, 89, 0.5) !important;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(197, 160, 89, 0.15) !important;
 }
-html[data-theme="charcoal"] .action-btn-add-property:hover {
+html[data-theme="charcoal"] .action-btn-add-property:hover,
+html[data-theme="charcoal"] .action-btn-finishing:hover,
+html[data-theme="charcoal"] .action-btn-consultation:hover {
   border-color: #C5A059 !important;
   box-shadow: 0 8px 26px rgba(197, 160, 89, 0.22), 0 0 0 1px rgba(197, 160, 89, 0.3) !important;
   transform: translateY(-2px);
 }
-html[data-theme="charcoal"] .action-btn-add-property span {
+html[data-theme="charcoal"] .action-btn-add-property span,
+html[data-theme="charcoal"] .action-btn-finishing span,
+html[data-theme="charcoal"] .action-btn-consultation span {
   color: #F8FAFC !important;
 }
-html[data-theme="charcoal"] .action-btn-add-property .action-icon-badge {
+html[data-theme="charcoal"] .action-btn-add-property .action-icon-badge,
+html[data-theme="charcoal"] .action-btn-finishing .action-icon-badge,
+html[data-theme="charcoal"] .action-btn-consultation .action-icon-badge {
   background: linear-gradient(135deg, #C5A059 0%, #B38E47 100%) !important;
   color: #181C20 !important;
   box-shadow: 0 2px 8px rgba(197, 160, 89, 0.35) !important;
 }
-html[data-theme="charcoal"] .action-btn-add-property .action-subtitle {
+html[data-theme="charcoal"] .action-btn-add-property .action-subtitle,
+html[data-theme="charcoal"] .action-btn-finishing .action-subtitle,
+html[data-theme="charcoal"] .action-btn-consultation .action-subtitle {
   color: #C5A059 !important;
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 /* ── هيدر صفحات لوحة التحكم بالثيم الفحمي وذهب الساتان ── */

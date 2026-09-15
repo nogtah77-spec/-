@@ -328,27 +328,27 @@ export default function Home() {
 
             <Link
               href="/finishing-services"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-2xs hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
+              className="action-btn-finishing group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/50 hover:border-accent"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
-                <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
+              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.2]" />
               </div>
               <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-bold leading-tight">خدمات التشطيبات</span>
-                <span className="hidden sm:block text-[10px] text-muted-foreground font-normal mt-0.5">تصميم وديكورات فاخرة</span>
+                <span className="block text-xs sm:text-sm font-black text-foreground group-hover:text-accent transition-colors leading-tight">خدمات التشطيبات</span>
+                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-medium mt-0.5">تصميم وديكورات فاخرة</span>
               </div>
             </Link>
 
             <Link
               href="/consultation"
-              className="group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-2xs hover:shadow-sm hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-border hover:border-accent/60"
+              className="action-btn-consultation group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/50 hover:border-accent"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-accent/15 text-accent flex items-center justify-center shrink-0 group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
-                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.2]" />
               </div>
               <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-bold leading-tight">اطرح استفسارك</span>
-                <span className="hidden sm:block text-[10px] text-muted-foreground font-normal mt-0.5">استشارة عقارية فورية</span>
+                <span className="block text-xs sm:text-sm font-black text-foreground group-hover:text-accent transition-colors leading-tight">اطرح استفسارك</span>
+                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-medium mt-0.5">استشارة عقارية فورية</span>
               </div>
             </Link>
           </div>
