@@ -276,6 +276,19 @@ export default function Home() {
   const [activeVideo, setActiveVideo] = useState<TiktokVideo | null>(null);
   const [showStickySearch, setShowStickySearch] = useState(false);
 
+  // Instant local lock check to guarantee zero flicker on reload or tab switch
+  let localTiktokEnabled: boolean | undefined;
+  try {
+    const raw = localStorage.getItem("alm_tiktok_enabled");
+    if (raw !== null) {
+      localTiktokEnabled = JSON.parse(raw);
+    }
+  } catch {}
+
+  const isTiktokSectionVisible = localTiktokEnabled !== undefined
+    ? localTiktokEnabled
+    : (settings.tiktokSectionEnabled !== undefined ? settings.tiktokSectionEnabled : true);
+
   useEffect(() => {
     const handleScroll = () => {
       // Reveal sticky search pill when scrolled past 220px
@@ -427,7 +440,7 @@ export default function Home() {
         )}
 
         {/* ── TikTok Section ── */}
-        {!isFiltering && (
+        {!isFiltering && isTiktokSectionVisible && (
           <section className="py-4 md:py-5 bg-transparent relative z-10">
               <div className="container px-3 sm:px-6">
               <div className="max-w-3xl mx-auto">
@@ -535,21 +548,23 @@ export default function Home() {
         )}
 
         {/* TikTok player modal */}
-        <Dialog
-          open={!!activeVideo}
-          onOpenChange={(o) => {
-            if (!o) setActiveVideo(null);
-          }}
-        >
-          <DialogContent className="max-w-[360px] p-0 overflow-hidden gap-0">
-            <DialogTitle className="sr-only">
-              {activeVideo?.title || "فيديو تيك توك"}
-            </DialogTitle>
-            {activeVideo && (
-              <TiktokPlayer key={activeVideo.id} video={activeVideo} />
-            )}
-          </DialogContent>
-        </Dialog>
+        {isTiktokSectionVisible && (
+          <Dialog
+            open={!!activeVideo}
+            onOpenChange={(o) => {
+              if (!o) setActiveVideo(null);
+            }}
+          >
+            <DialogContent className="max-w-[360px] p-0 overflow-hidden gap-0">
+              <DialogTitle className="sr-only">
+                {activeVideo?.title || "فيديو تيك توك"}
+              </DialogTitle>
+              {activeVideo && (
+                <TiktokPlayer key={activeVideo.id} video={activeVideo} />
+              )}
+            </DialogContent>
+          </Dialog>
+        )}
 
         {!isFiltering && (
           <>

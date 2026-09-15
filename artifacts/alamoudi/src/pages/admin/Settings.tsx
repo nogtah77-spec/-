@@ -74,7 +74,7 @@ const EMPTY_VIDEO: Omit<TiktokVideo, "id"> = {
   videoUrl: "",
 };
 
-export default function Settings() {
+export default function Settings({ initialTab }: { initialTab?: string } = {}) {
   const {
     settings,
     updateSettings,
@@ -87,6 +87,30 @@ export default function Settings() {
   const canEditSettings = isAdmin || checkUserPermission(currentUser, "الإعدادات-تعديل إعدادات الموقع");
   const canManageQr = isAdmin || checkUserPermission(currentUser, "الإعدادات-إدارة رموز الـ QR") || canEditSettings;
   const { toast } = useToast();
+
+  const getInitialTab = () => {
+    if (initialTab) return initialTab;
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get("tab");
+      const validTabs = ["general", "contact", "qrcodes", "hero", "appearance", "tiktok", "system", "carousel"];
+      if (tabParam && validTabs.includes(tabParam)) {
+        return tabParam;
+      }
+    } catch {}
+    return canEditSettings ? "general" : "qrcodes";
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", val);
+      window.history.replaceState({}, "", url.toString());
+    } catch {}
+  };
 
   const [form, setForm] = useState<SiteSettings>({ ...settings });
 
@@ -258,6 +282,21 @@ export default function Settings() {
     await updateSettings(updatedForm);
     toast({
       title: val ? "تم تفعيل ظهور قسم الـ QR كود في الموقع ✓" : "تم إخفاء قسم الـ QR كود بالكامل من الموقع ✕",
+    });
+  };
+
+  const handleToggleTiktokSection = async (val: boolean) => {
+    const updatedForm: SiteSettings = {
+      ...form,
+      tiktokSectionEnabled: val,
+    };
+    setForm(updatedForm);
+    try {
+      localStorage.setItem("alm_tiktok_enabled", JSON.stringify(val));
+    } catch {}
+    await updateSettings({ tiktokSectionEnabled: val });
+    toast({
+      title: val ? "تم تفعيل ظهور بوكس تيك توك في الصفحة الرئيسية ✓" : "تم إخفاء بوكس تيك توك بالكامل من الصفحة الرئيسية ✕",
     });
   };
 
@@ -491,7 +530,7 @@ export default function Settings() {
           icon={SettingsIcon}
         />
 
-        <Tabs defaultValue={canEditSettings ? "general" : "qrcodes"} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full h-auto p-2 bg-card/95 dark:bg-card/70 border border-border/80 rounded-2xl shadow-xs">
             {canEditSettings && (
               <TabsTrigger
@@ -1662,6 +1701,37 @@ export default function Settings() {
           {/* ── TikTok Videos ── */}
           <TabsContent value="tiktok" className="mt-6">
             <div className="space-y-5">
+              {/* Master TikTok Toggle Banner */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-card to-background border border-border/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <TikTokIcon className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-foreground">ظهور بوكس تيك توك في الصفحة الرئيسية</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${(form.tiktokSectionEnabled ?? true) ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                        {(form.tiktokSectionEnabled ?? true) ? "ظاهر بالموقع" : "مخفي تماماً"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      التحكم الرئيسي المباشر في تفعيل أو تعطيل ظهور بوكس فيديوهات وحساب تيك توك بالكامل في الصفحة الرئيسية.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 self-end sm:self-center">
+                  <Switch
+                    checked={form.tiktokSectionEnabled ?? true}
+                    onCheckedChange={handleToggleTiktokSection}
+                    id="master-tiktok-switch"
+                  />
+                  <Label htmlFor="master-tiktok-switch" className="text-xs font-bold cursor-pointer">
+                    {(form.tiktokSectionEnabled ?? true) ? "مفعّل" : "معطّل"}
+                  </Label>
+                </div>
+              </div>
+
               {/* Account info */}
               <Card className="card-luxury">
                 <CardHeader>

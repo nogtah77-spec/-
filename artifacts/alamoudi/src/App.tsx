@@ -242,6 +242,7 @@ function Router() {
       <Route path="/admin/agents">{() => <Protected component={AiAgents} adminOnly />}</Route>
       <Route path="/admin/whatsapp">{() => <Protected component={WhatsAppBot} adminOnly />}</Route>
       <Route path="/admin/finishing-gallery">{() => <Protected component={FinishingGallery} />}</Route>
+      <Route path="/admin/tiktok">{() => <Protected component={() => <Settings initialTab="tiktok" />} />}</Route>
 
       <Route component={NotFound} />
     </Switch>

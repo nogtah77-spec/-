@@ -345,6 +345,7 @@ export interface SiteSettings {
   /** Ambient luxury backgrounds for home page sections */
   homeBackgroundSettings?: HomeBackgroundSettings;
   tiktokVideos: TiktokVideo[];
+  tiktokSectionEnabled?: boolean;
   ads: Ad[];
   qrCodes?: QrCodeItem[];
   qrSectionEnabled?: boolean;
@@ -441,6 +442,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
     imageOpacityLight: 100,
   },
   qrSectionEnabled: true,
+  tiktokSectionEnabled: true,
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
   allowCustomerImageDownloads: true,
@@ -998,6 +1000,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const rawQr = localStorage.getItem("alm_qr_settings");
       if (rawQr) localQr = JSON.parse(rawQr);
     } catch {}
+    let localTiktokEnabled: boolean | undefined;
+    try {
+      const rawTiktok = localStorage.getItem("alm_tiktok_enabled");
+      if (rawTiktok !== null) localTiktokEnabled = JSON.parse(rawTiktok);
+    } catch {}
     let localCustom: Partial<SiteSettings> | null = null;
     try {
       const raw = localStorage.getItem("alm_settings");
@@ -1017,6 +1024,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       },
       qrCodes: localQr?.qrCodes ?? localCustom?.qrCodes ?? cached?.settings?.qrCodes ?? DEFAULT_SETTINGS.qrCodes,
       qrSectionEnabled: localQr?.qrSectionEnabled !== undefined ? localQr.qrSectionEnabled : (localCustom?.qrSectionEnabled !== undefined ? localCustom.qrSectionEnabled : (cached?.settings?.qrSectionEnabled ?? true)),
+      tiktokSectionEnabled: localTiktokEnabled !== undefined ? localTiktokEnabled : (localCustom?.tiktokSectionEnabled !== undefined ? localCustom.tiktokSectionEnabled : (cached?.settings?.tiktokSectionEnabled ?? true)),
       tiktokVideos: base.tiktokVideos ?? [],
       ads: base.ads ?? [],
     };
@@ -1363,6 +1371,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             homeBackgroundSettings: mergedBg,
             qrSectionEnabled: cloudSettings.qrSectionEnabled !== undefined ? cloudSettings.qrSectionEnabled : (prev.qrSectionEnabled ?? true),
             qrCodes: cloudSettings.qrCodes !== undefined ? cloudSettings.qrCodes : (prev.qrCodes ?? DEFAULT_SETTINGS.qrCodes),
+            tiktokSectionEnabled: cloudSettings.tiktokSectionEnabled !== undefined ? cloudSettings.tiktokSectionEnabled : (prev.tiktokSectionEnabled ?? true),
             tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
             ads: cloudSettings.ads ?? prev.ads ?? [],
           };
@@ -2263,6 +2272,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ? patch.qrCodes
         : (cur.qrCodes || cachedQr?.qrCodes || DEFAULT_SETTINGS.qrCodes);
 
+    let cachedTiktokEnabled: boolean | undefined;
+    try {
+      const raw = localStorage.getItem("alm_tiktok_enabled");
+      if (raw !== null) cachedTiktokEnabled = JSON.parse(raw);
+    } catch {}
+
+    const nextTiktokSectionEnabled =
+      patch.tiktokSectionEnabled !== undefined
+        ? patch.tiktokSectionEnabled
+        : (cur.tiktokSectionEnabled !== undefined
+            ? cur.tiktokSectionEnabled
+            : (cachedTiktokEnabled !== undefined ? cachedTiktokEnabled : true));
+
     const nextSettings: SiteSettings = {
       ...DEFAULT_SETTINGS,
       ...cur,
@@ -2270,6 +2292,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       homeBackgroundSettings: mergedBg,
       qrSectionEnabled: nextQrSectionEnabled,
       qrCodes: nextQrCodes,
+      tiktokSectionEnabled: nextTiktokSectionEnabled,
     };
 
     // Update memory ref and react state immediately
@@ -2279,6 +2302,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     // Save to local storage
     try {
       localStorage.setItem("alm_settings", JSON.stringify(nextSettings));
+      localStorage.setItem("alm_tiktok_enabled", JSON.stringify(nextTiktokSectionEnabled));
       localStorage.setItem("alm_qr_settings", JSON.stringify({
         qrSectionEnabled: nextQrSectionEnabled,
         qrCodes: nextQrCodes,
@@ -2314,6 +2338,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sendRealtimeSync("QR_UPDATE", {
         qrSectionEnabled: nextQrSectionEnabled,
         qrCodes: nextQrCodes,
+      });
+    }
+
+    // If patch included TikTok section toggle, broadcast sync
+    if (patch.tiktokSectionEnabled !== undefined) {
+      sendRealtimeSync("TIKTOK_UPDATE", {
+        tiktokSectionEnabled: nextTiktokSectionEnabled,
       });
     }
 
