@@ -75,6 +75,7 @@ export function PropertyFilterPanel({
   const [promptIndex, setPromptIndex] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
   const [isAnimating, setIsAnimating] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Rotating search ticker animation
   useEffect(() => {
@@ -110,11 +111,6 @@ export function PropertyFilterPanel({
     }
   };
 
-  const handleSelectPrompt = (prompt: string) => {
-    const cleaned = prompt.replace(/\.{2,}|…/g, "").trim();
-    update({ searchText: cleaned }, true);
-  };
-
   return (
     <section className="rounded-2xl border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
       {/* ── 1. Hero Search Input with Animated Sliding Ticker ── */}
@@ -125,35 +121,32 @@ export function PropertyFilterPanel({
           </div>
 
           <div className="relative flex-1 h-full flex items-center">
-            {/* Animated Ticker Placeholder with STATIC prefix and clickable prompt */}
+            {/* Animated Ticker Placeholder - Purely visual placeholder, clicking focuses input without prefilling */}
             {!filters.searchText && !isFocused && (
-              <div className="absolute inset-0 flex items-center pointer-events-none pr-3 pl-4 select-none overflow-hidden">
-                <span className="text-accent/50 font-medium text-xs sm:text-sm ml-2 shrink-0">
+              <div
+                onClick={() => inputRef.current?.focus()}
+                className="absolute inset-0 flex items-center pr-3 pl-4 select-none overflow-hidden cursor-text"
+              >
+                <span className="text-muted-foreground/45 font-normal text-xs sm:text-sm ml-2 shrink-0 select-none">
                   جرب البحث عن:
                 </span>
                 <div className="relative overflow-hidden h-6 flex items-center flex-1">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSelectPrompt(SEARCH_PROMPTS[promptIndex]);
-                    }}
-                    title="اضغط للبحث عن هذا المثال فوراً"
+                  <span
                     className={cn(
-                      "pointer-events-auto text-xs sm:text-sm text-muted-foreground/60 hover:text-accent font-normal transition-all duration-300 transform truncate block text-right cursor-pointer underline-offset-2 hover:underline",
+                      "text-xs sm:text-sm text-muted-foreground/40 font-normal transition-all duration-300 transform truncate block text-right select-none",
                       isAnimating
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-4 opacity-0"
                     )}
                   >
                     {SEARCH_PROMPTS[promptIndex]}
-                  </button>
+                  </span>
                 </div>
               </div>
             )}
 
             <Input
+              ref={inputRef}
               type="text"
               className="w-full h-full border-0 bg-transparent px-3 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-transparent"
               value={filters.searchText}
