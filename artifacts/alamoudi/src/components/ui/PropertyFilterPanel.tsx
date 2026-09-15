@@ -123,13 +123,13 @@ export function PropertyFilterPanel({
             {/* Animated Ticker Placeholder with STATIC prefix */}
             {!filters.searchText && !isFocused && (
               <div className="absolute inset-0 flex items-center pointer-events-none pr-3 pl-4 select-none overflow-hidden">
-                <span className="text-accent/90 font-bold text-xs sm:text-sm ml-2 shrink-0">
+                <span className="text-accent/40 font-medium text-xs sm:text-sm ml-2 shrink-0">
                   جرب البحث عن:
                 </span>
                 <div className="relative overflow-hidden h-6 flex items-center flex-1">
                   <span
                     className={cn(
-                      "text-xs sm:text-sm text-muted-foreground transition-all duration-300 transform truncate block",
+                      "text-xs sm:text-sm text-muted-foreground/45 font-normal transition-all duration-300 transform truncate block",
                       isAnimating
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-4 opacity-0"

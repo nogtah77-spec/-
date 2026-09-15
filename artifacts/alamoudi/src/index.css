@@ -504,7 +504,7 @@
 
 /* ────────────────────────────────────────────────────────────
    🎨 THEME ENGINE — INDEPENDENT ARCHITECTURE
-   Modern Dark Charcoal & Deep Teal & Royal Satin Gold
+   Modern Dark Charcoal & Royal Satin Gold
    ──────────────────────────────────────────────────────────── */
 html[data-theme="charcoal"] {
   --theme-btn-accent: #C5A059;
@@ -526,9 +526,9 @@ html[data-theme="charcoal"]:not(.light) {
   --popover-foreground: 210 40% 98%;
   --popover-border: 215 16% 24%;
 
-  /* زر البحث والتحديدات النشطة — تركواز نيلي عميق مريح للعين */
-  --primary: 175 77% 26%;              /* #0F766E */
-  --primary-foreground: 0 0% 100%;     /* #FFFFFF */
+  /* زر البحث والتحديدات النشطة وأزرار الإجراءات — ذهب الساتان الملكي الفاخر المتناسق مع الفحم */
+  --primary: 40 50% 56%;               /* #C5A059 ذهب ساتان ملكي متزن */
+  --primary-foreground: 210 14% 11%;   /* #181C20 تباين فحمي فائق الوضوح والأناقة */
 
   /* الأزرار المميزة واللمسات التفاعلية — ذهب الساتان الملكي المعتدل والواضح */
   --accent: 40 50% 56%;                /* #C5A059 ذهب ساتان متزن وواضح */
@@ -551,8 +551,8 @@ html[data-theme="charcoal"]:not(.light) {
   --sidebar: 210 14% 11%;
   --sidebar-foreground: 210 40% 98%;
   --sidebar-border: 215 16% 24%;
-  --sidebar-primary: 175 77% 26%;
-  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-primary: 40 50% 56%;
+  --sidebar-primary-foreground: 210 14% 11%;
   --sidebar-accent: 216 14% 19%;
   --sidebar-accent-foreground: 210 40% 98%;
   --sidebar-ring: 40 50% 56%;
@@ -566,8 +566,8 @@ html[data-theme="charcoal"].light {
   --card: 0 0% 100%;                   /* #FFFFFF */
   --card-foreground: 222 47% 11%;
   --card-border: 214 32% 91%;
-  --primary: 175 77% 26%;              /* #0F766E */
-  --primary-foreground: 0 0% 100%;
+  --primary: 40 50% 56%;               /* #C5A059 */
+  --primary-foreground: 210 14% 11%;
   --accent: 40 50% 56%;                /* #C5A059 */
   --accent-foreground: 210 14% 11%;
   --secondary: 210 40% 96.1%;
@@ -644,25 +644,28 @@ html[data-theme="charcoal"] .text-accent-foreground {
   color: #181C20 !important;
 }
 
-/* ── زر "أعرض عقارك" المتفاعل تلقائياً مع الثيم ── */
+/* ── زر "اعرض عقارك" الفاخر والمتفاعل بانسجام مع الثيم ── */
 html[data-theme="charcoal"] .action-btn-add-property {
-  background: linear-gradient(135deg, #C5A059 0%, #A8833C 100%) !important;
-  border-color: rgba(197, 160, 89, 0.5) !important;
-  box-shadow: 0 6px 20px rgba(197, 160, 89, 0.22) !important;
+  background: linear-gradient(135deg, rgba(34, 39, 45, 0.96) 0%, rgba(24, 28, 32, 0.98) 100%) !important;
+  border: 1.5px solid rgba(197, 160, 89, 0.5) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(197, 160, 89, 0.15) !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property:hover {
-  border-color: #DFBF80 !important;
-  box-shadow: 0 10px 28px rgba(197, 160, 89, 0.35) !important;
+  border-color: #C5A059 !important;
+  box-shadow: 0 8px 26px rgba(197, 160, 89, 0.22), 0 0 0 1px rgba(197, 160, 89, 0.3) !important;
+  transform: translateY(-2px);
 }
 html[data-theme="charcoal"] .action-btn-add-property span {
-  color: #181C20 !important;
+  color: #F8FAFC !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property .action-icon-badge {
-  background: #181C20 !important;
-  color: #C5A059 !important;
+  background: linear-gradient(135deg, #C5A059 0%, #B38E47 100%) !important;
+  color: #181C20 !important;
+  box-shadow: 0 2px 8px rgba(197, 160, 89, 0.35) !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property .action-subtitle {
-  color: rgba(24, 28, 32, 0.85) !important;
+  color: #C5A059 !important;
+  opacity: 0.9;
 }
 
 /* ── هيدر صفحات لوحة التحكم بالثيم الفحمي وذهب الساتان ── */

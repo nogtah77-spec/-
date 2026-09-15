@@ -93,7 +93,7 @@ export function ThemeAppearanceManager({
       {/* ── 2. Compact Theme Cards Grid ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         
-        {/* Theme 1: Modern Dark Charcoal & Deep Teal & Royal Satin Gold */}
+        {/* Theme 1: Modern Dark Charcoal & Royal Satin Gold */}
         <div 
           className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
             currentActiveTheme === "charcoal"
@@ -124,7 +124,7 @@ export function ThemeAppearanceManager({
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-snug mb-3">
-            رمادي فحمي هادئ (#181C20)، لوحة فحمية زجاجية (#22272D)، زر تركوازي (#0F766E)، ولمسات ذهب ساتان ملكي متزن (#C5A059).
+            رمادي فحمي هادئ (#181C20)، لوحة فحمية زجاجية (#22272D)، وأزرار ولمسات ذهب ساتان ملكي متزن (#C5A059).
           </p>
 
           {/* Mini Color Dots */}
@@ -132,7 +132,7 @@ export function ThemeAppearanceManager({
             <div className="flex items-center gap-1.5">
               <span className="w-4 h-4 rounded-full bg-[#181C20] border border-white/20 shadow-2xs" title="خلفية #181C20" />
               <span className="w-4 h-4 rounded-full bg-[#22272D] border border-white/20 shadow-2xs" title="لوحة #22272D" />
-              <span className="w-4 h-4 rounded-full bg-[#0F766E] border border-white/20 shadow-2xs" title="بحث #0F766E" />
+              <span className="w-4 h-4 rounded-full bg-[#333C46] border border-white/20 shadow-2xs" title="إطار #333C46" />
               <span className="w-4 h-4 rounded-full bg-[#C5A059] border border-white/20 shadow-2xs" title="ذهب ساتان #C5A059" />
             </div>
 
@@ -240,7 +240,7 @@ export function ThemeAppearanceManager({
                 <Search className="h-3 w-3 text-[#C5A059]" />
                 <span>ابحث عن عقار...</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#0F766E] text-white text-[9px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-[#C5A059] text-[#181C20] text-[9px] font-bold">
                 بحث
               </span>
             </div>

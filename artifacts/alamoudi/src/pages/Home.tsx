@@ -315,14 +315,14 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="action-btn-add-property group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-gradient-to-br from-[#10202D] via-[#183144] to-[#10202D] text-white shadow-[0_6px_20px_rgba(16,32,45,0.22)] hover:shadow-[0_10px_28px_rgba(16,32,45,0.32)] hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C09C5A]/40 hover:border-[#C09C5A]"
+              className="action-btn-add-property group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/50 hover:border-accent"
             >
-              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#C09C5A] to-[#A8823E] text-[#10202D] flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.5]" />
               </div>
               <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-black text-white leading-tight">أعرض عقارك</span>
-                <span className="action-subtitle hidden sm:block text-[10px] text-[#E0CEB0] font-medium mt-0.5">بيع أو تأجير وحدتك</span>
+                <span className="block text-xs sm:text-sm font-black text-foreground group-hover:text-accent transition-colors leading-tight">اعرض عقارك</span>
+                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-medium mt-0.5">بيع أو تأجير وحدتك</span>
               </div>
             </Link>
 

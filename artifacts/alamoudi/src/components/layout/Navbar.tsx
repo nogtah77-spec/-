@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
-import { Menu, MapPin, Sparkles, Smartphone, Download } from "lucide-react";
+import { Menu, MapPin, Sparkles, Smartphone, Download, LayoutDashboard } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "../ui/sheet";
 import { cn } from "@/lib/utils";
@@ -173,14 +173,14 @@ export function Navbar() {
             <span>تحميل التطبيق</span>
           </button>
           {isStaff ? (
-            <Button
-              asChild
-              size="sm"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-3.5 h-7 text-xs font-bold shadow-sm whitespace-nowrap flex-shrink-0"
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 px-3.5 h-7.5 rounded-full text-xs font-bold text-accent-foreground bg-accent hover:bg-accent/90 border border-accent/40 shadow-xs transition-all duration-200 active:scale-95 whitespace-nowrap flex-shrink-0 cursor-pointer"
               data-testid="button-nav-dashboard"
             >
-              <Link href="/admin">لوحة التحكم</Link>
-            </Button>
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              <span>لوحة التحكم</span>
+            </Link>
           ) : (
             <Link
               href="/login"
@@ -253,12 +253,13 @@ export function Navbar() {
                 </SheetClose>
               )}
               <div className="my-2 border-t border-border" />
-              <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-medium text-accent hover:bg-accent/10 transition-colors">
-                أعرض عقارك
+              <Link href="/add-property" className="py-2.5 px-3 rounded-md text-base font-bold text-accent hover:bg-accent/10 transition-colors">
+                اعرض عقارك
               </Link>
               {isStaff ? (
-                <Link href="/admin" className="py-2.5 px-3 rounded-md text-base font-bold text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
-                  لوحة التحكم
+                <Link href="/admin" className="flex items-center gap-2 py-2.5 px-3 rounded-xl text-base font-bold text-accent bg-accent/10 border border-accent/25 hover:bg-accent/15 transition-colors">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span>لوحة التحكم</span>
                 </Link>
               ) : (
                 <Link href="/login" className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
