@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Wrench, CheckCircle2, Play, X, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { supabaseService } from "@/lib/supabaseService";
+import { useData } from "@/context/DataContext";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { Link } from "wouter";
@@ -209,6 +211,7 @@ function VideoGrid({ videos }: { videos: GalleryVideo[] }) {
 
 export default function FinishingServices() {
   const { toast } = useToast();
+  const { addFinishingRequest } = useData();
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
@@ -218,8 +221,39 @@ export default function FinishingServices() {
   const [galleryLoading, setGalleryLoading] = useState(true);
 
   useEffect(() => {
-    api.get<GalleryConfig>("/finishing-gallery")
-      .then(data => setGallery(data))
+    // 1. Instant local cache load (0ms)
+    try {
+      const raw = localStorage.getItem("alm_finishing_gallery");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && (Array.isArray(parsed.images) || Array.isArray(parsed.videos))) {
+          setGallery(parsed);
+        }
+      }
+    } catch {}
+
+    // 2. Fetch fresh from Supabase Cloud
+    supabaseService.fetchFinishingGallery()
+      .then(cloudData => {
+        if (cloudData && (Array.isArray(cloudData.images) || Array.isArray(cloudData.videos))) {
+          const validConfig: GalleryConfig = {
+            interval: typeof cloudData.interval === "number" ? cloudData.interval : 4,
+            images: Array.isArray(cloudData.images) ? cloudData.images : [],
+            videos: Array.isArray(cloudData.videos) ? cloudData.videos : [],
+          };
+          setGallery(validConfig);
+          try { localStorage.setItem("alm_finishing_gallery", JSON.stringify(validConfig)); } catch {}
+        } else {
+          api.get<GalleryConfig>("/finishing-gallery")
+            .then(data => {
+              if (data && (Array.isArray(data.images) || Array.isArray(data.videos))) {
+                setGallery(data);
+                try { localStorage.setItem("alm_finishing_gallery", JSON.stringify(data)); } catch {}
+              }
+            })
+            .catch(() => {});
+        }
+      })
       .catch(() => {})
       .finally(() => setGalleryLoading(false));
   }, []);
@@ -236,11 +270,16 @@ export default function FinishingServices() {
     }
     setLoading(true);
     try {
-      await api.post("/finishing-requests", {
-        ...form, id: genId(), status: "new", createdAt: new Date().toISOString(),
+      addFinishingRequest({
+        name: form.name,
+        phone: form.phone,
+        location: form.location,
+        area: form.area,
+        finishingType: form.finishingType,
+        description: form.description,
       });
       setSubmitted(true);
-      toast({ title: "تم إرسال طلبك", description: "سنتواصل معك قريباً لمناقشة تفاصيل التشطيب." });
+      toast({ title: "تم إرسال طلبك بنجاح ✓", description: "سنتواصل معك قريباً لمناقشة تفاصيل التشطيب." });
     } catch {
       toast({ title: "خطأ في الإرسال", description: "فشل إرسال الطلب، يرجى المحاولة مرة أخرى", variant: "destructive" });
     } finally {

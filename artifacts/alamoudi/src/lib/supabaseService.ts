@@ -601,6 +601,53 @@ export const supabaseService = {
     }
   },
 
+  // Fetch Finishing Gallery Config from Supabase Cloud (Sync across all devices)
+  async fetchFinishingGallery(): Promise<any | null> {
+    if (!supabase) return null;
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__finishing_gallery_store__")
+        .maybeSingle();
+      if (error) {
+        console.warn("Supabase fetch finishing gallery warning:", error);
+        return null;
+      }
+      if (data && data.description) {
+        return JSON.parse(data.description);
+      }
+      return null;
+    } catch (e) {
+      console.warn("Supabase fetch finishing gallery exception:", e);
+      return null;
+    }
+  },
+
+  // Save Finishing Gallery Config to Supabase Cloud (Sync across all devices)
+  async saveFinishingGallery(config: any): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      const payloadString = JSON.stringify(config);
+      const row = {
+        id: "__finishing_gallery_store__",
+        code: "__FINISHING_GALLERY__",
+        title: "Finishing Gallery Store",
+        description: payloadString,
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+      const { error } = await supabase.from("properties").upsert(row);
+      if (error) throw error;
+      return true;
+    } catch (e) {
+      console.warn("Supabase save finishing gallery warning:", e);
+      return false;
+    }
+  },
+
   // Fetch Site Settings from Supabase Cloud (Sync across all devices)
   async fetchSettings(): Promise<Partial<SiteSettings> | null> {
     if (!supabase) return null;

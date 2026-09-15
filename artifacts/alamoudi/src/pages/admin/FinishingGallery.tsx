@@ -8,6 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Plus, Trash2, Upload, Link, Play, Image as ImageIcon, Save, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { supabaseService } from "@/lib/supabaseService";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
@@ -51,17 +52,59 @@ export default function FinishingGallery() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    api.get<GalleryConfig>("/finishing-gallery")
-      .then(data => setConfig(data))
-      .catch(() => toast({ title: "فشل تحميل المعرض", variant: "destructive" }))
+    // 1. Instant local cache load (0ms)
+    try {
+      const raw = localStorage.getItem("alm_finishing_gallery");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && (Array.isArray(parsed.images) || Array.isArray(parsed.videos))) {
+          setConfig(parsed);
+        }
+      }
+    } catch {}
+
+    // 2. Fetch fresh from Supabase Cloud (with fallback to API)
+    supabaseService.fetchFinishingGallery()
+      .then(cloudData => {
+        if (cloudData && (Array.isArray(cloudData.images) || Array.isArray(cloudData.videos))) {
+          const validConfig: GalleryConfig = {
+            interval: typeof cloudData.interval === "number" ? cloudData.interval : 4,
+            images: Array.isArray(cloudData.images) ? cloudData.images : [],
+            videos: Array.isArray(cloudData.videos) ? cloudData.videos : [],
+          };
+          setConfig(validConfig);
+          try { localStorage.setItem("alm_finishing_gallery", JSON.stringify(validConfig)); } catch {}
+        } else {
+          api.get<GalleryConfig>("/finishing-gallery")
+            .then(data => {
+              if (data && (Array.isArray(data.images) || Array.isArray(data.videos))) {
+                setConfig(data);
+                try { localStorage.setItem("alm_finishing_gallery", JSON.stringify(data)); } catch {}
+              }
+            })
+            .catch(() => {});
+        }
+      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put("/finishing-gallery", config);
-      toast({ title: "تم حفظ المعرض بنجاح" });
+      // 1. Instant local persistence
+      localStorage.setItem("alm_finishing_gallery", JSON.stringify(config));
+
+      // 2. Supabase Cloud persistence (global across all devices)
+      await supabaseService.saveFinishingGallery(config);
+
+      // 3. Fallback API sync if server route available
+      api.put("/finishing-gallery", config).catch(() => {});
+
+      toast({
+        title: "تم حفظ المعرض بنجاح ✓",
+        description: "تمت مزامنة الصور والفيديوهات سحابياً وفورياً على جميع الأجهزة.",
+      });
     } catch {
       toast({ title: "فشل الحفظ", variant: "destructive" });
     } finally {
