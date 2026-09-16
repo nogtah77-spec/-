@@ -188,10 +188,13 @@ export function parsePropertyText(text: string): ParsedPropertyData {
   }
 
   // ── 6. Building Total Floors (عدد طوابق العقار / العمارة) ──
-  const buildingFloorsMatch = cleanText.match(/(?:عدد\s*طوابق\s*العقار|عدد\s*أدوار\s*العمارة|عمارة\s*من|عمارة\s*مكونة\s*من|العمارة\s*مكونة\s*من|فيلا\s*مكونة\s*من)\s*[:=\-]?\s*(\d+)/i) ||
-    cleanText.match(/(?:عمارة|مبنى|فيلا)\s*(\d+)\s*(?:أدوار|طوابق|طابق|دور)/i);
+  const buildingFloorsMatch = cleanText.match(/(?:عدد\s*(?:طوابق|أدوار)\s*(?:العقار|العمارة|المبنى|الفيلا)|(?:عمارة|مبنى|فيلا)\s*(?:مكونة\s*من|من))\s*[:=\-]?\s*(\d+)/i) ||
+    cleanText.match(/(?:عمارة|مبنى|فيلا)\s*(?:بـ|ب|من)?\s*(\d+)\s*(?:أدوار|طوابق)/i);
   if (buildingFloorsMatch) {
-    result.floors = parseInt(buildingFloorsMatch[1], 10);
+    const parsedFloors = parseInt(buildingFloorsMatch[1], 10);
+    if (!isNaN(parsedFloors) && parsedFloors > 0) {
+      result.floors = parsedFloors;
+    }
   }
 
   // ── 7. Unit Floor (الدور كـ رقم) ──

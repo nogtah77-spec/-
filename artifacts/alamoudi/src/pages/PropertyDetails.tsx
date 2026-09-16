@@ -616,7 +616,7 @@ export default function PropertyDetails() {
                               : (property.floor === "0" ? "أرضي" : property.floor))
                           : null
                       },
-                      { label: "عدد طوابق العقار", value: property.floors || null },
+                      { label: "عدد طوابق العقار", value: Number(property.floors) > 0 ? property.floors : null },
                       { label: "الواجهة", value: property.unitType || null },
                       { label: "الفيو", value: property.view || null },
                       { label: "ماستر", value: property.master || null },

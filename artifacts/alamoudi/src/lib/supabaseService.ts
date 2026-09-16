@@ -76,7 +76,7 @@ export function rowToProperty(r: any): Property {
     area: Number(r.area) || 0,
     beds: Number(r.beds) || 0,
     baths: Number(r.baths) || 0,
-    floors: Number(r.floors) || 1,
+    floors: Number(r.floors) || 0,
     floor: Number(r.floor) || 0,
     finishing: r.finishing || "",
     view: r.view || "",
