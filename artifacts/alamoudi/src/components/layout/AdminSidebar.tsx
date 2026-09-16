@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Building2, MapPin, Home, Users, ShieldCheck, Settings, FileCheck2,
-  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox, Bot, Calculator, Bell, Play,
+  BarChart3, Activity, ArrowDownUp, MessageSquare, Wrench, ClipboardList, Database, Sparkles, Megaphone, LayoutTemplate, BookUser, Images, Inbox, Bot, Calculator, Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/DataContext";
@@ -64,7 +64,6 @@ const sidebarSections: SidebarSection[] = [
   {
     title: "التسويق والمحتوى",
     items: [
-      { href: "/admin/tiktok", label: "تيك توك والفيديوهات", icon: Play, permission: "الإعدادات-تعديل إعدادات الموقع" },
       { href: "/admin/notifications", label: "الإشعارات الفورية", icon: Bell },
       { href: "/admin/ads", label: "الإعلانات", icon: Megaphone },
       { href: "/admin/smart-banners", label: "البانر الذكي", icon: LayoutTemplate },
