@@ -174,11 +174,11 @@ export function StickyQuickSearch({
             </Select>
           </div>
 
-          {/* Search Button — باللون الرملي السابق #B99A68 للمقارنة الحية */}
+          {/* Search Button — باللون الرملي الجديد المعتمد #A9927D */}
           <Button
             type="submit"
             size="sm"
-            className="h-9 px-3 sm:px-4 text-xs font-black bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78] rounded-xl gap-1.5 shadow-sm border border-[#DCC08A]/60 transition-all"
+            className="h-9 px-3 sm:px-4 text-xs font-black bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591] rounded-xl gap-1.5 shadow-sm border border-[#C7B6A6]/60 transition-all"
           >
             <Search className="h-3.5 w-3.5" />
             <span>بحث</span>
