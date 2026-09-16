@@ -171,11 +171,11 @@ export function PropertyFilterPanel({
             </button>
           )}
 
-          {/* Seamlessly Merged Search CTA Button */}
+          {/* Seamlessly Merged Search CTA Button — باللون الرملي السابق #B99A68 للمقارنة الحية */}
           <button
             type="button"
             onClick={() => onApply(filters)}
-            className="h-full px-5 sm:px-7 rounded-none bg-primary text-primary-foreground font-black hover:bg-primary/90 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 border-s border-border/80 hover:border-accent/50 focus:outline-hidden select-none cursor-pointer"
+            className="h-full px-5 sm:px-7 rounded-none bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78] font-black transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 border-s border-[#DCC08A]/50 focus:outline-hidden select-none cursor-pointer shadow-xs"
           >
             <Search className="h-4 w-4" />
             <span>بحث</span>
