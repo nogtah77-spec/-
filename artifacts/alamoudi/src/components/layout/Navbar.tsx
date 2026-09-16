@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
-import { Menu, MapPin, Sparkles, Smartphone, Download, LayoutDashboard } from "lucide-react";
+import { Menu, MapPin, Sparkles, Smartphone, Download, LayoutDashboard, RotateCw } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "../ui/sheet";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { AI_ASSISTANT_ENABLED } from "@/config/features";
 import { buildWaUrl } from "@/lib/phone";
 import { getTiktokUrl } from "@/lib/socials";
 import { InstallAppModal } from "../ui/InstallAppModal";
+import { useToast } from "@/hooks/use-toast";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -24,7 +25,30 @@ export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
   const closeStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleRefresh = () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(25);
+      }
+    } catch {}
+    try {
+      localStorage.removeItem("alm_cache_v6");
+    } catch {}
+    toast({
+      title: "جارٍ تحديث المنصة... 🔄",
+      description: "جلب أحدث العقارات والإعدادات مباشرة من السيرفر",
+      duration: 1500,
+    });
+    setTimeout(() => {
+      window.location.reload();
+    }, 450);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -164,6 +188,20 @@ export function Navbar() {
               <ThemeToggle />
             </>
           )}
+          {/* Refresh button for iPad & Tablets (Strictly hidden on Desktop & Laptop) */}
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={cn(
+              "hidden md:flex xl:hidden items-center justify-center w-8 h-8 rounded-full bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 shadow-xs transition-all duration-200 active:scale-90 cursor-pointer flex-shrink-0",
+              isRefreshing && "pointer-events-none opacity-80"
+            )}
+            title="تحديث المنصة وجلب أحدث البيانات"
+            aria-label="تحديث المنصة"
+          >
+            <RotateCw className={cn("h-4 w-4 transition-transform duration-500", isRefreshing && "animate-spin text-accent")} />
+          </button>
           <button
             onClick={() => setInstallModalOpen(true)}
             className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-accent bg-accent/10 hover:bg-accent hover:text-accent-foreground border border-accent/30 shadow-sm transition-all duration-200 active:scale-95 cursor-pointer whitespace-nowrap flex-shrink-0"
@@ -314,7 +352,21 @@ export function Navbar() {
           <span className="text-2xl font-bold text-foreground dark:text-white">العمودي</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Refresh button for Mobile */}
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={cn(
+              "flex items-center justify-center w-8 h-8 rounded-full bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 shadow-xs transition-all duration-200 active:scale-90 cursor-pointer",
+              isRefreshing && "pointer-events-none opacity-80"
+            )}
+            title="تحديث المنصة وجلب أحدث البيانات"
+            aria-label="تحديث المنصة"
+          >
+            <RotateCw className={cn("h-4 w-4 transition-transform duration-500", isRefreshing && "animate-spin text-accent")} />
+          </button>
           <button
             onClick={() => setInstallModalOpen(true)}
             className="flex sm:hidden items-center justify-center w-8 h-8 rounded-full bg-accent/10 text-accent border border-accent/30"
