@@ -141,7 +141,8 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
           homeBackgroundSettings: {
             ...(settings.homeBackgroundSettings || {}),
             ...(prev.homeBackgroundSettings || {}),
-          },
+            enabled: prev.homeBackgroundSettings?.enabled ?? settings.homeBackgroundSettings?.enabled ?? true,
+          } as any,
         };
       });
     }
@@ -521,7 +522,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     setCompressingLoginBg(true);
     try {
       // Compress adaptive WebP (max 1920x1920, quality 0.80) to ~80-140KB
-      const compressedDataUrl = await compressImage(file, 1920, 1920, 0.80);
+      const compressedDataUrl = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.80 });
       loginFormDirtyRef.current = true;
       isFormDirtyRef.current = true;
       setForm((prev) => ({

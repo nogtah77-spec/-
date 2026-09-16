@@ -2173,7 +2173,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("alm_auth_change", syncPresenceRole);
       try {
         presenceChannel.untrack().catch(() => {});
-        supabase.removeChannel(presenceChannel);
+        supabase?.removeChannel(presenceChannel);
       } catch {}
     };
   }, []);
@@ -2484,10 +2484,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...nextSettings,
       homeBackgroundSettings: nextSettings.homeBackgroundSettings ? {
         ...nextSettings.homeBackgroundSettings,
-        bgImageDark: undefined,
-        bgImageLight: undefined,
+        bgImageDark: "",
+        bgImageLight: "",
       } : undefined,
-      loginBackgroundImageUrl: nextSettings.loginBackgroundImageUrl?.startsWith("data:") ? undefined : nextSettings.loginBackgroundImageUrl,
+      loginBackgroundImageUrl: nextSettings.loginBackgroundImageUrl?.startsWith("data:") ? "" : (nextSettings.loginBackgroundImageUrl || ""),
     };
     await supabaseService.saveSettings(settingsToSave).catch(() => {});
     // Realtime broadcast (instant cross-tab & cross-device websocket update)
