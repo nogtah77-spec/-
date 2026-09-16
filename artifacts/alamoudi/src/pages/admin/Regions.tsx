@@ -220,7 +220,7 @@ export default function Regions() {
           eyebrow="نطاق التغطية"
           icon={MapPin}
           actions={
-            <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={() => { setNewName(""); setHeroImage(""); setRawHeroImage(""); setShowAddDialog(true); }}>
+            <Button className="h-10 gap-2 bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591]" onClick={() => { setNewName(""); setHeroImage(""); setRawHeroImage(""); setShowAddDialog(true); }}>
               <Plus className="h-4 w-4" />
               إضافة منطقة
             </Button>

@@ -192,7 +192,7 @@ export default function Users() {
           icon={UsersIcon}
           actions={
             canAdd ? (
-              <Button className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]" onClick={openAdd}>
+              <Button className="h-10 gap-2 bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591]" onClick={openAdd}>
                 <Plus className="h-4 w-4" />
                 مستخدم جديد
               </Button>

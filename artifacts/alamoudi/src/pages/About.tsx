@@ -321,14 +321,14 @@ export default function About() {
 
         {/* CTA */}
         <section className="py-16 md:py-20 relative overflow-hidden" style={{ background: "var(--gradient-hero)" }}>
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(#C49A72 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(#A9927D 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
           <div className="container px-6 relative z-10 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-[#DCD7C9] mb-4">هل أنت مهتم بالاستثمار العقاري؟</h2>
             <p className="text-sm text-[#DCD7C9]/75 mb-8 max-w-lg mx-auto">
               تواصل معنا اليوم واطرح استفسارك وسيرد عليك أحد خبرائنا العقاريين.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-[#10202D]" style={{ background: "linear-gradient(135deg, #A2845A, #B99A68)" }}>
+              <Button asChild size="lg" className="h-12 px-8 rounded-full font-bold text-sm text-[#10202D]" style={{ background: "linear-gradient(135deg, #917B67, #A9927D)" }}>
                 <Link href="/add-property">أعرض عقارك</Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="h-12 px-8 rounded-full font-bold text-sm border-[#DCD7C9]/40 text-[#DCD7C9] hover:bg-white/10">

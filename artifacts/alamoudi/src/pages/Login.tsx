@@ -134,13 +134,13 @@ export default function Login() {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
             
             {/* ── Brand & Welcome Column (Right side on Desktop) ── */}
-            <div className="md:col-span-5 flex flex-col justify-between text-center md:text-right md:border-l md:border-[#DCC08A]/25 md:pl-8 space-y-4 md:space-y-6">
+            <div className="md:col-span-5 flex flex-col justify-between text-center md:text-right md:border-l md:border-[#C7B6A6]/25 md:pl-8 space-y-4 md:space-y-6">
               <div>
                 <Link href="/" className="inline-flex flex-col items-center md:items-start group transition-transform hover:scale-[1.01]" data-testid="link-login-brand">
                   <span className="login-brand-name text-[#F5F3EE] text-2xl sm:text-3xl md:text-[2.25rem] font-black tracking-tight">
                     العمودي
                   </span>
-                  <span className="login-brand-subtitle mt-2 inline-block border-t border-[#DCC08A]/50 pt-1.5 text-[0.75rem] sm:text-[0.8rem] font-semibold tracking-[0.14em] text-[#E6CC98]">
+                  <span className="login-brand-subtitle mt-2 inline-block border-t border-[#C7B6A6]/50 pt-1.5 text-[0.75rem] sm:text-[0.8rem] font-semibold tracking-[0.14em] text-[#DDD1C4]">
                     للتسويق العقاري
                   </span>
                 </Link>
@@ -156,7 +156,7 @@ export default function Login() {
               </div>
 
               <div className="hidden md:flex items-center gap-2 pt-3 border-t border-white/10 text-[11px] text-[#e8e5d9]/50">
-                <ShieldCheck className="h-3.5 w-3.5 text-[#E6CC98] shrink-0" />
+                <ShieldCheck className="h-3.5 w-3.5 text-[#DDD1C4] shrink-0" />
                 <span>اتصال إداري مشفر ومحمي</span>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function Login() {
                     اسم المستخدم أو البريد الإلكتروني
                   </Label>
                   <div className="relative">
-                    <UserRound className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
+                    <UserRound className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#DDD1C4]/75" />
                     <Input
                       id="identifier"
                       type="text"
@@ -202,7 +202,7 @@ export default function Login() {
                     كلمة المرور
                   </Label>
                   <div className="relative">
-                    <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#E6CC98]/75" />
+                    <LockKeyhole className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#DDD1C4]/75" />
                     <Input
                       id="password"
                       type="password"
@@ -222,7 +222,7 @@ export default function Login() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="mt-2 h-10 sm:h-11 w-full rounded-xl border border-[#E6CC98]/70 bg-[#B99A68] text-xs sm:text-sm font-bold text-[#10202D] shadow-[0_8px_20px_rgba(5,19,24,0.25)] hover:bg-[#C9AB78] transition-colors"
+                  className="mt-2 h-10 sm:h-11 w-full rounded-xl border border-[#DDD1C4]/70 bg-[#A9927D] text-xs sm:text-sm font-bold text-[#10202D] shadow-[0_8px_20px_rgba(5,19,24,0.25)] hover:bg-[#BBA591] transition-colors"
                   data-testid="button-login-submit"
                 >
                   {submitting ? "جارٍ تسجيل الدخول…" : (
@@ -236,7 +236,7 @@ export default function Login() {
                 <div className="pt-2 flex flex-col items-center gap-1.5">
                   <Link
                     href="/"
-                    className="inline-flex items-center justify-center gap-1.5 text-xs text-[#e8e5d9]/65 transition-colors hover:text-[#E6CC98]"
+                    className="inline-flex items-center justify-center gap-1.5 text-xs text-[#e8e5d9]/65 transition-colors hover:text-[#DDD1C4]"
                   >
                     العودة إلى الصفحة الرئيسية
                   </Link>

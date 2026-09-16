@@ -605,7 +605,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="general"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <SettingsIcon className="h-4 w-4 shrink-0" />
                 <span className="truncate">عام</span>
@@ -614,7 +614,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="contact"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <Phone className="h-4 w-4 shrink-0" />
                 <span className="truncate">التواصل</span>
@@ -623,7 +623,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canManageQr && (
               <TabsTrigger
                 value="qrcodes"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <QrCodeIcon className="h-4 w-4 shrink-0" />
                 <span className="truncate">رموز الـ QR</span>
@@ -632,7 +632,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="hero"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <ImageIcon className="h-4 w-4 shrink-0" />
                 <span className="truncate">صورة الغلاف</span>
@@ -641,7 +641,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="appearance"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <Sparkles className="h-4 w-4 shrink-0 text-accent" />
                 <span className="truncate">الخلفيات والثيمات</span>
@@ -650,7 +650,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="tiktok"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <Play className="h-4 w-4 shrink-0" />
                 <span className="truncate">تيك توك</span>
@@ -659,7 +659,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="system"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <Globe className="h-4 w-4 shrink-0" />
                 <span className="truncate">النظام</span>
@@ -668,7 +668,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
             {canEditSettings && (
               <TabsTrigger
                 value="carousel"
-                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground hover:bg-muted/80"
               >
                 <SunMoon className="h-4 w-4 shrink-0" />
                 <span className="truncate">الكاروسيل</span>
@@ -1835,7 +1835,7 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                       
                       {/* Mini Live Preview of the Horizontal Login Box */}
                       <div
-                        className="relative z-10 w-full max-w-[440px] rounded-2xl border border-[#DCC08A]/35 p-3 sm:p-4 shadow-2xl transition-all duration-200"
+                        className="relative z-10 w-full max-w-[440px] rounded-2xl border border-[#C7B6A6]/35 p-3 sm:p-4 shadow-2xl transition-all duration-200"
                         style={{
                           background: `linear-gradient(145deg, rgba(16, 32, 45, ${loginCardOpacity / 100}), rgba(9, 18, 26, ${Math.min(1, (loginCardOpacity + 6) / 100)}))`,
                           backdropFilter: `blur(${loginCardBlur}px) saturate(140%)`,
@@ -1843,20 +1843,20 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                         }}
                       >
                         <div className="grid grid-cols-12 gap-3 items-center">
-                          <div className="col-span-5 border-l border-[#DCC08A]/25 pl-2.5 text-right">
+                          <div className="col-span-5 border-l border-[#C7B6A6]/25 pl-2.5 text-right">
                             <div className="text-xs font-black text-white">العمودي</div>
-                            <div className="text-[7.5px] text-[#E6CC98] font-semibold border-t border-[#DCC08A]/30 mt-0.5 pt-0.5">للتسويق العقاري</div>
+                            <div className="text-[7.5px] text-[#DDD1C4] font-semibold border-t border-[#C7B6A6]/30 mt-0.5 pt-0.5">للتسويق العقاري</div>
                             <div className="text-[8.5px] text-white/75 mt-1 font-bold">مرحبًا بعودتك</div>
                             <div className="text-[7px] text-white/45 mt-0.5">لوحة التحكم</div>
                           </div>
                           <div className="col-span-7 space-y-1.5 text-right">
-                            <div className="h-5 rounded-md bg-black/40 border border-[#DCC08A]/20 px-1.5 flex items-center text-[7.5px] text-white/50" dir="ltr">
+                            <div className="h-5 rounded-md bg-black/40 border border-[#C7B6A6]/20 px-1.5 flex items-center text-[7.5px] text-white/50" dir="ltr">
                               admin
                             </div>
-                            <div className="h-5 rounded-md bg-black/40 border border-[#DCC08A]/20 px-1.5 flex items-center text-[7.5px] text-white/50" dir="ltr">
+                            <div className="h-5 rounded-md bg-black/40 border border-[#C7B6A6]/20 px-1.5 flex items-center text-[7.5px] text-white/50" dir="ltr">
                               ••••••••
                             </div>
-                            <div className="h-5 rounded-md bg-[#B99A68] flex items-center justify-center text-[8px] font-bold text-[#10202D]">
+                            <div className="h-5 rounded-md bg-[#A9927D] flex items-center justify-center text-[8px] font-bold text-[#10202D]">
                               تسجيل الدخول
                             </div>
                           </div>
@@ -1883,14 +1883,14 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
                 <TabsList className="grid grid-cols-2 gap-2 w-full sm:w-80 h-auto p-1 bg-muted/60 rounded-xl">
                   <TabsTrigger
                     value="backgrounds"
-                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
                   >
                     <Layers className="h-4 w-4 shrink-0" />
                     <span>الخلفيات</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="themes"
-                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#D4AF37] data-[state=active]:border-[#D4AF37]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-bold border border-transparent transition-all data-[state=active]:bg-[#10202D] data-[state=active]:text-[#A9927D] data-[state=active]:border-[#A9927D]/50 data-[state=active]:shadow-md dark:data-[state=active]:bg-accent dark:data-[state=active]:text-accent-foreground"
                   >
                     <Palette className="h-4 w-4 shrink-0" />
                     <span>الثيمات</span>

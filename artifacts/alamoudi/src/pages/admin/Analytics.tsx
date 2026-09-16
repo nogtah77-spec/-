@@ -25,7 +25,7 @@ import {
 } from "recharts";
 
 const LUXURY_PALETTE = [
-  "#c89b3c", // Warm Gold
+  "#A9927D", // Warm Sand Taupe
   "#2563eb", // Royal Blue
   "#10b981", // Emerald Green
   "#8b5cf6", // Purple

@@ -94,7 +94,7 @@ export function QrCodeView({
     <div
       style={{ width: size, height: size }}
       className={cn(
-        "relative rounded-xl overflow-hidden bg-white p-1.5 border border-[#B99A68]/30 shadow-sm flex items-center justify-center group select-none",
+        "relative rounded-xl overflow-hidden bg-white p-1.5 border border-[#A9927D]/30 shadow-sm flex items-center justify-center group select-none",
         className
       )}
     >

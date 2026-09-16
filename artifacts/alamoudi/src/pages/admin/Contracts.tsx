@@ -901,15 +901,15 @@ export default function Contracts() {
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1480px] space-y-6" dir="rtl">
-        <section className="admin-page-header relative isolate overflow-hidden rounded-2xl border border-[#B99A68]/40 bg-[linear-gradient(135deg,#10202D_0%,#173044_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
+        <section className="admin-page-header relative isolate overflow-hidden rounded-2xl border border-[#A9927D]/40 bg-[linear-gradient(135deg,#10202D_0%,#173044_58%,#0D1B27_100%)] px-5 py-5 text-white shadow-[0_16px_40px_rgba(16,32,45,.2)] sm:px-8 sm:py-7">
           <div className="relative grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0">
               <div className="mb-4 flex items-center gap-3">
-                <span className="header-icon-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#B99A68]/45 bg-[#B99A68]/15 text-[#DCC08A]">
+                <span className="header-icon-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#A9927D]/45 bg-[#A9927D]/15 text-[#C7B6A6]">
                   <ShieldCheck className="h-5 w-5" />
                 </span>
                 <div>
-                  <p className="header-eyebrow text-[11px] font-bold tracking-[.14em] text-[#DCC08A]">مركز التوثيق والعمليات</p>
+                  <p className="header-eyebrow text-[11px] font-bold tracking-[.14em] text-[#C7B6A6]">مركز التوثيق والعمليات</p>
                   <p className="mt-0.5 text-[11px] text-white/55">مساحة عمل آمنة لفريق العمودي</p>
                 </div>
               </div>
@@ -918,7 +918,7 @@ export default function Contracts() {
                 إدارة العقود والدفعات العقارية في مكان واحد.
               </p>
               <div className="mt-5 flex items-center gap-2 text-[11px] text-white/55">
-                <ClipboardCheck className="h-3.5 w-3.5 text-[#DCC08A]" />
+                <ClipboardCheck className="h-3.5 w-3.5 text-[#C7B6A6]" />
                 <span>كل تعديل يُحفظ مرتبطًا بالسجل الأصلي وقابلًا للمراجعة.</span>
               </div>
             </div>
@@ -936,7 +936,7 @@ export default function Contracts() {
                   تحديث السجل
                 </Button>
                 <Button
-                  className="h-11 justify-center gap-2 border border-[#DCC08A] bg-[#B99A68] text-[#10202D] shadow-[0_6px_16px_rgba(185,154,104,.22)] hover:bg-[#C9AB78]"
+                  className="h-11 justify-center gap-2 border border-[#C7B6A6] bg-[#A9927D] text-[#10202D] shadow-[0_6px_16px_rgba(169,146,125,.22)] hover:bg-[#BBA591]"
                   onClick={openCreate}
                 >
                   <Plus className="h-4 w-4" />

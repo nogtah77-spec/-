@@ -172,7 +172,7 @@ export default function FinishingGallery() {
           eyebrow="المحتوى المرئي"
           icon={ImageIcon}
           actions={
-            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2 bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]">
+            <Button onClick={handleSave} disabled={saving} className="h-10 gap-2 bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591]">
               <Save className="h-4 w-4" />
               {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
             </Button>

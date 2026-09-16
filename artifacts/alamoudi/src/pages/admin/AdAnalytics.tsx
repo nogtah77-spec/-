@@ -71,7 +71,7 @@ const REFERRER_LABELS: Record<string, string> = {
 
 const WEEKDAY_LABELS = ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"];
 
-const CHART_COLORS = ["#c9a96e", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+const CHART_COLORS = ["#A9927D", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 // تحويل كود الدولة (مثل EG) إلى إيموجي علم
 function countryFlag(code: string): string {

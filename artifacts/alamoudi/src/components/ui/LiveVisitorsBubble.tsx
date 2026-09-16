@@ -175,7 +175,7 @@ export function LiveVisitorsBubble() {
           title="المتواجدون الآن - انقر للتكبير أو التحريك"
         >
           {/* Live pulsing dot */}
-          <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#cdab74] to-[#b08d57] text-white shadow-xs">
+          <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-xs">
             <Radio className="h-2.5 w-2.5" />
             <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -209,7 +209,7 @@ export function LiveVisitorsBubble() {
             onPointerUp={onPointerUp}
             className="flex items-center gap-2 px-2.5 py-2 cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors"
           >
-            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#cdab74] to-[#b08d57] text-white shadow-xs">
+            <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-xs">
               <Radio className="h-3.5 w-3.5" />
               <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />

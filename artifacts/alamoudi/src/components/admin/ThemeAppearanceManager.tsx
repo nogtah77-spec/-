@@ -155,24 +155,24 @@ export function ThemeAppearanceManager({
         <div 
           className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
             currentActiveTheme === "classic" 
-              ? "border-[#C09C5A] shadow-sm ring-1 ring-[#C09C5A]/30" 
+              ? "border-[#A9927D] shadow-sm ring-1 ring-[#A9927D]/30" 
               : "border-border/70 hover:border-border"
           }`}
           onClick={() => handleApplyTheme("classic")}
         >
           <div className="flex items-start justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-[#10202D] border border-[#C09C5A]/50 flex items-center justify-center text-[#C09C5A] shrink-0">
+              <div className="w-6 h-6 rounded-md bg-[#10202D] border border-[#A9927D]/50 flex items-center justify-center text-[#A9927D] shrink-0">
                 <Sparkles className="h-3.5 w-3.5" />
               </div>
               <div>
                 <h4 className="text-xs font-bold text-foreground leading-tight">الثيم الملكي الكلاسيكي</h4>
-                <span className="text-[10px] text-muted-foreground font-mono">Imperial Gold & Navy</span>
+                <span className="text-[10px] text-muted-foreground font-mono">Warm Sand Taupe & Navy</span>
               </div>
             </div>
 
             {currentActiveTheme === "classic" ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#C09C5A] text-[#10202D] text-[10px] font-bold shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#A9927D] text-[#10202D] text-[10px] font-bold shrink-0">
                 <Check className="h-2.5 w-2.5 stroke-[3]" />
                 مفعّل
               </span>
@@ -182,7 +182,7 @@ export function ThemeAppearanceManager({
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-snug mb-3">
-            كحلي ليلي فاخر (#10202D)، كحلي ثانوي (#173044)، ذهبي ملكي (#C09C5A)، ونصوص عاجية دافئة.
+            كحلي ليلي فاخر (#10202D)، كحلي ثانوي (#173044)، بيج رملي دافئ (#A9927D)، ونصوص عاجية دافئة.
           </p>
 
           {/* Mini Color Dots */}
@@ -190,7 +190,7 @@ export function ThemeAppearanceManager({
             <div className="flex items-center gap-1.5">
               <span className="w-4 h-4 rounded-full bg-[#10202D] border border-white/20 shadow-2xs" title="خلفية #10202D" />
               <span className="w-4 h-4 rounded-full bg-[#173044] border border-white/20 shadow-2xs" title="لوحة #173044" />
-              <span className="w-4 h-4 rounded-full bg-[#C09C5A] border border-white/20 shadow-2xs" title="ذهبي #C09C5A" />
+              <span className="w-4 h-4 rounded-full bg-[#A9927D] border border-white/20 shadow-2xs" title="رملي دافئ #A9927D" />
               <span className="w-4 h-4 rounded-full bg-[#F5F3EE] border border-slate-300 shadow-2xs" title="عاجي #F5F3EE" />
             </div>
 
@@ -202,7 +202,7 @@ export function ThemeAppearanceManager({
                 e.stopPropagation();
                 handleApplyTheme("classic");
               }}
-              className="h-7 px-3 rounded-lg bg-[#10202D] hover:bg-[#183144] border border-[#C09C5A]/50 text-[#C09C5A] font-bold text-[11px]"
+              className="h-7 px-3 rounded-lg bg-[#10202D] hover:bg-[#183144] border border-[#A9927D]/50 text-[#A9927D] font-bold text-[11px]"
             >
               {currentActiveTheme === "classic" ? "مفعّل حالياً" : "تفعيل الثيم"}
             </Button>
@@ -247,9 +247,9 @@ export function ThemeAppearanceManager({
           </div>
         ) : (
           /* Compact Classic Mockup */
-          <div className="p-2.5 rounded-lg bg-[#10202D] border border-[#C09C5A]/30 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="p-2.5 rounded-lg bg-[#10202D] border border-[#A9927D]/30 flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
-              <div className="px-2.5 py-1 rounded-md bg-[#10202D] border border-[#C09C5A]/50 text-[#C09C5A] text-[10px] font-bold shadow-2xs flex items-center gap-1">
+              <div className="px-2.5 py-1 rounded-md bg-[#10202D] border border-[#A9927D]/50 text-[#A9927D] text-[10px] font-bold shadow-2xs flex items-center gap-1">
                 <Plus className="h-3 w-3 stroke-[2.5]" />
                 أعرض عقارك
               </div>
@@ -260,10 +260,10 @@ export function ThemeAppearanceManager({
 
             <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-[#173044] border border-white/10 flex-1 max-w-sm w-full justify-between">
               <div className="flex items-center gap-1 text-[10px] text-white/60">
-                <Search className="h-3 w-3 text-[#C09C5A]" />
+                <Search className="h-3 w-3 text-[#A9927D]" />
                 <span>ابحث عن عقار...</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#C09C5A] text-[#10202D] text-[9px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-[#A9927D] text-[#10202D] text-[9px] font-bold">
                 بحث
               </span>
             </div>

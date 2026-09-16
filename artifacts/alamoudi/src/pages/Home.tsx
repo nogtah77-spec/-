@@ -449,7 +449,7 @@ export default function Home() {
                     className="absolute inset-0 opacity-[0.04] pointer-events-none"
                     style={{
                       backgroundImage:
-                        "radial-gradient(#B99A68 1px, transparent 1px)",
+                        "radial-gradient(#A9927D 1px, transparent 1px)",
                       backgroundSize: "20px 20px",
                     }}
                   />
@@ -747,7 +747,7 @@ export default function Home() {
                       size="lg"
                       className="h-9 sm:h-11 px-4 sm:px-8 rounded-md font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
                       style={{
-                        background: "linear-gradient(135deg, #A2845A, #B99A68)",
+                        background: "linear-gradient(135deg, #917B67, #A9927D)",
                       }}
                     >
                       <Link href="/add-property">

@@ -934,7 +934,7 @@ export default function SmartBanners() {
                 <Settings2 className="h-4 w-4" /> إعدادات الخدمات
               </Button>
               <Button
-                className="h-10 gap-2 border border-[#DCC08A] bg-[#B99A68] text-[#10202D] hover:bg-[#C9AB78]"
+                className="h-10 gap-2 border border-[#C7B6A6] bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591]"
                 onClick={() => { setEditBanner(null); setCreateOpen(true); }}
               >
                 <Plus className="h-4 w-4" /> إضافة بانر جديد

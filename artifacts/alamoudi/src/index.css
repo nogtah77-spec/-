@@ -23,7 +23,7 @@
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
   scrollbar-width: thin !important;
-  scrollbar-color: #B99A68 rgba(255, 255, 255, 0.08) !important;
+  scrollbar-color: #A9927D rgba(255, 255, 255, 0.08) !important;
 }
 [data-radix-select-viewport]::-webkit-scrollbar {
   width: 8px !important;
@@ -34,12 +34,12 @@
   border-radius: 8px !important;
 }
 [data-radix-select-viewport]::-webkit-scrollbar-thumb {
-  background: #B99A68 !important;
+  background: #A9927D !important;
   border-radius: 8px !important;
   border: 1.5px solid rgba(16, 32, 45, 0.8) !important;
 }
 [data-radix-select-viewport]::-webkit-scrollbar-thumb:hover {
-  background: #d4b584 !important;
+  background: #BBA591 !important;
 }
 
 /* ── ضمان وضوح وتباين النصوص في القوائم المنسدلة في كل حالات التركيز والتحديد ── */
@@ -66,14 +66,14 @@
 .dark [data-radix-select-item][data-state="checked"],
 .dark [data-radix-dropdown-menu-checkbox-item][data-state="checked"],
 .dark [data-radix-dropdown-menu-radio-item][data-state="checked"] {
-  color: #e5cc9e !important;
+  color: #DDD1C4 !important;
 }
 
 .dark [data-radix-select-item][data-state="checked"][data-highlighted],
 .dark [data-radix-dropdown-menu-checkbox-item][data-state="checked"][data-highlighted],
 .dark [data-radix-dropdown-menu-radio-item][data-state="checked"][data-highlighted] {
-  background-color: rgba(185, 154, 104, 0.25) !important;
-  color: #f7e6c4 !important;
+  background-color: rgba(169, 146, 125, 0.25) !important;
+  color: #EDE5DE !important;
 }
 
 @keyframes ai-pulse {
@@ -86,7 +86,7 @@
 
 /* ────────────────────────────────────────────────────────────
    Design System — العمودي للتسويق العقاري
-   Midnight Blue #10202D · Warm Brass #B99A68 · Warm Ivory #F5F3EE
+   Midnight Blue #10202D · Warm Sand Taupe #A9927D · Warm Ivory #F5F3EE
    Radius: chips=8px | buttons/inputs/dropdowns=12px | cards=16px
    ──────────────────────────────────────────────────────────── */
 @theme inline {
@@ -149,7 +149,7 @@
 /* ────────────────────────────────────────────────────────────
    Light mode
    Background: #FAF9F5 (Luminous Luxury Ivory) · Cards: #FFFFFF (Pure White)
-   Primary text: #10202D (Midnight Blue) · Accent: #B88E4B (Imperial Gold)
+   Primary text: #10202D (Midnight Blue) · Accent: #A9927D (Warm Sand Taupe)
    Border: #E6E3DB
    ──────────────────────────────────────────────────────────── */
 :root {
@@ -177,9 +177,9 @@
   --sidebar-border: 40 14% 88%;
   --sidebar-primary: 207 48% 12%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 38 48% 48%;
+  --sidebar-accent: 29 21% 58%;
   --sidebar-accent-foreground: 207 48% 12%;
-  --sidebar-ring: 38 48% 48%;
+  --sidebar-ring: 29 21% 58%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 207 48% 12%;
@@ -194,8 +194,8 @@
   --muted: 40 15% 94%;
   --muted-foreground: 205 15% 42%;     /* slate-gray neutral */
 
-  /* ── Imperial Gold accent: #B88E4B ── */
-  --accent: 38 48% 48%;                /* #B88E4B */
+  /* ── Warm Sand Taupe accent: #A9927D ── */
+  --accent: 29 21% 58%;                /* #A9927D */
   --accent-foreground: 0 0% 100%;
 
   --status-success: 155 42% 42%;       /* Emerald */
@@ -206,10 +206,10 @@
   --destructive-foreground: 0 0% 100%;
 
   --input: 40 14% 88%;
-  --ring: 38 48% 48%;                  /* Gold focus ring */
+  --ring: 29 21% 58%;                  /* Warm Sand focus ring */
 
   --chart-1: 207 48% 12%;
-  --chart-2: 38 48% 48%;
+  --chart-2: 29 21% 58%;
   --chart-3: 40 14% 88%;
   --chart-4: 40 15% 94%;
   --chart-5: 207 15% 50%;
@@ -230,7 +230,7 @@
 /* ────────────────────────────────────────────────────────────
    Dark mode
    Background: #10202D (Midnight Blue) · Cards: #173044
-   Text: #F5F3EE (Warm Ivory) · Accent: #B99A68 (Warm Brass)
+   Text: #F5F3EE (Warm Ivory) · Accent: #A9927D (Warm Sand Taupe)
    Border: rgba(255,255,255,0.08)
    ──────────────────────────────────────────────────────────── */
 .dark {
@@ -254,17 +254,17 @@
   --sidebar: 207 50% 18%;
   --sidebar-foreground: 45 27% 95%;
   --sidebar-border: 207 34% 24%;
-  --sidebar-primary: 38 37% 57%;
+  --sidebar-primary: 29 21% 58%;
   --sidebar-primary-foreground: 207 48% 12%;
-  --sidebar-accent: 38 37% 57%;
+  --sidebar-accent: 29 21% 58%;
   --sidebar-accent-foreground: 207 48% 12%;
-  --sidebar-ring: 38 37% 57%;
+  --sidebar-ring: 29 21% 58%;
 
   --popover: 207 50% 18%;
   --popover-foreground: 45 27% 95%;
   --popover-border: 207 34% 24%;
 
-  --primary: 38 37% 57%;
+  --primary: 29 21% 58%;
   --primary-foreground: 207 48% 12%;
 
   --secondary: 207 34% 24%;
@@ -273,7 +273,7 @@
   --muted: 207 34% 22%;
   --muted-foreground: 207 18% 70%;     /* muted blue-gray text */
 
-  --accent: 38 37% 57%;                /* #B99A68 — same in both modes */
+  --accent: 29 21% 58%;                /* #A9927D — same in both modes */
   --accent-foreground: 207 48% 12%;
 
   --status-success: 155 42% 48%;
@@ -284,7 +284,7 @@
   --destructive-foreground: 0 0% 100%;
 
   --input: 207 34% 24%;
-  --ring: 38 37% 57%;
+  --ring: 29 21% 58%;
 }
 
 @layer base {
@@ -335,7 +335,7 @@
   background:
     radial-gradient(circle at 16% 18%, rgba(186, 154, 99, 0.36), transparent 26%),
     radial-gradient(circle at 84% 80%, rgba(35, 101, 99, 0.44), transparent 34%),
-    linear-gradient(122deg, #0D1B27 0%, #173044 44%, #B99A68 100%);
+    linear-gradient(122deg, #0D1B27 0%, #173044 44%, #A9927D 100%);
 }
 
 .login-content {
@@ -684,41 +684,36 @@ html[data-theme="charcoal"] section[class*="linear-gradient(135deg,#10202D"] {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35) !important;
 }
 html[data-theme="charcoal"] .admin-page-header .header-icon-badge,
-html[data-theme="charcoal"] .admin-page-header span[class*="bg-[#B99A68]/15"] {
+html[data-theme="charcoal"] .admin-page-header span[class*="bg-[#A9927D]/15"] {
   background: rgba(197, 160, 89, 0.12) !important;
   border-color: rgba(197, 160, 89, 0.38) !important;
   color: #C5A059 !important;
 }
 html[data-theme="charcoal"] .admin-page-header .header-eyebrow,
-html[data-theme="charcoal"] .admin-page-header p[class*="text-[#DCC08A]"] {
+html[data-theme="charcoal"] .admin-page-header p[class*="text-[#C7B6A6]"] {
   color: #D8B876 !important;
 }
 
 /* ── أزرار لوحة التحكم الرئيسية (حفظ، إضافة، تفاصيل) ── */
-html[data-theme="charcoal"] .bg-\[\#B99A68\],
-html[data-theme="charcoal"] .bg-\[\#b99a68\] {
+html[data-theme="charcoal"] .bg-\[\#A9927D\],
+html[data-theme="charcoal"] .bg-\[\#a9927d\] {
   background-color: #C5A059 !important;
   color: #181C20 !important;
 }
-html[data-theme="charcoal"] .bg-\[\#B99A68\]:hover,
-html[data-theme="charcoal"] .bg-\[\#b99a68\]:hover {
+html[data-theme="charcoal"] .bg-\[\#A9927D\]:hover,
+html[data-theme="charcoal"] .bg-\[\#a9927d\]:hover {
   background-color: #B38E47 !important;
 }
-html[data-theme="charcoal"] .text-\[\#B99A68\],
-html[data-theme="charcoal"] .text-\[\#b99a68\],
-html[data-theme="charcoal"] .text-\[\#DCC08A\],
-html[data-theme="charcoal"] .text-\[\#dcc08a\],
-html[data-theme="charcoal"] .text-\[\#C9AB78\],
-html[data-theme="charcoal"] .text-\[\#c9ab78\],
-html[data-theme="charcoal"] .text-\[\#D4AF37\],
-html[data-theme="charcoal"] .text-\[\#d4af37\] {
+html[data-theme="charcoal"] .text-\[\#A9927D\],
+html[data-theme="charcoal"] .text-\[\#a9927d\],
+html[data-theme="charcoal"] .text-\[\#C7B6A6\],
+html[data-theme="charcoal"] .text-\[\#c7b6a6\] {
   color: #C5A059 !important;
 }
-html[data-theme="charcoal"] .border-\[\#B99A68\]\/35,
-html[data-theme="charcoal"] .border-\[\#B99A68\]\/40,
-html[data-theme="charcoal"] .border-\[\#B99A68\]\/45,
-html[data-theme="charcoal"] .border-\[\#DCC08A\],
-html[data-theme="charcoal"] .border-\[\#dcc08a\] {
+html[data-theme="charcoal"] .border-\[\#A9927D\]\/35,
+html[data-theme="charcoal"] .border-\[\#A9927D\]\/40,
+html[data-theme="charcoal"] .border-\[\#A9927D\]\/45,
+html[data-theme="charcoal"] .border-\[\#C7B6A6\] {
   border-color: rgba(197, 160, 89, 0.38) !important;
 }
 
@@ -730,30 +725,27 @@ html[data-theme="charcoal"] [data-state="active"][class*="bg-[#10202D]"] {
 }
 
 /* ── شارات العقارات المميزة VIP ── */
-html[data-theme="charcoal"] [class*="from-amber-600"],
-html[data-theme="charcoal"] [class*="via-[#B88E4B]"] {
+html[data-theme="charcoal"] [class*="from-amber-600"] {
   background: linear-gradient(135deg, #C5A059 0%, #A8833C 100%) !important;
   color: #181C20 !important;
   border-color: rgba(197, 160, 89, 0.45) !important;
 }
-html[data-theme="charcoal"] [class*="from-amber-600"] *,
-html[data-theme="charcoal"] [class*="via-[#B88E4B]"] * {
+html[data-theme="charcoal"] [class*="from-amber-600"] * {
   color: #181C20 !important;
 }
-html[data-theme="charcoal"] [class*="from-amber-600"] svg,
-html[data-theme="charcoal"] [class*="via-[#B88E4B]"] svg {
+html[data-theme="charcoal"] [class*="from-amber-600"] svg {
   fill: #181C20 !important;
   color: #181C20 !important;
 }
 
 /* ── أزرار الـ CTA السفلية ── */
-html[data-theme="charcoal"] [style*="#A2845A"],
-html[data-theme="charcoal"] [style*="#B99A68"] {
+html[data-theme="charcoal"] [style*="#917B67"],
+html[data-theme="charcoal"] [style*="#A9927D"] {
   background: linear-gradient(135deg, #C5A059 0%, #A8833C 100%) !important;
   color: #181C20 !important;
 }
-html[data-theme="charcoal"] [style*="#A2845A"] *,
-html[data-theme="charcoal"] [style*="#B99A68"] * {
+html[data-theme="charcoal"] [style*="#917B67"] *,
+html[data-theme="charcoal"] [style*="#A9927D"] * {
   color: #181C20 !important;
 }
 

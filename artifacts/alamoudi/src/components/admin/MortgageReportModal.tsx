@@ -110,7 +110,7 @@ export function MortgageReportModal({
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2.5px solid #b99a68;
+      border-bottom: 2.5px solid #a9927d;
       padding-bottom: 12px;
       margin-bottom: 14px;
     }
@@ -123,7 +123,7 @@ export function MortgageReportModal({
     .brand-subtitle {
       font-size: 11px;
       font-weight: 700;
-      color: #b99a68;
+      color: #a9927d;
       margin-top: 1px;
     }
     .meta-box {
@@ -156,7 +156,7 @@ export function MortgageReportModal({
     .info-card-title {
       font-size: 10.5px;
       font-weight: 800;
-      color: #b99a68;
+      color: #a9927d;
       margin-bottom: 5px;
       border-bottom: 1px solid #e2e8f0;
       padding-bottom: 3px;
@@ -175,12 +175,12 @@ export function MortgageReportModal({
       border-radius: 10px;
       padding: 12px 16px;
       margin-bottom: 14px;
-      border: 1.5px solid #b99a68;
+      border: 1.5px solid #a9927d;
     }
     .summary-title {
       font-size: 11px;
       font-weight: 800;
-      color: #d8be92;
+      color: #c7b6a6;
       margin-bottom: 8px;
       text-align: center;
     }
@@ -198,7 +198,7 @@ export function MortgageReportModal({
     }
     .metric-label { font-size: 9.5px; color: #cbd5e1; margin-bottom: 2px; }
     .metric-val { font-size: 14px; font-weight: 900; color: #ffffff; }
-    .metric-val.gold { color: #f1dfbc; font-size: 16px; }
+    .metric-val.gold { color: #ddd1c4; font-size: 16px; }
     .metric-sub { font-size: 9px; color: #94a3b8; margin-top: 1px; }
     .table-container { margin-bottom: 14px; }
     .section-title { font-size: 11.5px; font-weight: 800; color: #10202d; margin-bottom: 5px; }
@@ -307,7 +307,7 @@ export function MortgageReportModal({
           </div>
           <div class="info-row">
             <span class="info-label">سعر العقار الإجمالي:</span>
-            <span class="info-value" style="color:#b99a68;">${propertyPrice.toLocaleString("en-US")} ج.م</span>
+            <span class="info-value" style="color:#a9927d;">${propertyPrice.toLocaleString("en-US")} ج.م</span>
           </div>
         </div>
       </div>
@@ -531,7 +531,7 @@ export function MortgageReportModal({
         <DialogHeader className="p-4 sm:p-5 border-b bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#B99A68]/20 text-[#B99A68] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#A9927D]/20 text-[#A9927D] flex items-center justify-center font-bold">
                 <FileText className="h-4 w-4" />
               </div>
               <div>
@@ -583,14 +583,14 @@ export function MortgageReportModal({
           {/* 2. In-App Report Canvas Preview (Live Capture Target) */}
           <div
             id="mortgage-report-printable-card"
-            className="rounded-xl border border-[#B99A68]/40 bg-white text-slate-900 p-4 sm:p-6 shadow-md space-y-5 min-w-0"
+            className="rounded-xl border border-[#A9927D]/40 bg-white text-slate-900 p-4 sm:p-6 shadow-md space-y-5 min-w-0"
             style={{ backgroundColor: "#ffffff", color: "#0f172a" }}
           >
             {/* Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#B99A68] pb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#A9927D] pb-4">
               <div>
                 <h3 className="text-xl sm:text-2xl font-black text-[#10202D]">العمودي للتسويق العقاري</h3>
-                <p className="text-xs font-bold text-[#B99A68] mt-0.5">
+                <p className="text-xs font-bold text-[#A9927D] mt-0.5">
                   خطة التمويل وجدول سداد الأقساط المعتمدة
                 </p>
               </div>
@@ -605,7 +605,7 @@ export function MortgageReportModal({
             {/* Info Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                <span className="font-bold text-[#B99A68] text-[11px] block">بيانات العميل والخطة</span>
+                <span className="font-bold text-[#A9927D] text-[11px] block">بيانات العميل والخطة</span>
                 <div className="flex justify-between">
                   <span className="text-slate-500">العميل:</span>
                   <span className="font-bold text-slate-900">{clientName.trim() || "العميل الكريم"}</span>
@@ -621,7 +621,7 @@ export function MortgageReportModal({
               </div>
 
               <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2">
-                <span className="font-bold text-[#B99A68] text-[11px] block">بيانات العقار</span>
+                <span className="font-bold text-[#A9927D] text-[11px] block">بيانات العقار</span>
                 <div className="flex justify-between">
                   <span className="text-slate-500">كود العقار:</span>
                   <span className="font-bold text-slate-900">{selectedProperty?.code || "عقار مختار"}</span>
@@ -632,17 +632,17 @@ export function MortgageReportModal({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">سعر العقار:</span>
-                  <span className="font-bold text-[#B99A68]">{propertyPrice.toLocaleString("en-US")} ج.م</span>
+                  <span className="font-bold text-[#A9927D]">{propertyPrice.toLocaleString("en-US")} ج.م</span>
                 </div>
               </div>
             </div>
 
             {/* Golden Summary KPIs */}
-            <div className="rounded-xl bg-gradient-to-r from-[#10202D] via-[#1A3348] to-[#10202D] p-3.5 sm:p-4 text-white border border-[#B99A68]/60">
+            <div className="rounded-xl bg-gradient-to-r from-[#10202D] via-[#1A3348] to-[#10202D] p-3.5 sm:p-4 text-white border border-[#A9927D]/60">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-                <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-[#B99A68]/30">
+                <div className="p-2 sm:p-2.5 rounded-lg bg-white/5 border border-[#A9927D]/30">
                   <span className="text-[10px] sm:text-[11px] text-white/70 block">القسط الشهري</span>
-                  <span className="text-base sm:text-lg font-black text-[#F1DFBC] block mt-0.5">
+                  <span className="text-base sm:text-lg font-black text-[#DDD1C4] block mt-0.5">
                     {monthlyInstallment.toLocaleString("en-US")} <small className="text-[9px]">ج.م</small>
                   </span>
                 </div>
@@ -756,7 +756,7 @@ export function MortgageReportModal({
             <Button
               onClick={handleDirectDownloadPDF}
               disabled={downloading}
-              className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 text-xs sm:text-sm h-10 px-5 shadow-md"
+              className="bg-[#A9927D] hover:bg-[#BBA591] text-[#10202D] font-black gap-2 text-xs sm:text-sm h-10 px-5 shadow-md"
             >
               {downloading ? (
                 <>

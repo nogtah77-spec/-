@@ -200,23 +200,23 @@ export function PropertyBrochureModal({
             style={{ direction: "rtl" }}
           >
             {/* 1. Header with Golden Brand Banner */}
-            <div className="flex items-center justify-between border-b-2 border-[#B99A68]/40 pb-4">
+            <div className="flex items-center justify-between border-b-2 border-[#A9927D]/40 pb-4">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-[#10202D] flex items-center justify-center text-[#B99A68] font-black text-sm">
+                  <div className="h-8 w-8 rounded-lg bg-[#10202D] flex items-center justify-center text-[#A9927D] font-black text-sm">
                     ع
                   </div>
                   <h2 className="text-xl sm:text-2xl font-black tracking-wide text-[#10202D]">
                     {companyName}
                   </h2>
                 </div>
-                <p className="text-[11px] font-bold text-[#B99A68] tracking-wider uppercase pr-10">
+                <p className="text-[11px] font-bold text-[#A9927D] tracking-wider uppercase pr-10">
                   ALAMOUDI REAL ESTATE & INVESTMENT
                 </p>
               </div>
 
               <div className="text-left" dir="ltr">
-                <div className="inline-block rounded-xl border border-[#B99A68]/40 bg-[#B99A68]/10 px-3 py-1 text-xs font-black text-[#10202D]">
+                <div className="inline-block rounded-xl border border-[#A9927D]/40 bg-[#A9927D]/10 px-3 py-1 text-xs font-black text-[#10202D]">
                   REF: {property.code || "ALM"}
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
@@ -232,7 +232,7 @@ export function PropertyBrochureModal({
                   <span className="inline-block rounded-md bg-[#10202D] px-2.5 py-0.5 text-xs font-bold text-white">
                     {categoryLabel}
                   </span>
-                  <span className="inline-block rounded-md bg-[#B99A68] px-2.5 py-0.5 text-xs font-bold text-white">
+                  <span className="inline-block rounded-md bg-[#A9927D] px-2.5 py-0.5 text-xs font-bold text-[#10202D]">
                     {getListingTypeArabic(property.listingType)}
                   </span>
                   {propertyType && (
@@ -242,7 +242,7 @@ export function PropertyBrochureModal({
                   )}
                   {region && (
                     <span className="flex items-center gap-1 text-xs text-gray-600 font-semibold">
-                      <MapPin className="h-3.5 w-3.5 text-[#B99A68]" />
+                      <MapPin className="h-3.5 w-3.5 text-[#A9927D]" />
                       {region.name} {property.subArea ? `- ${property.subArea}` : ""}
                     </span>
                   )}
@@ -253,7 +253,7 @@ export function PropertyBrochureModal({
                 </h1>
               </div>
 
-              <div className="rounded-xl border border-[#B99A68]/40 bg-white p-3 text-left shadow-sm min-w-[150px]" dir="ltr">
+              <div className="rounded-xl border border-[#A9927D]/40 bg-white p-3 text-left shadow-sm min-w-[150px]" dir="ltr">
                 <span className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold text-right">
                   السعر المطلوب
                 </span>
@@ -261,7 +261,7 @@ export function PropertyBrochureModal({
                   <span className="text-xl sm:text-2xl font-black text-[#10202D]">
                     {formatNumber(property.price)}
                   </span>
-                  <span className="text-xs font-bold text-[#B99A68] mr-1">ج.م</span>
+                  <span className="text-xs font-bold text-[#A9927D] mr-1">ج.م</span>
                 </div>
               </div>
             </div>
@@ -304,7 +304,7 @@ export function PropertyBrochureModal({
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm text-right">
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Square className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Square className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">المساحة</span>
                     <span className="font-bold text-[#10202D]">{property.area ? `${property.area} م²` : "غير محدد"}</span>
@@ -312,7 +312,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Bed className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Bed className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">الغرف</span>
                     <span className="font-bold text-[#10202D]">{property.beds > 0 ? `${property.beds} غرف` : (property.beds === 0 ? "استوديو" : "غير محدد")}</span>
@@ -320,7 +320,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Bath className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Bath className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">الحمامات</span>
                     <span className="font-bold text-[#10202D]">{property.baths > 0 ? `${property.baths} حمام` : "غير محدد"}</span>
@@ -328,7 +328,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Layers className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Layers className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">الدور</span>
                     <span className="font-bold text-[#10202D]">
@@ -344,7 +344,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Building2 className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Building2 className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">التشطيب</span>
                     <span className="font-bold text-[#10202D]">{finishingLabel || property.finishing || "غير محدد"}</span>
@@ -352,7 +352,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Compass className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Compass className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">الإطلالة / الواجهة</span>
                     <span className="font-bold text-[#10202D]">{property.view || property.unitType || "غير محدد"}</span>
@@ -360,7 +360,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Sparkles className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Sparkles className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">المصعد (الأسانسير)</span>
                     <span className="font-bold text-[#10202D]">{property.elevator && property.elevator.trim() ? property.elevator : "غير محدد"}</span>
@@ -368,7 +368,7 @@ export function PropertyBrochureModal({
                 </div>
 
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Car className="h-4 w-4 text-[#B99A68] flex-shrink-0" />
+                  <Car className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
                   <div>
                     <span className="block text-[10px] text-gray-500">مكان الجراج</span>
                     <span className="font-bold text-[#10202D]">{property.parking && property.parking.trim() ? property.parking : "غير محدد"}</span>
@@ -390,18 +390,18 @@ export function PropertyBrochureModal({
             )}
 
             {/* 6. Footer Contact & Dynamic QR Stamps */}
-            <div className="flex items-center justify-between border-t-2 border-[#B99A68]/40 pt-4 text-xs gap-4">
+            <div className="flex items-center justify-between border-t-2 border-[#A9927D]/40 pt-4 text-xs gap-4">
               <div className="space-y-1 text-right flex-1">
                 <span className="font-bold text-[#10202D] block">للحجز والاستفسار المباشر:</span>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600 font-semibold">
                   <span className="flex items-center gap-1.5" dir="ltr">
-                    <Phone className="h-3.5 w-3.5 text-[#B99A68]" /> {phone}
+                    <Phone className="h-3.5 w-3.5 text-[#A9927D]" /> {phone}
                   </span>
                   <span className="flex items-center gap-1.5" dir="ltr">
-                    <WhatsAppIcon className="h-3.5 w-3.5 fill-[#B99A68]" /> {whatsapp}
+                    <WhatsAppIcon className="h-3.5 w-3.5 fill-[#A9927D]" /> {whatsapp}
                   </span>
                   <span className="flex items-center gap-1.5" dir="ltr">
-                    <Mail className="h-3.5 w-3.5 text-[#B99A68]" /> {email}
+                    <Mail className="h-3.5 w-3.5 text-[#A9927D]" /> {email}
                   </span>
                 </div>
               </div>
@@ -415,7 +415,7 @@ export function PropertyBrochureModal({
                     type="url"
                     size={46}
                     alt="رابط صفحة العقار"
-                    className="p-1 rounded-md border border-[#B99A68]/30 shadow-xs bg-white"
+                    className="p-1 rounded-md border border-[#A9927D]/30 shadow-xs bg-white"
                   />
                   <span className="text-[7.5px] sm:text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
                     امسح لفتح العقار
@@ -431,7 +431,7 @@ export function PropertyBrochureModal({
                       type={q.type}
                       size={46}
                       alt={q.title}
-                      className="p-1 rounded-md border border-[#B99A68]/30 shadow-xs bg-white"
+                      className="p-1 rounded-md border border-[#A9927D]/30 shadow-xs bg-white"
                     />
                     <span className="text-[7.5px] sm:text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
                       {q.title}

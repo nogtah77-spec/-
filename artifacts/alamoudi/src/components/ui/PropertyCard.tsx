@@ -194,8 +194,8 @@ export function PropertyCard({
               )}
               {isNew() && <span className="rounded bg-emerald-500/90 text-white font-bold px-1.5 py-0.5">جديد</span>}
               {property.featured && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-gradient-to-r from-amber-600 via-[#B88E4B] to-amber-600 text-white font-bold px-1.5 py-0.5 shadow-xs border border-white/20">
-                  <Sparkles className="h-2 w-2 fill-white/80" />
+                <span className="inline-flex items-center gap-0.5 rounded bg-[#A9927D] text-[#10202D] font-bold px-1.5 py-0.5 shadow-xs border border-[#10202D]/10">
+                  <Sparkles className="h-2 w-2 fill-[#10202D]/80" />
                   مميز
                 </span>
               )}
@@ -352,8 +352,8 @@ export function PropertyCard({
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
             {property.featured && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-gradient-to-r from-amber-600 via-[#B88E4B] to-amber-600 text-white font-black text-[11px] shadow-md border border-white/20">
-                <Sparkles className="h-3 w-3 fill-white/80" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#A9927D] text-[#10202D] font-black text-[11px] shadow-md border border-[#10202D]/10">
+                <Sparkles className="h-3 w-3 fill-[#10202D]/80" />
                 مميز VIP
               </span>
             )}

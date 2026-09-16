@@ -308,7 +308,7 @@ export default function MortgageCalculatorPage() {
               </Button>
               <Button
                 onClick={() => setShowReportModal(true)}
-                className="bg-[#B99A68] hover:bg-[#C9AB78] text-[#10202D] font-black gap-2 h-10 px-4 rounded-xl shadow-md text-xs sm:text-sm"
+                className="bg-[#A9927D] hover:bg-[#BBA591] text-[#10202D] font-black gap-2 h-10 px-4 rounded-xl shadow-md text-xs sm:text-sm"
               >
                 <FileText className="h-4 w-4" />
                 تقرير PDF
