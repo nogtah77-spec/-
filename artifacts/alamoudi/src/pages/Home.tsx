@@ -135,7 +135,7 @@ function TiktokCard({
   return (
     <button
       onClick={onPlay}
-      className="group block w-full text-right rounded-md overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+      className="group block w-full text-right rounded-[10px] overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
     >
       <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {!failed ? (
@@ -326,61 +326,61 @@ export default function Home() {
       <main className="flex-1 relative bg-transparent">
 
         {/* ── 3 Action Buttons — Luxury Quick Actions ── */}
-        <div className="container px-3 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
-          <div className="grid grid-cols-3 gap-2 sm:gap-3.5 max-w-4xl mx-auto">
+        <div className="container px-2 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="action-btn-add-property group relative flex items-center justify-center rounded-xl sm:rounded-2xl py-2 px-2 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
+              className="action-btn-add-property group relative flex items-center justify-center rounded-[10px] py-2 px-1.5 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
             >
               {/* Subtle luxury top ambient highlight & contained micro radial glow */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent pointer-events-none" />
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[#C5A059]/2 rounded-full blur-md pointer-events-none group-hover:bg-[#C5A059]/6 transition-all duration-500" />
 
-              <div className="relative z-10 flex items-center justify-between sm:justify-center gap-1.5 sm:gap-2.5 w-full">
-                <div className="text-right min-w-0">
-                  <span className="block text-[11px] sm:text-[14px] font-black text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight truncate">اعرض عقارك</span>
-                  <span className="action-subtitle block text-[8px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 truncate">بيع أو تأجير وحدتك</span>
+              <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2.5 w-full">
+                <div className="text-right shrink-0">
+                  <span className="block text-[10px] xs:text-[11.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">اعرض عقارك</span>
+                  <span className="action-subtitle block text-[7.5px] xs:text-[8.5px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">بيع أو تأجير وحدتك</span>
                 </div>
-                <div className="action-icon-badge w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300">
-                  <Building2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+                <div className="action-icon-badge w-5 h-5 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
+                  <Building2 className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
                 </div>
               </div>
             </Link>
 
             <Link
               href="/finishing-services"
-              className="action-btn-finishing group relative flex items-center justify-center rounded-xl sm:rounded-2xl py-2 px-2 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
+              className="action-btn-finishing group relative flex items-center justify-center rounded-[10px] py-2 px-1.5 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
             >
               {/* Subtle luxury top ambient highlight & contained micro radial glow */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent pointer-events-none" />
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[#C5A059]/2 rounded-full blur-md pointer-events-none group-hover:bg-[#C5A059]/6 transition-all duration-500" />
 
-              <div className="relative z-10 flex items-center justify-between sm:justify-center gap-1.5 sm:gap-2.5 w-full">
-                <div className="text-right min-w-0">
-                  <span className="block text-[11px] sm:text-[14px] font-black text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight truncate">خدمات التشطيبات</span>
-                  <span className="action-subtitle block text-[8px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 truncate">تصميم وديكورات فاخرة</span>
+              <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2.5 w-full">
+                <div className="text-right shrink-0">
+                  <span className="block text-[10px] xs:text-[11.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">خدمات التشطيبات</span>
+                  <span className="action-subtitle block text-[7.5px] xs:text-[8.5px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">تصميم وديكورات فاخرة</span>
                 </div>
-                <div className="action-icon-badge w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300">
-                  <Paintbrush className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+                <div className="action-icon-badge w-5 h-5 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
+                  <Paintbrush className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
                 </div>
               </div>
             </Link>
 
             <Link
               href="/consultation"
-              className="action-btn-consultation group relative flex items-center justify-center rounded-xl sm:rounded-2xl py-2 px-2 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
+              className="action-btn-consultation group relative flex items-center justify-center rounded-[10px] py-2 px-1.5 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
             >
               {/* Subtle luxury top ambient highlight & contained micro radial glow */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent pointer-events-none" />
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[#C5A059]/2 rounded-full blur-md pointer-events-none group-hover:bg-[#C5A059]/6 transition-all duration-500" />
 
-              <div className="relative z-10 flex items-center justify-between sm:justify-center gap-1.5 sm:gap-2.5 w-full">
-                <div className="text-right min-w-0">
-                  <span className="block text-[11px] sm:text-[14px] font-black text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight truncate">اطرح استفسارك</span>
-                  <span className="action-subtitle block text-[8px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 truncate">استشارة عقارية فورية</span>
+              <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2.5 w-full">
+                <div className="text-right shrink-0">
+                  <span className="block text-[10px] xs:text-[11.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">اطرح استفسارك</span>
+                  <span className="action-subtitle block text-[7.5px] xs:text-[8.5px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">استشارة عقارية فورية</span>
                 </div>
-                <div className="action-icon-badge w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300">
-                  <MessageSquareText className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+                <div className="action-icon-badge w-5 h-5 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
+                  <MessageSquareText className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
                 </div>
               </div>
             </Link>
@@ -464,7 +464,7 @@ export default function Home() {
           <section className="py-4 md:py-5 bg-transparent relative z-10">
               <div className="container px-3 sm:px-6">
               <div className="max-w-3xl mx-auto">
-                <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
+                <div className="relative overflow-hidden rounded-[10px] border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
                   <div
                     className="absolute inset-0 opacity-[0.04] pointer-events-none"
                     style={{
@@ -483,7 +483,7 @@ export default function Home() {
                           {...(settings.tiktok
                             ? { target: "_blank", rel: "noopener noreferrer" }
                             : {})}
-                          className="block w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                          className="block w-16 h-16 sm:w-20 sm:h-20 rounded-[10px] overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
                           aria-label="حساب تيك توك"
                         >
                           {settings.tiktokAvatar ? (

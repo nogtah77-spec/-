@@ -63,14 +63,14 @@ export function PropertyCard({
   if (isLoading || !property) {
     if (size === "compact" && layout === "list") {
       return (
-        <Card className="flex flex-row h-[180px] overflow-hidden border-border/60 shadow-sm rounded-2xl">
+        <Card className="flex flex-row h-[180px] overflow-hidden border-border/60 shadow-sm rounded-[10px]">
           <Skeleton className="w-36 h-full rounded-none flex-shrink-0" />
           <div className="flex-1 p-3 space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-5 w-1/2" /><Skeleton className="h-3 w-full" /></div>
         </Card>
       );
     }
     return (
-      <Card className="overflow-hidden border-border/60 shadow-sm flex flex-col h-full rounded-2xl">
+      <Card className="overflow-hidden border-border/60 shadow-sm flex flex-col h-full rounded-[10px]">
         <Skeleton className="w-full aspect-[16/10] rounded-none flex-shrink-0" />
         <CardContent className="p-4 flex-1 space-y-3"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-6 w-1/2" /><Skeleton className="h-3 w-full" /></CardContent>
         <CardFooter className="p-4 pt-0 flex gap-2"><Skeleton className="h-8 flex-1" /><Skeleton className="h-8 w-8" /></CardFooter>
@@ -126,7 +126,7 @@ export function PropertyCard({
         dir="rtl"
         onClick={goToDetails}
         className={cn(
-          "relative flex flex-row overflow-hidden group cursor-pointer rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)]",
+          "relative flex flex-row overflow-hidden group cursor-pointer rounded-[10px] transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-0.5 shadow-[0_6px_20px_rgba(16,32,45,0.08)] hover:shadow-[0_12px_28px_rgba(16,32,45,0.14)]",
           property.featured
             ? "border-accent/50 hover:border-accent"
             : "border-border/70 hover:border-accent/50",
@@ -301,7 +301,7 @@ export function PropertyCard({
       dir="rtl"
       onClick={goToDetails}
       className={cn(
-        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-2xl transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-1 shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)]",
+        "overflow-hidden group cursor-pointer flex flex-col h-full rounded-[10px] transition-all duration-300 border bg-card/95 backdrop-blur hover:-translate-y-1 shadow-[0_8px_24px_rgba(16,32,45,0.08)] hover:shadow-[0_16px_36px_rgba(16,32,45,0.14)]",
         property.featured
           ? "border-accent/50 hover:border-accent"
           : "border-border/70 hover:border-accent/60",

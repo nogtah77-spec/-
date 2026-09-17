@@ -112,10 +112,10 @@ export function PropertyFilterPanel({
   };
 
   return (
-    <section className="rounded-2xl border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
+    <section className="rounded-[10px] border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
       {/* ── 1. Hero Search Input with Animated Sliding Ticker ── */}
       <div className="relative mb-5 group">
-        <div className="relative flex items-stretch rounded-2xl border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-11 sm:h-12">
+        <div className="relative flex items-stretch rounded-[10px] border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-11 sm:h-12">
           <div className="flex items-center justify-center pr-4 text-accent">
             <Search className="h-5 w-5" />
           </div>

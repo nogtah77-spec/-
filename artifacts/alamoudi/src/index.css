@@ -139,11 +139,12 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  /* ── Radius system — Design System spec ── */
+  /* ── Radius system — Unified 10px Design Spec ── */
   --radius-sm:  4px;   /* chips, badges */
   --radius-md:  6px;   /* buttons, inputs, dropdowns */
-  --radius-lg:  8px;   /* cards */
-  --radius-xl:  6px;   /* action tiles, filter card */
+  --radius-lg:  10px;  /* cards */
+  --radius-xl:  10px;  /* action tiles, filter card */
+  --radius-2xl: 10px;  /* major cards & sections */
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -297,14 +298,18 @@
     max-width: 100vw;
   }
 
-  /* ── Card — 16px radius, Design System spec ── */
+  /* ── Card — 10px radius, Unified Design System spec ── */
   .card-luxury {
     box-shadow: var(--shadow-luxury);
     border: 1px solid hsl(var(--card-border));
-    border-radius: 16px;
+    border-radius: 10px !important;
   }
   .dark .card-luxury {
     border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px !important;
+  }
+  .rounded-2xl {
+    border-radius: 10px !important;
   }
 
   /* ── Navbar — glass over Soft White / Midnight Blue ── */
@@ -649,6 +654,7 @@ html[data-theme="charcoal"] .action-btn-consultation {
   background: linear-gradient(135deg, rgba(34, 39, 45, 0.96) 0%, rgba(24, 28, 32, 0.98) 100%) !important;
   border: 1px solid rgba(197, 160, 89, 0.35) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(197, 160, 89, 0.12) !important;
+  border-radius: 10px !important;
 }
 html[data-theme="charcoal"] .action-btn-add-property:hover,
 html[data-theme="charcoal"] .action-btn-finishing:hover,

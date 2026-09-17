@@ -82,7 +82,7 @@ export function StickyQuickSearch({
           : "opacity-0 -translate-y-4 pointer-events-none"
       )}
     >
-      <div className="max-w-5xl mx-auto rounded-2xl bg-card/95 dark:bg-card/95 backdrop-blur-xl border border-border/80 shadow-xl shadow-black/10 p-2 sm:p-2.5 transition-all">
+      <div className="max-w-5xl mx-auto rounded-[10px] bg-card/95 dark:bg-card/95 backdrop-blur-xl border border-border/80 shadow-xl shadow-black/10 p-2 sm:p-2.5 transition-all">
         <form onSubmit={handleSearchSubmit} className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           {/* Main Search Input */}
           <div className="relative flex-1 min-w-[200px] sm:min-w-[240px]">
