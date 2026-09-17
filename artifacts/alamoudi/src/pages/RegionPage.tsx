@@ -179,26 +179,27 @@ export default function RegionPage({ params }: { params: { regionId: string } })
 
             <div className="mb-5 sm:mb-7">
               {/* عنوان النتائج وبطاقة التنقل */}
-              <div className="rounded-2xl border border-border/80 bg-card px-4 py-4 shadow-sm sm:px-6 sm:py-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl px-4 py-4 shadow-[0_12px_36px_rgba(0,0,0,0.45)] sm:px-6 sm:py-5">
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+                <div className="flex flex-wrap items-center justify-between gap-3 relative z-10">
                   <div>
                     {/* رابط التنقل السريع للرئيسية */}
                     <nav aria-label="التنقل" className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
                       <Link
                         href="/"
-                        className="inline-flex items-center gap-1 text-accent hover:text-accent/80 transition-colors"
+                        className="inline-flex items-center gap-1 text-[#C5A059] hover:text-[#C5A059]/80 transition-colors"
                       >
                         <ChevronRight className="h-3.5 w-3.5 rotate-180" />
                         <span>الرئيسية</span>
                       </Link>
-                      <span className="text-muted-foreground/40">/</span>
+                      <span className="text-white/20">/</span>
                       <span className="text-foreground">{region.name}</span>
                     </nav>
 
                     <h1 className="text-xl font-extrabold text-foreground sm:text-2xl tracking-tight">
                       عقارات {region.name}
                     </h1>
-                    <div className="mt-2 h-0.5 w-12 rounded-full bg-accent" />
+                    <div className="mt-2 h-0.5 w-12 rounded-full bg-[#C5A059]" />
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -209,7 +210,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
                       asChild
                       variant="outline"
                       size="sm"
-                      className="h-8.5 rounded-xl text-xs gap-1.5 border-accent/40 text-accent hover:bg-accent/10"
+                      className="h-8.5 rounded-[10px] text-xs gap-1.5 border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-[#C5A059] hover:text-[#C5A059] backdrop-blur-md cursor-pointer transition-all"
                     >
                       <Link href="/">
                         <ChevronRight className="h-3.5 w-3.5 rotate-180" />

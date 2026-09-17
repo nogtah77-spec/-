@@ -811,10 +811,12 @@ export default function PropertyDetails() {
                     <Link
                       key={p.id}
                       href={`/properties/${p.id}`}
-                      className="group flex items-stretch gap-3 p-2.5 rounded-2xl bg-card border border-border/70 hover:border-accent/50 hover:shadow-md transition-all duration-300 overflow-hidden relative"
+                      className="group flex items-stretch gap-3 p-2.5 rounded-[10px] bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl border border-[#C5A059]/30 hover:border-[#C5A059]/70 hover:shadow-[0_12px_36px_rgba(0,0,0,0.45)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden relative"
                     >
+                      <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+
                       {/* Image Thumbnail */}
-                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden bg-muted flex-shrink-0 relative">
+                      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[8px] overflow-hidden bg-muted flex-shrink-0 relative">
                         {thumb ? (
                           <img
                             src={thumb}
@@ -833,7 +835,7 @@ export default function PropertyDetails() {
                         <div className="absolute top-1.5 right-1.5">
                           <span
                             className={cn(
-                              "text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm",
+                              "text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-sm",
                               isSale
                                 ? "bg-accent text-accent-foreground font-black"
                                 : "bg-blue-600 text-white"
@@ -857,19 +859,19 @@ export default function PropertyDetails() {
                         <div>
                           {/* Code & Region */}
                           <div className="flex items-center justify-between gap-1 mb-1">
-                            <span className="text-xs font-bold text-accent font-mono bg-accent/10 px-1.5 py-0.5 rounded">
+                            <span className="text-xs font-bold text-[#C5A059] font-mono bg-[#C5A059]/15 border border-[#C5A059]/30 px-1.5 py-0.5 rounded">
                               {p.code}
                             </span>
                             {rName && (
                               <span className="text-[11px] text-muted-foreground truncate flex items-center gap-0.5">
-                                <MapPin className="h-2.5 w-2.5 flex-shrink-0 text-muted-foreground/70" />
+                                <MapPin className="h-2.5 w-2.5 flex-shrink-0 text-[#C5A059]" />
                                 <span className="truncate">{rName}</span>
                               </span>
                             )}
                           </div>
 
                           {/* Unit Title / Type */}
-                          <h3 className="text-xs sm:text-sm font-semibold text-foreground truncate group-hover:text-accent transition-colors">
+                          <h3 className="text-xs sm:text-sm font-semibold text-foreground truncate group-hover:text-[#C5A059] transition-colors">
                             {tName} {p.subArea ? `- ${p.subArea}` : ""}
                           </h3>
                         </div>
@@ -878,19 +880,19 @@ export default function PropertyDetails() {
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground my-1">
                           {p.area > 0 && (
                             <span className="flex items-center gap-0.5">
-                              <Square className="h-2.5 w-2.5 text-muted-foreground/70" />
+                              <Square className="h-2.5 w-2.5 text-[#C5A059]" />
                               <span>{p.area}م²</span>
                             </span>
                           )}
                           {p.beds > 0 && (
                             <span className="flex items-center gap-0.5">
-                              <Bed className="h-2.5 w-2.5 text-muted-foreground/70" />
+                              <Bed className="h-2.5 w-2.5 text-[#C5A059]" />
                               <span>{p.beds}غ</span>
                             </span>
                           )}
                           {p.baths > 0 && (
                             <span className="flex items-center gap-0.5">
-                              <Bath className="h-2.5 w-2.5 text-muted-foreground/70" />
+                              <Bath className="h-2.5 w-2.5 text-[#C5A059]" />
                               <span>{p.baths}ح</span>
                             </span>
                           )}
@@ -898,7 +900,7 @@ export default function PropertyDetails() {
 
                         {/* Price */}
                         <div className="flex items-baseline justify-between mt-auto">
-                          <p className="text-xs sm:text-sm font-bold text-accent">
+                          <p className="text-xs sm:text-sm font-black text-[#C5A059]">
                             {p.price > 0 ? `${formatNumber(p.price)} ج.م` : "عند الطلب"}
                           </p>
                           <span className="text-[10px] text-muted-foreground group-hover:translate-x-[-2px] transition-transform font-medium">

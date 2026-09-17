@@ -135,7 +135,7 @@ function TiktokCard({
   return (
     <button
       onClick={onPlay}
-      className="group block w-full text-right rounded-[10px] overflow-hidden border border-border bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-0.5"
+      className="group block w-full text-right rounded-[10px] overflow-hidden border border-[#C5A059]/30 bg-[#0F1317]/80 hover:border-[#C5A059]/70 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
     >
       <div className="relative aspect-[4/5] bg-muted overflow-hidden">
         {!failed ? (
@@ -152,17 +152,17 @@ function TiktokCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-            <Play className="h-7 w-7 text-muted-foreground/40" />
+            <Play className="h-7 w-7 text-[#C5A059]/50" />
           </div>
         )}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-            <Play className="h-4 w-4 text-foreground fill-foreground mr-[-2px]" />
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-[#C5A059] flex items-center justify-center shadow-lg">
+            <Play className="h-4 w-4 text-[#10202D] fill-[#10202D] mr-[-2px]" />
           </div>
         </div>
       </div>
       <div className="p-2">
-        <p className="text-xs font-medium text-foreground group-hover:text-accent transition-colors line-clamp-2 leading-snug">
+        <p className="text-xs font-bold text-foreground group-hover:text-[#C5A059] transition-colors line-clamp-2 leading-snug">
           {video.title}
         </p>
       </div>
@@ -464,18 +464,13 @@ export default function Home() {
           <section className="py-4 md:py-5 bg-transparent relative z-10">
               <div className="container px-3 sm:px-6">
               <div className="max-w-3xl mx-auto">
-                <div className="relative overflow-hidden rounded-[10px] border border-border bg-gradient-to-br from-card via-card to-accent/5 shadow-sm p-3 sm:p-4">
-                  <div
-                    className="absolute inset-0 opacity-[0.04] pointer-events-none"
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(#A9927D 1px, transparent 1px)",
-                      backgroundSize: "20px 20px",
-                    }}
-                  />
+                <div className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)] p-3 sm:p-4">
+                  {/* Top Ambient Highlight Line */}
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none z-10" />
+
                   <div className="relative flex flex-row items-center gap-3 sm:gap-4">
                     {/* ── عمود البروفايل (يمين في RTL) ── */}
-                    <div className="flex flex-col items-center gap-2 shrink-0 border-l border-border pl-3 sm:pl-4">
+                    <div className="flex flex-col items-center gap-2 shrink-0 border-l border-white/10 pl-3 sm:pl-4">
                       {/* صورة الحساب */}
                       <div className="relative">
                         <a
@@ -483,7 +478,7 @@ export default function Home() {
                           {...(settings.tiktok
                             ? { target: "_blank", rel: "noopener noreferrer" }
                             : {})}
-                          className="block w-16 h-16 sm:w-20 sm:h-20 rounded-[10px] overflow-hidden border-2 border-accent/40 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
+                          className="block w-16 h-16 sm:w-20 sm:h-20 rounded-[10px] overflow-hidden border-2 border-[#C5A059]/50 shadow-md bg-muted hover:scale-105 transition-transform duration-300"
                           aria-label="حساب تيك توك"
                         >
                           {settings.tiktokAvatar ? (
@@ -493,13 +488,13 @@ export default function Home() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="w-full h-full flex items-center justify-center bg-accent/10 text-accent">
+                            <span className="w-full h-full flex items-center justify-center bg-[#C5A059]/10 text-[#C5A059]">
                               <TikTokIcon className="h-5 w-5" />
                             </span>
                           )}
                         </a>
                         {/* شارة تيك توك */}
-                        <span className="absolute -bottom-1 -left-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-foreground text-background shadow border-2 border-card">
+                        <span className="absolute -bottom-1 -left-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-black text-white shadow border border-[#C5A059]/40">
                           <TikTokIcon className="h-2 w-2" />
                         </span>
                       </div>
@@ -510,7 +505,7 @@ export default function Home() {
                         {...(settings.tiktok
                           ? { target: "_blank", rel: "noopener noreferrer" }
                           : {})}
-                        className="text-center hover:text-accent transition-colors"
+                        className="text-center hover:text-[#C5A059] transition-colors"
                       >
                         <p className="text-[10px] sm:text-[11px] font-bold text-foreground leading-snug whitespace-nowrap text-center">
                           {settings.tiktokName || "العمودي للتسويق العقاري"}
@@ -523,7 +518,7 @@ export default function Home() {
                         {...(settings.tiktok
                           ? { target: "_blank", rel: "noopener noreferrer" }
                           : {})}
-                        className="w-full inline-flex items-center justify-center gap-1 rounded-sm bg-foreground text-background hover:bg-foreground/80 transition-colors text-[11px] font-semibold h-7 px-2 shadow-sm"
+                        className="w-full inline-flex items-center justify-center gap-1 rounded-[7px] bg-[#C5A059] text-[#10202D] hover:bg-[#B38E46] transition-colors text-[11px] font-bold h-7 px-2 shadow-sm"
                       >
                         <TikTokIcon className="h-2.5 w-2.5 shrink-0" />
                         <span>متابعة</span>
@@ -613,6 +608,7 @@ export default function Home() {
                     layout={filters.viewMode}
                     emphasized
                     detailsScale="home"
+                    glass
                     autoPlay
                     autoPlayDelay={(settings.carouselAutoPlayDelay ?? 4) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
@@ -750,8 +746,9 @@ export default function Home() {
             {/* ── Add Property CTA ── */}
             <section className="py-12 md:py-14 bg-transparent relative z-10">
               <div className="container px-6">
-                <div className="max-w-2xl mx-auto text-center bg-card border border-accent/20 rounded-lg p-8 card-luxury">
-                  <div className="w-14 h-14 bg-accent/10 rounded-md flex items-center justify-center text-accent mx-auto mb-4">
+                <div className="relative overflow-hidden max-w-2xl mx-auto text-center rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)] p-6 sm:p-8">
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+                  <div className="w-14 h-14 bg-[#C5A059]/15 border border-[#C5A059]/30 rounded-[10px] flex items-center justify-center text-[#C5A059] mx-auto mb-4 backdrop-blur-md">
                     <UserCheck className="h-7 w-7" />
                   </div>
                   <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">
@@ -765,10 +762,7 @@ export default function Home() {
                     <Button
                       asChild
                       size="lg"
-                      className="h-9 sm:h-11 px-4 sm:px-8 rounded-md font-bold text-xs sm:text-sm text-white gap-1.5 sm:gap-2 shrink-0"
-                      style={{
-                        background: "linear-gradient(135deg, #917B67, #A9927D)",
-                      }}
+                      className="h-9 sm:h-11 px-4 sm:px-8 rounded-[10px] font-bold text-xs sm:text-sm bg-[#C5A059] text-[#10202D] hover:bg-[#B38E46] gap-1.5 sm:gap-2 shrink-0 shadow-md border-0 transition-all cursor-pointer"
                     >
                       <Link href="/add-property">
                         <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
@@ -779,7 +773,7 @@ export default function Home() {
                       asChild
                       size="lg"
                       variant="outline"
-                      className="h-9 sm:h-11 px-4 sm:px-8 rounded-md text-xs sm:text-sm border-accent/40 text-accent hover:bg-accent/10 shrink-0"
+                      className="h-9 sm:h-11 px-4 sm:px-8 rounded-[10px] text-xs sm:text-sm border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-muted-foreground hover:text-foreground backdrop-blur-md shrink-0 cursor-pointer transition-all"
                     >
                       <Link href="/consultation">اطرح استفسارك</Link>
                     </Button>

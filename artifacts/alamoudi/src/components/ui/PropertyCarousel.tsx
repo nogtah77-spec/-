@@ -16,6 +16,7 @@ interface PropertyCarouselProps {
   /** Movement speed multiplier (0.25 = slower/cinematic, 1 = normal, 4 = faster) */
   motionSpeed?: number;
   infinite?: boolean;
+  glass?: boolean;
 }
 
 export function PropertyCarousel({
@@ -29,6 +30,7 @@ export function PropertyCarousel({
   autoPlayDelay = 3500,
   motionSpeed = 1,
   infinite = true,
+  glass = true,
 }: PropertyCarouselProps) {
   const safeSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
 
@@ -154,6 +156,7 @@ export function PropertyCarousel({
                 layout={layout}
                 emphasized={emphasized}
                 detailsScale={detailsScale}
+                glass={glass}
               />
             </div>
           ))}

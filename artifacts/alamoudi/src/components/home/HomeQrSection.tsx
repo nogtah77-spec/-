@@ -98,15 +98,18 @@ export function HomeQrSection() {
           {qrCodes.map((qr) => (
             <div
               key={qr.id}
-              className="group rounded-2xl bg-card border border-border/80 hover:border-accent/50 p-3.5 sm:p-4 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
+              className="group rounded-[10px] bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl border border-[#C5A059]/30 hover:border-[#C5A059]/70 p-3.5 sm:p-4 shadow-[0_12px_36px_rgba(0,0,0,0.45)] hover:shadow-[0_18px_48px_rgba(0,0,0,0.6)] transition-all duration-300 flex flex-col items-center text-center relative overflow-hidden"
             >
+              {/* Ambient Top Highlight Line */}
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+
               {/* Header Icon & Title */}
               <div className="flex items-center gap-2 mb-2 w-full justify-center">
-                <div className="h-7 w-7 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center flex-shrink-0">
+                <div className="h-7 w-7 rounded-[8px] bg-[#C5A059]/15 border border-[#C5A059]/30 flex items-center justify-center flex-shrink-0">
                   {getIcon(qr.icon)}
                 </div>
                 <div className="text-right min-w-0">
-                  <h3 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-accent transition-colors truncate">
+                  <h3 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-[#C5A059] transition-colors truncate">
                     {qr.title}
                   </h3>
                   {qr.subtitle && (
@@ -116,7 +119,7 @@ export function HomeQrSection() {
               </div>
 
               {/* QR Code Canvas/Image (Compact Mini Box) */}
-              <div className="my-1.5 p-1.5 rounded-xl bg-white shadow-xs border border-gray-200 group-hover:border-accent/40 transition-colors">
+              <div className="my-1.5 p-1.5 rounded-[10px] bg-white shadow-xs border border-[#C5A059]/30 group-hover:border-[#C5A059]/70 transition-colors">
                 <QrCodeView
                   url={qr.url}
                   imageUrl={qr.imageUrl}
@@ -128,12 +131,12 @@ export function HomeQrSection() {
 
               {/* Action Buttons */}
               {qr.url && (
-                <div className="w-full flex items-center gap-1.5 mt-2 pt-2 border-t border-border/50">
+                <div className="w-full flex items-center gap-1.5 mt-2 pt-2 border-t border-white/10">
                   <Button
                     asChild
                     variant="outline"
                     size="sm"
-                    className="flex-1 h-7 text-[11px] gap-1 rounded-lg border-border/80 hover:bg-accent hover:text-accent-foreground transition-colors"
+                    className="flex-1 h-7 text-[11px] gap-1 rounded-[8px] border-white/10 bg-[#161B20]/60 hover:bg-[#C5A059] hover:text-[#10202D] text-muted-foreground transition-all cursor-pointer"
                   >
                     <a href={qr.url} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3 w-3" />
@@ -143,7 +146,7 @@ export function HomeQrSection() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 rounded-lg"
+                    className="h-7 w-7 p-0 rounded-[8px] hover:bg-white/10 text-muted-foreground hover:text-foreground cursor-pointer"
                     onClick={() => handleCopy(qr.id, qr.url)}
                     title="نسخ الرابط"
                   >
