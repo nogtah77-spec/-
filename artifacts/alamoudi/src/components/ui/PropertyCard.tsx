@@ -118,7 +118,8 @@ export function PropertyCard({
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/properties/${property.code || property.id}`;
+    const propKey = (/^[A-Za-z0-9_-]+$/.test(property.code || "")) ? property.code : property.id;
+    const url = `${window.location.origin}/properties/${propKey}`;
     if (navigator.share) { try { await navigator.share({ title: property.title || property.code, url }); return; } catch {} }
     await navigator.clipboard.writeText(url);
     toast({ title: "تم نسخ رابط العقار" });

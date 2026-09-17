@@ -81,6 +81,12 @@ export default function PropertyDetails() {
 
   const [directProperty, setDirectProperty] = useState<any>(null);
   const [directLoading, setDirectLoading] = useState(false);
+  const [directChecked, setDirectChecked] = useState(false);
+
+  useEffect(() => {
+    setDirectProperty(null);
+    setDirectChecked(false);
+  }, [cleanId]);
 
   // 1. Find by ID or by Code (case-insensitive)
   const property = useMemo(() => {
@@ -98,36 +104,65 @@ export default function PropertyDetails() {
 
   // 2. Direct fallback to Supabase if not in memory
   useEffect(() => {
-    if (!property && cleanId && ready && supabase) {
-      let cancelled = false;
-      setDirectLoading(true);
-      void (async () => {
-        try {
-          const { data, error } = await supabase
+    if (!cleanId) {
+      setDirectChecked(true);
+      return;
+    }
+
+    if (property) {
+      setDirectChecked(true);
+      return;
+    }
+
+    if (!supabase) {
+      setDirectChecked(true);
+      return;
+    }
+
+    let cancelled = false;
+    setDirectLoading(true);
+
+    void (async () => {
+      try {
+        // 1. Try finding by ID first
+        let res = await supabase
+          .from("properties")
+          .select("*")
+          .eq("id", cleanId)
+          .maybeSingle();
+
+        // 2. Fallback to searching by code (case-insensitive)
+        if (!res.data) {
+          res = await supabase
             .from("properties")
             .select("*")
-            .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
+            .ilike("code", cleanId)
             .maybeSingle();
-          if (cancelled) return;
-          setDirectLoading(false);
-          if (data && !error) {
-            try {
-              setDirectProperty(rowToProperty(data));
-            } catch (e) {
-              console.warn("Error mapping property:", e);
-            }
-          }
-        } catch {
-          if (!cancelled) setDirectLoading(false);
         }
-      })();
 
-      return () => {
-        cancelled = true;
-      };
-    }
-    return;
-  }, [property, cleanId, ready]);
+        if (cancelled) return;
+        if (res.data && !res.error) {
+          try {
+            const mapped = rowToProperty(res.data);
+            setDirectProperty(mapped);
+          } catch (e) {
+            console.warn("Error mapping property:", e);
+          }
+        }
+      } catch (err) {
+        console.warn("Direct property fetch error:", err);
+      } finally {
+        if (!cancelled) {
+          setDirectLoading(false);
+          setDirectChecked(true);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cleanId, property ? true : false]);
 
   const images = useMemo(() => {
     if (!property?.images) return [];
@@ -145,6 +180,7 @@ export default function PropertyDetails() {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
   const [downloadAllPending, setDownloadAllPending] = useState(false);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const lbTouch = useRef<{ x: number; y: number } | null>(null);
 
   const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
@@ -199,43 +235,7 @@ export default function PropertyDetails() {
     }
   }, [property?.title, property?.code, property?.description, property?.price, property?.images, id]);
 
-  if (!property) {
-    if (!ready || directLoading) {
-      return (
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
-          <main className="flex-1 flex items-center justify-center bg-background">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
-              <p className="text-sm text-muted-foreground animate-pulse">جارٍ تحميل بيانات العقار…</p>
-            </div>
-          </main>
-          <Footer />
-        </div>
-      );
-    }
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex items-center justify-center bg-background">
-          <div className="text-center">
-            <Building2 className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">العقار غير موجود</h1>
-            <p className="text-muted-foreground mb-6">لم يتم العثور على هذا العقار.</p>
-            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
-              <Link href="/">العودة للرئيسية</Link>
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  const typeName = propertyTypes?.find(t => t.id === property?.typeId)?.name || "";
-  const regionName = regions?.find(r => r.id === property?.regionId)?.name || "";
-
-  // Smart Multi-Factor Similarity Algorithm
+  // Smart Multi-Factor Similarity Algorithm (Unconditionally declared to obey React Hook Rules)
   const similar = useMemo(() => {
     if (!property || !properties || properties.length <= 1) return [];
 
@@ -301,13 +301,51 @@ export default function PropertyDetails() {
     return scored.slice(0, 6).map(s => s.property);
   }, [property, properties]);
 
+  // Handle Loading & Not Found states AFTER all hooks are evaluated
+  if (!property) {
+    if (!ready || directLoading || !directChecked) {
+      return (
+        <div className="min-h-screen flex flex-col">
+          <Navbar />
+          <main className="flex-1 flex items-center justify-center bg-background">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+              <p className="text-sm text-muted-foreground animate-pulse">جارٍ تحميل بيانات العقار…</p>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center bg-background">
+          <div className="text-center">
+            <Building2 className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-foreground mb-2">العقار غير موجود</h1>
+            <p className="text-muted-foreground mb-6">لم يتم العثور على هذا العقار أو قد يكون تم نقله.</p>
+            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
+              <Link href="/">العودة للرئيسية</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const typeName = propertyTypes?.find(t => t.id === property?.typeId)?.name || "";
+  const regionName = regions?.find(r => r.id === property?.regionId)?.name || "";
+
   const waNum = normalizePhoneForWa(settings?.whatsapp || settings?.phone1 || "");
   const waMsg = encodeURIComponent(`السلام عليكم، أرغب بالاستفسار عن العقار رقم (${property.code || ""}).`);
   const waHref = waNum ? `https://wa.me/${waNum}?text=${waMsg}` : null;
 
   const handleShare = async () => {
-    const url = window.location.href;
-    if (navigator.share) { try { await navigator.share({ title: property.title, url }); return; } catch {} }
+    const propKey = (/^[A-Za-z0-9_-]+$/.test(property.code || "")) ? property.code : property.id;
+    const url = `${window.location.origin}/properties/${propKey}`;
+    if (navigator.share) { try { await navigator.share({ title: property.title || property.code, url }); return; } catch {} }
     await navigator.clipboard.writeText(url);
     toast({ title: "تم نسخ رابط العقار" });
   };
@@ -357,7 +395,6 @@ export default function PropertyDetails() {
   const detailVideoThumb = images.length === 0 ? getVideoThumbnailUrl(property.videoUrl) : null;
   const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
   const showDetailVideoPoster = images.length === 0 && propHasVideo && (!detailVideoThumb || detailThumbFailed);
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

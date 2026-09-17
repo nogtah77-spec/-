@@ -20,8 +20,9 @@ export function PropertyShareModal({ property, regionName, typeName }: PropertyS
   const [copiedText, setCopiedText] = useState(false);
 
   const rawUrl = typeof window !== "undefined" ? window.location.href : "";
+  const propKey = (/^[A-Za-z0-9_-]+$/.test(property.code || "")) ? property.code : property.id;
   const cleanUrl = rawUrl
-    ? `${window.location.origin}/properties/${property.code || property.id}`
+    ? `${window.location.origin}/properties/${propKey}`
     : "";
 
   const shareText = `🏡 *${property.title || property.code}*
