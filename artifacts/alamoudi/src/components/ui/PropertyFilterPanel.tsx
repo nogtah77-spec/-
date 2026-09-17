@@ -112,12 +112,12 @@ export function PropertyFilterPanel({
   };
 
   return (
-    <section className="rounded-[10px] border border-accent/25 bg-card/95 backdrop-blur-xl p-3 sm:p-4.5 shadow-[0_8px_24px_rgba(16,32,45,0.10)] transition-all duration-300">
+    <section className="rounded-[10px] border border-accent/25 bg-card/95 backdrop-blur-xl p-2.5 sm:p-3.5 shadow-[0_6px_20px_rgba(16,32,45,0.08)] transition-all duration-300">
       {/* ── 1. Hero Search Input with Animated Sliding Ticker ── */}
-      <div className="relative mb-5 group">
-        <div className="relative flex items-stretch rounded-[10px] border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-11 sm:h-12">
-          <div className="flex items-center justify-center pr-4 text-accent">
-            <Search className="h-5 w-5" />
+      <div className="relative mb-2.5 sm:mb-3 group">
+        <div className="relative flex items-stretch rounded-[10px] border border-border/80 bg-background/90 hover:border-accent/60 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all duration-300 shadow-sm overflow-hidden h-10 sm:h-11">
+          <div className="flex items-center justify-center pr-3.5 text-accent">
+            <Search className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </div>
 
           <div className="relative flex-1 h-full flex items-center">
@@ -125,7 +125,7 @@ export function PropertyFilterPanel({
             {!filters.searchText && !isFocused && (
               <div
                 onClick={() => inputRef.current?.focus()}
-                className="absolute inset-0 flex items-center pr-3 pl-4 select-none overflow-hidden cursor-text"
+                className="absolute inset-0 flex items-center pr-2.5 pl-3 select-none overflow-hidden cursor-text"
               >
                 <span className="text-muted-foreground/45 font-normal text-xs sm:text-sm ml-2 shrink-0 select-none">
                   جرب البحث عن:
@@ -148,7 +148,7 @@ export function PropertyFilterPanel({
             <Input
               ref={inputRef}
               type="text"
-              className="w-full h-full border-0 bg-transparent px-3 text-sm sm:text-base focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-transparent"
+              className="w-full h-full border-0 bg-transparent px-2.5 text-xs sm:text-sm focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground placeholder:text-transparent"
               value={filters.searchText}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
@@ -164,10 +164,10 @@ export function PropertyFilterPanel({
             <button
               type="button"
               aria-label="مسح البحث"
-              className="px-2.5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              className="px-2 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => update({ searchText: "" }, true)}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
 
@@ -175,23 +175,23 @@ export function PropertyFilterPanel({
           <button
             type="button"
             onClick={() => onApply(filters)}
-            className="h-full px-5 sm:px-7 rounded-none bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591] font-black transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shrink-0 border-s border-[#C7B6A6]/50 focus:outline-hidden select-none cursor-pointer shadow-xs"
+            className="h-full px-4 sm:px-6 rounded-none bg-[#A9927D] text-[#10202D] hover:bg-[#BBA591] font-black transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm shrink-0 border-s border-[#C7B6A6]/50 focus:outline-hidden select-none cursor-pointer shadow-xs"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-3.5 w-3.5" />
             <span>بحث</span>
           </button>
         </div>
       </div>
 
       {/* ── 2. Segmented Pill Row: نوع العرض (Unified Professional Layout) ── */}
-      <div className="mb-2.5 pb-2.5 border-b border-border/50">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-xs">
+      <div className="mb-2 pb-2 border-b border-border/40">
+        <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[11px] sm:text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-accent" />
             <span>نوع العرض:</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
             {CATEGORY_OPTIONS.map((option) => {
               const active = filters.category === option.value;
               return (
@@ -200,9 +200,9 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ category: option.value }, true)}
                   className={cn(
-                    "px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                    "px-2.5 py-1 sm:px-3 sm:py-1 rounded-[10px] text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none",
                     active
-                      ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm scale-105"
+                      ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm scale-102"
                       : "bg-background text-muted-foreground hover:bg-card hover:text-foreground border border-border/70 shadow-2xs"
                   )}
                 >
@@ -215,14 +215,14 @@ export function PropertyFilterPanel({
       </div>
 
       {/* ── 3. Category / Sector Row: فئة العقار (Unified Professional Layout) ── */}
-      <div className="mb-4">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-xs">
+      <div className="mb-2.5 sm:mb-3">
+        <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[11px] sm:text-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-accent" />
             <span>فئة العقار:</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
             {SECTOR_OPTIONS.map((option) => {
               const active = filters.sector === option.value;
               const icon = getSectorIcon(option.value);
@@ -232,7 +232,7 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ sector: option.value }, true)}
                   className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                    "inline-flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1 rounded-[10px] text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none",
                     active
                       ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm"
                       : "bg-background text-muted-foreground hover:bg-card hover:text-foreground border border-border/70 shadow-2xs"
@@ -248,21 +248,21 @@ export function PropertyFilterPanel({
       </div>
 
       {/* ── 4. Main Dropdowns Grid ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
         {/* المدينة / المنطقة */}
         {!fixedRegionId && (
-          <div className="relative">
+          <div className="relative col-span-1">
             <Select
               value={filters.regionId}
               onValueChange={(value) => update({ regionId: value }, true)}
             >
-              <SelectTrigger className="h-11 rounded-xl bg-background/80 border-border/70 text-xs sm:text-sm font-medium px-3.5 focus:border-accent focus:ring-1 focus:ring-accent/20">
-                <div className="flex items-center gap-2 truncate">
-                  <MapPin className="h-4 w-4 text-accent shrink-0" />
+              <SelectTrigger className="h-9 sm:h-9.5 rounded-[10px] bg-background/80 border-border/70 text-[11px] sm:text-xs font-medium px-2.5 sm:px-3 focus:border-accent focus:ring-1 focus:ring-accent/20">
+                <div className="flex items-center gap-1.5 truncate">
+                  <MapPin className="h-3.5 w-3.5 text-accent shrink-0" />
                   <SelectValue placeholder="الموقع / المدينة" />
                 </div>
               </SelectTrigger>
-              <SelectContent dir="rtl" className="rounded-xl">
+              <SelectContent dir="rtl" className="rounded-[10px]">
                 <SelectItem value="all">كل المدن والمناطق</SelectItem>
                 {regions
                   .filter((region) => region.active)
@@ -277,18 +277,18 @@ export function PropertyFilterPanel({
         )}
 
         {/* نوع العقار */}
-        <div className="relative">
+        <div className="relative col-span-1">
           <Select
             value={filters.typeId}
             onValueChange={(value) => update({ typeId: value }, true)}
           >
-            <SelectTrigger className="h-11 rounded-xl bg-background/80 border-border/70 text-xs sm:text-sm font-medium px-3.5 focus:border-accent focus:ring-1 focus:ring-accent/20">
-              <div className="flex items-center gap-2 truncate">
-                <Building className="h-4 w-4 text-accent shrink-0" />
+            <SelectTrigger className="h-9 sm:h-9.5 rounded-[10px] bg-background/80 border-border/70 text-[11px] sm:text-xs font-medium px-2.5 sm:px-3 focus:border-accent focus:ring-1 focus:ring-accent/20">
+              <div className="flex items-center gap-1.5 truncate">
+                <Building className="h-3.5 w-3.5 text-accent shrink-0" />
                 <SelectValue placeholder="نوع العقار (شقة، فيلا...)" />
               </div>
             </SelectTrigger>
-            <SelectContent dir="rtl" className="rounded-xl">
+            <SelectContent dir="rtl" className="rounded-[10px]">
               <SelectItem value="all">كل أنواع العقارات</SelectItem>
               {propertyTypes
                 .filter((type) => type.active)
@@ -302,18 +302,18 @@ export function PropertyFilterPanel({
         </div>
 
         {/* حالة التشطيب */}
-        <div className="relative">
+        <div className="relative col-span-2 sm:col-span-1">
           <Select
             value={filters.finishing}
             onValueChange={(value) => update({ finishing: value }, true)}
           >
-            <SelectTrigger className="h-11 rounded-xl bg-background/80 border-border/70 text-xs sm:text-sm font-medium px-3.5 focus:border-accent focus:ring-1 focus:ring-accent/20">
-              <div className="flex items-center gap-2 truncate">
-                <Paintbrush className="h-4 w-4 text-accent shrink-0" />
+            <SelectTrigger className="h-9 sm:h-9.5 rounded-[10px] bg-background/80 border-border/70 text-[11px] sm:text-xs font-medium px-2.5 sm:px-3 focus:border-accent focus:ring-1 focus:ring-accent/20">
+              <div className="flex items-center gap-1.5 truncate">
+                <Paintbrush className="h-3.5 w-3.5 text-accent shrink-0" />
                 <SelectValue placeholder="حالة التشطيب" />
               </div>
             </SelectTrigger>
-            <SelectContent dir="rtl" className="rounded-xl">
+            <SelectContent dir="rtl" className="rounded-[10px]">
               {FINISHING_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
@@ -325,25 +325,25 @@ export function PropertyFilterPanel({
       </div>
 
       {/* ── 5. Action Row: Advanced Filters Toggle & Reset ── */}
-      <div className="mt-4 pt-3.5 border-t border-border/50 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="mt-2.5 pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-2">
         <Button
           type="button"
           variant="outline"
-          className="h-9 gap-2 rounded-xl border-accent/40 text-accent hover:bg-accent/10 text-xs font-bold"
+          className="h-8 gap-1.5 rounded-[10px] border-accent/40 text-accent hover:bg-accent/10 text-[11px] sm:text-xs font-bold"
           onClick={() => setAdvancedOpen((open) => !open)}
         >
-          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <SlidersHorizontal className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
           <span>{advancedOpen ? "إخفاء الفلاتر المتقدمة" : "فلاتر متقدمة (السعر، المساحة، الغرف...)"}</span>
           <ChevronDown
             className={cn(
-              "h-3.5 w-3.5 transition-transform duration-200",
+              "h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200",
               advancedOpen && "rotate-180"
             )}
           />
         </Button>
 
         {cityName && (
-          <span className="text-xs font-semibold text-accent bg-accent/10 px-3 py-1 rounded-full border border-accent/20">
+          <span className="text-[11px] sm:text-xs font-semibold text-accent bg-accent/10 px-2.5 py-0.5 rounded-full border border-accent/20">
             📍 {cityName}
           </span>
         )}
