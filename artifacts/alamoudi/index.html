@@ -58,8 +58,17 @@
             msNav.setAttribute("content", tc);
           }
         } catch (e) {}
-        // Dev safety: clear any lingering service workers on localhost to prevent stuck cache
+        // Instant Auto-Heal: Purge legacy static caches to prevent any stale chunk errors on mobile/WhatsApp
         try {
+          if ("caches" in window) {
+            caches.keys().then(function(keys) {
+              for (var i = 0; i < keys.length; i++) {
+                if (keys[i].indexOf("static") !== -1 || keys[i].indexOf("data-v") !== -1) {
+                  caches.delete(keys[i]);
+                }
+              }
+            });
+          }
           if ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && "serviceWorker" in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(regs) {
               regs.forEach(function(r) { r.unregister(); });

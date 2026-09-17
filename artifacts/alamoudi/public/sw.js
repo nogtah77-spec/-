@@ -1,34 +1,17 @@
-const STATIC_CACHE = "alamoudi-static-v16";
-const DATA_CACHE = "alamoudi-data-v16";
-const MEDIA_CACHE = "alamoudi-media-v16";
+const MEDIA_CACHE = "alamoudi-media-v17";
 
-const APP_SHELL_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/logo.png",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/favicon.svg"
-];
-
-// Install: Pre-cache App Shell and activate immediately
+// Install: Activate immediately without waiting
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(APP_SHELL_ASSETS).catch(() => {});
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-// Activate: Clean up older legacy caches & take immediate client control
+// Activate: Completely clean up all legacy static & data caches
 self.addEventListener("activate", (event) => {
-  const currentCaches = [STATIC_CACHE, DATA_CACHE, MEDIA_CACHE];
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (!currentCaches.includes(key)) {
+          if (key !== MEDIA_CACHE) {
             return caches.delete(key);
           }
         })
@@ -37,14 +20,14 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Message listener for skipWaiting / cache busting
+// Message listener for immediate skipWaiting
 self.addEventListener("message", (event) => {
   if (event.data && (event.data.type === "SKIP_WAITING" || event.data.action === "skipWaiting")) {
     self.skipWaiting();
   }
 });
 
-// Fetch routing
+// Fetch routing: STRICT NETWORK-FIRST / NETWORK-ONLY for HTML and scripts
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -54,26 +37,35 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 1. Navigation: Network-First with Offline Cache Fallback (guarantees fresh index.html)
+  // 1. Navigation (HTML Pages): Strictly Network-Only to ensure zero stale chunks and instant updates
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            caches.open(STATIC_CACHE).then((cache) => {
-              cache.put("/index.html", networkResponse.clone());
-            });
-          }
-          return networkResponse;
-        })
-        .catch(() => {
-          return caches.match("/index.html");
-        })
+      fetch(request).catch(() => {
+        return new Response(
+          `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"/><title>العمودي للتسويق العقاري</title><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body style="font-family:sans-serif;text-align:center;padding:50px 20px;background:#10202D;color:#fff;"><h2>لا يوجد اتصال بالإنترنت</h2><p>يرجى التحقق من اتصالك بالشبكة ثم إعادة المحاولة.</p><button onclick="window.location.reload()" style="background:#C5A059;color:#10202D;border:none;padding:12px 24px;border-radius:12px;font-weight:bold;cursor:pointer;margin-top:16px;">إعادة المحاولة</button></body></html>`,
+          { headers: { "content-type": "text/html; charset=utf-8" } }
+        );
+      })
     );
     return;
   }
 
-  // 2. Images & Media (Property photos, icons, banners): Cache-First -> Network Fallback
+  // 2. Scripts, Styles & Vite Chunks: Strictly Network-Only (handled by browser HTTP cache via immutable hashes)
+  if (
+    request.destination === "script" ||
+    request.destination === "style" ||
+    url.pathname.startsWith("/assets/")
+  ) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // 3. API Requests: Let pass directly to network
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  // 4. Images & Media (Property photos, icons, banners): Cache-First -> Network Fallback
   if (
     request.destination === "image" ||
     url.pathname.match(/\.(png|jpg|jpeg|svg|webp|avif|ico)(\?.*)?$/i)
@@ -96,55 +88,8 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3. API Requests: Let pass directly to network without SW interception
-  if (url.pathname.startsWith("/api/")) {
-    return;
-  }
-
-  // 4. Static Assets (JS, CSS, Fonts, Vite Chunks): Instant Cache-First (<5ms!)
-  if (
-    request.destination === "script" ||
-    request.destination === "style" ||
-    request.destination === "font" ||
-    url.pathname.startsWith("/assets/") ||
-    url.hostname.includes("fonts.googleapis.com") ||
-    url.hostname.includes("fonts.gstatic.com")
-  ) {
-    event.respondWith(
-      caches.open(STATIC_CACHE).then((staticCache) => {
-        return staticCache.match(request).then((cached) => {
-          if (cached) {
-            return cached;
-          }
-          return fetch(request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const ct = networkResponse.headers.get("content-type") || "";
-              if (
-                (request.destination === "script" || url.pathname.endsWith(".js")) &&
-                !ct.includes("javascript")
-              ) {
-                return networkResponse;
-              }
-              if (
-                (request.destination === "style" || url.pathname.endsWith(".css")) &&
-                !ct.includes("css")
-              ) {
-                return networkResponse;
-              }
-              staticCache.put(request, networkResponse.clone());
-            }
-            return networkResponse;
-          });
-        });
-      })
-    );
-    return;
-  }
-
-  // 5. Default Fallback
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  );
+  // 5. Default pass through
+  event.respondWith(fetch(request));
 });
 
 // ==========================================
@@ -212,4 +157,3 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
-

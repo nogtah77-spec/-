@@ -19,15 +19,21 @@ export function PropertyShareModal({ property, regionName, typeName }: PropertyS
   const [copied, setCopied] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
 
-  const url = typeof window !== "undefined" ? window.location.href : "";
+  const rawUrl = typeof window !== "undefined" ? window.location.href : "";
+  const cleanUrl = rawUrl
+    ? `${window.location.origin}/properties/${property.code || property.id}`
+    : "";
 
-  const shareText = `🏡 *${property.title}*
+  const shareText = `🏡 *${property.title || property.code}*
 🏷️ كود العقار: ${property.code}
 💰 السعر: ${formatNumber(property.price)} ج.م
 📐 المساحة: ${property.area} م²
 📍 الموقع: ${regionName || "مصر"}${typeName ? `\n🏢 النوع: ${typeName}` : ""}
 
-🔗 للمعاينة والتفاصيل: ${url}`;
+🔗 للمعاينة والتفاصيل:
+${cleanUrl}`;
+
+  const url = cleanUrl;
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(url);

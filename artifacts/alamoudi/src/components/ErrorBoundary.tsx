@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
       const lastReload = sessionStorage.getItem(reloadKey);
       const now = Date.now();
 
-      if (!lastReload || now - parseInt(lastReload, 10) > 12000) {
+      if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
         sessionStorage.setItem(reloadKey, String(now));
         try {
           if ("caches" in window) {
@@ -63,8 +63,12 @@ export class ErrorBoundary extends Component<Props, State> {
           }
         } catch {}
         setTimeout(() => {
-          window.location.reload();
-        }, 80);
+          // Force fresh fetch bypassing browser cache
+          const cleanUrl = window.location.href.replace(/([?&])_r=\d+/, "");
+          const sep = cleanUrl.includes("?") ? "&" : "?";
+          window.location.replace(`${cleanUrl}${sep}_r=${Date.now()}`);
+        }, 100);
+        return;
       }
     }
   }
@@ -90,7 +94,9 @@ export class ErrorBoundary extends Component<Props, State> {
           }
         }
       } catch {}
-      window.location.reload();
+      const cleanUrl = window.location.href.replace(/([?&])_r=\d+/, "");
+      const sep = cleanUrl.includes("?") ? "&" : "?";
+      window.location.replace(`${cleanUrl}${sep}_r=${Date.now()}`);
     }
   };
 

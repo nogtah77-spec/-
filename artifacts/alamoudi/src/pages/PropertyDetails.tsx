@@ -66,9 +66,16 @@ export default function PropertyDetails() {
   const cleanId = useMemo(() => {
     if (!id) return "";
     try {
-      return decodeURIComponent(id).trim().replace(/\/$/, "");
+      let val = decodeURIComponent(id);
+      // Strip any query strings (?...) or hashes (#...)
+      val = val.split("?")[0].split("#")[0];
+      // Strip trailing slashes, dots, commas, parentheses
+      val = val.replace(/[\/.,);]+$/, "").trim();
+      return val;
     } catch {
-      return String(id).trim().replace(/\/$/, "");
+      let val = String(id).split("?")[0].split("#")[0];
+      val = val.replace(/[\/.,);]+$/, "").trim();
+      return val;
     }
   }, [id]);
 
@@ -179,12 +186,16 @@ export default function PropertyDetails() {
   // Update page meta independently without re-triggering view tracking
   useEffect(() => {
     if (property) {
-      const propCode = property.code ? `${property.code} | العمودي للتسويق العقاري` : (property.title ? `${property.title} | العمودي للتسويق العقاري` : "العمودي للتسويق العقاري");
-      updatePageMeta({
-        title: propCode,
-        description: property.description || `${property.title || property.code} - السعر: ${formatNumber(property.price)} ج.م`,
-        image: property.images?.[0],
-      });
+      try {
+        const propCode = property.code ? `${property.code} | العمودي للتسويق العقاري` : (property.title ? `${property.title} | العمودي للتسويق العقاري` : "العمودي للتسويق العقاري");
+        updatePageMeta({
+          title: propCode,
+          description: property.description || `${property.title || property.code} - السعر: ${formatNumber(property.price)} ج.م`,
+          image: property.images?.[0],
+        });
+      } catch (e) {
+        console.warn("Error updating meta:", e);
+      }
     }
   }, [property?.title, property?.code, property?.description, property?.price, property?.images, id]);
 
