@@ -712,6 +712,23 @@ export function isSystemStoreProperty(p: { id?: string; code?: string } | null |
   return id.startsWith("__") || code.startsWith("__");
 }
 
+export const DUMMY_PROP_IDS = new Set([
+  "alm_prop_tagamoa_t10",
+  "alm_prop_villa_v01",
+  "alm_prop_badr_b05",
+  "alm_prop_madinaty_m22",
+  "alm_prop_wasal_w03",
+  "alm_prop_nasr_city_n14",
+  "alm_prop_beit_elwatan_bw08",
+]);
+
+export function isDummyProperty(p: { id?: string; code?: string } | null | undefined): boolean {
+  if (!p) return false;
+  const id = String(p.id || "").toLowerCase().trim();
+  const code = String(p.code || "").toLowerCase().trim();
+  return id.startsWith("alm_prop_") || DUMMY_PROP_IDS.has(id) || (["bw08", "b05", "t10", "v01", "m22", "w03", "n14"].includes(code) && id.includes("alm_prop"));
+}
+
 export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
   const map = new Map<string, Property>();
   for (const fp of freshList) {
@@ -751,7 +768,7 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
 
   return Array.from(map.values())
     .filter(p => {
-      if (!p || isSystemStoreProperty(p)) return false;
+      if (!p || isSystemStoreProperty(p) || isDummyProperty(p)) return false;
       const id = (p.id || "").toLowerCase().trim();
       const code = (p.code || "").toLowerCase().trim();
       return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
@@ -894,7 +911,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (rawDeleted) deletedIds = JSON.parse(rawDeleted);
     } catch {}
     const isClean = (p: Property) => {
-      if (!p || isSystemStoreProperty(p)) return false;
+      if (!p || isSystemStoreProperty(p) || isDummyProperty(p)) return false;
       const id = (p.id || "").toLowerCase().trim();
       const code = (p.code || "").toLowerCase().trim();
       return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
@@ -1276,12 +1293,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
             return p;
           });
-          idbProps.forEach(p => {
+          idbProps.filter(p => !isDummyProperty(p)).forEach(p => {
             if (!updated.some(u => u.id === p.id)) {
               updated.push(p);
             }
           });
-          return updated.sort((a, b) => {
+          return updated.filter(p => !isDummyProperty(p)).sort((a, b) => {
             const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
             const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
             return tB - tA;
@@ -1289,6 +1306,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         });
       }
     }).catch(() => {});
+
+    // Purge legacy dummy properties from Supabase permanently
+    Array.from(DUMMY_PROP_IDS).forEach(dId => {
+      supabaseService.deleteProperty(dId).catch(() => {});
+    });
 
     // 2. Fetch fresh properties from Supabase in parallel with ZERO delay
     supabaseService.fetchProperties().then(supabaseProps => {
