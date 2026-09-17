@@ -330,57 +330,57 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="action-btn-add-property group relative flex items-center justify-center rounded-[10px] py-2 px-1.5 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
+              className="action-btn-add-property group relative flex items-center justify-center rounded-[10px] py-2 px-1 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
             >
               {/* Subtle luxury top ambient highlight & contained micro radial glow */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent pointer-events-none" />
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[#C5A059]/2 rounded-full blur-md pointer-events-none group-hover:bg-[#C5A059]/6 transition-all duration-500" />
 
-              <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2.5 w-full">
+              <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 w-full">
                 <div className="text-right shrink-0">
-                  <span className="block text-[10px] xs:text-[11.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">اعرض عقارك</span>
-                  <span className="action-subtitle block text-[7.5px] xs:text-[8.5px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">بيع أو تأجير وحدتك</span>
+                  <span className="block text-[10.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">اعرض عقارك</span>
+                  <span className="action-subtitle block text-[8px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">بيع أو تأجير وحدتك</span>
                 </div>
-                <div className="action-icon-badge w-5 h-5 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
-                  <Building2 className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+                <div className="action-icon-badge w-6 h-6 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
+                  <Building2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
                 </div>
               </div>
             </Link>
 
             <Link
               href="/finishing-services"
-              className="action-btn-finishing group relative flex items-center justify-center rounded-[10px] py-2 px-1.5 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
+              className="action-btn-finishing group relative flex items-center justify-center rounded-[10px] py-2 px-1 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
             >
               {/* Subtle luxury top ambient highlight & contained micro radial glow */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent pointer-events-none" />
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[#C5A059]/2 rounded-full blur-md pointer-events-none group-hover:bg-[#C5A059]/6 transition-all duration-500" />
 
-              <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2.5 w-full">
+              <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 w-full">
                 <div className="text-right shrink-0">
-                  <span className="block text-[10px] xs:text-[11.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">خدمات التشطيبات</span>
-                  <span className="action-subtitle block text-[7.5px] xs:text-[8.5px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">تصميم وديكورات فاخرة</span>
+                  <span className="block text-[10.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">خدمات التشطيبات</span>
+                  <span className="action-subtitle block text-[8px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">تصميم وديكورات فاخرة</span>
                 </div>
-                <div className="action-icon-badge w-5 h-5 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
-                  <Paintbrush className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+                <div className="action-icon-badge w-6 h-6 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
+                  <Paintbrush className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
                 </div>
               </div>
             </Link>
 
             <Link
               href="/consultation"
-              className="action-btn-consultation group relative flex items-center justify-center rounded-[10px] py-2 px-1.5 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
+              className="action-btn-consultation group relative flex items-center justify-center rounded-[10px] py-2 px-1 sm:py-3 sm:px-3.5 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] text-foreground shadow-sm hover:shadow-md hover:shadow-black/40 hover:-translate-y-0.5 transition-all duration-300 select-none cursor-pointer border border-[#C5A059]/30 hover:border-[#C5A059]/60 overflow-hidden backdrop-blur-md"
             >
               {/* Subtle luxury top ambient highlight & contained micro radial glow */}
               <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/30 to-transparent pointer-events-none" />
               <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[#C5A059]/2 rounded-full blur-md pointer-events-none group-hover:bg-[#C5A059]/6 transition-all duration-500" />
 
-              <div className="relative z-10 flex items-center justify-center gap-1 sm:gap-2.5 w-full">
+              <div className="relative z-10 flex items-center justify-center gap-2 sm:gap-3 w-full">
                 <div className="text-right shrink-0">
-                  <span className="block text-[10px] xs:text-[11.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">اطرح استفسارك</span>
-                  <span className="action-subtitle block text-[7.5px] xs:text-[8.5px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">استشارة عقارية فورية</span>
+                  <span className="block text-[10.5px] sm:text-[14px] font-bold text-[#F8FAFC] group-hover:text-[#C5A059] transition-colors leading-tight whitespace-nowrap">اطرح استفسارك</span>
+                  <span className="action-subtitle block text-[8px] sm:text-[10.5px] text-[#C5A059] font-medium mt-0.5 whitespace-nowrap">استشارة عقارية فورية</span>
                 </div>
-                <div className="action-icon-badge w-5 h-5 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
-                  <MessageSquareText className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[1.8]" />
+                <div className="action-icon-badge w-6 h-6 sm:w-7 sm:h-7 rounded-[6px] sm:rounded-[7px] flex items-center justify-center shrink-0 transition-all duration-300">
+                  <MessageSquareText className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[1.8]" />
                 </div>
               </div>
             </Link>
