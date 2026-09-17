@@ -99,13 +99,13 @@ export function PropertyFilterPanel({
   const getSectorIcon = (sector: PropertySector) => {
     switch (sector) {
       case "residential":
-        return <Home className="h-3.5 w-3.5" />;
+        return <Home className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />;
       case "commercial":
-        return <Building2 className="h-3.5 w-3.5" />;
+        return <Building2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />;
       case "administrative":
-        return <Briefcase className="h-3.5 w-3.5" />;
+        return <Briefcase className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />;
       case "medical":
-        return <Stethoscope className="h-3.5 w-3.5" />;
+        return <Stethoscope className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />;
       default:
         return null;
     }
@@ -185,13 +185,13 @@ export function PropertyFilterPanel({
 
       {/* ── 2. Segmented Pill Row: نوع العرض (Unified Professional Layout) ── */}
       <div className="mb-2 pb-2 border-b border-border/40">
-        <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[11px] sm:text-xs">
+        <div className="flex flex-row items-center justify-center gap-1.5 sm:gap-3 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[10.5px] sm:text-xs whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-accent" />
             <span>نوع العرض:</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 shrink-0">
             {CATEGORY_OPTIONS.map((option) => {
               const active = filters.category === option.value;
               return (
@@ -200,7 +200,7 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ category: option.value }, true)}
                   className={cn(
-                    "px-2.5 py-1 sm:px-3 sm:py-1 rounded-[10px] text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                    "px-2 py-0.5 sm:px-3 sm:py-1 rounded-[10px] text-[10.5px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none whitespace-nowrap",
                     active
                       ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm scale-102"
                       : "bg-background text-muted-foreground hover:bg-card hover:text-foreground border border-border/70 shadow-2xs"
@@ -216,13 +216,13 @@ export function PropertyFilterPanel({
 
       {/* ── 3. Category / Sector Row: فئة العقار (Unified Professional Layout) ── */}
       <div className="mb-2.5 sm:mb-3">
-        <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[11px] sm:text-xs">
+        <div className="flex flex-row items-center justify-center gap-1.5 sm:gap-3 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar py-0.5">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[10.5px] sm:text-xs whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-accent" />
             <span>فئة العقار:</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5">
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 shrink-0">
             {SECTOR_OPTIONS.map((option) => {
               const active = filters.sector === option.value;
               const icon = getSectorIcon(option.value);
@@ -232,7 +232,7 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ sector: option.value }, true)}
                   className={cn(
-                    "inline-flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1 rounded-[10px] text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none",
+                    "inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-[10px] text-[10.5px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none whitespace-nowrap",
                     active
                       ? "bg-primary text-primary-foreground border border-accent/50 shadow-sm"
                       : "bg-background text-muted-foreground hover:bg-card hover:text-foreground border border-border/70 shadow-2xs"
@@ -329,11 +329,18 @@ export function PropertyFilterPanel({
         <Button
           type="button"
           variant="outline"
-          className="h-8 gap-1.5 rounded-[10px] border-accent/40 text-accent hover:bg-accent/10 text-[11px] sm:text-xs font-bold"
+          className="h-8 gap-1.5 rounded-[10px] border-accent/40 text-accent hover:bg-accent/10 text-[11px] sm:text-xs"
           onClick={() => setAdvancedOpen((open) => !open)}
         >
           <SlidersHorizontal className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-          <span>{advancedOpen ? "إخفاء الفلاتر المتقدمة" : "فلاتر متقدمة (السعر، المساحة، الغرف...)"}</span>
+          {advancedOpen ? (
+            <span className="font-bold">إخفاء الفلاتر المتقدمة</span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="font-bold">فلاتر متقدمة</span>
+              <span className="font-normal opacity-70 text-[10px] sm:text-[11px]">(السعر، المساحة، الغرف...)</span>
+            </span>
+          )}
           <ChevronDown
             className={cn(
               "h-3 w-3 sm:h-3.5 sm:w-3.5 transition-transform duration-200",
