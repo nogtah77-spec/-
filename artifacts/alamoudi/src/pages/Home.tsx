@@ -328,40 +328,73 @@ export default function Home() {
           <div className="grid grid-cols-3 gap-2.5 sm:gap-4 max-w-4xl mx-auto">
             <Link
               href="/add-property"
-              className="action-btn-add-property group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/50 hover:border-accent"
+              className="action-btn-add-property group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-[#10202D] text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/60 hover:border-accent overflow-hidden"
             >
-              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              {/* Background image & luxury overlay */}
+              <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                <img
+                  src="/images/actions/action-add-property.jpg"
+                  alt=""
+                  aria-hidden="true"
+                  className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#10202D]/95 via-[#10202D]/80 to-[#10202D]/60 transition-opacity duration-300 group-hover:opacity-90" />
+              </div>
+
+              <div className="action-icon-badge relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform border border-accent/40">
                 <Plus className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.5]" />
               </div>
-              <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-black text-foreground group-hover:text-accent transition-colors leading-tight">اعرض عقارك</span>
-                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-medium mt-0.5">بيع أو تأجير وحدتك</span>
+              <div className="relative z-10 text-center sm:text-right">
+                <span className="block text-xs sm:text-sm font-black text-white group-hover:text-accent transition-colors leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">اعرض عقارك</span>
+                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-semibold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">بيع أو تأجير وحدتك</span>
               </div>
             </Link>
 
             <Link
               href="/finishing-services"
-              className="action-btn-finishing group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/50 hover:border-accent"
+              className="action-btn-finishing group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-[#10202D] text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/60 hover:border-accent overflow-hidden"
             >
-              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              {/* Background image & luxury overlay */}
+              <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                <img
+                  src="/images/actions/action-finishing.jpg"
+                  alt=""
+                  aria-hidden="true"
+                  className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#10202D]/95 via-[#10202D]/80 to-[#10202D]/60 transition-opacity duration-300 group-hover:opacity-90" />
+              </div>
+
+              <div className="action-icon-badge relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform border border-accent/40">
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.2]" />
               </div>
-              <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-black text-foreground group-hover:text-accent transition-colors leading-tight">خدمات التشطيبات</span>
-                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-medium mt-0.5">تصميم وديكورات فاخرة</span>
+              <div className="relative z-10 text-center sm:text-right">
+                <span className="block text-xs sm:text-sm font-black text-white group-hover:text-accent transition-colors leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">خدمات التشطيبات</span>
+                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-semibold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">تصميم وديكورات فاخرة</span>
               </div>
             </Link>
 
             <Link
               href="/consultation"
-              className="action-btn-consultation group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-card text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/50 hover:border-accent"
+              className="action-btn-consultation group relative flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 rounded-2xl p-2 sm:py-2.5 sm:px-3 bg-[#10202D] text-foreground shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 font-bold select-none cursor-pointer border-2 border-accent/60 hover:border-accent overflow-hidden"
             >
-              <div className="action-icon-badge w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+              {/* Background image & luxury overlay */}
+              <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                <img
+                  src="/images/actions/action-consultation.jpg"
+                  alt=""
+                  aria-hidden="true"
+                  className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#10202D]/95 via-[#10202D]/80 to-[#10202D]/60 transition-opacity duration-300 group-hover:opacity-90" />
+              </div>
+
+              <div className="action-icon-badge relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform border border-accent/40">
                 <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 stroke-[2.2]" />
               </div>
-              <div className="text-center sm:text-right">
-                <span className="block text-xs sm:text-sm font-black text-foreground group-hover:text-accent transition-colors leading-tight">اطرح استفسارك</span>
-                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-medium mt-0.5">استشارة عقارية فورية</span>
+              <div className="relative z-10 text-center sm:text-right">
+                <span className="block text-xs sm:text-sm font-black text-white group-hover:text-accent transition-colors leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">اطرح استفسارك</span>
+                <span className="action-subtitle hidden sm:block text-[10px] text-accent font-semibold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]">استشارة عقارية فورية</span>
               </div>
             </Link>
           </div>
