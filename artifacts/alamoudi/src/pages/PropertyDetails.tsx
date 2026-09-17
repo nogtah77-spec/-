@@ -66,9 +66,9 @@ export default function PropertyDetails() {
   const cleanId = useMemo(() => {
     if (!id) return "";
     try {
-      return decodeURIComponent(id).trim();
+      return decodeURIComponent(id).trim().replace(/\/$/, "");
     } catch {
-      return String(id).trim();
+      return String(id).trim().replace(/\/$/, "");
     }
   }, [id]);
 
@@ -81,9 +81,10 @@ export default function PropertyDetails() {
     const cleanLower = cleanId.toLowerCase();
     const found = (properties || []).find(
       (p) =>
-        p.id === cleanId ||
-        (p.code && p.code.trim().toLowerCase() === cleanLower) ||
-        (p.id && p.id.toLowerCase() === cleanLower)
+        p &&
+        ((p.id && String(p.id).trim() === cleanId) ||
+         (p.code && String(p.code).trim().toLowerCase() === cleanLower) ||
+         (p.id && String(p.id).toLowerCase() === cleanLower))
     );
     return found || directProperty;
   }, [properties, cleanId, directProperty]);
@@ -93,17 +94,12 @@ export default function PropertyDetails() {
     if (!property && cleanId && ready && supabase) {
       let cancelled = false;
       setDirectLoading(true);
-      const safeId = cleanId.replace(/[^a-zA-Z0-9_-]/g, "");
-      if (!safeId) {
-        setDirectLoading(false);
-        return;
-      }
       void (async () => {
         try {
           const { data, error } = await supabase
             .from("properties")
             .select("*")
-            .or(`id.eq.${safeId},code.ilike.${safeId}`)
+            .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
             .maybeSingle();
           if (cancelled) return;
           setDirectLoading(false);
@@ -407,15 +403,15 @@ export default function PropertyDetails() {
                 {canViewBrochure && (
                   <PropertyBrochureModal
                     property={property}
-                    region={regions.find(r => r.id === property.regionId)}
-                    propertyType={propertyTypes.find(t => t.id === property.typeId)}
-                    categoryLabel={categoryLabels[property.category] || property.category}
-                    finishingLabel={finishingLabels[property.finishing] || property.finishing}
-                    companyName={settings.companyName}
-                    phone={settings.phone1}
-                    whatsapp={settings.whatsapp}
-                    email={settings.email}
-                    qrCodes={settings.qrCodes}
+                    region={regions?.find(r => r.id === property.regionId)}
+                    propertyType={propertyTypes?.find(t => t.id === property.typeId)}
+                    categoryLabel={categoryLabels[property.category] || property.category || ""}
+                    finishingLabel={finishingLabels[property.finishing] || property.finishing || ""}
+                    companyName={settings?.companyName}
+                    phone={settings?.phone1}
+                    whatsapp={settings?.whatsapp}
+                    email={settings?.email}
+                    qrCodes={settings?.qrCodes}
                   />
                 )}
                 <PropertyShareModal
@@ -677,7 +673,7 @@ export default function PropertyDetails() {
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-24 flex-shrink-0">الموظف المسؤول</span>
                           <span className="font-medium text-foreground">
-                            {users.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
+                            {users?.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
                           </span>
                         </div>
                       )}
@@ -687,14 +683,17 @@ export default function PropertyDetails() {
                           <span className="font-medium text-foreground">{property.source}</span>
                         </div>
                       )}
-                      {(property.sourcePhones ?? []).filter((ph: string) => ph.trim()).map((ph: string, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
-                          <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-[#C5A059] hover:underline font-medium transition-colors" dir="ltr">
-                            <Phone className="h-3.5 w-3.5 flex-shrink-0 text-[#C5A059]" />{ph}
-                          </a>
-                        </div>
-                      ))}
+                      {(Array.isArray(property.sourcePhones) ? property.sourcePhones : []).filter((ph: any) => ph && String(ph).trim()).map((ph: any, i: number) => {
+                        const phStr = String(ph).trim();
+                        return (
+                          <div key={i} className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
+                            <a href={`tel:${phStr.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-[#C5A059] hover:underline font-medium transition-colors" dir="ltr">
+                              <Phone className="h-3.5 w-3.5 flex-shrink-0 text-[#C5A059]" />{phStr}
+                            </a>
+                          </div>
+                        );
+                      })}
                       {property.sourceEmail?.trim() && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
@@ -812,8 +811,8 @@ export default function PropertyDetails() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
                 {similar.map(p => {
-                  const tName = propertyTypes.find(t => t.id === p.typeId)?.name || p.unitType || "عقار";
-                  const rName = regions.find(r => r.id === p.regionId)?.name || p.location || "";
+                  const tName = propertyTypes?.find(t => t.id === p.typeId)?.name || p.unitType || "عقار";
+                  const rName = regions?.find(r => r.id === p.regionId)?.name || p.location || "";
                   const thumb = p.images?.[0] || (p.videoUrl ? getVideoThumbnailUrl(p.videoUrl) : null);
                   const isSale = p.listingType === "sale" || p.category === "sale";
 

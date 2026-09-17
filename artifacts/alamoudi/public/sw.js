@@ -1,6 +1,6 @@
-const STATIC_CACHE = "alamoudi-static-v15";
-const DATA_CACHE = "alamoudi-data-v15";
-const MEDIA_CACHE = "alamoudi-media-v15";
+const STATIC_CACHE = "alamoudi-static-v16";
+const DATA_CACHE = "alamoudi-data-v16";
+const MEDIA_CACHE = "alamoudi-media-v16";
 
 const APP_SHELL_ASSETS = [
   "/",
@@ -118,6 +118,19 @@ self.addEventListener("fetch", (event) => {
           }
           return fetch(request).then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
+              const ct = networkResponse.headers.get("content-type") || "";
+              if (
+                (request.destination === "script" || url.pathname.endsWith(".js")) &&
+                !ct.includes("javascript")
+              ) {
+                return networkResponse;
+              }
+              if (
+                (request.destination === "style" || url.pathname.endsWith(".css")) &&
+                !ct.includes("css")
+              ) {
+                return networkResponse;
+              }
               staticCache.put(request, networkResponse.clone());
             }
             return networkResponse;

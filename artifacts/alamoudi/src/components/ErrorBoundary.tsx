@@ -31,21 +31,40 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error(`[ErrorBoundary${this.props.name ? `:${this.props.name}` : ""}]`, error, info.componentStack, "path:", window.location.pathname);
 
     const errorMsg = String(error?.message || "");
-    const isChunkLoadError =
+    const errorStack = String(error?.stack || "");
+    const isChunkOrAssetError =
       error?.name === "ChunkLoadError" ||
       errorMsg.includes("Failed to fetch dynamically imported module") ||
       errorMsg.includes("Importing a module script failed") ||
-      errorMsg.includes("error loading dynamically imported module");
+      errorMsg.includes("error loading dynamically imported module") ||
+      errorMsg.includes("Unexpected token '<'") ||
+      errorMsg.includes("is not valid JSON") ||
+      errorMsg.includes("Loading chunk") ||
+      errorMsg.includes("Load failed") ||
+      errorStack.includes("assets/") ||
+      errorMsg.includes("mime type");
 
-    // Auto silent recovery for chunk load errors caused by server updates
-    if (isChunkLoadError && typeof window !== "undefined") {
+    // Auto silent recovery for chunk load / stale asset errors caused by updates
+    if (isChunkOrAssetError && typeof window !== "undefined") {
       const reloadKey = `eb_chunk_reload_${window.location.pathname}`;
       const lastReload = sessionStorage.getItem(reloadKey);
       const now = Date.now();
 
       if (!lastReload || now - parseInt(lastReload, 10) > 12000) {
         sessionStorage.setItem(reloadKey, String(now));
-        window.location.reload();
+        try {
+          if ("caches" in window) {
+            caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))));
+          }
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+              for (const r of regs) r.unregister();
+            });
+          }
+        } catch {}
+        setTimeout(() => {
+          window.location.reload();
+        }, 80);
       }
     }
   }
