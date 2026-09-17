@@ -82,7 +82,7 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
             <div
               key={`${img.id}-${i}`}
               onClick={() => setLightbox(img.url)}
-              className="group aspect-square rounded-xl overflow-hidden border border-border bg-muted cursor-zoom-in"
+              className="group aspect-square rounded-[10px] overflow-hidden border border-[#C5A059]/30 hover:border-[#C5A059]/70 bg-muted cursor-zoom-in transition-all duration-300 shadow-md"
             >
               <img
                 src={img.url}
@@ -91,7 +91,7 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
               />
             </div>
           ) : (
-            <div key={i} className="aspect-square rounded-xl border border-dashed border-border bg-muted/40" />
+            <div key={i} className="aspect-square rounded-[10px] border border-dashed border-[#C5A059]/20 bg-muted/40" />
           )
         )}
       </div>
@@ -159,7 +159,7 @@ function VideoGrid({ videos }: { videos: GalleryVideo[] }) {
                 <div
                   key={vid.id}
                   onClick={() => setActive(vid)}
-                  className="group relative aspect-square rounded-xl overflow-hidden border border-border bg-muted cursor-pointer"
+                  className="group relative aspect-square rounded-[10px] overflow-hidden border border-[#C5A059]/30 hover:border-[#C5A059]/70 bg-[#0F1317]/80 cursor-pointer shadow-md transition-all duration-300"
                 >
                   {thumb ? (
                     <img
@@ -170,22 +170,22 @@ function VideoGrid({ videos }: { videos: GalleryVideo[] }) {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground/30" />
+                      <ImageIcon className="h-8 w-8 text-[#C5A059]/30" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/25 group-hover:bg-black/40 transition-colors" />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/45 transition-colors" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="w-12 h-12 rounded-full bg-white/85 group-hover:bg-white group-hover:scale-110 flex items-center justify-center shadow-lg transition-all duration-200">
-                      <Play className="h-5 w-5 text-accent fill-accent translate-x-px" />
+                    <span className="w-12 h-12 rounded-full bg-[#C5A059] group-hover:bg-[#B38E46] group-hover:scale-110 flex items-center justify-center shadow-lg transition-all duration-200">
+                      <Play className="h-5 w-5 text-[#10202D] fill-[#10202D] translate-x-px" />
                     </span>
                   </div>
                   {vid.title && (
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 to-transparent px-2.5 pt-6 pb-2 translate-y-full group-hover:translate-y-0 transition-transform duration-250">
-                      <p className="text-white text-xs font-medium line-clamp-2">{vid.title}</p>
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2.5 pt-6 pb-2 translate-y-full group-hover:translate-y-0 transition-transform duration-250">
+                      <p className="text-white text-xs font-bold line-clamp-2">{vid.title}</p>
                     </div>
                   )}
                   <div className="absolute top-2 right-2">
-                    <span className="bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-sm">
+                    <span className="bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 backdrop-blur-sm border border-white/10">
                       <Play className="h-2.5 w-2.5 fill-white" />فيديو
                     </span>
                   </div>
@@ -293,8 +293,12 @@ export default function FinishingServices() {
       <main className="flex-1 bg-background">
 
         {/* Hero */}
-        <div className="bg-card border-b border-border py-12 md:py-16">
-          <div className="container px-6 text-center">
+        <div className="relative border-b border-[#C5A059]/20 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] py-12 md:py-16 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+          <div className="container px-6 text-center relative z-10">
+            <span className="inline-block text-xs font-semibold tracking-wider text-[#C5A059] uppercase mb-2 px-3 py-1 rounded-full bg-[#C5A059]/10 border border-[#C5A059]/30">
+              خدمات حصرية راقية
+            </span>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">خدمات التشطيبات</h1>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
               نقدم خدمات تشطيب متكاملة لجميع أنواع الوحدات السكنية والإدارية بأعلى مستوى من الجودة وأفضل الأسعار.
@@ -325,77 +329,84 @@ export default function FinishingServices() {
         <section className="py-12">
           <div className="container px-6 max-w-2xl mx-auto">
             {submitted ? (
-              <Card className="card-luxury border-none text-center py-16">
+              <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)] text-center py-16">
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
                 <CardContent>
-                  <div className="w-16 h-16 bg-green-100 dark:bg-green-950/30 rounded-full flex items-center justify-center text-green-600 mx-auto mb-4">
+                  <div className="w-16 h-16 bg-[#C5A059]/15 border border-[#C5A059]/30 rounded-full flex items-center justify-center text-[#C5A059] mx-auto mb-4 shadow-[0_0_20px_rgba(197,160,89,0.2)]">
                     <CheckCircle2 className="h-8 w-8" />
                   </div>
                   <h2 className="text-xl font-bold text-foreground mb-2">تم إرسال طلبك بنجاح</h2>
                   <p className="text-sm text-muted-foreground">سيتواصل معك فريقنا خلال 24 ساعة.</p>
-                  <Button className="mt-6 bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8"
+                  <Button className="mt-6 bg-[#C5A059] text-[#10202D] hover:bg-[#B38E46] font-bold rounded-[10px] px-8 transition-all"
                     onClick={() => { setSubmitted(false); setForm({ name: "", phone: "", location: "", area: "", finishingType: "", description: "" }); }}>
                     إرسال طلب آخر
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              <Card className="card-luxury border-none bg-card">
-                <CardHeader><CardTitle>اطلب خدمة تشطيب</CardTitle></CardHeader>
-                <CardContent>
+              <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)]">
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+                <CardHeader className="border-b border-white/5 pb-4">
+                  <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#C5A059] inline-block shadow-[0_0_8px_rgba(197,160,89,0.8)]" />
+                    اطلب خدمة تشطيب
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>الاسم *</Label>
-                        <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="الاسم الكامل" />
+                        <Label className="text-xs text-muted-foreground font-medium">الاسم *</Label>
+                        <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="الاسم الكامل" className="bg-[#0F1317]/70 border-white/10 rounded-[10px] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-[#C5A059]/50 focus-visible:ring-[#C5A059]/20" />
                       </div>
                       <div className="space-y-2">
-                        <Label>الهاتف *</Label>
-                        <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+20 10 0000 0000" dir="ltr" />
+                        <Label className="text-xs text-muted-foreground font-medium">الهاتف *</Label>
+                        <Input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+20 10 0000 0000" dir="ltr" className="bg-[#0F1317]/70 border-white/10 rounded-[10px] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-[#C5A059]/50 focus-visible:ring-[#C5A059]/20 text-right" />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>الموقع</Label>
-                        <Input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="المنطقة / الكمباوند" />
+                        <Label className="text-xs text-muted-foreground font-medium">الموقع</Label>
+                        <Input value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="المنطقة / الكمباوند" className="bg-[#0F1317]/70 border-white/10 rounded-[10px] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-[#C5A059]/50 focus-visible:ring-[#C5A059]/20" />
                       </div>
                       <div className="space-y-2">
-                        <Label>المساحة (م²)</Label>
-                        <Input value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} placeholder="مثال: 120" />
+                        <Label className="text-xs text-muted-foreground font-medium">المساحة (م²)</Label>
+                        <Input value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} placeholder="مثال: 120" className="bg-[#0F1317]/70 border-white/10 rounded-[10px] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-[#C5A059]/50 focus-visible:ring-[#C5A059]/20" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>نوع التشطيب *</Label>
+                      <Label className="text-xs text-muted-foreground font-medium">نوع التشطيب *</Label>
                       <Select value={form.finishingType} onValueChange={v => setForm({ ...form, finishingType: v })}>
-                        <SelectTrigger><SelectValue placeholder="اختر نوع التشطيب" /></SelectTrigger>
-                        <SelectContent>{finishingTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        <SelectTrigger className="bg-[#0F1317]/70 border-white/10 rounded-[10px] text-foreground focus:border-[#C5A059]/50 focus:ring-[#C5A059]/20"><SelectValue placeholder="اختر نوع التشطيب" /></SelectTrigger>
+                        <SelectContent className="bg-[#181C20] border-[#C5A059]/30 text-foreground rounded-[10px]">{finishingTypes.map(t => <SelectItem key={t} value={t} className="focus:bg-[#C5A059]/20 focus:text-white">{t}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>وصف إضافي</Label>
-                      <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="أي تفاصيل إضافية أو متطلبات خاصة..." className="min-h-[100px]" />
+                      <Label className="text-xs text-muted-foreground font-medium">وصف إضافي</Label>
+                      <Textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="أي تفاصيل إضافية أو متطلبات خاصة..." className="min-h-[100px] bg-[#0F1317]/70 border-white/10 rounded-[10px] text-foreground placeholder:text-muted-foreground/50 focus-visible:border-[#C5A059]/50 focus-visible:ring-[#C5A059]/20" />
                     </div>
                     {/* Terms agreement */}
-                    <div className={`flex items-start gap-3 rounded-xl border p-4 transition-colors ${agreed ? "border-accent/30 bg-accent/5" : "border-border bg-card/50"}`}>
+                    <div className={`flex items-start gap-3 rounded-[10px] border p-4 transition-colors ${agreed ? "border-[#C5A059]/40 bg-[#C5A059]/5" : "border-white/10 bg-[#0F1317]/50"}`}>
                       <Checkbox
                         id="finishing-terms-agree"
                         checked={agreed}
                         onCheckedChange={v => setAgreed(!!v)}
-                        className="mt-0.5 shrink-0"
+                        className="mt-0.5 shrink-0 data-[state=checked]:bg-[#C5A059] data-[state=checked]:border-[#C5A059] border-white/30"
                       />
-                      <label htmlFor="finishing-terms-agree" className="text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
+                      <label htmlFor="finishing-terms-agree" className="text-xs md:text-sm text-muted-foreground leading-relaxed cursor-pointer select-none">
                         أقر بأنني قرأت ووافقت على{" "}
-                        <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                        <Link href="/privacy" className="text-[#C5A059] font-medium underline underline-offset-2 hover:text-[#B38E46]" onClick={e => e.stopPropagation()}>
                           سياسة الخصوصية
                         </Link>
                         {" "}و{" "}
-                        <Link href="/privacy" className="text-accent font-medium underline underline-offset-2 hover:text-accent/80" onClick={e => e.stopPropagation()}>
+                        <Link href="/privacy" className="text-[#C5A059] font-medium underline underline-offset-2 hover:text-[#B38E46]" onClick={e => e.stopPropagation()}>
                           شروط الاستخدام
                         </Link>
                         {" "}الخاصة بمنصة العمودي للتسويق العقاري.
                       </label>
                     </div>
 
-                    <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-bold rounded-xl disabled:opacity-50">
+                    <Button type="submit" disabled={loading || !agreed} className="w-full h-11 bg-[#C5A059] text-[#10202D] hover:bg-[#B38E46] font-bold rounded-[10px] shadow-[0_4px_16px_rgba(197,160,89,0.25)] transition-all disabled:opacity-50">
                       {loading ? "جاري الإرسال..." : "إرسال الطلب"}
                     </Button>
                   </form>

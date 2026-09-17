@@ -424,13 +424,13 @@ export default function PropertyDetails() {
                   typeName={typeName}
                 />
                 <Button variant="outline" size="icon"
-                  className={cn("rounded-xl border-border/80", isFavorite(property.id) ? "text-red-500 border-red-200" : "")}
+                  className={cn("rounded-[10px] border border-white/10 bg-[#161B20]/60 hover:bg-white/5 backdrop-blur-md cursor-pointer transition-all", isFavorite(property.id) ? "text-red-500 border-red-500/40 bg-red-500/10" : "text-muted-foreground hover:text-foreground")}
                   onClick={() => { toggleFavorite(property.id); toast({ title: isFavorite(property.id) ? "تمت الإزالة من المفضلة" : "تمت الإضافة للمفضلة" }); }}
                   title="المفضلة">
                   <Heart className={cn("h-4 w-4", isFavorite(property.id) ? "fill-red-500" : "")} />
                 </Button>
                 <Button variant="outline" size="icon"
-                  className={cn("rounded-xl border-border/80", isInCompare(property.id) ? "text-accent border-accent/30" : "")}
+                  className={cn("rounded-[10px] border border-white/10 bg-[#161B20]/60 hover:bg-white/5 backdrop-blur-md cursor-pointer transition-all", isInCompare(property.id) ? "text-[#C5A059] border-[#C5A059]/40 bg-[#C5A059]/10" : "text-muted-foreground hover:text-foreground")}
                   onClick={() => { toggleCompare(property.id); toast({ title: isInCompare(property.id) ? "تمت الإزالة من المقارنة" : "تمت الإضافة للمقارنة" }); }}
                   title="مقارنة">
                   <Scale className="h-4 w-4" />
@@ -442,43 +442,43 @@ export default function PropertyDetails() {
           {/* Specs chips — mobile only, shown above gallery */}
           <div className="flex flex-wrap gap-2 mb-4 lg:hidden">
             {property.beds > 0 && (
-              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
-                <Bed className="h-4 w-4 text-accent flex-shrink-0" />
-                <span className="font-semibold">{property.beds}</span>
+              <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                <Bed className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                <span className="font-bold text-foreground">{property.beds}</span>
                 <span className="text-muted-foreground text-xs">غرف</span>
               </div>
             )}
             {property.baths > 0 && (
-              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
-                <Bath className="h-4 w-4 text-accent flex-shrink-0" />
-                <span className="font-semibold">{property.baths}</span>
+              <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                <Bath className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                <span className="font-bold text-foreground">{property.baths}</span>
                 <span className="text-muted-foreground text-xs">حمام</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
-              <Square className="h-4 w-4 text-accent flex-shrink-0" />
-              <span className="font-semibold">{property.area}</span>
+            <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+              <Square className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+              <span className="font-bold text-foreground">{property.area}</span>
               <span className="text-muted-foreground text-xs">م²</span>
             </div>
             {property.floor !== undefined && property.floor !== null && property.floor !== "" && (
-              <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-2 text-sm">
-                <Layers className="h-4 w-4 text-accent flex-shrink-0" />
-                <span className="font-semibold">{property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor}</span>
+              <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                <Layers className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                <span className="font-bold text-foreground">{property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor}</span>
                 {typeof property.floor === "number" && property.floor > 0 && <span className="text-muted-foreground text-xs">دور</span>}
               </div>
             )}
             {property.finishing && (
-              <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-xl px-3 py-2 text-sm">
-                <span className="text-accent text-xs font-medium">{finishingLabels[property.finishing] || property.finishing}</span>
+              <div className="flex items-center gap-1.5 bg-[#C5A059]/15 border border-[#C5A059]/30 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                <span className="text-[#C5A059] text-xs font-bold">{finishingLabels[property.finishing] || property.finishing}</span>
               </div>
             )}
             {property.videoUrl && (
               <button
                 onClick={() => setVideoModalOpen(true)}
-                className="flex items-center gap-1.5 bg-accent text-accent-foreground rounded-xl px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+                className="flex items-center gap-1.5 bg-[#C5A059] text-[#10202D] font-bold rounded-[10px] px-3 py-2 text-sm hover:bg-[#B38E46] transition-colors cursor-pointer shadow-md"
               >
-                <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
-                <span className="text-xs font-medium">فيديو العقار</span>
+                <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
+                <span className="text-xs font-bold">فيديو العقار</span>
               </button>
             )}
           </div>
@@ -541,62 +541,68 @@ export default function PropertyDetails() {
               {/* Compact specs row — desktop only (mobile version is above gallery) */}
               <div className="hidden lg:flex flex-wrap gap-2">
                 {property.beds > 0 && (
-                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
-                    <Bed className="h-4 w-4 text-accent flex-shrink-0" />
-                    <span className="font-semibold">{property.beds}</span>
+                  <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                    <Bed className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                    <span className="font-bold text-foreground">{property.beds}</span>
                     <span className="text-muted-foreground text-xs">غرف</span>
                   </div>
                 )}
                 {property.baths > 0 && (
-                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
-                    <Bath className="h-4 w-4 text-accent flex-shrink-0" />
-                    <span className="font-semibold">{property.baths}</span>
+                  <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                    <Bath className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                    <span className="font-bold text-foreground">{property.baths}</span>
                     <span className="text-muted-foreground text-xs">حمام</span>
                   </div>
                 )}
-                <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
-                  <Square className="h-4 w-4 text-accent flex-shrink-0" />
-                  <span className="font-semibold">{property.area}</span>
+                <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                  <Square className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                  <span className="font-bold text-foreground">{property.area}</span>
                   <span className="text-muted-foreground text-xs">م²</span>
                 </div>
                 {property.floor !== undefined && property.floor !== null && property.floor !== "" && (
-                  <div className="flex items-center gap-1.5 bg-card border border-border rounded-md px-3 py-2 text-sm">
-                    <Layers className="h-4 w-4 text-accent flex-shrink-0" />
-                    <span className="font-semibold">{property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor}</span>
+                  <div className="flex items-center gap-1.5 bg-[#0F1317]/70 border border-white/10 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                    <Layers className="h-4 w-4 text-[#C5A059] flex-shrink-0" />
+                    <span className="font-bold text-foreground">{property.floor === 0 || property.floor === "0" ? "أرضي" : property.floor}</span>
                     {typeof property.floor === "number" && property.floor > 0 && <span className="text-muted-foreground text-xs">دور</span>}
                   </div>
                 )}
                 {property.finishing && (
-                  <div className="flex items-center gap-1.5 bg-accent/8 border border-accent/20 rounded-md px-3 py-2 text-sm">
-                    <span className="text-accent text-xs font-medium">{finishingLabels[property.finishing] || property.finishing}</span>
+                  <div className="flex items-center gap-1.5 bg-[#C5A059]/15 border border-[#C5A059]/30 rounded-[10px] px-3 py-2 text-sm backdrop-blur-md">
+                    <span className="text-[#C5A059] text-xs font-bold">{finishingLabels[property.finishing] || property.finishing}</span>
                   </div>
                 )}
                 {property.videoUrl && (
                   <button
                     onClick={() => setVideoModalOpen(true)}
                     data-testid="link-watch-video"
-                    className="flex items-center gap-1.5 bg-accent text-accent-foreground rounded-md px-3 py-2 text-sm hover:bg-accent/90 transition-colors"
+                    className="flex items-center gap-1.5 bg-[#C5A059] text-[#10202D] font-bold rounded-[10px] px-3 py-2 text-sm hover:bg-[#B38E46] transition-colors cursor-pointer shadow-md"
                   >
-                    <Play className="h-3.5 w-3.5 fill-white flex-shrink-0" />
-                    <span className="text-xs font-medium">فيديو العقار</span>
+                    <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
+                    <span className="text-xs font-bold">فيديو العقار</span>
                   </button>
                 )}
               </div>
 
               {/* Description — before full details */}
               {property.description && (
-                <Card className="card-luxury">
-                  <CardHeader className="pb-3"><CardTitle className="text-base">وصف العقار</CardTitle></CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground leading-relaxed text-sm whitespace-pre-line break-words [overflow-wrap:anywhere]">{property.description}</p>
+                <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)]">
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+                  <CardHeader className="pb-3 border-b border-white/10">
+                    <CardTitle className="text-base text-[#C5A059] font-bold">وصف العقار</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-3">
+                    <p className="text-foreground/90 leading-relaxed text-sm whitespace-pre-line break-words [overflow-wrap:anywhere]">{property.description}</p>
                   </CardContent>
                 </Card>
               )}
 
               {/* Full specs table */}
-              <Card className="card-luxury">
-                <CardHeader className="pb-3"><CardTitle className="text-base">تفاصيل العقار</CardTitle></CardHeader>
-                <CardContent>
+              <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)]">
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+                <CardHeader className="pb-3 border-b border-white/10">
+                  <CardTitle className="text-base text-[#C5A059] font-bold">تفاصيل ومواصفات العقار</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-3">
                   <div className="flex flex-col">
                     {[
                       { label: "كود العقار", value: property.code, copy: true },
@@ -627,15 +633,15 @@ export default function PropertyDetails() {
                       { label: "التشطيب", value: property.finishing ? (finishingLabels[property.finishing] || property.finishing) : null },
                       { label: "الموقع", value: property.location || null },
                     ].filter(r => r.value != null && r.value !== "").map((row, i) => (
-                      <div key={i} className="flex justify-between items-start gap-3 py-2.5 border-b border-border last:border-0">
+                      <div key={i} className="flex justify-between items-start gap-3 py-2.5 border-b border-white/10 last:border-0">
                         <span className="text-sm text-muted-foreground flex-shrink-0">{row.label}</span>
                         <div className="flex items-center gap-1.5 min-w-0">
                           {row.copy
-                            ? <span className="text-sm font-mono font-semibold text-accent tracking-wide">{String(row.value)}</span>
-                            : <span className="text-sm font-medium text-start break-words [overflow-wrap:anywhere]">{String(row.value)}</span>
+                            ? <span className="text-sm font-mono font-bold text-[#C5A059] tracking-wide">{String(row.value)}</span>
+                            : <span className="text-sm font-medium text-start break-words [overflow-wrap:anywhere] text-foreground">{String(row.value)}</span>
                           }
                           {row.copy && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0 text-accent/60 hover:text-accent" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0 text-[#C5A059]/70 hover:text-[#C5A059] cursor-pointer" onClick={handleCopy}><Copy className="h-3 w-3" /></Button>
                           )}
                         </div>
                       </div>
@@ -653,23 +659,24 @@ export default function PropertyDetails() {
                   property.sourceNotes?.trim() ||
                   property.source?.trim()
                 ) && (
-                  <Card className="card-luxury border-accent/30 bg-accent/5">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2 text-foreground">
-                        <FileText className="h-4 w-4 text-accent" />
+                  <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)]">
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
+                    <CardHeader className="pb-3 border-b border-white/10">
+                      <CardTitle className="text-base flex items-center gap-2 text-[#C5A059] font-bold">
+                        <FileText className="h-4 w-4 text-[#C5A059]" />
                         بيانات المصدر
-                        <span className="text-[10px] font-bold bg-accent/20 text-accent border border-accent/30 px-2 py-0.5 rounded-full">للمدير فقط</span>
+                        <span className="text-[10px] font-bold bg-[#C5A059]/20 text-[#C5A059] border border-[#C5A059]/30 px-2 py-0.5 rounded-full">للمدير فقط</span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-3 pt-3">
                       <div className="flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground w-24 flex-shrink-0">نوع المصدر</span>
-                        <span className="font-semibold text-accent">{property.agentType === "broker" ? "بروكر / وسيط" : "مباشر"}</span>
+                        <span className="font-semibold text-[#C5A059]">{property.agentType === "broker" ? "بروكر / وسيط" : "مباشر"}</span>
                       </div>
                       {property.assignedStaffId && property.assignedStaffId !== "none" && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-24 flex-shrink-0">الموظف المسؤول</span>
-                          <span className="font-medium">
+                          <span className="font-medium text-foreground">
                             {users.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
                           </span>
                         </div>
@@ -677,22 +684,22 @@ export default function PropertyDetails() {
                       {property.source?.trim() && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-24 flex-shrink-0">اسم المالك</span>
-                          <span className="font-medium">{property.source}</span>
+                          <span className="font-medium text-foreground">{property.source}</span>
                         </div>
                       )}
                       {(property.sourcePhones ?? []).filter((ph: string) => ph.trim()).map((ph: string, i: number) => (
                         <div key={i} className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
-                          <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline font-medium transition-colors" dir="ltr">
-                            <Phone className="h-3.5 w-3.5 flex-shrink-0 text-blue-600 dark:text-blue-400" />{ph}
+                          <a href={`tel:${ph.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-[#C5A059] hover:underline font-medium transition-colors" dir="ltr">
+                            <Phone className="h-3.5 w-3.5 flex-shrink-0 text-[#C5A059]" />{ph}
                           </a>
                         </div>
                       ))}
                       {property.sourceEmail?.trim() && (
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
-                          <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-foreground hover:text-violet-600 dark:hover:text-violet-400 hover:underline transition-colors" dir="ltr">
-                            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-violet-600 dark:text-violet-400" />{property.sourceEmail}
+                          <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-foreground hover:text-[#C5A059] hover:underline transition-colors" dir="ltr">
+                            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-[#C5A059]" />{property.sourceEmail}
                           </a>
                         </div>
                       )}
@@ -700,7 +707,7 @@ export default function PropertyDetails() {
                         <div className="flex items-center gap-2 text-sm">
                           <span className="text-muted-foreground w-20 flex-shrink-0">الموقع</span>
                           <a href={property.sourceLocation} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-accent hover:underline">
+                            className="flex items-center gap-1.5 text-[#C5A059] hover:underline">
                             <LinkIcon className="h-3.5 w-3.5 flex-shrink-0" />افتح الرابط
                           </a>
                         </div>
@@ -708,7 +715,7 @@ export default function PropertyDetails() {
                       {property.sourceNotes?.trim() && (
                         <div className="flex gap-2 text-sm">
                           <span className="text-muted-foreground w-20 flex-shrink-0">ملاحظات</span>
-                          <p className="text-sm leading-relaxed whitespace-pre-line">{property.sourceNotes}</p>
+                          <p className="text-sm leading-relaxed whitespace-pre-line text-foreground/90">{property.sourceNotes}</p>
                         </div>
                       )}
                     </CardContent>
@@ -719,14 +726,14 @@ export default function PropertyDetails() {
               {/* Map */}
               {property.mapsUrl && (
                 <div>
-                  <h2 className="text-xl font-bold mb-3 flex items-center gap-2"><MapPin className="h-5 w-5 text-accent" />الموقع على الخريطة</h2>
+                  <h2 className="text-xl font-bold mb-3 flex items-center gap-2 text-foreground"><MapPin className="h-5 w-5 text-[#C5A059]" />الموقع على الخريطة</h2>
                   <button
                     onClick={() => window.open(property.mapsUrl!, "_blank", "noopener,noreferrer")}
-                    className="w-full flex items-center gap-2 p-4 bg-muted rounded-xl hover:bg-muted/70 transition-colors text-sm text-right"
+                    className="w-full flex items-center gap-2 p-4 rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl hover:border-[#C5A059]/60 shadow-[0_8px_24px_rgba(0,0,0,0.35)] transition-all text-sm text-right cursor-pointer"
                   >
                     <MapPin className="h-4 w-4 text-red-500 flex-shrink-0" />
                     <span className="text-muted-foreground flex-1">افتح الموقع على خرائط جوجل</span>
-                    <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                    <ExternalLink className="h-3.5 w-3.5 text-[#C5A059] flex-shrink-0" />
                   </button>
                 </div>
               )}
@@ -734,17 +741,20 @@ export default function PropertyDetails() {
 
             {/* Sidebar */}
             <div className="space-y-4">
-              <Card className="card-luxury sticky top-24">
-                <CardHeader className="pb-3"><CardTitle className="text-base">تواصل بشأن العقار</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="bg-muted/50 rounded-xl p-3 text-center">
+              <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/40 bg-gradient-to-b from-[#22272D]/95 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)] sticky top-24">
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/50 to-transparent pointer-events-none" />
+                <CardHeader className="pb-3 border-b border-white/10">
+                  <CardTitle className="text-base text-[#C5A059] font-bold">تواصل بشأن العقار</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-3">
+                  <div className="bg-[#0F1317]/80 border border-white/10 rounded-[10px] p-3 text-center backdrop-blur-md">
                     <p className="text-xs text-muted-foreground mb-1">كود العقار</p>
-                    <p className="font-bold text-accent text-lg tracking-wider">{property.code}</p>
+                    <p className="font-bold text-[#C5A059] text-xl font-mono tracking-widest">{property.code}</p>
                   </div>
 
                   {waHref && (
                     <a href={waHref} target="_blank" rel="noopener noreferrer">
-                      <Button className="w-full bg-green-600 hover:bg-green-700 text-white gap-2 rounded-xl">
+                      <Button className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold gap-2 rounded-[10px] shadow-md cursor-pointer transition-all">
                         <WhatsAppIcon className="h-4 w-4" />
                         تواصل عبر واتساب
                       </Button>
@@ -752,18 +762,18 @@ export default function PropertyDetails() {
                   )}
                   {settings.phone1 && (
                     <a href={`tel:${settings.phone1.replace(/\s/g, "")}`}>
-                      <Button variant="outline" className="w-full gap-2 rounded-xl mt-2 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30">
-                        <Phone className="h-4 w-4" />
+                      <Button variant="outline" className="w-full gap-2 rounded-[10px] mt-2 border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-foreground font-semibold backdrop-blur-md cursor-pointer transition-all">
+                        <Phone className="h-4 w-4 text-[#C5A059]" />
                         {settings.phone1}
                       </Button>
                     </a>
                   )}
-                  <Button variant="outline" className="w-full gap-2 rounded-xl" onClick={handleCopy}>
-                    <Copy className="h-4 w-4" />
+                  <Button variant="outline" className="w-full gap-2 rounded-[10px] border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-foreground backdrop-blur-md cursor-pointer transition-all" onClick={handleCopy}>
+                    <Copy className="h-4 w-4 text-[#C5A059]" />
                     نسخ كود العقار
                   </Button>
-                  <Button variant="outline" className="w-full gap-2 rounded-xl" onClick={handleShare}>
-                    <Share2 className="h-4 w-4" />
+                  <Button variant="outline" className="w-full gap-2 rounded-[10px] border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-foreground backdrop-blur-md cursor-pointer transition-all" onClick={handleShare}>
+                    <Share2 className="h-4 w-4 text-[#C5A059]" />
                     مشاركة العقار
                   </Button>
 
