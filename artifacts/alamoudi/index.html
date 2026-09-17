@@ -58,6 +58,14 @@
             msNav.setAttribute("content", tc);
           }
         } catch (e) {}
+        // Dev safety: clear any lingering service workers on localhost to prevent stuck cache
+        try {
+          if ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && "serviceWorker" in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.unregister(); });
+            });
+          }
+        } catch (e) {}
       })();
     </script>
   </head>
