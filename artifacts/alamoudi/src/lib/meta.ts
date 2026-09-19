@@ -86,10 +86,13 @@ export function syncThemeColor(themeId?: string, isLightMode?: boolean) {
     (isLightMode === undefined && document.documentElement.classList.contains("dark")) ||
     !document.documentElement.classList.contains("light");
 
+  // Midnight Theme: #202332 (dark) or #F8FAFC (light)
   // Charcoal Theme: #181C20 (dark) or #F8FAFC (light)
   // Classic Theme: #10202D (Midnight Blue)
   let targetColor = "#10202D";
-  if (currentTheme === "charcoal") {
+  if (currentTheme === "midnight") {
+    targetColor = isDark ? "#202332" : "#F8FAFC";
+  } else if (currentTheme === "charcoal") {
     targetColor = isDark ? "#181C20" : "#F8FAFC";
   } else {
     targetColor = isDark ? "#10202D" : "#10202D";

@@ -362,7 +362,7 @@ export interface SiteSettings {
   /** Allow authenticated staff members to download property images. */
   allowStaffImageDownloads: boolean;
   themeMode?: "light" | "dark" | "user";
-  activeThemeId?: "classic" | "charcoal" | string;
+  activeThemeId?: "classic" | "charcoal" | "midnight" | string;
 }
 
 export function sanitizeDummyContact(val?: string): string {
