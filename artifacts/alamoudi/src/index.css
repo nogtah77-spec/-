@@ -771,6 +771,17 @@ html[data-theme="charcoal"] ::-webkit-scrollbar-thumb {
   background: #C5A059 !important;
 }
 
+/* ── استبدال الظل الأسود الكثيف بظل محيطي ناعم في ثيم الفحم والذهب الساتان ── */
+html[data-theme="charcoal"] [class*="shadow-[0_12px_36px"],
+html[data-theme="charcoal"] .card-luxury {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08), 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+}
+html[data-theme="charcoal"] [class*="shadow-[0_12px_36px"]:hover,
+html[data-theme="charcoal"] [class*="hover:shadow-[0_18px_48px"]:hover,
+html[data-theme="charcoal"] .card-luxury:hover {
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0 6px 20px rgba(0, 0, 0, 0.24) !important;
+}
+
 /* ────────────────────────────────────────────────────────────
    Theme 3: Midnight Steel & Desert Gold (الليل الفولاذي وذهب الصحراء)
    Colors:
@@ -1077,50 +1088,63 @@ html[data-theme="midnight"] .blur-3xl {
   box-shadow: none !important;
 }
 
-/* ── أسطح البطاقات والبوكسات: لمسة زجاجية فولاذية فاخرة (Frosted Glass) بظلال محيطية ناعمة جداً بدون سواد كثيف ── */
+/* ── أسطح البطاقات والبوكسات: لمسة زجاجية فولاذية مصقولة فاخرة (Architectural Frosted Glass) ── */
+/* تجمع بين التدرج الانسيابي ثنائي العمق وشطفة الحافة المصقولة المجهرية (Micro Bevel) بدون أي إضاءة مزعجة */
 html[data-theme="midnight"] [class*="from-[#22272D]"],
 html[data-theme="midnight"] [class*="via-[#181C20]"],
 html[data-theme="midnight"] [class*="to-[#14171A]"],
 html[data-theme="midnight"] .card-luxury,
-html[data-theme="midnight"] [class*="shadow-[0_12px_36px"] {
-  background: rgba(43, 49, 64, 0.72) !important;
-  backdrop-filter: blur(20px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
-  border: 1px solid rgba(67, 78, 96, 0.6) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+html[data-theme="midnight"] [class*="shadow-[0_12px_36px"],
+html[data-theme="midnight"] div.bg-card {
+  background: linear-gradient(145deg, rgba(50, 58, 77, 0.68) 0%, rgba(32, 36, 49, 0.78) 100%) !important;
+  backdrop-filter: blur(24px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
+  border: 1px solid rgba(85, 98, 119, 0.45) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 4px 16px rgba(0, 0, 0, 0.14) !important;
 }
+
 html[data-theme="midnight"] [class*="from-[#22272D]"]:hover,
 html[data-theme="midnight"] .card-luxury:hover,
 html[data-theme="midnight"] [class*="shadow-[0_12px_36px"]:hover,
-html[data-theme="midnight"] [class*="hover:shadow-[0_18px_48px"]:hover {
-  background: rgba(43, 49, 64, 0.84) !important;
-  border-color: rgba(85, 98, 119, 0.85) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+html[data-theme="midnight"] [class*="hover:shadow-[0_18px_48px"]:hover,
+html[data-theme="midnight"] div.bg-card:hover {
+  background: linear-gradient(145deg, rgba(58, 67, 88, 0.78) 0%, rgba(36, 41, 55, 0.86) 100%) !important;
+  border-color: rgba(188, 152, 118, 0.42) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.22) !important;
 }
+
+/* ── القوائم المنسدلة والحاويات الزجاجية الفرعية ── */
 html[data-theme="midnight"] [class*="bg-[#161B20]"] {
-  background-color: rgba(36, 41, 54, 0.75) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  background: rgba(34, 38, 51, 0.92) !important;
+  backdrop-filter: blur(24px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(135%) !important;
+  border: 1px solid rgba(85, 98, 119, 0.45) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 12px 32px rgba(0, 0, 0, 0.28) !important;
 }
+
+/* ── تجاويف حقول الإدخال والبحث داخل البوكسات الزجاجية (Frosted Sunken Slots) ── */
 html[data-theme="midnight"] [class*="bg-[#0F1317]"] {
-  background-color: rgba(32, 35, 50, 0.75) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(67, 78, 96, 0.6) !important;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  background: rgba(24, 27, 38, 0.62) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(85, 98, 119, 0.38) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.24), 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
+
 html[data-theme="midnight"] [class*="ring-[#C5A059]"],
 html[data-theme="midnight"] [class*="ring-2"] {
   --tw-ring-color: transparent !important;
   --tw-ring-offset-color: transparent !important;
   box-shadow: none !important;
 }
+
+/* ── شريط التنقل العلوي الزجاجي الفولاذي المريح ── */
 html[data-theme="midnight"] .glass-navbar {
-  background: rgba(32, 35, 50, 0.85) !important;
-  backdrop-filter: blur(20px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(140%) !important;
-  border-bottom: 1px solid rgba(67, 78, 96, 0.45) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12) !important;
+  background: linear-gradient(180deg, rgba(32, 36, 49, 0.90) 0%, rgba(26, 29, 40, 0.85) 100%) !important;
+  backdrop-filter: blur(24px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(135%) !important;
+  border-bottom: 1px solid rgba(85, 98, 119, 0.35) !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.14) !important;
 }
 
 /* ── تبويبات الإعدادات والصفحات النشطة ── */
@@ -1161,5 +1185,179 @@ html[data-theme="midnight"] {
 }
 html[data-theme="midnight"] ::-webkit-scrollbar-thumb {
   background: #BC9876 !important;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Theme 1: Classic Royal Theme (الثيم الملكي الكلاسيكي - الكحلي والرملي)
+   - خلفية كحلية ليلية فاخرة: #10202D
+   - بوكسات وبطاقات كحلية زجاجية مصقولة: rgba(23, 48, 68, 0.78) / #173044
+   - لمسات وإطارات ذهب رملي دافئ: #A9927D
+   - ظلال محيطية ناعمة بدون سواد كثيف تحت البطاقات
+   ──────────────────────────────────────────────────────────── */
+
+/* 1. أزرار الإجراءات السريعة في أعلى الصفحة الرئيسية بالثيم الكلاسيكي */
+html[data-theme="classic"] .action-btn-add-property,
+html[data-theme="classic"] .action-btn-finishing,
+html[data-theme="classic"] .action-btn-consultation,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-add-property,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-finishing,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-consultation {
+  background: linear-gradient(135deg, rgba(23, 48, 68, 0.85) 0%, rgba(16, 32, 45, 0.95) 100%) !important;
+  border-color: rgba(169, 146, 125, 0.35) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 14px rgba(0, 0, 0, 0.14) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+html[data-theme="classic"] .action-btn-add-property:hover,
+html[data-theme="classic"] .action-btn-finishing:hover,
+html[data-theme="classic"] .action-btn-consultation:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-add-property:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-finishing:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-consultation:hover {
+  border-color: rgba(169, 146, 125, 0.65) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 6px 20px rgba(0, 0, 0, 0.22) !important;
+}
+html[data-theme="classic"] .action-btn-add-property span,
+html[data-theme="classic"] .action-btn-finishing span,
+html[data-theme="classic"] .action-btn-consultation span,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-add-property span,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-finishing span,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-consultation span {
+  color: #F5F3EE !important;
+}
+html[data-theme="classic"] .action-btn-add-property .action-icon-badge,
+html[data-theme="classic"] .action-btn-finishing .action-icon-badge,
+html[data-theme="classic"] .action-btn-consultation .action-icon-badge,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-add-property .action-icon-badge,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-finishing .action-icon-badge,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-consultation .action-icon-badge {
+  border-color: rgba(169, 146, 125, 0.40) !important;
+  background: rgba(169, 146, 125, 0.15) !important;
+  color: #A9927D !important;
+}
+html[data-theme="classic"] .action-btn-add-property:hover .action-icon-badge,
+html[data-theme="classic"] .action-btn-finishing:hover .action-icon-badge,
+html[data-theme="classic"] .action-btn-consultation:hover .action-icon-badge,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-add-property:hover .action-icon-badge,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-finishing:hover .action-icon-badge,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-consultation:hover .action-icon-badge {
+  border-color: rgba(169, 146, 125, 0.65) !important;
+  background: rgba(169, 146, 125, 0.25) !important;
+  color: #C7B6A6 !important;
+}
+html[data-theme="classic"] .action-btn-add-property .action-subtitle,
+html[data-theme="classic"] .action-btn-finishing .action-subtitle,
+html[data-theme="classic"] .action-btn-consultation .action-subtitle,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-add-property .action-subtitle,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-finishing .action-subtitle,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .action-btn-consultation .action-subtitle {
+  color: #A9927D !important;
+  opacity: 0.95;
+}
+
+/* 2. أسطح البوكسات، والبطاقات العقارية، وبوكس البحث، وصفحات المناطق بالثيم الكلاسيكي */
+html[data-theme="classic"] [class*="from-[#22272D]"],
+html[data-theme="classic"] [class*="via-[#181C20]"],
+html[data-theme="classic"] [class*="to-[#14171A]"],
+html[data-theme="classic"] .card-luxury,
+html[data-theme="classic"] [class*="shadow-[0_12px_36px"],
+html[data-theme="classic"] div.bg-card,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="from-[#22272D]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="via-[#181C20]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="to-[#14171A]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .card-luxury,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="shadow-[0_12px_36px"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) div.bg-card {
+  background: linear-gradient(145deg, rgba(23, 48, 68, 0.78) 0%, rgba(16, 32, 45, 0.88) 100%) !important;
+  backdrop-filter: blur(24px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(130%) !important;
+  border: 1px solid rgba(169, 146, 125, 0.32) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.10), 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+}
+
+html[data-theme="classic"] [class*="from-[#22272D]"]:hover,
+html[data-theme="classic"] .card-luxury:hover,
+html[data-theme="classic"] [class*="shadow-[0_12px_36px"]:hover,
+html[data-theme="classic"] [class*="hover:shadow-[0_18px_48px"]:hover,
+html[data-theme="classic"] div.bg-card:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="from-[#22272D]"]:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .card-luxury:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="shadow-[0_12px_36px"]:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="hover:shadow-[0_18px_48px"]:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) div.bg-card:hover {
+  background: linear-gradient(145deg, rgba(28, 56, 78, 0.86) 0%, rgba(19, 37, 52, 0.94) 100%) !important;
+  border-color: rgba(169, 146, 125, 0.55) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.16), 0 6px 20px rgba(0, 0, 0, 0.20) !important;
+}
+
+/* 3. إطارات ونصوص وأزرار الذهب الرملي في الثيم الكلاسيكي */
+html[data-theme="classic"] [class*="border-[#C5A059]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="border-[#C5A059]"] {
+  border-color: rgba(169, 146, 125, 0.35) !important;
+}
+html[data-theme="classic"] [class*="text-[#C5A059]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="text-[#C5A059]"] {
+  color: #A9927D !important;
+}
+html[data-theme="classic"] [class*="bg-[#C5A059]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#C5A059]"] {
+  background-color: #A9927D !important;
+  color: #10202D !important;
+}
+html[data-theme="classic"] [class*="bg-[#C5A059]"]:hover,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#C5A059]"]:hover {
+  background-color: #967E6A !important;
+  color: #10202D !important;
+}
+html[data-theme="classic"] [class*="bg-[#C5A059]/10"],
+html[data-theme="classic"] [class*="bg-[#C5A059]/15"],
+html[data-theme="classic"] [class*="bg-[#C5A059]/20"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#C5A059]/10"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#C5A059]/15"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#C5A059]/20"] {
+  background-color: rgba(169, 146, 125, 0.16) !important;
+  color: #A9927D !important;
+}
+
+/* 4. تجاويف حقول البحث والقوائم بالثيم الكلاسيكي */
+html[data-theme="classic"] [class*="bg-[#0F1317]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#0F1317]"] {
+  background: rgba(13, 27, 39, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(169, 146, 125, 0.25) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+html[data-theme="classic"] [class*="bg-[#161B20]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="bg-[#161B20]"] {
+  background: rgba(19, 38, 54, 0.94) !important;
+  backdrop-filter: blur(24px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(135%) !important;
+  border: 1px solid rgba(169, 146, 125, 0.35) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.10), 0 12px 32px rgba(0, 0, 0, 0.30) !important;
+}
+
+/* 5. شريط التنقل الزجاجي بالثيم الكلاسيكي */
+html[data-theme="classic"] .glass-navbar,
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .glass-navbar {
+  background: linear-gradient(180deg, rgba(23, 48, 68, 0.92) 0%, rgba(16, 32, 45, 0.88) 100%) !important;
+  backdrop-filter: blur(24px) saturate(135%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(135%) !important;
+  border-bottom: 1px solid rgba(169, 146, 125, 0.25) !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.14) !important;
+}
+
+/* 6. إلغاء خطوط التوهج والإضاءة المزعجة بالثيم الكلاسيكي */
+html[data-theme="classic"] [class*="via-[#C5A059]"],
+html[data-theme="classic"] [class*="h-[1px]"][class*="bg-gradient-to-r"],
+html[data-theme="classic"] [class*="rounded-full"][class*="blur-"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="via-[#C5A059]"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="h-[1px]"][class*="bg-gradient-to-r"],
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="rounded-full"][class*="blur-"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
