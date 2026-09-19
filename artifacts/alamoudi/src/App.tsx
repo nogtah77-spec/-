@@ -289,7 +289,10 @@ function ThemeEnforcer() {
   useEffect(() => {
     const mode = settings.themeMode ?? "user";
     if (mode === "light" || mode === "dark") setTheme(mode);
-    const activeTheme = settings.activeThemeId || localStorage.getItem("alm_active_theme") || "charcoal";
+    const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
+    const activeTheme = isLocalAdminPreview
+      ? (localStorage.getItem("alm_active_theme") || settings.activeThemeId || "midnight")
+      : (settings.activeThemeId || localStorage.getItem("alm_active_theme") || "midnight");
     document.documentElement.setAttribute("data-theme", activeTheme);
     try {
       localStorage.setItem("alm_active_theme", activeTheme);

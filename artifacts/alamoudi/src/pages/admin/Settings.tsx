@@ -147,6 +147,13 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
       });
     }
   }, [settings]);
+
+  // Keep form.activeThemeId synced with cloud settings so saving general settings never reverts themes
+  useEffect(() => {
+    if (settings.activeThemeId) {
+      setForm((prev) => (prev.activeThemeId === settings.activeThemeId ? prev : { ...prev, activeThemeId: settings.activeThemeId }));
+    }
+  }, [settings.activeThemeId]);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loginBackgroundFileRef = useRef<HTMLInputElement>(null);
@@ -571,7 +578,10 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     setSaving(true);
     await new Promise((r) => setTimeout(r, 400));
     try {
-      const saved = await updateSettings(form);
+      const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
+      // If admin is previewing a theme locally, preserve public cloud theme for visitors when saving general settings
+      const payloadToSave = isLocalAdminPreview ? { ...form, activeThemeId: settings.activeThemeId } : form;
+      const saved = await updateSettings(payloadToSave);
       if (!saved) throw new Error("settings save failed");
       loginFormDirtyRef.current = false;
       isFormDirtyRef.current = false;

@@ -6,6 +6,7 @@ import { supabaseService, rowToProperty } from "@/lib/supabaseService";
 import { supabase } from "@/lib/supabaseClient";
 import { enqueueOfflineAction, isOnline, processOfflineQueue } from "@/lib/offlineSync";
 import { savePropertiesToIndexedDb, getPropertiesFromIndexedDb } from "@/lib/indexedDbStorage";
+import { syncThemeColor } from "@/lib/meta";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -1116,7 +1117,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
       }
       if (freshSettings.status === "fulfilled" && freshSettings.value) {
-        setSettings(prev => ({ ...prev, ...freshSettings.value }));
+        const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
+        setSettings(prev => {
+          const effectiveTheme = isLocalAdminPreview
+            ? (prev.activeThemeId || localStorage.getItem("alm_active_theme") || "midnight")
+            : (freshSettings.value?.activeThemeId || prev.activeThemeId || "midnight");
+          const next = { ...prev, ...freshSettings.value, activeThemeId: effectiveTheme };
+          settingsRef.current = next;
+          try {
+            localStorage.setItem("alm_settings", JSON.stringify(next));
+            if (!isLocalAdminPreview && freshSettings.value?.activeThemeId) {
+              localStorage.setItem("alm_active_theme", freshSettings.value.activeThemeId);
+              document.documentElement.setAttribute("data-theme", freshSettings.value.activeThemeId);
+              syncThemeColor(freshSettings.value.activeThemeId);
+            }
+          } catch {}
+          return next;
+        });
       }
       if (freshUsers.status === "fulfilled" && freshUsers.value) setUsers(freshUsers.value);
       if (freshInqs.status === "fulfilled" && freshInqs.value) setInquiries(freshInqs.value);
@@ -1446,10 +1463,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
             bgImageLight: activeLight,
           };
 
+          const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
+          const effectiveTheme = isLocalAdminPreview
+            ? (prev.activeThemeId || localStorage.getItem("alm_active_theme") || "midnight")
+            : (cloudSettings.activeThemeId || prev.activeThemeId || "midnight");
+
           const merged = {
             ...DEFAULT_SETTINGS,
             ...prev,
             ...cloudSettings,
+            activeThemeId: effectiveTheme,
             homeBackgroundSettings: mergedBg,
             phone1: sanitizeDummyContact(cloudSettings.phone1 ?? prev.phone1),
             phone2: sanitizeDummyContact(cloudSettings.phone2 ?? prev.phone2),
@@ -1465,9 +1488,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
             tiktokVideos: cloudSettings.tiktokVideos ?? prev.tiktokVideos ?? [],
             ads: cloudSettings.ads ?? prev.ads ?? [],
           };
+          settingsRef.current = merged;
           try {
             localStorage.setItem("alm_settings", JSON.stringify(merged));
             localStorage.setItem("alm_home_bg", JSON.stringify(mergedBg));
+            if (!isLocalAdminPreview && cloudSettings.activeThemeId) {
+              localStorage.setItem("alm_active_theme", cloudSettings.activeThemeId);
+              document.documentElement.setAttribute("data-theme", cloudSettings.activeThemeId);
+              syncThemeColor(cloudSettings.activeThemeId);
+            }
           } catch {}
           return merged;
         });
@@ -1665,16 +1694,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return updated;
         });
       } else if (event === "SETTINGS_UPDATE" && data.settings) {
+        const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
         setSettings(prev => {
           const nextSettings = data.settings;
-          const merged = { ...DEFAULT_SETTINGS, ...prev, ...nextSettings };
+          const effectiveTheme = isLocalAdminPreview
+            ? (prev.activeThemeId || localStorage.getItem("alm_active_theme") || "midnight")
+            : (nextSettings.activeThemeId || prev.activeThemeId || "midnight");
+          const merged = { ...DEFAULT_SETTINGS, ...prev, ...nextSettings, activeThemeId: effectiveTheme };
           if (nextSettings.homeBackgroundSettings) {
             merged.homeBackgroundSettings = nextSettings.homeBackgroundSettings;
             try {
               localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
             } catch {}
           }
-          try { localStorage.setItem("alm_settings", JSON.stringify(merged)); } catch {}
+          settingsRef.current = merged;
+          try { 
+            localStorage.setItem("alm_settings", JSON.stringify(merged));
+            if (!isLocalAdminPreview && nextSettings.activeThemeId) {
+              localStorage.setItem("alm_active_theme", nextSettings.activeThemeId);
+              document.documentElement.setAttribute("data-theme", nextSettings.activeThemeId);
+              syncThemeColor(nextSettings.activeThemeId);
+            }
+          } catch {}
           writeCache({ regions, types: propertyTypes, properties, settings: merged });
           return merged;
         });
@@ -1714,6 +1755,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
           "postgres_changes",
           { event: "*", schema: "public", table: "properties" },
           (payload) => {
+            const row = (payload.new || payload.old) as any;
+            const recordId = String(row?.id || "");
+
+            // Intercept system configuration rows stored in properties table
+            if (recordId.startsWith("__")) {
+              if (recordId === "__site_settings_store__" && (payload.eventType === "INSERT" || payload.eventType === "UPDATE")) {
+                try {
+                  const cloudSettings = JSON.parse(payload.new.description);
+                  if (cloudSettings && typeof cloudSettings === "object") {
+                    const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
+                    setSettings(prev => {
+                      const effectiveTheme = isLocalAdminPreview
+                        ? (prev.activeThemeId || localStorage.getItem("alm_active_theme") || "midnight")
+                        : (cloudSettings.activeThemeId || prev.activeThemeId || "midnight");
+                      const merged = { ...DEFAULT_SETTINGS, ...prev, ...cloudSettings, activeThemeId: effectiveTheme };
+                      settingsRef.current = merged;
+                      try {
+                        localStorage.setItem("alm_settings", JSON.stringify(merged));
+                        if (!isLocalAdminPreview && cloudSettings.activeThemeId) {
+                          localStorage.setItem("alm_active_theme", cloudSettings.activeThemeId);
+                          document.documentElement.setAttribute("data-theme", cloudSettings.activeThemeId);
+                          syncThemeColor(cloudSettings.activeThemeId);
+                        }
+                      } catch {}
+                      writeCache({ regions, types: propertyTypes, properties, settings: merged });
+                      return merged;
+                    });
+                  }
+                } catch (e) {
+                  console.warn("Error parsing cloud settings in postgres_changes:", e);
+                }
+              } else if (recordId === "__home_background_store__" && (payload.eventType === "INSERT" || payload.eventType === "UPDATE")) {
+                try {
+                  const bg = JSON.parse(payload.new.description);
+                  if (bg) {
+                    setSettings(prev => ({ ...prev, homeBackgroundSettings: bg }));
+                    try { localStorage.setItem("alm_home_bg", JSON.stringify(bg)); } catch {}
+                  }
+                } catch {}
+              }
+              return; // Stop here! Do not treat system configuration rows as property listings!
+            }
+
             if (payload.eventType === "INSERT") {
               const newProp = rowToProperty(payload.new);
               setProperties(prev => {
@@ -1995,18 +2079,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
               bgImageLight: activeLight,
             };
 
-            const merged = {
+            const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
+            const effectiveThemeId = isLocalAdminPreview
+              ? (prev.activeThemeId || localStorage.getItem("alm_active_theme") || "midnight")
+              : (freshSettings.activeThemeId || prev.activeThemeId || "midnight");
+
+            const merged: SiteSettings = {
               ...DEFAULT_SETTINGS,
-              ...freshSettings,
               ...prev,
-              phone1: sanitizeDummyContact(prev.phone1 !== undefined ? prev.phone1 : freshSettings.phone1),
-              phone2: sanitizeDummyContact(prev.phone2 !== undefined ? prev.phone2 : freshSettings.phone2),
-              whatsapp: sanitizeDummyContact(prev.whatsapp !== undefined ? prev.whatsapp : freshSettings.whatsapp),
-              loginBackgroundEnabled: prev.loginBackgroundEnabled !== undefined ? prev.loginBackgroundEnabled : (freshSettings.loginBackgroundEnabled ?? false),
-              loginBackgroundImageUrl: prev.loginBackgroundImageUrl || freshSettings.loginBackgroundImageUrl || "",
-              loginOverlayColor: prev.loginOverlayColor || freshSettings.loginOverlayColor || "#10202D",
-              loginOverlayOpacity: prev.loginOverlayOpacity ?? freshSettings.loginOverlayOpacity ?? 72,
-              loginGradientOpacity: prev.loginGradientOpacity ?? freshSettings.loginGradientOpacity ?? 58,
+              ...freshSettings, // freshSettings takes precedence over prev!
+              activeThemeId: effectiveThemeId,
+              phone1: sanitizeDummyContact(freshSettings.phone1 !== undefined ? freshSettings.phone1 : prev.phone1),
+              phone2: sanitizeDummyContact(freshSettings.phone2 !== undefined ? freshSettings.phone2 : prev.phone2),
+              whatsapp: sanitizeDummyContact(freshSettings.whatsapp !== undefined ? freshSettings.whatsapp : prev.whatsapp),
+              loginBackgroundEnabled: freshSettings.loginBackgroundEnabled !== undefined ? freshSettings.loginBackgroundEnabled : (prev.loginBackgroundEnabled ?? false),
+              loginBackgroundImageUrl: freshSettings.loginBackgroundImageUrl || prev.loginBackgroundImageUrl || "",
+              loginOverlayColor: freshSettings.loginOverlayColor || prev.loginOverlayColor || "#10202D",
+              loginOverlayOpacity: freshSettings.loginOverlayOpacity ?? prev.loginOverlayOpacity ?? 72,
+              loginGradientOpacity: freshSettings.loginGradientOpacity ?? prev.loginGradientOpacity ?? 58,
               qrSectionEnabled: effectiveQrEnabled,
               qrCodes: effectiveQrCodes,
               homeBackgroundSettings: mergedHomeBg,
@@ -2014,6 +2104,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             settingsRef.current = merged;
             try {
               localStorage.setItem("alm_settings", JSON.stringify(merged));
+              if (!isLocalAdminPreview && freshSettings.activeThemeId) {
+                localStorage.setItem("alm_active_theme", freshSettings.activeThemeId);
+                document.documentElement.setAttribute("data-theme", freshSettings.activeThemeId);
+                syncThemeColor(freshSettings.activeThemeId);
+              }
             } catch {}
             writeCache({ regions, types: propertyTypes, properties, settings: merged });
             return merged;
@@ -2434,6 +2529,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (nextSettings.activeThemeId) {
         localStorage.setItem("alm_active_theme", nextSettings.activeThemeId);
         document.documentElement.setAttribute("data-theme", nextSettings.activeThemeId);
+        syncThemeColor(nextSettings.activeThemeId);
       }
       if (nextSettings.homeBackgroundSettings) {
         localStorage.setItem("alm_home_bg", JSON.stringify(nextSettings.homeBackgroundSettings));
