@@ -590,10 +590,19 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v6";
+const CACHE_KEY = "alm_cache_v7";
 // الـ cache بيُعرض فوراً حتى لو قديم، والـ API دايماً بيرفّش في الخلفية
 // TTL طويل جداً (7 أيام) كـ safety net بس للـ cache القديم جداً
 const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
+
+// One-time startup purge of zombie legacy caches
+if (typeof window !== "undefined") {
+  try {
+    localStorage.removeItem("alm_property_overrides");
+    localStorage.removeItem("alm_cache_v6");
+    localStorage.removeItem("alm_cache_v5");
+  } catch {}
+}
 
 interface CachePayload {
   ts: number;
@@ -766,36 +775,17 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     if (fp && fp.id) map.set(fp.id, fp);
   }
 
-  // Overlay persistent overrides (such as status updates like "rented" that user saved)
-  try {
-    const rawOverrides = localStorage.getItem("alm_property_overrides");
-    if (rawOverrides) {
-      const overrides = JSON.parse(rawOverrides);
-      for (const k of Object.keys(overrides)) {
-        const prop = overrides[k];
-        if (prop && prop.id) {
-          const current = map.get(prop.id);
-          if (current) {
-            map.set(prop.id, { ...current, ...prop });
-          } else {
-            map.set(prop.id, prop);
-          }
-        }
-      }
-    }
-  } catch {}
-
-  // Apply active recent edits (within 15 minutes) strictly over fresh DB reads
+  // Apply active recent edits (within 5 minutes) strictly over fresh DB reads
   const now = Date.now();
-  const fifteenMinutes = 15 * 60 * 1000;
+  const fiveMinutes = 5 * 60 * 1000;
   const deletedSet = getDeletedPropertyIds();
 
   for (const [key, item] of recentPropertyEdits.entries()) {
-    if (now - item.timestamp < fifteenMinutes && item.property && item.property.id) {
+    if (now - item.timestamp < fiveMinutes && item.property && item.property.id) {
       if (!isPropertyDeleted(item.property, deletedSet)) {
         map.set(item.property.id, item.property);
       }
-    } else if (now - item.timestamp >= fifteenMinutes) {
+    } else if (now - item.timestamp >= fiveMinutes) {
       recentPropertyEdits.delete(key);
     }
   }
@@ -806,7 +796,7 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
       const stored = JSON.parse(raw);
       for (const k of Object.keys(stored)) {
         const it = stored[k];
-        if (it && now - it.timestamp < fifteenMinutes && it.property && it.property.id) {
+        if (it && now - it.timestamp < fiveMinutes && it.property && it.property.id) {
           if (!isPropertyDeleted(it.property, deletedSet)) {
             map.set(it.property.id, it.property);
           }
@@ -980,25 +970,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-    // 3. Overlay persistent local overrides (e.g. status changes saved by user)
-    try {
-      const rawOverrides = localStorage.getItem("alm_property_overrides");
-      if (rawOverrides) {
-        const overrides = JSON.parse(rawOverrides);
-        for (const k of Object.keys(overrides)) {
-          const prop = overrides[k];
-          if (prop && prop.id && !isPropertyDeleted(prop, deletedSet)) {
-            const existing = map.get(prop.id);
-            if (existing) {
-              map.set(prop.id, { ...existing, ...prop });
-            } else {
-              map.set(prop.id, prop);
-            }
-          }
-        }
-      }
-    } catch {}
-
     return Array.from(map.values()).filter(isClean).sort((a, b) => {
       const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
       const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
@@ -2902,17 +2873,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         settings,
       });
 
-      // Save to persistent overrides
+      // If previously blacklisted, remove from deleted properties
       if (updatedTarget) {
-        try {
-          const overrides = JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
-          overrides[id] = updatedTarget;
-          if (updatedTarget.id) overrides[updatedTarget.id] = updatedTarget;
-          if (updatedTarget.code) overrides[updatedTarget.code] = updatedTarget;
-          localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
-        } catch {}
-
-        // If previously blacklisted, remove from deleted properties
         try {
           const delArr: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
           const cleaned = delArr.filter(x => {
@@ -2963,16 +2925,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const delSet = new Set(deletedArr);
       [id, targetId, targetIdLower, targetCode, targetCodeLower].filter(Boolean).forEach(k => delSet.add(k));
       localStorage.setItem("alm_deleted_properties", JSON.stringify(Array.from(delSet)));
-
-      const overrides = JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
-      delete overrides[id];
-      delete overrides[targetId];
-      delete overrides[targetIdLower];
-      if (targetCode) {
-        delete overrides[targetCode];
-        delete overrides[targetCodeLower];
-      }
-      localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
     } catch {}
 
     // 3. Update React State
@@ -3075,16 +3027,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const bulkUpdateProperties = (ids: string[], updates: Partial<Property>) => {
+  const bulkUpdateProperties = async (ids: string[], updates: Partial<Property>) => {
     if (ids.length === 0) return;
-    const idSet = new Set(ids);
-    setProperties(p => p.map(x => idSet.has(x.id) ? { ...x, ...updates } : x));
+    const idSet = new Set(ids.map(x => (x || "").toLowerCase().trim()));
+    const nowIso = new Date().toISOString();
+    const updatedProps: Property[] = [];
+
+    setProperties(prev => {
+      const next = prev.map(p => {
+        if (idSet.has((p.id || "").toLowerCase().trim()) || idSet.has((p.code || "").toLowerCase().trim())) {
+          const item = { ...p, ...updates, updatedAt: nowIso };
+          recordRecentEdit(item);
+          updatedProps.push(item);
+          return item;
+        }
+        return p;
+      });
+      writeCache({ regions, types: propertyTypes, properties: next, settings });
+      return next;
+    });
+
+    for (const up of updatedProps) {
+      await supabaseService.saveProperty(up).catch(() => {});
+      sendRealtimeSync("PROPERTY_UPDATE", { property: up });
+    }
+
     logActivity({
       action: "updated",
       entityType: "property",
       title: `تعديل مجمّع لـ (${ids.length}) عقارات`,
     });
-    persist(api.patch("/properties/bulk", { ids, updates }));
   };
 
   const importProperties = (items: Omit<Property, "id" | "createdAt">[]) => {

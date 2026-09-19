@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink, Star } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -218,6 +218,38 @@ export default function Properties() {
                   </Button>
                 </>
               )}
+              {canEditProperty && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                    onClick={() => {
+                      const ids = Array.from(selectedIds);
+                      bulkUpdateProperties(ids, { featured: true });
+                      clearSelection();
+                      toast({ title: "تم التمييز ⭐", description: `تم تمييز ${ids.length} عقارات ليظهروا في العقارات المميزة VIP` });
+                    }}
+                  >
+                    <Star className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                    تمييز VIP
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      const ids = Array.from(selectedIds);
+                      bulkUpdateProperties(ids, { featured: false });
+                      clearSelection();
+                      toast({ title: "تم إلغاء التمييز", description: `تم إلغاء تمييز ${ids.length} عقارات` });
+                    }}
+                  >
+                    <Star className="h-3.5 w-3.5" />
+                    إلغاء التمييز
+                  </Button>
+                </>
+              )}
               {canDeleteProperty && (
                 <Button
                   size="sm"
@@ -253,7 +285,7 @@ export default function Properties() {
                     className={someSelected && !allSelected ? "opacity-50" : ""}
                   />
                 </TableHead>
-                <TableHead>الكود</TableHead>
+                <TableHead>الكود / تمييز VIP</TableHead>
                 <TableHead>فئة العقار</TableHead>
                 <TableHead>نوع العرض</TableHead>
                 <TableHead>النوع</TableHead>
@@ -277,16 +309,45 @@ export default function Properties() {
                     />
                   </TableCell>
                   <TableCell>
-                    <a
-                      href={`/properties/${property.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="معاينة العقار في تبويب جديد"
-                      className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-accent bg-accent/10 hover:bg-accent/20 border border-accent/25 px-2 py-0.5 rounded tracking-wide whitespace-nowrap transition-colors cursor-pointer"
-                    >
-                      <span>{property.code}</span>
-                      <ExternalLink className="h-3 w-3 opacity-60" />
-                    </a>
+                    <div className="flex items-center gap-1.5">
+                      {canEditProperty && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFeatured = !property.featured;
+                            updateProperty(property.id, { featured: newFeatured });
+                            toast({
+                              title: newFeatured ? "تم التمييز ⭐" : "تم إلغاء التمييز",
+                              description: newFeatured
+                                ? `تم تمييز العقار (${property.code}) ليظهر في العقارات المميزة VIP`
+                                : `تم إلغاء تمييز العقار (${property.code})`,
+                            });
+                          }}
+                          title={property.featured ? "عقار مميز VIP (اضغط لإلغاء التمييز)" : "تمييز كعقار مميز VIP (اضغط للتفعيل)"}
+                          className={`p-1 rounded-md transition-all cursor-pointer ${
+                            property.featured
+                              ? "text-amber-500 hover:text-amber-600 bg-amber-500/10 hover:bg-amber-500/20"
+                              : "text-muted-foreground/35 hover:text-amber-500 hover:bg-muted/50"
+                          }`}
+                        >
+                          <Star className={`h-4 w-4 ${property.featured ? "fill-amber-500" : ""}`} />
+                        </button>
+                      )}
+                      <a
+                        href={`/properties/${property.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="معاينة العقار في تبويب جديد"
+                        className={`inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded tracking-wide whitespace-nowrap transition-colors cursor-pointer ${
+                          property.featured
+                            ? "text-amber-600 dark:text-amber-400 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30"
+                            : "text-accent bg-accent/10 hover:bg-accent/20 border border-accent/25"
+                        }`}
+                      >
+                        <span>{property.code}</span>
+                        <ExternalLink className="h-3 w-3 opacity-60" />
+                      </a>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground font-medium whitespace-nowrap">
