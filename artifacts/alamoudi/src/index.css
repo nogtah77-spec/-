@@ -807,8 +807,8 @@ html[data-theme="midnight"]:not(.light) {
   --accent-foreground: 231 22% 14%;    /* #1C1E2B */
 
   --gradient-hero: linear-gradient(135deg, #202332 0%, #2A3142 55%, #151822 100%);
-  --shadow-luxury: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(188, 152, 118, 0.18);
-  --shadow-luxury-lg: 0 14px 36px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(188, 152, 118, 0.28);
+  --shadow-luxury: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-luxury-lg: 0 10px 28px rgba(0, 0, 0, 0.45);
 
   --secondary: 217 18% 32%;            /* #434E60 أردوازي فولاذي */
   --secondary-foreground: 210 40% 98%;
@@ -917,20 +917,21 @@ html[data-theme="midnight"] .text-accent-foreground {
   color: #1C1E2B !important;
 }
 
-/* ── أزرار الإجراءات السريعة الفاخرة في الصفحة الرئيسية ── */
+/* ── أزرار الإجراءات السريعة الفاخرة في الصفحة الرئيسية: أزرار هادئة ومريحة بدون أي توهج أو انعكاسات ── */
 html[data-theme="midnight"] .action-btn-add-property,
 html[data-theme="midnight"] .action-btn-finishing,
 html[data-theme="midnight"] .action-btn-consultation {
-  background: linear-gradient(135deg, rgba(43, 49, 64, 0.96) 0%, rgba(32, 35, 50, 0.98) 100%) !important;
-  border: 1px solid rgba(188, 152, 118, 0.38) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(188, 152, 118, 0.15) !important;
+  background: #2B3140 !important;
+  border: 1px solid #434E60 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
   border-radius: 10px !important;
 }
 html[data-theme="midnight"] .action-btn-add-property:hover,
 html[data-theme="midnight"] .action-btn-finishing:hover,
 html[data-theme="midnight"] .action-btn-consultation:hover {
-  border-color: rgba(188, 152, 118, 0.7) !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  background: #343C4E !important;
+  border-color: #556277 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
   transform: translateY(-1px);
 }
 html[data-theme="midnight"] .action-btn-add-property span,
@@ -941,17 +942,18 @@ html[data-theme="midnight"] .action-btn-consultation span {
 html[data-theme="midnight"] .action-btn-add-property .action-icon-badge,
 html[data-theme="midnight"] .action-btn-finishing .action-icon-badge,
 html[data-theme="midnight"] .action-btn-consultation .action-icon-badge {
-  background: linear-gradient(135deg, rgba(188, 152, 118, 0.16) 0%, rgba(188, 152, 118, 0.05) 100%) !important;
-  border: 1px solid rgba(188, 152, 118, 0.32) !important;
+  background: rgba(188, 152, 118, 0.12) !important;
+  border: 1px solid rgba(188, 152, 118, 0.25) !important;
   color: #BC9876 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: none !important;
 }
 html[data-theme="midnight"] .action-btn-add-property:hover .action-icon-badge,
 html[data-theme="midnight"] .action-btn-finishing:hover .action-icon-badge,
 html[data-theme="midnight"] .action-btn-consultation:hover .action-icon-badge {
-  border-color: rgba(188, 152, 118, 0.65) !important;
-  background: rgba(188, 152, 118, 0.25) !important;
-  transform: scale(1.05);
+  border-color: rgba(188, 152, 118, 0.45) !important;
+  background: rgba(188, 152, 118, 0.18) !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 html[data-theme="midnight"] .action-btn-add-property .action-subtitle,
 html[data-theme="midnight"] .action-btn-finishing .action-subtitle,
@@ -963,14 +965,14 @@ html[data-theme="midnight"] .action-btn-consultation .action-subtitle {
 /* ── هيدر صفحات لوحة التحكم ── */
 html[data-theme="midnight"] .admin-page-header,
 html[data-theme="midnight"] section[class*="linear-gradient(135deg,#10202D"] {
-  background: linear-gradient(135deg, #202332 0%, #2B3142 58%, #161822 100%) !important;
-  border-color: rgba(188, 152, 118, 0.35) !important;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4) !important;
+  background: #202332 !important;
+  border-color: #434E60 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
 html[data-theme="midnight"] .admin-page-header .header-icon-badge,
 html[data-theme="midnight"] .admin-page-header span[class*="bg-[#A9927D]/15"] {
   background: rgba(188, 152, 118, 0.14) !important;
-  border-color: rgba(188, 152, 118, 0.4) !important;
+  border-color: rgba(188, 152, 118, 0.3) !important;
   color: #BC9876 !important;
 }
 html[data-theme="midnight"] .admin-page-header .header-eyebrow,
@@ -998,10 +1000,10 @@ html[data-theme="midnight"] .border-\[\#A9927D\]\/35,
 html[data-theme="midnight"] .border-\[\#A9927D\]\/40,
 html[data-theme="midnight"] .border-\[\#A9927D\]\/45,
 html[data-theme="midnight"] .border-\[\#C7B6A6\] {
-  border-color: rgba(188, 152, 118, 0.38) !important;
+  border-color: #434E60 !important;
 }
 
-/* ── تحويل كافة العناصر ذات التنسيق الثابت المباشر #C5A059 إلى ثيم #BC9876 ── */
+/* ── إطارات البوكسات والبطاقات الفولاذية المريحة بدون أي توهج ذهبي أو أضواء ── */
 html[data-theme="midnight"] .border-\[\#C5A059\],
 html[data-theme="midnight"] .border-\[\#c5a059\],
 html[data-theme="midnight"] .border-\[\#C5A059\]\/10,
@@ -1014,11 +1016,20 @@ html[data-theme="midnight"] .border-\[\#C5A059\]\/40,
 html[data-theme="midnight"] .border-\[\#C5A059\]\/50,
 html[data-theme="midnight"] .border-\[\#C5A059\]\/60,
 html[data-theme="midnight"] .border-\[\#C5A059\]\/70,
+html[data-theme="midnight"] [class*="border-[#C5A059]"],
+html[data-theme="midnight"] [class*="border-[#c5a059]"],
+html[data-theme="midnight"] .card-luxury {
+  border-color: #434E60 !important;
+}
+
 html[data-theme="midnight"] .hover\:border-\[\#C5A059\]\/60:hover,
 html[data-theme="midnight"] .hover\:border-\[\#C5A059\]\/70:hover,
-html[data-theme="midnight"] [class*="border-[#C5A059]"],
-html[data-theme="midnight"] [class*="border-[#c5a059]"] {
-  border-color: rgba(188, 152, 118, 0.38) !important;
+html[data-theme="midnight"] .hover\:border-\[\#C5A059\]\/80:hover,
+html[data-theme="midnight"] [class*="hover:border-[#C5A059]"]:hover,
+html[data-theme="midnight"] [class*="hover:border-[#c5a059]"]:hover,
+html[data-theme="midnight"] .group:hover [class*="group-hover:border-[#C5A059]"],
+html[data-theme="midnight"] .group:hover [class*="group-hover:border-[#c5a059]"] {
+  border-color: #556277 !important;
 }
 
 html[data-theme="midnight"] .text-\[\#C5A059\],
@@ -1047,24 +1058,43 @@ html[data-theme="midnight"] [class*="bg-[#C5A059]/30"] {
   background-color: rgba(188, 152, 118, 0.16) !important;
   color: #BC9876 !important;
 }
-html[data-theme="midnight"] [class*="via-[#C5A059]"] {
-  --tw-gradient-stops: var(--tw-gradient-from), rgba(188, 152, 118, 0.45), var(--tw-gradient-to) !important;
+
+/* ── إلغاء تام لحركة الإضاءة والتوهج والخطوط العلوية والبلور في الثيم الجديد ── */
+html[data-theme="midnight"] [class*="via-[#C5A059]"],
+html[data-theme="midnight"] [class*="via-[#c5a059]"],
+html[data-theme="midnight"] [class*="h-[1px]"][class*="bg-gradient-to-r"],
+html[data-theme="midnight"] [class*="rounded-full"][class*="blur-"],
+html[data-theme="midnight"] .blur-md,
+html[data-theme="midnight"] .blur-lg,
+html[data-theme="midnight"] .blur-xl,
+html[data-theme="midnight"] .blur-3xl {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-/* ── تحويل تدرجات البطاقات الفحمية القديمة إلى تدرجات الليل الفولاذي الفاخر ── */
+/* ── أسطح البطاقات والبوكسات: لون فولاذي صلب ومريح بدون تدرجات مشعة ── */
 html[data-theme="midnight"] [class*="from-[#22272D]"],
 html[data-theme="midnight"] [class*="via-[#181C20]"],
 html[data-theme="midnight"] [class*="to-[#14171A]"] {
-  background: linear-gradient(135deg, rgba(43, 49, 64, 0.94) 0%, rgba(32, 35, 50, 0.98) 55%, rgba(21, 24, 34, 1) 100%) !important;
+  background: #2B3140 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
 }
 html[data-theme="midnight"] [class*="bg-[#161B20]"] {
-  background-color: rgba(43, 49, 64, 0.75) !important;
+  background-color: #242936 !important;
 }
 html[data-theme="midnight"] [class*="bg-[#0F1317]"] {
-  background-color: rgba(28, 32, 44, 0.85) !important;
+  background-color: #202332 !important;
+  border-color: #434E60 !important;
+  box-shadow: none !important;
 }
-html[data-theme="midnight"] [class*="ring-[#C5A059]"] {
-  --tw-ring-color: rgba(188, 152, 118, 0.3) !important;
+html[data-theme="midnight"] [class*="ring-[#C5A059]"],
+html[data-theme="midnight"] [class*="ring-2"] {
+  --tw-ring-color: transparent !important;
+  --tw-ring-offset-color: transparent !important;
+  box-shadow: none !important;
 }
 
 /* ── تبويبات الإعدادات والصفحات النشطة ── */
