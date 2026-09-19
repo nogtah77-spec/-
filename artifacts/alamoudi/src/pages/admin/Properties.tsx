@@ -24,7 +24,7 @@ const statusLabels: Record<PropertyStatus, string> = {
   active: "نشط",
   listed: "معروض",
   draft: "مسودة",
-  sold: "مباعة",
+  sold: "مباع",
   rented: "مؤجر",
   reserved: "محجوز",
 };

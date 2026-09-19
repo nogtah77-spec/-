@@ -62,6 +62,7 @@ export function propertyToRow(p: Property) {
     source_phones: Array.isArray(p.sourcePhones) ? p.sourcePhones : [],
     assigned_staff_id: p.assignedStaffId || "",
     created_at: p.createdAt || new Date().toISOString(),
+    updated_at: p.updatedAt || new Date().toISOString(),
   };
 }
 
@@ -105,7 +106,7 @@ export function rowToProperty(r: any): Property {
     assignedStaffId: r.assigned_staff_id || "",
     views: Number(r.views) || 0,
     createdAt: r.created_at || new Date().toISOString(),
-    updatedAt: r.created_at || new Date().toISOString(),
+    updatedAt: r.updated_at || r.created_at || new Date().toISOString(),
   };
 }
 
@@ -169,15 +170,28 @@ export const supabaseService = {
     }
   },
 
-  // Delete property
-  async deleteProperty(id: string): Promise<boolean> {
-    if (!supabase) return false;
+  // Delete property (by id or code)
+  async deleteProperty(idOrCode: string): Promise<boolean> {
+    if (!supabase || !idOrCode) return false;
     try {
-      const { error } = await supabase.from("properties").delete().eq("id", id);
-      if (error) throw error;
+      await supabase.from("properties").delete().eq("id", idOrCode);
+      await supabase.from("properties").delete().eq("code", idOrCode);
       return true;
     } catch (e) {
       console.warn("Supabase delete property error:", e);
+      return false;
+    }
+  },
+
+  // Bulk delete properties
+  async bulkDeleteProperties(ids: string[]): Promise<boolean> {
+    if (!supabase || !ids || ids.length === 0) return false;
+    try {
+      await supabase.from("properties").delete().in("id", ids);
+      await supabase.from("properties").delete().in("code", ids);
+      return true;
+    } catch (e) {
+      console.warn("Supabase bulk delete error:", e);
       return false;
     }
   },

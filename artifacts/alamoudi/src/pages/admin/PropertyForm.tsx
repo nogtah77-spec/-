@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import { cn, formatNumber, toNumericString } from "@/lib/utils";
 import { SEED_SOURCES } from "@/data/seedSources";
 import { parsePropertyText } from "@/lib/aiPropertyParser";
 import { parsePropertyWithGemini } from "@/lib/geminiApi";
+import { supabase } from "@/lib/supabaseClient";
+import { rowToProperty } from "@/lib/supabaseService";
 
 import { useAuth } from "@/context/AuthContext";
 import { checkUserPermission } from "@/lib/permissions";
@@ -83,47 +85,122 @@ export default function PropertyForm() {
     );
   }
 
+  const [directProperty, setDirectProperty] = useState<any>(null);
+  const activeProperty = existing || directProperty;
+  const isDirtyRef = useRef(false);
+
+  // Direct fallback to Supabase if editing and property is not in memory
+  useEffect(() => {
+    const idToFetch = params.id?.trim();
+    if (!isEdit || !idToFetch || existing || !supabase) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        let res = await supabase.from("properties").select("*").eq("id", idToFetch).maybeSingle();
+        if (!res.data) {
+          res = await supabase.from("properties").select("*").ilike("code", idToFetch).maybeSingle();
+        }
+        if (!cancelled && res.data) {
+          setDirectProperty(rowToProperty(res.data));
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [isEdit, params.id, existing]);
+
   const [notifySubscribers, setNotifySubscribers] = useState(!isEdit);
   const [form, setForm] = useState({
-    code: existing?.code ?? "",
-    description: existing?.description ?? "",
-    price: existing?.price ?? 0,
-    area: existing?.area ?? 0,
-    beds: existing?.beds ?? 0,
-    baths: existing?.baths ?? 0,
-    floors: existing?.floors ?? 0,
-    floor: existing?.floor !== undefined && existing?.floor !== null ? String(existing.floor) : "",
-    finishing: existing?.finishing ?? "",
-    view: existing?.view ?? "",
-    typeId: existing?.typeId ?? "",
-    regionId: existing?.regionId ?? "",
-    category: (existing?.category ?? "residential") as PropertyCategory,
-    listingType: (existing?.listingType ?? "sale") as "sale" | "rent" | "furnished",
-    status: existing?.status ?? "active" as PropertyStatus,
-    featured: existing?.featured ?? false,
-    agentType: (existing?.agentType ?? "unspecified") as "direct" | "broker" | "unspecified",
-    videoUrl: existing?.videoUrl ?? "",
-    externalUrl: existing?.externalUrl ?? "",
-    mapsUrl: existing?.mapsUrl ?? "",
-    unitType: existing?.unitType ?? "",
-    subArea: existing?.subArea ?? "",
-    layout: existing?.layout ?? "",
-    master: existing?.master ?? "",
-    elevator: existing?.elevator ?? "",
-    parking: existing?.parking ?? "",
-    additionalFeatures: existing?.additionalFeatures ?? "",
-    floorText: existing?.floorText ?? "",
-    location: existing?.location ?? "",
-    source: existing?.source ?? (existing?.code ? SEED_SOURCES[existing.code] ?? "" : ""),
-    sourcePhones: existing?.sourcePhones ?? [""],
-    sourceEmail: existing?.sourceEmail ?? "",
-    sourceLocation: existing?.sourceLocation ?? "",
-    sourceNotes: existing?.sourceNotes ?? "",
-    assignedStaffId: existing?.assignedStaffId ?? "",
-    brokerId: existing?.brokerId ?? "",
-    coverPriority: existing?.coverPriority ?? "image",
+    code: activeProperty?.code ?? "",
+    description: activeProperty?.description ?? "",
+    price: activeProperty?.price ?? 0,
+    area: activeProperty?.area ?? 0,
+    beds: activeProperty?.beds ?? 0,
+    baths: activeProperty?.baths ?? 0,
+    floors: activeProperty?.floors ?? 0,
+    floor: activeProperty?.floor !== undefined && activeProperty?.floor !== null ? String(activeProperty.floor) : "",
+    finishing: activeProperty?.finishing ?? "",
+    view: activeProperty?.view ?? "",
+    typeId: activeProperty?.typeId ?? "",
+    regionId: activeProperty?.regionId ?? "",
+    category: (activeProperty?.category ?? "residential") as PropertyCategory,
+    listingType: (activeProperty?.listingType ?? "sale") as "sale" | "rent" | "furnished",
+    status: activeProperty?.status ?? "active" as PropertyStatus,
+    featured: activeProperty?.featured ?? false,
+    agentType: (activeProperty?.agentType ?? "unspecified") as "direct" | "broker" | "unspecified",
+    videoUrl: activeProperty?.videoUrl ?? "",
+    externalUrl: activeProperty?.externalUrl ?? "",
+    mapsUrl: activeProperty?.mapsUrl ?? "",
+    unitType: activeProperty?.unitType ?? "",
+    subArea: activeProperty?.subArea ?? "",
+    layout: activeProperty?.layout ?? "",
+    master: activeProperty?.master ?? "",
+    elevator: activeProperty?.elevator ?? "",
+    parking: activeProperty?.parking ?? "",
+    additionalFeatures: activeProperty?.additionalFeatures ?? "",
+    floorText: activeProperty?.floorText ?? "",
+    location: activeProperty?.location ?? "",
+    source: activeProperty?.source ?? (activeProperty?.code ? SEED_SOURCES[activeProperty.code] ?? "" : ""),
+    sourcePhones: activeProperty?.sourcePhones ?? [""],
+    sourceEmail: activeProperty?.sourceEmail ?? "",
+    sourceLocation: activeProperty?.sourceLocation ?? "",
+    sourceNotes: activeProperty?.sourceNotes ?? "",
+    assignedStaffId: activeProperty?.assignedStaffId ?? "",
+    brokerId: activeProperty?.brokerId ?? "",
+    coverPriority: activeProperty?.coverPriority ?? "image",
   });
-  const [images, setImages] = useState<string[]>(existing?.images ?? []);
+  const [images, setImages] = useState<string[]>(activeProperty?.images ?? []);
+
+  // Sync activeProperty to form if user hasn't made changes yet
+  const lastSyncedKeyRef = useRef("");
+  useEffect(() => {
+    if (!isEdit || !activeProperty) return;
+    const key = `${activeProperty.id}_${activeProperty.updatedAt || activeProperty.createdAt || ""}_${activeProperty.status}_${activeProperty.featured}`;
+    if (lastSyncedKeyRef.current === key) return;
+    if (!isDirtyRef.current) {
+      lastSyncedKeyRef.current = key;
+      setForm({
+        code: activeProperty.code ?? "",
+        description: activeProperty.description ?? "",
+        price: activeProperty.price ?? 0,
+        area: activeProperty.area ?? 0,
+        beds: activeProperty.beds ?? 0,
+        baths: activeProperty.baths ?? 0,
+        floors: activeProperty.floors ?? 0,
+        floor: activeProperty.floor !== undefined && activeProperty.floor !== null ? String(activeProperty.floor) : "",
+        finishing: activeProperty.finishing ?? "",
+        view: activeProperty.view ?? "",
+        typeId: activeProperty.typeId ?? "",
+        regionId: activeProperty.regionId ?? "",
+        category: (activeProperty.category ?? "residential") as PropertyCategory,
+        listingType: (activeProperty.listingType ?? "sale") as "sale" | "rent" | "furnished",
+        status: activeProperty.status ?? "active" as PropertyStatus,
+        featured: activeProperty.featured ?? false,
+        agentType: (activeProperty.agentType ?? "unspecified") as "direct" | "broker" | "unspecified",
+        videoUrl: activeProperty.videoUrl ?? "",
+        externalUrl: activeProperty.externalUrl ?? "",
+        mapsUrl: activeProperty.mapsUrl ?? "",
+        unitType: activeProperty.unitType ?? "",
+        subArea: activeProperty.subArea ?? "",
+        layout: activeProperty.layout ?? "",
+        master: activeProperty.master ?? "",
+        elevator: activeProperty.elevator ?? "",
+        parking: activeProperty.parking ?? "",
+        additionalFeatures: activeProperty.additionalFeatures ?? "",
+        floorText: activeProperty.floorText ?? "",
+        location: activeProperty.location ?? "",
+        source: activeProperty.source ?? (activeProperty.code ? SEED_SOURCES[activeProperty.code] ?? "" : ""),
+        sourcePhones: activeProperty.sourcePhones ?? [""],
+        sourceEmail: activeProperty.sourceEmail ?? "",
+        sourceLocation: activeProperty.sourceLocation ?? "",
+        sourceNotes: activeProperty.sourceNotes ?? "",
+        assignedStaffId: activeProperty.assignedStaffId ?? "",
+        brokerId: activeProperty.brokerId ?? "",
+        coverPriority: activeProperty.coverPriority ?? "image",
+      });
+      setImages(activeProperty.images ?? []);
+    }
+  }, [isEdit, activeProperty]);
+
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [compressing, setCompressing] = useState(false);
@@ -226,7 +303,7 @@ export default function PropertyForm() {
     };
     const payload = {
       ...form,
-      sourcePhones: form.sourcePhones.filter(ph => ph && ph.trim()),
+      sourcePhones: form.sourcePhones.filter((ph: string) => ph && ph.trim()),
       title: form.code.trim(),
       price: numericValue(form.price),
       area: numericValue(form.area),
@@ -237,7 +314,7 @@ export default function PropertyForm() {
       images,
     };
     try {
-      const targetId = existing?.id || params.id;
+      const targetId = activeProperty?.id || existing?.id || params.id;
       const saved = isEdit && targetId
         ? await updateProperty(targetId, payload)
         : await addProperty(payload);
@@ -269,7 +346,10 @@ export default function PropertyForm() {
     }
   };
 
-  const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => setForm(p => ({ ...p, [k]: v }));
+  const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => {
+    isDirtyRef.current = true;
+    setForm(p => ({ ...p, [k]: v }));
+  };
   const staffUsers = users.filter(user => user.role === "admin" || user.role === "agent");
   const staffLabel = (user: typeof staffUsers[number]) => {
     return user.name || (user.username ? `@${user.username}` : user.email);
@@ -838,11 +918,11 @@ export default function PropertyForm() {
                   <Select value={form.status} onValueChange={(v: PropertyStatus) => set("status", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">نشط ومتاح</SelectItem>
+                      <SelectItem value="active">نشط</SelectItem>
                       <SelectItem value="listed">معروض</SelectItem>
-                      <SelectItem value="draft">مسودة قيد المراجعة</SelectItem>
-                      <SelectItem value="sold">تم البيع</SelectItem>
-                      <SelectItem value="rented">تم التأجير</SelectItem>
+                      <SelectItem value="draft">مسودة</SelectItem>
+                      <SelectItem value="sold">مباع</SelectItem>
+                      <SelectItem value="rented">مؤجر</SelectItem>
                       <SelectItem value="reserved">محجوز</SelectItem>
                     </SelectContent>
                   </Select>
@@ -936,7 +1016,7 @@ export default function PropertyForm() {
                       أرقام التواصل
                     </Label>
                     <div className="space-y-2">
-                      {form.sourcePhones.map((ph, i) => (
+                      {form.sourcePhones.map((ph: string, i: number) => (
                         <div key={i} className="flex gap-2">
                           <Input
                             dir="ltr"
@@ -952,7 +1032,7 @@ export default function PropertyForm() {
                           {form.sourcePhones.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => set("sourcePhones", form.sourcePhones.filter((_, idx) => idx !== i))}
+                              onClick={() => set("sourcePhones", form.sourcePhones.filter((_: string, idx: number) => idx !== i))}
                               className="w-9 h-9 flex items-center justify-center rounded-md border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors flex-shrink-0"
                             >
                               <X className="h-4 w-4" />

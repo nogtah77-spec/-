@@ -46,10 +46,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active: { label: "نشط ومعروض", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
+  active: { label: "نشط", color: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
   listed: { label: "معروض", color: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30" },
   reserved: { label: "محجوز", color: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30" },
-  sold: { label: "تم البيع", color: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" },
+  sold: { label: "مباع", color: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30" },
   rented: { label: "مؤجر", color: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30" },
   draft: { label: "مسودة", color: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30" },
 };

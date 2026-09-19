@@ -730,19 +730,71 @@ export function isDummyProperty(p: { id?: string; code?: string } | null | undef
   return id.startsWith("alm_prop_") || DUMMY_PROP_IDS.has(id) || (["bw08", "b05", "t10", "v01", "m22", "w03", "n14"].includes(code) && id.includes("alm_prop"));
 }
 
+export function getDeletedPropertyIds(): Set<string> {
+  const set = new Set<string>();
+  try {
+    const raw = localStorage.getItem("alm_deleted_properties");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        arr.forEach(x => {
+          if (x) {
+            const s = String(x).trim();
+            if (s) {
+              set.add(s);
+              set.add(s.toLowerCase());
+            }
+          }
+        });
+      }
+    }
+  } catch {}
+  return set;
+}
+
+export function isPropertyDeleted(p: { id?: string; code?: string } | null | undefined, deletedSet?: Set<string>): boolean {
+  if (!p) return true;
+  const delSet = deletedSet || getDeletedPropertyIds();
+  const id = String(p.id || "").trim();
+  const code = String(p.code || "").trim();
+  return delSet.has(id) || delSet.has(id.toLowerCase()) || delSet.has(code) || delSet.has(code.toLowerCase());
+}
+
 export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
   const map = new Map<string, Property>();
   for (const fp of freshList) {
     if (fp && fp.id) map.set(fp.id, fp);
   }
 
+  // Overlay persistent overrides (such as status updates like "rented" that user saved)
+  try {
+    const rawOverrides = localStorage.getItem("alm_property_overrides");
+    if (rawOverrides) {
+      const overrides = JSON.parse(rawOverrides);
+      for (const k of Object.keys(overrides)) {
+        const prop = overrides[k];
+        if (prop && prop.id) {
+          const current = map.get(prop.id);
+          if (current) {
+            map.set(prop.id, { ...current, ...prop });
+          } else {
+            map.set(prop.id, prop);
+          }
+        }
+      }
+    }
+  } catch {}
+
   // Apply active recent edits (within 15 minutes) strictly over fresh DB reads
   const now = Date.now();
   const fifteenMinutes = 15 * 60 * 1000;
+  const deletedSet = getDeletedPropertyIds();
 
   for (const [key, item] of recentPropertyEdits.entries()) {
     if (now - item.timestamp < fifteenMinutes && item.property && item.property.id) {
-      map.set(item.property.id, item.property);
+      if (!isPropertyDeleted(item.property, deletedSet)) {
+        map.set(item.property.id, item.property);
+      }
     } else if (now - item.timestamp >= fifteenMinutes) {
       recentPropertyEdits.delete(key);
     }
@@ -755,24 +807,18 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
       for (const k of Object.keys(stored)) {
         const it = stored[k];
         if (it && now - it.timestamp < fifteenMinutes && it.property && it.property.id) {
-          map.set(it.property.id, it.property);
+          if (!isPropertyDeleted(it.property, deletedSet)) {
+            map.set(it.property.id, it.property);
+          }
         }
       }
     }
   } catch {}
 
-  let deletedIds: string[] = [];
-  try {
-    const rawDeleted = localStorage.getItem("alm_deleted_properties");
-    if (rawDeleted) deletedIds = JSON.parse(rawDeleted);
-  } catch {}
-
   return Array.from(map.values())
     .filter(p => {
       if (!p || isSystemStoreProperty(p) || isDummyProperty(p)) return false;
-      const id = (p.id || "").toLowerCase().trim();
-      const code = (p.code || "").toLowerCase().trim();
-      return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
+      return !isPropertyDeleted(p, deletedSet);
     })
     .sort((a, b) => {
       const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
@@ -906,27 +952,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES;
   });
   const [properties, setProperties] = useState<Property[]>(() => {
-    let deletedIds: string[] = [];
-    try {
-      const rawDeleted = localStorage.getItem("alm_deleted_properties");
-      if (rawDeleted) deletedIds = JSON.parse(rawDeleted);
-    } catch {}
+    const deletedSet = getDeletedPropertyIds();
     const isClean = (p: Property) => {
       if (!p || isSystemStoreProperty(p) || isDummyProperty(p)) return false;
-      const id = (p.id || "").toLowerCase().trim();
-      const code = (p.code || "").toLowerCase().trim();
-      return !deletedIds.includes(p.id) && !deletedIds.includes(id) && !deletedIds.includes(code);
+      return !isPropertyDeleted(p, deletedSet);
     };
     const cached = readCache();
     const map = new Map<string, Property>();
-    // 1. First add all master seed properties (guaranteeing all 71 current listings exist)
+    // 1. First add all master seed properties
     for (const p of SEED_PROPERTIES) {
-      if (p && p.id) map.set(p.id, p);
+      if (p && p.id && !isPropertyDeleted(p, deletedSet)) map.set(p.id, p);
     }
     // 2. Overlay any cached updates/edits
     if (cached?.properties && cached.properties.length > 0) {
       for (const p of cached.properties) {
-        if (p && p.id) {
+        if (p && p.id && !isPropertyDeleted(p, deletedSet)) {
           const existing = map.get(p.id);
           if (existing) {
             const tExist = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
@@ -940,6 +980,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
       }
     }
+    // 3. Overlay persistent local overrides (e.g. status changes saved by user)
+    try {
+      const rawOverrides = localStorage.getItem("alm_property_overrides");
+      if (rawOverrides) {
+        const overrides = JSON.parse(rawOverrides);
+        for (const k of Object.keys(overrides)) {
+          const prop = overrides[k];
+          if (prop && prop.id && !isPropertyDeleted(prop, deletedSet)) {
+            const existing = map.get(prop.id);
+            if (existing) {
+              map.set(prop.id, { ...existing, ...prop });
+            } else {
+              map.set(prop.id, prop);
+            }
+          }
+        }
+      }
+    } catch {}
+
     return Array.from(map.values()).filter(isClean).sort((a, b) => {
       const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
       const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
@@ -1300,9 +1359,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     getPropertiesFromIndexedDb().then(idbProps => {
       if (destroyed) return;
       if (idbProps && idbProps.length > 0) {
+        const deletedSet = getDeletedPropertyIds();
         setProperties(prev => {
           const idbMap = new Map<string, Property>();
-          idbProps.forEach(p => idbMap.set(p.id, p));
+          idbProps.forEach(p => {
+            if (p?.id && !isPropertyDeleted(p, deletedSet)) idbMap.set(p.id, p);
+          });
           const updated = prev.map(p => {
             const full = idbMap.get(p.id);
             if (full && (full.images?.length || 0) > (p.images?.length || 0)) {
@@ -1310,12 +1372,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
             return p;
           });
-          idbProps.filter(p => !isDummyProperty(p)).forEach(p => {
+          idbProps.filter(p => !isDummyProperty(p) && !isPropertyDeleted(p, deletedSet)).forEach(p => {
             if (!updated.some(u => u.id === p.id)) {
               updated.push(p);
             }
           });
-          return updated.filter(p => !isDummyProperty(p)).sort((a, b) => {
+          return updated.filter(p => !isDummyProperty(p) && !isPropertyDeleted(p, deletedSet)).sort((a, b) => {
             const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
             const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
             return tB - tA;
@@ -2849,6 +2911,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (updatedTarget.code) overrides[updatedTarget.code] = updatedTarget;
           localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
         } catch {}
+
+        // If previously blacklisted, remove from deleted properties
+        try {
+          const delArr: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
+          const cleaned = delArr.filter(x => {
+            const s = String(x).toLowerCase().trim();
+            return s !== targetIdLower && s !== (updatedTarget?.id || "").toLowerCase().trim() && s !== (updatedTarget?.code || "").toLowerCase().trim();
+          });
+          localStorage.setItem("alm_deleted_properties", JSON.stringify(cleaned));
+        } catch {}
       }
 
       return updated;
@@ -2870,59 +2942,137 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteProperty = async (id: string) => {
-    const targetIdLower = (id || "").toLowerCase().trim();
+    const target = properties.find(p => (p.id || "").toLowerCase().trim() === (id || "").toLowerCase().trim() || (p.code || "").toLowerCase().trim() === (id || "").toLowerCase().trim());
+    const targetId = target?.id || id;
+    const targetCode = target?.code || "";
+    const targetIdLower = targetId.toLowerCase().trim();
+    const targetCodeLower = targetCode.toLowerCase().trim();
+
+    // 1. Purge from recent edits (both memory & storage)
     clearRecentEdit(id);
+    clearRecentEdit(targetId);
     clearRecentEdit(targetIdLower);
+    if (targetCode) {
+      clearRecentEdit(targetCode);
+      clearRecentEdit(targetCodeLower);
+    }
 
-    // 1. Add to persistent blacklist
+    // 2. Add to persistent blacklist & remove from overrides
     try {
-      const deleted: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
-      if (!deleted.includes(id)) deleted.push(id);
-      if (!deleted.includes(targetIdLower)) deleted.push(targetIdLower);
-      localStorage.setItem("alm_deleted_properties", JSON.stringify(deleted));
+      const deletedArr: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
+      const delSet = new Set(deletedArr);
+      [id, targetId, targetIdLower, targetCode, targetCodeLower].filter(Boolean).forEach(k => delSet.add(k));
+      localStorage.setItem("alm_deleted_properties", JSON.stringify(Array.from(delSet)));
 
-      // Remove from persistent overrides
       const overrides = JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
       delete overrides[id];
+      delete overrides[targetId];
       delete overrides[targetIdLower];
+      if (targetCode) {
+        delete overrides[targetCode];
+        delete overrides[targetCodeLower];
+      }
       localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
     } catch {}
 
+    // 3. Update React State
+    let nextProperties: Property[] = [];
     setProperties(prev => {
-      const updated = prev.filter(x => {
-        const matchId = (x.id || "").toLowerCase().trim() === targetIdLower;
-        const matchCode = (x.code || "").toLowerCase().trim() === targetIdLower;
-        return !matchId && !matchCode;
-      });
+      const delSet = getDeletedPropertyIds();
+      nextProperties = prev.filter(x => !isPropertyDeleted(x, delSet));
       writeCache({
         regions,
         types: propertyTypes,
-        properties: updated,
+        properties: nextProperties,
         settings,
       });
-      return updated;
+      return nextProperties;
     });
 
-    await supabaseService.deleteProperty(id).catch(() => {});
-    sendRealtimeSync("PROPERTY_DELETE", { propertyId: id });
+    // 4. Update IndexedDB cache
+    if (nextProperties.length > 0) {
+      savePropertiesToIndexedDb(nextProperties).catch(() => {});
+    }
+
+    // 5. Delete from Supabase
+    await supabaseService.deleteProperty(targetId).catch(() => {});
+    if (targetCode && targetCode !== targetId) {
+      await supabaseService.deleteProperty(targetCode).catch(() => {});
+    }
+    if (id !== targetId && id !== targetCode) {
+      await supabaseService.deleteProperty(id).catch(() => {});
+    }
+
+    sendRealtimeSync("PROPERTY_DELETE", { propertyId: targetId });
     logActivity({
       action: "deleted",
       entityType: "property",
-      title: `حذف العقار (${id}) من المنصة`,
+      title: `حذف العقار (${targetCode || targetId}) من المنصة`,
     });
     return true;
   };
 
-  const bulkDeleteProperties = (ids: string[]) => {
+  const bulkDeleteProperties = async (ids: string[]) => {
     if (ids.length === 0) return;
-    const idSet = new Set(ids);
-    setProperties(p => p.filter(x => !idSet.has(x.id)));
+    const lowerIds = ids.map(x => (x || "").toLowerCase().trim());
+    const targets = properties.filter(p => lowerIds.includes((p.id || "").toLowerCase().trim()) || lowerIds.includes((p.code || "").toLowerCase().trim()));
+    const keysToPurge: string[] = [];
+    targets.forEach(t => {
+      if (t.id) { keysToPurge.push(t.id); keysToPurge.push(t.id.toLowerCase().trim()); }
+      if (t.code) { keysToPurge.push(t.code); keysToPurge.push(t.code.toLowerCase().trim()); }
+    });
+    ids.forEach(id => {
+      keysToPurge.push(id);
+      keysToPurge.push(id.toLowerCase().trim());
+    });
+
+    // 1. Purge from recent edits
+    keysToPurge.forEach(k => clearRecentEdit(k));
+
+    // 2. Add to persistent blacklist & purge overrides
+    try {
+      const deletedArr: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
+      const delSet = new Set(deletedArr);
+      keysToPurge.forEach(k => delSet.add(k));
+      localStorage.setItem("alm_deleted_properties", JSON.stringify(Array.from(delSet)));
+
+      const overrides = JSON.parse(localStorage.getItem("alm_property_overrides") || "{}");
+      keysToPurge.forEach(k => { delete overrides[k]; });
+      localStorage.setItem("alm_property_overrides", JSON.stringify(overrides));
+    } catch {}
+
+    // 3. Update React State
+    let nextProperties: Property[] = [];
+    setProperties(prev => {
+      const delSet = getDeletedPropertyIds();
+      nextProperties = prev.filter(x => !isPropertyDeleted(x, delSet));
+      writeCache({
+        regions,
+        types: propertyTypes,
+        properties: nextProperties,
+        settings,
+      });
+      return nextProperties;
+    });
+
+    // 4. Update IndexedDB cache
+    if (nextProperties.length > 0) {
+      savePropertiesToIndexedDb(nextProperties).catch(() => {});
+    }
+
+    // 5. Delete from Supabase
+    await supabaseService.bulkDeleteProperties(ids).catch(() => {});
+    for (const t of targets) {
+      if (t.id) supabaseService.deleteProperty(t.id).catch(() => {});
+      if (t.code) supabaseService.deleteProperty(t.code).catch(() => {});
+    }
+
+    ids.forEach(id => sendRealtimeSync("PROPERTY_DELETE", { propertyId: id }));
     logActivity({
       action: "deleted",
       entityType: "property",
       title: `حذف مجمّع لـ (${ids.length}) عقارات دفعة واحدة`,
     });
-    persist(api.del("/properties/bulk", { ids }));
   };
 
   const bulkUpdateProperties = (ids: string[], updates: Partial<Property>) => {

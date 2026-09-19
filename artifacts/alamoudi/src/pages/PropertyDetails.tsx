@@ -426,7 +426,10 @@ export default function PropertyDetails() {
                 {typeName && <Badge className="bg-primary/10 text-primary">{typeName}</Badge>}
                 {categoryLabels[property.category] && <Badge className="bg-accent/15 text-accent border border-accent/30 font-bold">{categoryLabels[property.category]}</Badge>}
                 {property.featured && <Badge className="bg-accent text-accent-foreground font-black shadow-xs">مميز VIP</Badge>}
-                {property.status === "reserved" && <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">محجوز</Badge>}
+                {property.status === "rented" && <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">مؤجر</Badge>}
+                {property.status === "sold" && <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">مباع</Badge>}
+                {property.status === "reserved" && <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30 font-bold">محجوز</Badge>}
+                {property.status === "draft" && <Badge className="bg-muted text-muted-foreground border border-border font-bold">مسودة</Badge>}
               </div>
               <div className="mb-2">
                 <h1 className="text-2xl md:text-3xl font-bold font-mono tracking-widest text-accent">{property.code}</h1>

@@ -206,11 +206,26 @@ export function PropertyCard({
           {/* Subtle Dark Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 z-[5]" />
 
-          {/* Top Left Listing Type Badge */}
-          <div className="absolute top-2 right-2 z-20">
+          {/* Top Left Listing Type & Status Badges */}
+          <div className="absolute top-2 right-2 z-20 flex items-center gap-1 flex-wrap">
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent text-accent-foreground shadow-xs">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
+            {property.status === "rented" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/90 text-white shadow-xs border border-amber-400/30 backdrop-blur-xs">
+                مؤجر
+              </span>
+            )}
+            {property.status === "sold" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-red-600/90 text-white shadow-xs border border-red-500/30 backdrop-blur-xs">
+                مباع
+              </span>
+            )}
+            {property.status === "reserved" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-yellow-500/90 text-slate-950 shadow-xs border border-yellow-400/30 backdrop-blur-xs">
+                محجوز
+              </span>
+            )}
           </div>
 
           {/* Bottom Indicators inside Image */}
@@ -407,11 +422,26 @@ export function PropertyCard({
 
         {/* Top Badges & Actions inside Image */}
         <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
-          {/* Listing Type & Featured Badges */}
+          {/* Listing Type, Status & Featured Badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-foreground font-black text-xs shadow-md">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
+            {property.status === "rented" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/90 text-white font-black text-xs shadow-md border border-amber-400/30 backdrop-blur-md">
+                مؤجر
+              </span>
+            )}
+            {property.status === "sold" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-600/90 text-white font-black text-xs shadow-md border border-red-500/30 backdrop-blur-md">
+                مباع
+              </span>
+            )}
+            {property.status === "reserved" && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-yellow-500/90 text-slate-950 font-black text-xs shadow-md border border-yellow-400/30 backdrop-blur-md">
+                محجوز
+              </span>
+            )}
             {property.featured && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#A9927D] text-[#10202D] font-black text-[11px] shadow-md border border-[#10202D]/10">
                 <Sparkles className="h-3 w-3 fill-[#10202D]/80" />
