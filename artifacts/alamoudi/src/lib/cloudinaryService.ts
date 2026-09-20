@@ -6,6 +6,8 @@
 export const CLOUDINARY_CONFIG = {
   cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "vis04evc",
   uploadPreset: import.meta.env.VITE_CLOUDINARY_PRESET || "h2ft0erz",
+  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY || "657172733186433",
+  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET || "btYELgnhR-2E54LxI1OwivkvAfY",
 };
 
 /**
@@ -196,42 +198,112 @@ export function getDetailImageUrl(url: string | null | undefined): string {
 }
 
 /**
- * Deletes a single image from Cloudinary by URL or publicId
+ * Computes SHA-1 hexadecimal hash using browser native Web Crypto API
+ */
+async function sha1Hex(str: string): Promise<string> {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest("SHA-1", enc.encode(str));
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Deletes a single image from Cloudinary directly using Cloudinary REST API
  */
 export async function deleteFromCloudinary(urlOrPublicId: string): Promise<boolean> {
   if (!urlOrPublicId || typeof urlOrPublicId !== "string") return false;
+  const publicId = extractCloudinaryPublicId(urlOrPublicId) || urlOrPublicId.trim();
+  if (!publicId) return false;
+
+  const { cloudName, apiKey, apiSecret } = CLOUDINARY_CONFIG;
+  if (!cloudName || !apiKey || !apiSecret) return false;
+
+  try {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const signatureStr = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    const signature = await sha1Hex(signatureStr);
+
+    const formData = new FormData();
+    formData.append("public_id", publicId);
+    formData.append("timestamp", timestamp.toString());
+    formData.append("api_key", apiKey);
+    formData.append("signature", signature);
+
+    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`;
+    const res = await fetch(endpoint, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data?.result === "ok") return true;
+    }
+  } catch (err) {
+    console.warn("Direct Cloudinary delete error:", err);
+  }
+
+  // Graceful fallback to backend route if available
   try {
     const res = await fetch("/api/cloudinary/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: urlOrPublicId }),
+      body: JSON.stringify({ publicId }),
     });
-    if (!res.ok) return false;
-    const data = await res.json();
-    return Boolean(data?.success);
-  } catch (err) {
-    console.warn("Cloudinary delete failed:", err);
-    return false;
-  }
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return Boolean(data?.success);
+    }
+  } catch {}
+
+  return false;
 }
 
 /**
- * Deletes an entire folder and all its images from Cloudinary
+ * Deletes an entire folder and all its images from Cloudinary directly
  */
 export async function deleteFolderFromCloudinary(folder: string): Promise<boolean> {
   if (!folder || typeof folder !== "string") return false;
+  const cleanFolder = folder.trim().replace(/^\/+|\/+$/g, "");
+  if (!cleanFolder) return false;
+
+  const { cloudName, apiKey, apiSecret } = CLOUDINARY_CONFIG;
+  if (!cloudName || !apiKey || !apiSecret) return false;
+
+  const basicAuth = "Basic " + btoa(`${apiKey}:${apiSecret}`);
+
+  try {
+    // 1. Delete all images under this folder prefix directly
+    await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload?prefix=${encodeURIComponent(cleanFolder)}`, {
+      method: "DELETE",
+      headers: { Authorization: basicAuth },
+    });
+
+    // 2. Delete the folder itself directly
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/folders/${encodeURIComponent(cleanFolder)}`, {
+      method: "DELETE",
+      headers: { Authorization: basicAuth },
+    });
+
+    if (res.ok) return true;
+  } catch (err) {
+    console.warn("Direct Cloudinary folder delete error:", err);
+  }
+
+  // Graceful fallback to backend route if available
   try {
     const res = await fetch("/api/cloudinary/delete-folder", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ folder }),
+      body: JSON.stringify({ folder: cleanFolder }),
     });
-    if (!res.ok) return false;
-    const data = await res.json();
-    return Boolean(data?.success);
-  } catch (err) {
-    console.warn("Cloudinary folder delete failed:", err);
-    return false;
-  }
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return Boolean(data?.success);
+    }
+  } catch {}
+
+  return false;
 }
 
