@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Sparkles } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Star } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
@@ -113,7 +113,16 @@ export function PropertyCard({
     : !heroImg && propHasVideo && (!videoThumb || thumbFailed);
   const coverImg = videoFirst ? null : heroImg;
   const imageCount = property.images?.length || 0;
-  const isNew = () => { try { return Date.now() - new Date(property.createdAt).getTime() < 7 * 86400000; } catch { return false; } };
+  const isNew = () => {
+    try {
+      const created = property.createdAt || (property as any).created_at;
+      if (!created) return false;
+      const time = new Date(created).getTime();
+      return time > 0 && Date.now() - time <= 7 * 86400000;
+    } catch {
+      return false;
+    }
+  };
   const goToDetails = () => navigate(`/properties/${property.id}`);
 
   const handleShare = async (e: React.MouseEvent) => {
@@ -208,21 +217,26 @@ export function PropertyCard({
 
           {/* Top Left Listing Type & Status Badges */}
           <div className="absolute top-2 right-2 z-20 flex items-center gap-1 flex-wrap">
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent text-accent-foreground shadow-xs">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
+            {isNew() && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black text-white bg-black/55 backdrop-blur-md border border-white/35 shadow-[0_3px_10px_rgba(0,0,0,0.35)] tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                جديد
+              </span>
+            )}
             {property.status === "rented" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/90 text-white shadow-xs border border-amber-400/30 backdrop-blur-xs">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/80 text-white shadow-xs border border-amber-400/30 backdrop-blur-md">
                 مؤجر
               </span>
             )}
             {property.status === "sold" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-red-600/90 text-white shadow-xs border border-red-500/30 backdrop-blur-xs">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-red-600/80 text-white shadow-xs border border-red-500/30 backdrop-blur-md">
                 مباع
               </span>
             )}
             {property.status === "reserved" && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-yellow-500/90 text-slate-950 shadow-xs border border-yellow-400/30 backdrop-blur-xs">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-yellow-500/80 text-slate-950 shadow-xs border border-yellow-400/30 backdrop-blur-md">
                 محجوز
               </span>
             )}
@@ -231,7 +245,7 @@ export function PropertyCard({
           {/* Bottom Indicators inside Image */}
           <div className="absolute bottom-2 inset-x-2 z-20 flex flex-wrap items-center justify-between gap-1 text-[9px]">
             {property.typeName ? (
-              <span className="px-2 py-0.5 rounded bg-black/60 backdrop-blur-sm text-white/95 font-bold border border-white/10">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black text-white bg-black/55 backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.35)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                 {property.typeName}
               </span>
             ) : <span />}
@@ -242,10 +256,9 @@ export function PropertyCard({
                   <Play className="h-2 w-2 fill-white" />
                 </span>
               )}
-              {isNew() && <span className="rounded bg-emerald-500/90 text-white font-bold px-1.5 py-0.5">جديد</span>}
               {property.featured && (
                 <span className="inline-flex items-center gap-0.5 rounded bg-[#A9927D] text-[#10202D] font-bold px-1.5 py-0.5 shadow-xs border border-[#10202D]/10">
-                  <Sparkles className="h-2 w-2 fill-[#10202D]/80" />
+                  <Star className="h-2 w-2 fill-[#10202D] text-[#10202D]" />
                   مميز
                 </span>
               )}
@@ -424,27 +437,32 @@ export function PropertyCard({
         <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
           {/* Listing Type, Status & Featured Badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent text-accent-foreground font-black text-xs shadow-md">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
+            {isNew() && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10.5px] font-black text-white bg-black/55 backdrop-blur-md border border-white/35 shadow-[0_3px_10px_rgba(0,0,0,0.35)] tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                جديد
+              </span>
+            )}
             {property.status === "rented" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/90 text-white font-black text-xs shadow-md border border-amber-400/30 backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-500/80 text-white font-black text-xs shadow-md border border-amber-400/30 backdrop-blur-md">
                 مؤجر
               </span>
             )}
             {property.status === "sold" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-600/90 text-white font-black text-xs shadow-md border border-red-500/30 backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-600/80 text-white font-black text-xs shadow-md border border-red-500/30 backdrop-blur-md">
                 مباع
               </span>
             )}
             {property.status === "reserved" && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-yellow-500/90 text-slate-950 font-black text-xs shadow-md border border-yellow-400/30 backdrop-blur-md">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-yellow-500/80 text-slate-950 font-black text-xs shadow-md border border-yellow-400/30 backdrop-blur-md">
                 محجوز
               </span>
             )}
             {property.featured && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#A9927D] text-[#10202D] font-black text-[11px] shadow-md border border-[#10202D]/10">
-                <Sparkles className="h-3 w-3 fill-[#10202D]/80" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#A9927D]/85 text-[#10202D] font-black text-[11px] shadow-md border border-white/20 backdrop-blur-md">
+                <Star className="h-3 w-3 fill-[#10202D] text-[#10202D]" />
                 مميز VIP
               </span>
             )}
@@ -481,7 +499,7 @@ export function PropertyCard({
           {/* Type Badge & Location */}
           <div className="flex items-center gap-1.5">
             {property.typeName && (
-              <span className="px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-white font-bold border border-white/10 text-[11px]">
+              <span className="inline-flex items-center px-2 py-0.5 rounded bg-black/55 backdrop-blur-md text-white font-black border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.35)] text-[10.5px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                 {property.typeName}
               </span>
             )}

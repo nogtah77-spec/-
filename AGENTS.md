@@ -10,11 +10,11 @@
    - يقع في المجلد: `artifacts/alamoudi`
    - البنية: `React 18` + `TypeScript` + `Vite` + `Tailwind CSS` + `Wouter Router`.
    - النشر والتشغيل: منشور سحابيًا على `Vercel Edge Network` ومرتبط بمستودع GitHub الرسمي: `https://github.com/nogtah77-spec/-`.
-2. **قاعدة البيانات والخدمات السحابية:**
-   - سحابة **Supabase** (PostgreSQL، Realtime Engine، Storage Buckets).
-   - يتم الاتصال بسحابة Supabase مباشرة وبشكل آمن عبر مكتبة `@supabase/supabase-js` مع مفاتيح البيئة المعتمدة.
+2. **قاعدة البيانات والخدمات السحابية والتخزين الهجين (Hybrid Cloud Storage):**
+   - **قاعدة بيانات Supabase:** (المشروع النشط: `https://inuouzvmujxjjzfxinvk.supabase.co`) لقاعدة بيانات PostgreSQL، والتواجد اللحظي (Realtime Engine)، والمستخدمين، والإعدادات، وبيانات العقارات النصية وروابط الصور.
+   - **سحابة الوسائط Cloudinary:** (Cloud: `vis04evc` / Preset: `h2ft0erz`) لتخزين كافة صور وسائط العقارات عبر CDN عالمي فائق السرعة، بمجلدات منظمة جغرافياً حسب المنطقة وكود العقار (`alamoudi_properties/{region}/{code}`)، لمنع استهلاك حصة قاعدة البيانات (Zero DB Egress).
 3. **تطبيق الويب التقدمي (PWA) ومشغل الخدمة:**
-   - مشغل الخدمة النشط هو الإصدار `Service Worker v14` الموجود في `artifacts/alamoudi/public/sw.js`.
+   - مشغل الخدمة النشط هو الإصدار `Service Worker v15` الموجود في `artifacts/alamoudi/public/sw.js`.
 
 ---
 

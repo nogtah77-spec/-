@@ -2,10 +2,10 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback, Re
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { SEED_PROPERTIES } from "@/data/seedProperties";
-import { supabaseService, rowToProperty } from "@/lib/supabaseService";
+import { supabaseService, rowToProperty, parsePropertyImages } from "@/lib/supabaseService";
 import { supabase } from "@/lib/supabaseClient";
 import { enqueueOfflineAction, isOnline, processOfflineQueue } from "@/lib/offlineSync";
-import { savePropertiesToIndexedDb, getPropertiesFromIndexedDb } from "@/lib/indexedDbStorage";
+import { savePropertiesToIndexedDb, getPropertiesFromIndexedDb, clearPropertiesFromIndexedDb } from "@/lib/indexedDbStorage";
 import { syncThemeColor } from "@/lib/meta";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
@@ -556,6 +556,7 @@ interface DataContextType {
     actor?: string;
   }) => ActivityLog;
   clearActivityLogs: () => Promise<boolean>;
+  resetAllProperties: () => Promise<boolean>;
 }
 
 export const DEFAULT_INITIAL_ACTIVITIES: ActivityLog[] = [
@@ -590,7 +591,7 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v7";
+const CACHE_KEY = "alm_cache_v9";
 // الـ cache بيُعرض فوراً حتى لو قديم، والـ API دايماً بيرفّش في الخلفية
 // TTL طويل جداً (7 أيام) كـ safety net بس للـ cache القديم جداً
 const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -599,6 +600,8 @@ const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
 if (typeof window !== "undefined") {
   try {
     localStorage.removeItem("alm_property_overrides");
+    localStorage.removeItem("alm_cache_v8");
+    localStorage.removeItem("alm_cache_v7");
     localStorage.removeItem("alm_cache_v6");
     localStorage.removeItem("alm_cache_v5");
   } catch {}
@@ -772,7 +775,25 @@ export function isPropertyDeleted(p: { id?: string; code?: string } | null | und
 export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
   const map = new Map<string, Property>();
   for (const fp of freshList) {
-    if (fp && fp.id) map.set(fp.id, fp);
+    if (!fp) continue;
+    const codeKey = (fp.code || fp.id).trim().toLowerCase();
+    const existing = map.get(codeKey) || (fp.id ? map.get(fp.id) : undefined);
+    if (!existing) {
+      map.set(codeKey, fp);
+      if (fp.id) map.set(fp.id, fp);
+    } else {
+      const existImgs = parsePropertyImages(existing.images);
+      const fpImgs = parsePropertyImages(fp.images);
+      const combined = [...fpImgs];
+      for (const img of existImgs) {
+        if (img && !combined.includes(img)) combined.push(img);
+      }
+      const newer = new Date(fp.updatedAt || fp.createdAt || 0) >= new Date(existing.updatedAt || existing.createdAt || 0) ? fp : existing;
+      const mergedProp = { ...existing, ...newer, images: combined };
+      map.set(codeKey, mergedProp);
+      if (fp.id) map.set(fp.id, mergedProp);
+      if (existing.id) map.set(existing.id, mergedProp);
+    }
   }
 
   // Apply active recent edits (within 5 minutes) strictly over fresh DB reads
@@ -783,7 +804,17 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
   for (const [key, item] of recentPropertyEdits.entries()) {
     if (now - item.timestamp < fiveMinutes && item.property && item.property.id) {
       if (!isPropertyDeleted(item.property, deletedSet)) {
-        map.set(item.property.id, item.property);
+        const codeKey = (item.property.code || item.property.id).trim().toLowerCase();
+        const existing = map.get(codeKey) || map.get(item.property.id);
+        const existImgs = parsePropertyImages(existing?.images);
+        const inImgs = parsePropertyImages(item.property.images);
+        const combined = [...inImgs];
+        for (const img of existImgs) {
+          if (img && !combined.includes(img)) combined.push(img);
+        }
+        const mergedProp = { ...existing, ...item.property, images: combined };
+        map.set(codeKey, mergedProp);
+        map.set(item.property.id, mergedProp);
       }
     } else if (now - item.timestamp >= fiveMinutes) {
       recentPropertyEdits.delete(key);
@@ -798,18 +829,43 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
         const it = stored[k];
         if (it && now - it.timestamp < fiveMinutes && it.property && it.property.id) {
           if (!isPropertyDeleted(it.property, deletedSet)) {
-            map.set(it.property.id, it.property);
+            const codeKey = (it.property.code || it.property.id).trim().toLowerCase();
+            const existing = map.get(codeKey) || map.get(it.property.id);
+            const existImgs = parsePropertyImages(existing?.images);
+            const inImgs = parsePropertyImages(it.property.images);
+            const combined = [...inImgs];
+            for (const img of existImgs) {
+              if (img && !combined.includes(img)) combined.push(img);
+            }
+            const mergedProp = { ...existing, ...it.property, images: combined };
+            map.set(codeKey, mergedProp);
+            map.set(it.property.id, mergedProp);
           }
         }
       }
     }
   } catch {}
 
-  return Array.from(map.values())
-    .filter(p => {
-      if (!p || isSystemStoreProperty(p) || isDummyProperty(p)) return false;
-      return !isPropertyDeleted(p, deletedSet);
-    })
+  // Deduplicate by ID and unique Code
+  const uniqueMap = new Map<string, Property>();
+  for (const p of map.values()) {
+    if (!p || isSystemStoreProperty(p) || isDummyProperty(p) || isPropertyDeleted(p, deletedSet)) continue;
+    const key = (p.code || p.id).trim().toLowerCase();
+    const existing = uniqueMap.get(key);
+    if (!existing) {
+      uniqueMap.set(key, p);
+    } else {
+      const existImgs = parsePropertyImages(existing.images);
+      const newImgs = parsePropertyImages(p.images);
+      const combined = [...newImgs];
+      for (const img of existImgs) {
+        if (img && !combined.includes(img)) combined.push(img);
+      }
+      uniqueMap.set(key, { ...existing, ...p, images: combined });
+    }
+  }
+
+  return Array.from(uniqueMap.values())
     .sort((a, b) => {
       const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
       const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
@@ -829,15 +885,20 @@ function readCache(): CachePayload | null {
 
 function toLeanProperties(props: Property[]): Property[] {
   return (props || []).map(p => {
-    const firstImg = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : "";
+    const images = parsePropertyImages(p.images);
     return {
       ...p,
-      images: firstImg ? [firstImg] : [],
+      images: images.slice(0, 15),
     };
   });
 }
 
 function writeCache(payload: Omit<CachePayload, "ts">) {
+  // Also save FULL multi-image properties to IndexedDB (unlimited quota) FIRST
+  if (payload.properties && payload.properties.length > 0) {
+    savePropertiesToIndexedDb(payload.properties).catch(() => {});
+  }
+
   try {
     const leanProps = toLeanProperties(payload.properties || []);
     const leanPayload = {
@@ -856,17 +917,12 @@ function writeCache(payload: Omit<CachePayload, "ts">) {
         types: payload.types,
         properties: (payload.properties || []).slice(0, 50).map(p => ({
           ...p,
-          images: p.images?.slice(0, 1) || [],
+          images: p.images?.slice(0, 2) || [],
         })),
         settings: payload.settings,
       };
       localStorage.setItem(CACHE_KEY, JSON.stringify(ultraLean));
     } catch {}
-  }
-
-  // Also save FULL multi-image properties to IndexedDB (unlimited quota)
-  if (payload.properties && payload.properties.length > 0) {
-    savePropertiesToIndexedDb(payload.properties).catch(() => {});
   }
 }
 
@@ -879,12 +935,15 @@ export function sendRealtimeSync(event: string, payload: any) {
   let safePayload = payload;
   if (payload && payload.property) {
     const p = payload.property;
+    const images = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+    const isBase64 = images.some((img: any) => typeof img === "string" && img.startsWith("data:image"));
+    // Keep all URL images (up to 20) without exceeding WS limit. For base64, send first 1.
+    const safeImages = isBase64 ? images.slice(0, 1) : images.slice(0, 20);
     safePayload = {
       ...payload,
       property: {
         ...p,
-        // Broadcast single image to guarantee payload stays < 50KB
-        images: Array.isArray(p.images) && p.images.length > 0 ? [p.images[0]] : [],
+        images: safeImages,
       },
     };
   }
@@ -907,7 +966,15 @@ export function sendRealtimeSync(event: string, payload: any) {
 
 function sanitizeRegions(list?: Region[] | null): Region[] {
   if (!list || !list.length) return DEFAULT_REGIONS;
-  return list.map(r => {
+  const map = new Map<string, Region>();
+  DEFAULT_REGIONS.forEach(r => map.set(r.id, r));
+  list.forEach(r => {
+    if (r && r.id) {
+      const existing = map.get(r.id);
+      map.set(r.id, { ...existing, ...r, active: r.active !== undefined ? r.active : (existing?.active ?? true) });
+    }
+  });
+  return Array.from(map.values()).map(r => {
     if (r.heroImage && (r.heroImage.includes("/city-heroes/") || r.heroImage.includes("shorouk.jpg"))) {
       return { ...r, heroImage: "" };
     }
@@ -949,22 +1016,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
     const cached = readCache();
     const map = new Map<string, Property>();
-    // 1. First add all master seed properties
-    for (const p of SEED_PROPERTIES) {
-      if (p && p.id && !isPropertyDeleted(p, deletedSet)) map.set(p.id, p);
+    const isReset = typeof window !== "undefined" && localStorage.getItem("alm_platform_reset_flag") === "true";
+    // 1. First add all master seed properties if not explicitly reset (indexed by code and id)
+    if (!isReset) {
+      for (const p of SEED_PROPERTIES) {
+        if (p && p.id && !isPropertyDeleted(p, deletedSet)) {
+          const codeKey = (p.code || p.id).trim().toLowerCase();
+          map.set(codeKey, p);
+          map.set(p.id, p);
+        }
+      }
     }
-    // 2. Overlay any cached updates/edits
+    // 2. Overlay any cached updates/edits, preserving all photos
     if (cached?.properties && cached.properties.length > 0) {
       for (const p of cached.properties) {
         if (p && p.id && !isPropertyDeleted(p, deletedSet)) {
-          const existing = map.get(p.id);
+          const codeKey = (p.code || p.id).trim().toLowerCase();
+          const existing = map.get(codeKey) || map.get(p.id);
           if (existing) {
             const tExist = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
             const tCache = new Date(p.updatedAt || p.createdAt || 0).getTime();
-            if (tCache >= tExist) {
-              map.set(p.id, { ...existing, ...p });
+            const existImgs = parsePropertyImages(existing.images);
+            const pImgs = parsePropertyImages(p.images);
+            const combined = [...pImgs];
+            for (const img of existImgs) {
+              if (img && !combined.includes(img)) combined.push(img);
             }
+            const newer = tCache >= tExist ? { ...existing, ...p, images: combined } : { ...p, ...existing, images: combined };
+            map.set(codeKey, newer);
+            map.set(p.id, newer);
           } else {
+            map.set(codeKey, p);
             map.set(p.id, p);
           }
         }
@@ -1143,8 +1225,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
       if (freshProps.status === "fulfilled" && freshProps.value) {
         const protectedList = mergeFreshWithRecentEdits(freshProps.value);
-        setProperties(protectedList);
-        writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
+        setProperties(prev => {
+          const prevMap = new Map<string, Property>();
+          prev.forEach(p => {
+            if (p?.code) prevMap.set(p.code.toLowerCase().trim(), p);
+            if (p?.id) prevMap.set(p.id, p);
+          });
+          const merged = protectedList.map(fresh => {
+            const codeKey = (fresh.code || fresh.id).toLowerCase().trim();
+            const existing = prevMap.get(codeKey) || prevMap.get(fresh.id);
+            if (!existing) return fresh;
+            const freshImgs = parsePropertyImages(fresh.images);
+            const existImgs = parsePropertyImages(existing.images);
+            const combined = [...freshImgs];
+            for (const img of existImgs) {
+              if (img && !combined.includes(img)) combined.push(img);
+            }
+            return { ...existing, ...fresh, images: combined };
+          });
+          const deletedSet = getDeletedPropertyIds();
+          prev.forEach(p => {
+            if (p?.id && !merged.some(m => m.id === p.id || (m.code && p.code && m.code.toLowerCase().trim() === p.code.toLowerCase().trim())) && !isPropertyDeleted(p, deletedSet)) {
+              merged.push(p);
+            }
+          });
+          writeCache({ regions, types: propertyTypes, properties: merged, settings });
+          return merged;
+        });
       }
       if (freshSettings.status === "fulfilled" && freshSettings.value) {
         const isLocalAdminPreview = typeof window !== "undefined" && localStorage.getItem("alm_theme_scope") === "admin_only";
@@ -1287,19 +1394,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (cached.properties && cached.properties.length > 0) {
         setProperties(prev => {
           const map = new Map<string, Property>();
-          prev.forEach(p => { if (p?.id) map.set(p.id, p); });
+          prev.forEach(p => {
+            if (p?.code) map.set(p.code.toLowerCase().trim(), p);
+            if (p?.id) map.set(p.id, p);
+          });
           cached.properties.forEach(p => {
-            if (p?.id) {
-              const existing = map.get(p.id);
-              if (!existing) map.set(p.id, p);
-              else {
+            if (p) {
+              const codeKey = (p.code || p.id).toLowerCase().trim();
+              const existing = map.get(codeKey) || map.get(p.id);
+              if (!existing) {
+                map.set(codeKey, p);
+                map.set(p.id, p);
+              } else {
                 const tE = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
                 const tC = new Date(p.updatedAt || p.createdAt || 0).getTime();
-                if (tC >= tE) map.set(p.id, { ...existing, ...p });
+                const existImgs = parsePropertyImages(existing.images);
+                const pImgs = parsePropertyImages(p.images);
+                const combined = [...pImgs];
+                for (const img of existImgs) {
+                  if (img && !combined.includes(img)) combined.push(img);
+                }
+                const newer = tC >= tE ? { ...existing, ...p, images: combined } : { ...p, ...existing, images: combined };
+                map.set(codeKey, newer);
+                map.set(p.id, newer);
               }
             }
           });
-          return Array.from(map.values()).sort((a, b) => {
+          return Array.from(new Set(map.values())).sort((a, b) => {
             const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
             const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
             return tB - tA;
@@ -1334,17 +1455,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setProperties(prev => {
           const idbMap = new Map<string, Property>();
           idbProps.forEach(p => {
-            if (p?.id && !isPropertyDeleted(p, deletedSet)) idbMap.set(p.id, p);
+            if (p && !isPropertyDeleted(p, deletedSet)) {
+              if (p.code) idbMap.set(p.code.toLowerCase().trim(), p);
+              if (p.id) idbMap.set(p.id, p);
+            }
           });
           const updated = prev.map(p => {
-            const full = idbMap.get(p.id);
-            if (full && (full.images?.length || 0) > (p.images?.length || 0)) {
-              return { ...p, images: full.images };
+            const codeKey = (p.code || p.id).toLowerCase().trim();
+            const full = idbMap.get(codeKey) || (p.id ? idbMap.get(p.id) : null);
+            if (full) {
+              const prevImgs = parsePropertyImages(p.images);
+              const fullImgs = parsePropertyImages(full.images);
+              const combined = [...prevImgs];
+              for (const img of fullImgs) {
+                if (img && !combined.includes(img)) combined.push(img);
+              }
+              return { ...p, images: combined };
             }
             return p;
           });
           idbProps.filter(p => !isDummyProperty(p) && !isPropertyDeleted(p, deletedSet)).forEach(p => {
-            if (!updated.some(u => u.id === p.id)) {
+            if (!updated.some(u => u.id === p.id || (u.code && p.code && u.code.toLowerCase().trim() === p.code.toLowerCase().trim()))) {
               updated.push(p);
             }
           });
@@ -1367,15 +1498,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (destroyed) return;
       if (supabaseProps && supabaseProps.length > 0) {
         const protectedList = mergeFreshWithRecentEdits(supabaseProps);
-        setProperties(protectedList);
-        writeCache({
-          regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
-          types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
-          properties: protectedList,
-          settings: cached?.settings ?? DEFAULT_SETTINGS,
+        setProperties(prev => {
+          const prevMap = new Map<string, Property>();
+          prev.forEach(p => {
+            if (p?.code) prevMap.set(p.code.toLowerCase().trim(), p);
+            if (p?.id) prevMap.set(p.id, p);
+          });
+          const merged = protectedList.map(fresh => {
+            const codeKey = (fresh.code || fresh.id).toLowerCase().trim();
+            const existing = prevMap.get(codeKey) || prevMap.get(fresh.id);
+            if (!existing) return fresh;
+            const freshImgs = parsePropertyImages(fresh.images);
+            const existImgs = parsePropertyImages(existing.images);
+            const combined = [...freshImgs];
+            for (const img of existImgs) {
+              if (img && !combined.includes(img)) combined.push(img);
+            }
+            return { ...existing, ...fresh, images: combined };
+          });
+          const deletedSet = getDeletedPropertyIds();
+          prev.forEach(p => {
+            if (p?.id && !merged.some(m => m.id === p.id || (m.code && p.code && m.code.toLowerCase().trim() === p.code.toLowerCase().trim())) && !isPropertyDeleted(p, deletedSet)) {
+              merged.push(p);
+            }
+          });
+          writeCache({
+            regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
+            types: cached?.types?.length ? cached.types : DEFAULT_PROPERTY_TYPES,
+            properties: merged,
+            settings: cached?.settings ?? DEFAULT_SETTINGS,
+          });
+          return merged;
         });
       } else if (supabaseProps && supabaseProps.length === 0) {
-        supabaseService.seedInitialPropertiesIfEmpty().catch(() => {});
+        const isReset = typeof window !== "undefined" && localStorage.getItem("alm_platform_reset_flag") === "true";
+        if (!isReset) {
+          supabaseService.seedInitialPropertiesIfEmpty().catch(() => {});
+        }
       }
     }).catch(() => {});
 
@@ -1615,7 +1774,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
               if (p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase())) {
                 const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
                 const inTime = property.updatedAt ? new Date(property.updatedAt).getTime() : Date.now();
-                return inTime >= prevTime ? { ...p, ...property } : p;
+                const existImgs = Array.isArray(p.images) ? p.images : [];
+                const inImgs = Array.isArray(property.images) ? property.images : [];
+                const bestImages = inImgs.length >= existImgs.length ? inImgs : existImgs;
+                return inTime >= prevTime ? { ...p, ...property, images: bestImages } : p;
               }
               return p;
             });
@@ -1629,8 +1791,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         supabaseService.fetchProperties().then(props => {
           if (props && props.length > 0) {
             const protectedList = mergeFreshWithRecentEdits(props);
-            setProperties(protectedList);
-            writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
+            setProperties(prev => {
+              const prevMap = new Map<string, Property>();
+              prev.forEach(p => { if (p?.id) prevMap.set(p.id, p); });
+              const merged = protectedList.map(fresh => {
+                const existing = prevMap.get(fresh.id);
+                if (!existing) return fresh;
+                const freshImgs = Array.isArray(fresh.images) ? fresh.images : [];
+                const existImgs = Array.isArray(existing.images) ? existing.images : [];
+                const bestImgs = freshImgs.length >= existImgs.length ? freshImgs : existImgs;
+                return { ...existing, ...fresh, images: bestImgs };
+              });
+              writeCache({ regions, types: propertyTypes, properties: merged, settings });
+              return merged;
+            });
           }
         }).catch(() => {});
       } else if (event === "PROPERTY_UPDATE" && property) {
@@ -1641,7 +1815,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (match) {
               const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
               const inTime = property.updatedAt ? new Date(property.updatedAt).getTime() : Date.now();
-              return inTime >= prevTime ? { ...p, ...property } : p;
+              const existImgs = Array.isArray(p.images) ? p.images : [];
+              const inImgs = Array.isArray(property.images) ? property.images : [];
+              const bestImages = inImgs.length >= existImgs.length ? inImgs : existImgs;
+              return inTime >= prevTime ? { ...p, ...property, images: bestImages } : p;
             }
             return p;
           });
@@ -1656,6 +1833,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
           writeCache({ regions, types: propertyTypes, properties: updated, settings });
           return updated;
         });
+      } else if (event === "PROPERTY_DELETE_ALL") {
+        setProperties([]);
+        writeCache({ regions, types: propertyTypes, properties: [], settings });
       } else if ((event === "USER_ADD" || event === "USER_UPDATE") && user) {
         setUsers(prev => {
           const exists = prev.some(u => u.id === user.id);
@@ -2028,11 +2208,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (freshProps && freshProps.length > 0) {
           setProperties(prev => {
             const protectedList = mergeFreshWithRecentEdits(freshProps).filter(p => !isSystemStoreProperty(p));
-            const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
-            const mergedSig = protectedList.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}`).join("|");
+            const prevSig = prev.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}_${p.images?.length || 0}`).join("|");
+            const mergedSig = protectedList.map(p => `${p.id}_${p.code}_${p.price}_${p.status}_${p.title}_${p.images?.length || 0}`).join("|");
             if (prevSig !== mergedSig) {
-              writeCache({ regions, types: propertyTypes, properties: protectedList, settings });
-              return protectedList;
+              const prevMap = new Map<string, Property>();
+              prev.forEach(p => { if (p?.id) prevMap.set(p.id, p); });
+              const merged = protectedList.map(fresh => {
+                const existing = prevMap.get(fresh.id);
+                if (!existing) return fresh;
+                const freshImgs = Array.isArray(fresh.images) ? fresh.images : [];
+                const existImgs = Array.isArray(existing.images) ? existing.images : [];
+                const bestImgs = freshImgs.length >= existImgs.length ? freshImgs : existImgs;
+                return { ...existing, ...fresh, images: bestImgs };
+              });
+              writeCache({ regions, types: propertyTypes, properties: merged, settings });
+              return merged;
             }
             return prev;
           });
@@ -2942,9 +3132,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     // 4. Update IndexedDB cache
-    if (nextProperties.length > 0) {
-      savePropertiesToIndexedDb(nextProperties).catch(() => {});
-    }
+    savePropertiesToIndexedDb(nextProperties).catch(() => {});
 
     // 5. Delete from Supabase
     await supabaseService.deleteProperty(targetId).catch(() => {});
@@ -3008,9 +3196,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
 
     // 4. Update IndexedDB cache
-    if (nextProperties.length > 0) {
-      savePropertiesToIndexedDb(nextProperties).catch(() => {});
-    }
+    savePropertiesToIndexedDb(nextProperties).catch(() => {});
 
     // 5. Delete from Supabase
     await supabaseService.bulkDeleteProperties(ids).catch(() => {});
@@ -3057,6 +3243,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
       entityType: "property",
       title: `تعديل مجمّع لـ (${ids.length}) عقارات`,
     });
+  };
+
+  const resetAllProperties = async () => {
+    // 1. Wipe React state
+    setProperties([]);
+    // 2. Clear IndexedDB
+    await clearPropertiesFromIndexedDb().catch(() => {});
+    // 3. Clear all storage and caches
+    try {
+      localStorage.removeItem("alm_properties");
+      localStorage.removeItem("alm_recent_property_edits");
+      localStorage.removeItem("alm_deleted_properties");
+      localStorage.removeItem("alm_property_overrides");
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.setItem("alm_platform_reset_flag", "true");
+    } catch {}
+    // 4. Wipe Supabase properties table
+    await supabaseService.clearAllProperties().catch(() => {});
+    // 5. Broadcast to all clients
+    sendRealtimeSync("PROPERTY_DELETE_ALL", {});
+    writeCache({ regions, types: propertyTypes, properties: [], settings });
+    logActivity({
+      action: "deleted",
+      entityType: "system",
+      title: "إعادة ضبط المنصة وحذف جميع العقارات والبيانات",
+    });
+    return true;
   };
 
   const importProperties = (items: Omit<Property, "id" | "createdAt">[]) => {
@@ -3651,7 +3864,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       brokers, addBroker, updateBroker, deleteBroker,
       addTiktokVideo, updateTiktokVideo, deleteTiktokVideo,
       addAd, updateAd, deleteAd, reorderAds, trackAdView, trackAdClick,
-      logActivity, clearActivityLogs,
+      logActivity, clearActivityLogs, resetAllProperties,
     }}>
       {children}
     </DataContext.Provider>

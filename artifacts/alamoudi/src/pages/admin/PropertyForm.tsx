@@ -23,6 +23,7 @@ import { checkUserPermission } from "@/lib/permissions";
 
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 import { compressMultipleImages } from "@/lib/imageOptimizer";
+import { uploadMultipleToCloudinary, getPropertyCloudinaryFolder } from "@/lib/cloudinaryService";
 
 export default function PropertyForm() {
   const { regions, propertyTypes, users, addProperty, updateProperty, properties, brokers } = useData();
@@ -217,8 +218,11 @@ export default function PropertyForm() {
     try {
       const optimized = await compressMultipleImages(files, remainingSlots);
       if (optimized.length > 0) {
-        setImages(prev => [...prev, ...optimized]);
-        toast({ title: `تم تحسين وضغط ${optimized.length} صورة بتقنية WebP بنجاح ✓` });
+        toast({ title: `جاري رفع ${optimized.length} صورة إلى السحابة السريعة...` });
+        const folder = getPropertyCloudinaryFolder(form.regionId, form.code);
+        const uploaded = await uploadMultipleToCloudinary(optimized, folder);
+        setImages(prev => [...prev, ...uploaded]);
+        toast({ title: `تم رفع ${uploaded.length} صورة بنجاح إلى السحابة ✓` });
       }
     } catch (err) {
       toast({ title: "تعذر معالجة بعض الصور", variant: "destructive" });
@@ -314,10 +318,19 @@ export default function PropertyForm() {
       images,
     };
     try {
+      // Offload any remaining base64 images to Cloudinary to keep DB lightweight
+      let finalImages = [...images];
+      const hasBase64 = finalImages.some(img => typeof img === "string" && img.startsWith("data:image/"));
+      if (hasBase64) {
+        const folder = getPropertyCloudinaryFolder(form.regionId, form.code);
+        finalImages = await uploadMultipleToCloudinary(finalImages, folder);
+      }
+      const finalPayload = { ...payload, images: finalImages };
+
       const targetId = activeProperty?.id || existing?.id || params.id;
       const saved = isEdit && targetId
-        ? await updateProperty(targetId, payload)
-        : await addProperty(payload);
+        ? await updateProperty(targetId, finalPayload)
+        : await addProperty(finalPayload);
       if (!saved) return;
 
       if (!isEdit && notifySubscribers) {

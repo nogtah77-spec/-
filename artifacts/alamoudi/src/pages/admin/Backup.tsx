@@ -74,10 +74,12 @@ export default function Backup() {
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleReset = () => {
-    if (!confirm("هل أنت متأكد؟ سيتم حذف جميع البيانات ولا يمكن التراجع عن هذا الإجراء.")) return;
+  const handleReset = async () => {
+    if (!confirm("هل أنت متأكد؟ سيتم حذف جميع البيانات والعقارات من السحابة والمحلي نهائياً.")) return;
+    await data.resetAllProperties();
     KEYS.forEach(k => localStorage.removeItem(k));
-    toast({ title: "تم حذف جميع البيانات", description: "يتم تحديث الصفحة..." });
+    localStorage.setItem("alm_platform_reset_flag", "true");
+    toast({ title: "تم تنظيف وإعادة ضبط المنصة بنجاح", description: "يتم تحديث الصفحة..." });
     setTimeout(() => window.location.reload(), 1500);
   };
 

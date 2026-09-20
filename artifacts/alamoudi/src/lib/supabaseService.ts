@@ -66,6 +66,69 @@ export function propertyToRow(p: Property) {
   };
 }
 
+// Universal Multi-Format Image Parser
+// Handles JSON arrays, nested stringified arrays, Postgres array literals, and single strings
+export function parsePropertyImages(rawImages: any): string[] {
+  if (!rawImages) return [];
+
+  // 1. If already an array
+  if (Array.isArray(rawImages)) {
+    const flat: string[] = [];
+    for (const item of rawImages) {
+      if (!item) continue;
+      if (typeof item === "string") {
+        const trimmed = item.trim();
+        if (!trimmed) continue;
+        if ((trimmed.startsWith("[") && trimmed.endsWith("]")) || (trimmed.startsWith("{") && trimmed.endsWith("}"))) {
+          flat.push(...parsePropertyImages(trimmed));
+        } else {
+          flat.push(trimmed);
+        }
+      } else if (typeof item === "object") {
+        const u = item.url || item.src || item.image || item.path;
+        if (u && typeof u === "string" && u.trim()) flat.push(u.trim());
+      }
+    }
+    return Array.from(new Set(flat.filter(Boolean)));
+  }
+
+  // 2. If string
+  if (typeof rawImages === "string") {
+    const trimmed = rawImages.trim();
+    if (!trimmed) return [];
+
+    // JSON Array string
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsePropertyImages(parsed);
+        }
+      } catch {}
+    }
+
+    // Postgres Array string literal: {"item1","item2"} or {item1,item2}
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      const inner = trimmed.slice(1, -1).trim();
+      if (!inner) return [];
+      const matches: string[] = [];
+      const regex = /"((?:[^"\\]|\\.)*)"|([^,]+)/g;
+      let m;
+      while ((m = regex.exec(inner)) !== null) {
+        const val = m[1] !== undefined ? m[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\') : (m[2] ? m[2].trim() : "");
+        if (val) matches.push(val);
+      }
+      if (matches.length > 0) {
+        return parsePropertyImages(matches);
+      }
+    }
+
+    return [trimmed];
+  }
+
+  return [];
+}
+
 // Helper to convert DB Row to Property
 export function rowToProperty(r: any): Property {
   return {
@@ -88,7 +151,7 @@ export function rowToProperty(r: any): Property {
     status: r.status || "active",
     featured: Boolean(r.featured),
     agentType: r.agent_type || "direct",
-    images: Array.isArray(r.images) ? r.images : [],
+    images: parsePropertyImages(r.images),
     videoUrl: r.video_url || "",
     externalUrl: r.external_url || "",
     mapsUrl: r.maps_url || "",
@@ -121,20 +184,41 @@ export const supabaseService = {
       ]);
       if (propsRes.error) throw propsRes.error;
       if (!propsRes.data || propsRes.data.length === 0) return null;
-      return propsRes.data
+
+      // Unify properties by code and preserve/combine all photos
+      const codeMap = new Map<string, Property>();
+      propsRes.data
         .filter((r: any) => {
           const id = String(r.id || "");
           const code = String(r.code || "");
           return !id.startsWith("__") && !code.startsWith("__");
         })
-        .map((r: any) => {
+        .forEach((r: any) => {
           const prop = rowToProperty(r);
           const cloudViews = viewsMap[prop.id] ?? (prop.code ? viewsMap[prop.code] : undefined);
           if (cloudViews !== undefined) {
             prop.views = Number(cloudViews);
           }
-          return prop;
+          const codeKey = (prop.code || prop.id).toLowerCase().trim();
+          const existing = codeMap.get(codeKey);
+          if (!existing) {
+            codeMap.set(codeKey, prop);
+          } else {
+            // Combine all unique images across rows
+            const existImgs = Array.isArray(existing.images) ? existing.images : [];
+            const newImgs = Array.isArray(prop.images) ? prop.images : [];
+            const mergedImgs = [...existImgs];
+            for (const img of newImgs) {
+              if (img && !mergedImgs.includes(img)) {
+                mergedImgs.push(img);
+              }
+            }
+            const newer = new Date(prop.updatedAt || prop.createdAt || 0) >= new Date(existing.updatedAt || existing.createdAt || 0) ? prop : existing;
+            codeMap.set(codeKey, { ...existing, ...newer, images: mergedImgs });
+          }
         });
+
+      return Array.from(codeMap.values());
     } catch (e) {
       console.warn("Supabase fetch properties error:", e);
       return null;
@@ -192,6 +276,18 @@ export const supabaseService = {
       return true;
     } catch (e) {
       console.warn("Supabase bulk delete error:", e);
+      return false;
+    }
+  },
+
+  // Clear all properties from Supabase
+  async clearAllProperties(): Promise<boolean> {
+    if (!supabase) return false;
+    try {
+      await supabase.from("properties").delete().neq("id", "__keep__");
+      return true;
+    } catch (e) {
+      console.warn("Supabase clear all properties error:", e);
       return false;
     }
   },

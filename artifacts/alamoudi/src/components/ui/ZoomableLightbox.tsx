@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,16 @@ export function ZoomableLightbox({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [currentIndex, onClose, prev, next]);
+
+  // Lock body scroll while lightbox is open
+  useEffect(() => {
+    if (currentIndex === null) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [currentIndex]);
 
   if (currentIndex === null || images.length === 0) return null;
 
@@ -182,11 +193,21 @@ export function ZoomableLightbox({
       const dx = touch.clientX - touchState.current.startX;
       const dy = touch.clientY - touchState.current.startY;
 
-      // When scale === 1 and swiped horizontally
-      if (scale <= 1.05 && Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-        if (dx > 0) prev(); // Swipe right -> previous in RTL
-        else next();       // Swipe left -> next in RTL
-      } else if (scale < 1.05) {
+      // When scale <= 1.05:
+      if (scale <= 1.05) {
+        // Vertical swipe to dismiss (swipe down or up > 60px)
+        if (Math.abs(dy) > 60 && Math.abs(dy) > Math.abs(dx) * 1.3) {
+          onClose();
+          return;
+        }
+
+        // Horizontal swipe to navigate images (RTL)
+        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+          if (dx > 0) prev(); // Swipe right -> previous in RTL
+          else next();       // Swipe left -> next in RTL
+          return;
+        }
+
         resetZoom();
       }
     }
@@ -207,37 +228,69 @@ export function ZoomableLightbox({
     }
   };
 
-  return (
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && scale <= 1.05) {
+      onClose();
+    }
+  };
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center select-none touch-none overflow-hidden animate-in fade-in duration-200"
+      className="fixed inset-0 z-[999999] bg-black/95 flex flex-col items-center justify-center select-none touch-none overflow-hidden animate-in fade-in duration-200"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top bar */}
-      <div className="absolute top-4 inset-x-4 z-20 flex items-center justify-between pointer-events-none">
-        {/* Close Button on Left */}
-        <button
-          className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm pointer-events-auto cursor-pointer"
-          onClick={onClose}
-          aria-label="إغلاق"
-        >
-          <X className="h-5 w-5 text-white" />
-        </button>
+      {/* Fixed Close Button - Right corner (LTR/desktop close standard) */}
+      <button
+        type="button"
+        className="fixed top-4 right-4 sm:top-5 sm:right-6 z-[1000000] w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 active:scale-90 text-white flex items-center justify-center backdrop-blur-md border-2 border-white/70 shadow-[0_4px_25px_rgba(0,0,0,0.85)] transition-all duration-150 cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="إغلاق المعرض"
+        title="إغلاق (Esc)"
+      >
+        <X className="w-5 h-5 text-white stroke-[2.5]" />
+      </button>
 
-        {/* Counter in the center */}
-        <div className="text-white/80 text-sm font-medium tabular-nums px-3 py-1 rounded-full bg-black/40 backdrop-blur-sm border border-white/10">
-          {currentIndex + 1} / {images.length}
-        </div>
+      {/* Fixed Close Button - Left corner (RTL close standard) */}
+      <button
+        type="button"
+        className="fixed top-4 left-4 sm:top-5 sm:left-6 z-[1000000] w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 active:scale-90 text-white flex items-center justify-center backdrop-blur-md border-2 border-white/70 shadow-[0_4px_25px_rgba(0,0,0,0.85)] transition-all duration-150 cursor-pointer"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="إغلاق المعرض"
+        title="إغلاق (Esc)"
+      >
+        <X className="w-5 h-5 text-white stroke-[2.5]" />
+      </button>
 
-        {/* Balance space on right */}
-        <div className="w-11" />
+      {/* Top Counter - Center */}
+      <div className="fixed top-4 sm:top-5 left-1/2 -translate-x-1/2 z-[1000000] text-white/95 text-xs sm:text-sm font-bold tabular-nums px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/30 shadow-[0_4px_15px_rgba(0,0,0,0.6)] select-none pointer-events-none">
+        {currentIndex + 1} / {images.length}
       </div>
 
-      {/* Main Image Container */}
+      {/* Main Image Container — Clicking backdrop closes lightbox */}
       <div
         className="w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing"
+        onClick={handleBackdropClick}
         onDoubleClick={handleDoubleClick}
       >
         <img
@@ -255,13 +308,18 @@ export function ZoomableLightbox({
 
       {/* Bottom Navigation (Only visible when scale === 1) */}
       {images.length > 1 && scale <= 1.05 && (
-        <div className="absolute bottom-6 flex items-center gap-4 z-20 animate-in fade-in duration-200">
+        <div className="absolute bottom-6 flex items-center gap-4 z-50 animate-in fade-in duration-200">
           <button
-            onClick={prev}
-            className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm cursor-pointer"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              prev();
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="w-11 h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 border-2 border-white/60 flex items-center justify-center shadow-[0_4px_25px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95"
             aria-label="الصورة السابقة"
           >
-            <ChevronRight className="h-6 w-6 text-white" />
+            <ChevronRight className="h-6 w-6 text-white stroke-[2.5]" />
           </button>
           <div className="flex gap-1.5 pointer-events-none">
             {images.length <= 10 &&
@@ -278,14 +336,20 @@ export function ZoomableLightbox({
               ))}
           </div>
           <button
-            onClick={next}
-            className="w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 active:bg-white/40 flex items-center justify-center transition-colors backdrop-blur-sm cursor-pointer"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              next();
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            className="w-11 h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 border-2 border-white/60 flex items-center justify-center shadow-[0_4px_25px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95"
             aria-label="الصورة التالية"
           >
-            <ChevronLeft className="h-6 w-6 text-white" />
+            <ChevronLeft className="h-6 w-6 text-white stroke-[2.5]" />
           </button>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

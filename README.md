@@ -70,6 +70,11 @@
 - **إخفاء ذكي للبند عند عدم التحديد:** لا يظهر بند «عدد طوابق العقار» إطلاقاً في صفحة التفاصيل إلا إذا أدخل المستخدم عدداً موجباً للطوابق (`> 0`)، مما يحافظ على نظافة واحترافية تفاصيل الشقق السكنية.
 - **تكامل سحابي متزن مع Supabase:** إزالة أي قيم افتراضية قسرية في جلب البيانات من السحابة، مع تصفير جميع العقارات الحالية بنجاح عبر السحابة وملفات البذور المحلية وتحديث كاش المنصة (`alm_cache_v6`).
 
+### 16. ☁️ معمارية التخزين الهجين وفصل وسائط Cloudinary (Hybrid Cloud Storage & CDN)
+- **فصل جذري للوسائط (Separation of Concerns):** ترحيل كامل وسائط وصور العقارات إلى شبكة التوزيع السحابية المتخصصة `Cloudinary CDN` وحفظ البيانات النصية والروابط فقط في قاعدة بيانات `Supabase PostgreSQL`. هذا الفصل يحل بشكل نهائي وجذري أزمة استهلاك حزمة الباندويث (Egress Quota) ويضمن استقرار المنصة وسرعة تصفح فائقة.
+- **تنظيم هرمي ذكي للمجلدات:** يتم تنظيم وحفظ صور كل عقار تلقائياً داخل مجلدات مهيكلة باسم المنطقة وكود العقار (`alamoudi_properties/{region}/{code}`) لسهولة الإدارة والتتبع السحابي.
+- **حذف آمن ومتزامن:** عند حذف أي عقار من المنصة، تُحذف بياناته بالكامل من السحابة (Supabase) وقاعدة البيانات المحلية (IndexedDB) وكاش المتصفح لضمان تنظيف شامل وتفادي بقاء أي بيانات معلقة.
+
 ---
 
 ## 🛠️ حزمة التقنيات المستخدمة (Tech Stack)
@@ -78,7 +83,8 @@
 | :--- | :--- |
 | **الواجهة الأمامية** | React 18, TypeScript, Vite, Wouter (Routing), TanStack Query |
 | **التصميم والهوية** | Tailwind CSS v4, Radix UI Primitives, Lucide Icons, Glassmorphism & Gold/Midnight Theme |
-| **السحابة وقاعدة البيانات** | Supabase Cloud (PostgreSQL, Realtime Presence Engine, Storage) |
+| **قاعدة البيانات والسحابة** | Supabase Cloud (PostgreSQL, Realtime Presence Engine, Storage) |
+| **إدارة الوسائط والصور** | Cloudinary CDN (Automated Compression, Structured Folders & WebP Delivery) |
 | **الإشعارات والـ PWA** | Web Push API, VAPID Encryption, Service Worker v15, Web App Manifest |
 | **الذكاء الاصطناعي** | Google Gemini Pro API + Fast Local Arabic NLP Parser |
 | **الاستضافة والنشر** | Vercel Global Edge Network, GitHub CI/CD |

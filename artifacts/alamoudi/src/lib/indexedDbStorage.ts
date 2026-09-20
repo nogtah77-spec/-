@@ -37,7 +37,32 @@ export async function savePropertiesToIndexedDb(properties: any[]): Promise<bool
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
       const store = tx.objectStore(STORE_NAME);
-      store.put({ key: "cached_properties", data: properties, timestamp: Date.now() });
+      const getReq = store.get("cached_properties");
+      getReq.onsuccess = () => {
+        const existingData: any[] = getReq.result?.data || [];
+        const existingMap = new Map<string, any>();
+        existingData.forEach((p) => {
+          if (p?.id) existingMap.set(p.id, p);
+          if (p?.code) existingMap.set(p.code.toLowerCase().trim(), p);
+        });
+
+        // Merge, guaranteeing that we combine and accumulate all unique images
+        const merged = properties.map((p) => {
+          const old = existingMap.get(p.id) || (p.code ? existingMap.get(p.code.toLowerCase().trim()) : null);
+          if (old) {
+            const oldImgs: string[] = Array.isArray(old.images) ? old.images : [];
+            const newImgs: string[] = Array.isArray(p.images) ? p.images : [];
+            const combined = [...newImgs];
+            for (const img of oldImgs) {
+              if (img && !combined.includes(img)) combined.push(img);
+            }
+            return { ...old, ...p, images: combined };
+          }
+          return p;
+        });
+
+        store.put({ key: "cached_properties", data: merged, timestamp: Date.now() });
+      };
       tx.oncomplete = () => {
         db.close();
         resolve(true);
@@ -77,3 +102,26 @@ export async function getPropertiesFromIndexedDb(): Promise<any[] | null> {
     return null;
   }
 }
+
+export async function clearPropertiesFromIndexedDb(): Promise<boolean> {
+  try {
+    const db = await openDb();
+    if (!db) return false;
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.delete("cached_properties");
+      req.onsuccess = () => {
+        db.close();
+        resolve(true);
+      };
+      req.onerror = () => {
+        db.close();
+        resolve(false);
+      };
+    });
+  } catch {
+    return false;
+  }
+}
+

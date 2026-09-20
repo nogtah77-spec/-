@@ -1072,15 +1072,16 @@ html[data-theme="midnight"] [class*="bg-[#C5A059]/30"] {
   color: #BC9876 !important;
 }
 
-/* ── إلغاء تام لحركة الإضاءة والتوهج والخطوط العلوية والبلور في الثيم الجديد ── */
-html[data-theme="midnight"] [class*="via-[#C5A059]"],
-html[data-theme="midnight"] [class*="via-[#c5a059]"],
+/* ── إلغاء تام لحركة الإضاءة والتوهج والخطوط العلوية في الثيم الجديد (دون المساس بالأزرار) ── */
+html[data-theme="midnight"] [class*="via-[#C5A059]"]:not(button):not(a),
+html[data-theme="midnight"] [class*="via-[#c5a059]"]:not(button):not(a),
 html[data-theme="midnight"] [class*="h-[1px]"][class*="bg-gradient-to-r"],
-html[data-theme="midnight"] [class*="rounded-full"][class*="blur-"],
-html[data-theme="midnight"] .blur-md,
-html[data-theme="midnight"] .blur-lg,
-html[data-theme="midnight"] .blur-xl,
-html[data-theme="midnight"] .blur-3xl {
+html[data-theme="midnight"] [class*="rounded-full"][class*="blur-"]:not(button):not(a),
+html[data-theme="midnight"] .blur-md:not(button):not(a),
+html[data-theme="midnight"] .blur-lg:not(button):not(a),
+html[data-theme="midnight"] .blur-xl:not(button):not(a),
+html[data-theme="midnight"] .blur-2xl:not(button):not(a),
+html[data-theme="midnight"] .blur-3xl:not(button):not(a) {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
@@ -1347,13 +1348,23 @@ html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .glass-navbar {
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.14) !important;
 }
 
-/* 6. إلغاء خطوط التوهج والإضاءة المزعجة بالثيم الكلاسيكي */
-html[data-theme="classic"] [class*="via-[#C5A059]"],
+/* 6. إلغاء خطوط التوهج والإضاءة المزعجة بالثيم الكلاسيكي (دون المساس بالأزرار) ── */
+html[data-theme="classic"] [class*="via-[#C5A059]"]:not(button):not(a),
 html[data-theme="classic"] [class*="h-[1px]"][class*="bg-gradient-to-r"],
-html[data-theme="classic"] [class*="rounded-full"][class*="blur-"],
-html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="via-[#C5A059]"],
+html[data-theme="classic"] [class*="rounded-full"][class*="blur-"]:not(button):not(a),
+html[data-theme="classic"] .blur-md:not(button):not(a),
+html[data-theme="classic"] .blur-lg:not(button):not(a),
+html[data-theme="classic"] .blur-xl:not(button):not(a),
+html[data-theme="classic"] .blur-2xl:not(button):not(a),
+html[data-theme="classic"] .blur-3xl:not(button):not(a),
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="via-[#C5A059]"]:not(button):not(a),
 html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="h-[1px]"][class*="bg-gradient-to-r"],
-html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="rounded-full"][class*="blur-"] {
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) [class*="rounded-full"][class*="blur-"]:not(button):not(a),
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .blur-md:not(button):not(a),
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .blur-lg:not(button):not(a),
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .blur-xl:not(button):not(a),
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .blur-2xl:not(button):not(a),
+html:not([data-theme="charcoal"]):not([data-theme="midnight"]) .blur-3xl:not(button):not(a) {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;

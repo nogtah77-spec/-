@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -18,17 +19,16 @@ import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { checkUserPermission } from "@/lib/permissions";
-import { useData } from "@/context/DataContext";
+import { useData, type Property } from "@/context/DataContext";
 import { formatNumber } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
-import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
 import { PropertyShareModal } from "@/components/property/PropertyShareModal";
 import { updatePageMeta } from "@/lib/meta";
-import { supabaseService, rowToProperty } from "@/lib/supabaseService";
+import { supabaseService, rowToProperty, parsePropertyImages } from "@/lib/supabaseService";
 import { supabase } from "@/lib/supabaseClient";
 
 const categoryLabels: Record<string, string> = {
@@ -88,28 +88,47 @@ export default function PropertyDetails() {
     setDirectChecked(false);
   }, [cleanId]);
 
-  // 1. Find by ID or by Code (case-insensitive)
+  // 1. Find by ID or by Code (case-insensitive) across all properties
   const property = useMemo(() => {
     if (!cleanId) return null;
     const cleanLower = cleanId.toLowerCase();
-    const found = (properties || []).find(
+    const matches = (properties || []).filter(
       (p) =>
         p &&
         ((p.id && String(p.id).trim() === cleanId) ||
          (p.code && String(p.code).trim().toLowerCase() === cleanLower) ||
          (p.id && String(p.id).toLowerCase() === cleanLower))
     );
-    return found || directProperty;
+
+    let bestFound: Property | null = null;
+    for (const m of matches) {
+      if (!bestFound || (m.images?.length || 0) > (bestFound.images?.length || 0)) {
+        bestFound = m;
+      }
+    }
+
+    if (bestFound && directProperty) {
+      const foundImgs = Array.isArray(bestFound.images) ? bestFound.images : [];
+      const directImgs = Array.isArray(directProperty.images) ? directProperty.images : [];
+      const combined = [...directImgs];
+      for (const img of foundImgs) {
+        if (img && !combined.includes(img)) combined.push(img);
+      }
+      return { ...bestFound, ...directProperty, images: combined };
+    }
+    return directProperty || bestFound;
   }, [properties, cleanId, directProperty]);
 
-  // 2. Direct fallback to Supabase if not in memory
+  // 2. Direct fallback to Supabase if not in memory or if memory has <= 1 image
   useEffect(() => {
     if (!cleanId) {
       setDirectChecked(true);
       return;
     }
 
-    if (property) {
+    const currentImgs = property && Array.isArray(property.images) ? property.images : [];
+    // Only skip fetching if we already have the full multi-image gallery (> 1 image)
+    if (property && currentImgs.length > 1) {
       setDirectChecked(true);
       return;
     }
@@ -124,30 +143,29 @@ export default function PropertyDetails() {
 
     void (async () => {
       try {
-        // 1. Try finding by ID first
-        let res = await supabase
+        // Query by id OR by code, order by created_at desc, and inspect ALL returned rows
+        const { data, error } = await supabase
           .from("properties")
           .select("*")
-          .eq("id", cleanId)
-          .maybeSingle();
-
-        // 2. Fallback to searching by code (case-insensitive)
-        if (!res.data) {
-          res = await supabase
-            .from("properties")
-            .select("*")
-            .ilike("code", cleanId)
-            .maybeSingle();
-        }
+          .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
+          .order("created_at", { ascending: false })
+          .limit(20);
 
         if (cancelled) return;
-        if (res.data && !res.error) {
-          try {
-            const mapped = rowToProperty(res.data);
-            setDirectProperty(mapped);
-          } catch (e) {
-            console.warn("Error mapping property:", e);
+        if (data && data.length > 0) {
+          // Combine all unique images across any matching rows for this property
+          const allImages: string[] = [];
+          for (const r of data) {
+            const imgs = parsePropertyImages(r.images);
+            for (const img of imgs) {
+              if (img && !allImages.includes(img)) allImages.push(img);
+            }
           }
+          const primaryProp = rowToProperty(data[0]);
+          if (allImages.length > (primaryProp.images?.length || 0)) {
+            primaryProp.images = allImages;
+          }
+          setDirectProperty(primaryProp);
         }
       } catch (err) {
         console.warn("Direct property fetch error:", err);
@@ -162,42 +180,72 @@ export default function PropertyDetails() {
     return () => {
       cancelled = true;
     };
-  }, [cleanId, property ? true : false]);
+  }, [cleanId, property?.images?.length || 0]);
 
   const images = useMemo(() => {
     if (!property?.images) return [];
-    if (Array.isArray(property.images)) return property.images.filter(Boolean);
-    if (typeof property.images === "string") {
-      try {
-        const parsed = JSON.parse(property.images);
-        if (Array.isArray(parsed)) return parsed.filter(Boolean);
-      } catch {}
-      return [property.images];
-    }
-    return [];
+    return parsePropertyImages(property.images);
   }, [property?.images]);
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
   const [downloadAllPending, setDownloadAllPending] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const lbTouch = useRef<{ x: number; y: number } | null>(null);
+  const lbTouch = useRef<{ x: number; y: number; target: HTMLElement | null } | null>(null);
 
   const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
   const lbNext = useCallback(() => setLightboxIdx(i => i === null ? null : (i + 1) % images.length), [images.length]);
 
   const lbTouchStart = (e: React.TouchEvent) => {
-    lbTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    lbTouch.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      target: e.target as HTMLElement,
+    };
   };
   const lbTouchEnd = (e: React.TouchEvent) => {
     if (!lbTouch.current) return;
     const dx = e.changedTouches[0].clientX - lbTouch.current.x;
     const dy = e.changedTouches[0].clientY - lbTouch.current.y;
+    const dist = Math.hypot(dx, dy);
+    const startTarget = lbTouch.current.target;
     lbTouch.current = null;
-    if (Math.abs(dx) > Math.abs(dy) + 10 && Math.abs(dx) >= 48) {
-      if (dx > 0) lbPrev(); else lbNext();
+
+    // Swipe horizontal to navigate images
+    if (Math.abs(dx) > Math.abs(dy) + 10 && Math.abs(dx) >= 30) {
+      if (images.length > 1) {
+        if (dx > 0) lbPrev(); else lbNext();
+      }
+      return;
+    }
+
+    // Tap on empty area outside image -> close lightbox immediately on mobile
+    if (dist < 15) {
+      const endTarget = e.target as HTMLElement;
+      const isStartOnImgOrBtn = startTarget?.tagName?.toLowerCase() === "img" || !!startTarget?.closest("button");
+      const isEndOnImgOrBtn = endTarget?.tagName?.toLowerCase() === "img" || !!endTarget?.closest("button");
+      if (!isStartOnImgOrBtn && !isEndOnImgOrBtn) {
+        setLightboxIdx(null);
+      }
     }
   };
+
+  // Lightbox keyboard controls (Esc to close, arrows to navigate) and body scroll lock
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+      else if (e.key === "ArrowRight") lbPrev();
+      else if (e.key === "ArrowLeft") lbNext();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [lightboxIdx, lbPrev, lbNext]);
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
@@ -396,17 +444,188 @@ export default function PropertyDetails() {
   const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
   const showDetailVideoPoster = images.length === 0 && propHasVideo && (!detailVideoThumb || detailThumbFailed);
 
+  const isNew = () => {
+    if (!property) return false;
+    try {
+      const created = property.createdAt || (property as any).created_at;
+      if (!created) return false;
+      const time = new Date(created).getTime();
+      return time > 0 && Date.now() - time <= 7 * 86400000;
+    } catch {
+      return false;
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      {/* Zoomable Lightbox with Pinch-to-zoom & Double-tap */}
-      <ZoomableLightbox
-        images={images}
-        currentIndex={lightboxIdx}
-        onClose={() => setLightboxIdx(null)}
-        onChangeIndex={setLightboxIdx}
-      />
+      {/* Lightbox Portal */}
+      {lightboxIdx !== null && images.length > 0 && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[1000000] bg-black/95 flex flex-col items-center justify-center select-none"
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.tagName.toLowerCase() !== "img" && !target.closest("button")) {
+              setLightboxIdx(null);
+            }
+          }}
+          onTouchStart={lbTouchStart}
+          onTouchEnd={lbTouchEnd}
+        >
+
+          {/* X على اليمين — لضمان الرؤية من أي زاوية */}
+          <button
+            type="button"
+            className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[1000005] w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxIdx(null);
+            }}
+            onTouchEnd={(e) => {
+              e.stopPropagation();
+              setLightboxIdx(null);
+            }}
+            aria-label="إغلاق"
+            title="إغلاق (Esc)"
+          >
+            <X className="w-6 h-6 text-white stroke-[2.5]" />
+          </button>
+
+          {/* العداد بأعلى المنتصف */}
+          <div className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[1000005] text-white/95 text-xs sm:text-sm font-bold tabular-nums px-4 py-1.5 rounded-full bg-[#161B20] border border-white/50 shadow-xl pointer-events-none select-none">
+            {lightboxIdx + 1} / {images.length}
+          </div>
+
+          {/* سهم التنقل الأيمن - في منتصف الشاشة عمودياً */}
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                lbPrev();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                lbPrev();
+              }}
+              className="fixed top-1/2 -translate-y-1/2 right-3 sm:right-6 z-[1000005] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
+              aria-label="الصورة السابقة"
+              title="السابق"
+            >
+              <ChevronRight className="w-7 h-7 sm:w-8 sm:h-8 text-white stroke-[2.5]" />
+            </button>
+          )}
+
+          {/* سهم التنقل الأيسر - في منتصف الشاشة عمودياً */}
+          {images.length > 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                lbNext();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                lbNext();
+              }}
+              className="fixed top-1/2 -translate-y-1/2 left-3 sm:left-6 z-[1000005] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
+              aria-label="الصورة التالية"
+              title="التالي"
+            >
+              <ChevronLeft className="w-7 h-7 sm:w-8 sm:h-8 text-white stroke-[2.5]" />
+            </button>
+          )}
+
+          {/* الصورة الرئيسية */}
+          <div className="relative max-h-[80vh] max-w-[88vw] flex items-center justify-center pointer-events-none">
+            <img
+              src={images[lightboxIdx]}
+              alt=""
+              draggable={false}
+              onClick={(e) => e.stopPropagation()}
+              onTouchEnd={(e) => e.stopPropagation()}
+              className="max-h-[78vh] max-w-[86vw] w-auto h-auto object-contain rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.95)] select-none pointer-events-auto"
+            />
+          </div>
+
+          {/* شريط التحكم السفلي والأسهم والمؤشر */}
+          <div
+            className="fixed z-[1000005] flex items-center gap-3 px-4 py-2 rounded-full bg-[#161B20] border border-white/50 shadow-2xl"
+            style={{ bottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 16px) + 16px))", left: "50%", transform: "translateX(-50%)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {images.length > 1 ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  lbPrev();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  lbPrev();
+                }}
+                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 active:scale-90 flex items-center justify-center text-white cursor-pointer transition-all"
+                aria-label="السابق"
+              >
+                <ChevronRight className="w-5 h-5 text-white stroke-[2.5]" />
+              </button>
+            ) : (
+              <div
+                className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/30 cursor-not-allowed select-none"
+                title="صورة وحيدة"
+              >
+                <ChevronRight className="w-5 h-5 text-white/30 stroke-[2]" />
+              </div>
+            )}
+
+            <div className="flex items-center gap-1.5 px-2">
+              {images.length > 1 && images.length <= 12 &&
+                images.map((_: string, i: number) => (
+                  <span
+                    key={i}
+                    className={cn(
+                      "block rounded-full transition-all duration-200",
+                      i === lightboxIdx
+                        ? "w-4 h-1.5 bg-[#C5A059] shadow"
+                        : "w-1.5 h-1.5 bg-white/40"
+                    )}
+                  />
+                ))}
+              <span className="text-white/95 text-xs font-bold tabular-nums pr-1">
+                {lightboxIdx + 1} / {images.length}
+              </span>
+            </div>
+
+            {images.length > 1 ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  lbNext();
+                }}
+                onTouchEnd={(e) => {
+                  e.stopPropagation();
+                  lbNext();
+                }}
+                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 active:scale-90 flex items-center justify-center text-white cursor-pointer transition-all"
+                aria-label="التالي"
+              >
+                <ChevronLeft className="w-5 h-5 text-white stroke-[2.5]" />
+              </button>
+            ) : (
+              <div
+                className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/30 cursor-not-allowed select-none"
+                title="صورة وحيدة"
+              >
+                <ChevronLeft className="w-5 h-5 text-white/30 stroke-[2]" />
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
 
       <main className="flex-1 pb-16">
         {/* Breadcrumb */}
@@ -422,9 +641,20 @@ export default function PropertyDetails() {
           {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
             <div className="flex-1">
-              <div className="flex flex-wrap gap-2 mb-3">
-                {typeName && <Badge className="bg-primary/10 text-primary">{typeName}</Badge>}
-                {categoryLabels[property.category] && <Badge className="bg-accent/15 text-accent border border-accent/30 font-bold">{categoryLabels[property.category]}</Badge>}
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {typeName && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black text-white bg-black/55 backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.35)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                    {typeName}
+                  </span>
+                )}
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                  {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
+                </span>
+                {isNew() && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-black text-white bg-black/55 backdrop-blur-md border border-white/35 shadow-[0_3px_10px_rgba(0,0,0,0.35)] tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                    جديد
+                  </span>
+                )}
                 {property.featured && <Badge className="bg-accent text-accent-foreground font-black shadow-xs">مميز VIP</Badge>}
                 {property.status === "rented" && <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">مؤجر</Badge>}
                 {property.status === "sold" && <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">مباع</Badge>}

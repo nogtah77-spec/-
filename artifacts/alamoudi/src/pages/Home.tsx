@@ -221,20 +221,37 @@ export default function Home() {
     [properties, propertyTypes, regions],
   );
 
-  const latestProps = useMemo(
-    () =>
-      [...properties]
-        .filter((p) => (p.status as string) !== "archived" && p.status !== "sold" && p.status !== "rented")
-        .sort((a, b) => {
-          const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
-          const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
-          if (timeA !== timeB) return timeB - timeA;
-          return String(b.id).localeCompare(String(a.id));
-        })
-        .slice(0, 6)
-        .map(resolve),
-    [properties, propertyTypes, regions],
-  );
+  const latestProps = useMemo(() => {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    // 1. Available active properties
+    const activeCandidates = [...properties].filter(
+      (p) => (p.status as string) !== "archived" && p.status !== "sold" && p.status !== "rented" && p.status !== "draft"
+    );
+
+    // 2. Sort all by newest creation date first
+    const sorted = activeCandidates.sort((a, b) => {
+      const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
+      const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
+      if (timeA !== timeB) return timeB - timeA;
+      return String(b.id).localeCompare(String(a.id));
+    });
+
+    // 3. Properties added within the last 7 days
+    const recentWithin7Days = sorted.filter((p) => {
+      const time = new Date(p.createdAt || (p as any).created_at || 0).getTime();
+      return time > 0 && now - time <= SEVEN_DAYS_MS;
+    });
+
+    // 4. If there are properties added within 7 days, display them (up to 8).
+    // If a week passes without new properties, fallback to the latest 6 active properties to prevent an empty section!
+    const finalItems = recentWithin7Days.length > 0
+      ? recentWithin7Days.slice(0, 8)
+      : sorted.slice(0, 6);
+
+    return finalItems.map(resolve);
+  }, [properties, propertyTypes, regions]);
 
   const propertiesByRegion = useMemo(() => {
     const groups = new Map<string, { name: string; items: any[] }>();
