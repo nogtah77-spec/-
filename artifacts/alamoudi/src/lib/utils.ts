@@ -103,3 +103,34 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     })
   );
 }
+
+/**
+ * Suppresses ghost/synthetic click and touch events across the window for a short duration (default 450ms).
+ * Crucial when closing full-screen overlays, lightboxes, and modals on mobile touch devices
+ * so touches on 'X' or the backdrop NEVER bleed through to underlying buttons or navigation items.
+ */
+export function suppressGhostClicks(durationMs = 450) {
+  if (typeof window === "undefined") return;
+
+  const killEvent = (e: Event) => {
+    try {
+      e.preventDefault();
+      e.stopPropagation();
+      if ("stopImmediatePropagation" in e && typeof e.stopImmediatePropagation === "function") {
+        e.stopImmediatePropagation();
+      }
+    } catch {}
+  };
+
+  // Intercept events during the CAPTURE phase at the window level before they reach ANY element
+  window.addEventListener("click", killEvent, { capture: true, passive: false });
+  window.addEventListener("touchend", killEvent, { capture: true, passive: false });
+  window.addEventListener("pointerup", killEvent, { capture: true, passive: false });
+
+  setTimeout(() => {
+    window.removeEventListener("click", killEvent, { capture: true });
+    window.removeEventListener("touchend", killEvent, { capture: true });
+    window.removeEventListener("pointerup", killEvent, { capture: true });
+  }, durationMs);
+}
+

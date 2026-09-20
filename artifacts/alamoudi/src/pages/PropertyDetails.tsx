@@ -23,13 +23,14 @@ import { useData, type Property } from "@/context/DataContext";
 import { formatNumber } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { cn, suppressGhostClicks } from "@/lib/utils";
 import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
 import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
 import { PropertyShareModal } from "@/components/property/PropertyShareModal";
 import { updatePageMeta } from "@/lib/meta";
 import { supabaseService, rowToProperty, parsePropertyImages } from "@/lib/supabaseService";
 import { supabase } from "@/lib/supabaseClient";
+import { getDetailImageUrl, getCardImageUrl } from "@/lib/cloudinaryService";
 
 const categoryLabels: Record<string, string> = {
   residential: "سكني",
@@ -193,6 +194,17 @@ export default function PropertyDetails() {
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const lbTouch = useRef<{ x: number; y: number; target: HTMLElement | null } | null>(null);
 
+  const closeLightbox = useCallback((e?: React.SyntheticEvent | Event) => {
+    if (e) {
+      try {
+        if ("preventDefault" in e && typeof e.preventDefault === "function") e.preventDefault();
+        if ("stopPropagation" in e && typeof e.stopPropagation === "function") e.stopPropagation();
+      } catch {}
+    }
+    suppressGhostClicks(450);
+    setLightboxIdx(null);
+  }, []);
+
   const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
   const lbNext = useCallback(() => setLightboxIdx(i => i === null ? null : (i + 1) % images.length), [images.length]);
 
@@ -219,13 +231,13 @@ export default function PropertyDetails() {
       return;
     }
 
-    // Tap on empty area outside image -> close lightbox immediately on mobile
+    // Tap on empty area outside image -> close lightbox safely with zero ghost clicks
     if (dist < 15) {
       const endTarget = e.target as HTMLElement;
       const isStartOnImgOrBtn = startTarget?.tagName?.toLowerCase() === "img" || !!startTarget?.closest("button");
       const isEndOnImgOrBtn = endTarget?.tagName?.toLowerCase() === "img" || !!endTarget?.closest("button");
       if (!isStartOnImgOrBtn && !isEndOnImgOrBtn) {
-        setLightboxIdx(null);
+        closeLightbox(e);
       }
     }
   };
@@ -234,7 +246,7 @@ export default function PropertyDetails() {
   useEffect(() => {
     if (lightboxIdx === null) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLightboxIdx(null);
+      if (e.key === "Escape") closeLightbox(e);
       else if (e.key === "ArrowRight") lbPrev();
       else if (e.key === "ArrowLeft") lbNext();
     };
@@ -467,7 +479,9 @@ export default function PropertyDetails() {
           onClick={(e) => {
             const target = e.target as HTMLElement;
             if (target.tagName.toLowerCase() !== "img" && !target.closest("button")) {
-              setLightboxIdx(null);
+              e.preventDefault();
+              e.stopPropagation();
+              closeLightbox(e);
             }
           }}
           onTouchStart={lbTouchStart}
@@ -479,12 +493,14 @@ export default function PropertyDetails() {
             type="button"
             className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[1000005] w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setLightboxIdx(null);
+              closeLightbox(e);
             }}
             onTouchEnd={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setLightboxIdx(null);
+              closeLightbox(e);
             }}
             aria-label="إغلاق"
             title="إغلاق (Esc)"
@@ -502,10 +518,12 @@ export default function PropertyDetails() {
             <button
               type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 lbPrev();
               }}
               onTouchEnd={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 lbPrev();
               }}
@@ -522,10 +540,12 @@ export default function PropertyDetails() {
             <button
               type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 lbNext();
               }}
               onTouchEnd={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 lbNext();
               }}
@@ -540,11 +560,17 @@ export default function PropertyDetails() {
           {/* الصورة الرئيسية */}
           <div className="relative max-h-[80vh] max-w-[88vw] flex items-center justify-center pointer-events-none">
             <img
-              src={images[lightboxIdx]}
+              src={getDetailImageUrl(images[lightboxIdx])}
               alt=""
               draggable={false}
-              onClick={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               className="max-h-[78vh] max-w-[86vw] w-auto h-auto object-contain rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.95)] select-none pointer-events-auto"
             />
           </div>
@@ -553,16 +579,21 @@ export default function PropertyDetails() {
           <div
             className="fixed z-[1000005] flex items-center gap-3 px-4 py-2 rounded-full bg-[#161B20] border border-white/50 shadow-2xl"
             style={{ bottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 16px) + 16px))", left: "50%", transform: "translateX(-50%)" }}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             {images.length > 1 ? (
               <button
                 type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   lbPrev();
                 }}
                 onTouchEnd={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   lbPrev();
                 }}
@@ -602,10 +633,12 @@ export default function PropertyDetails() {
               <button
                 type="button"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   lbNext();
                 }}
                 onTouchEnd={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   lbNext();
                 }}
@@ -1109,7 +1142,7 @@ export default function PropertyDetails() {
                       <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-[8px] overflow-hidden bg-muted flex-shrink-0 relative">
                         {thumb ? (
                           <img
-                            src={thumb}
+                            src={getCardImageUrl(thumb)}
                             alt={p.code || p.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             loading="lazy"

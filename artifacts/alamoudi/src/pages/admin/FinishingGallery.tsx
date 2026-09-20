@@ -13,7 +13,7 @@ import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
-import { uploadMultipleToCloudinary, getFinishingCloudinaryFolder } from "@/lib/cloudinaryService";
+import { uploadMultipleToCloudinary, getFinishingCloudinaryFolder, getThumbnailImageUrl } from "@/lib/cloudinaryService";
 
 interface GalleryImage { id: string; url: string; title: string }
 interface GalleryVideo { id: string; url: string; title: string }
@@ -269,7 +269,7 @@ export default function FinishingGallery() {
                 {config.images.map((img) => (
                   <div key={img.id} className="group relative aspect-square rounded-lg overflow-hidden border border-border bg-muted">
                     <img
-                      src={img.url}
+                      src={getThumbnailImageUrl(img.url)}
                       alt={img.title || "صورة"}
                       className="w-full h-full object-cover"
                       onError={e => { (e.target as HTMLImageElement).style.opacity = "0.3"; }}

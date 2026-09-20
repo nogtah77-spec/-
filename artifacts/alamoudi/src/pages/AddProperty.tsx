@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { Link } from "wouter";
 import { formatNumericInput, toNumericString } from "@/lib/utils";
+import { getThumbnailImageUrl } from "@/lib/cloudinaryService";
 
 interface FormState {
   ownerName: string;
@@ -303,7 +304,7 @@ export default function AddProperty() {
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                     {images.map((img, idx) => (
                       <div key={idx} className="relative rounded-lg overflow-hidden aspect-square bg-muted group">
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <img src={getThumbnailImageUrl(img)} alt="" className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeImage(idx)}

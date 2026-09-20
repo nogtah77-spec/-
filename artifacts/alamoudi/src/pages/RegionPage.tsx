@@ -7,6 +7,7 @@ import { useData } from "@/context/DataContext";
 import { ChevronRight } from "lucide-react";
 import { Link } from "wouter";
 import { updatePageMeta } from "@/lib/meta";
+import { getDetailImageUrl } from "@/lib/cloudinaryService";
 
 function clampPercent(value: number | undefined, fallback: number): number {
   const number = Number(value);
@@ -154,7 +155,7 @@ export default function RegionPage({ params }: { params: { regionId: string } })
         <section className="relative isolate h-[clamp(180px,22vw,280px)] w-full overflow-hidden bg-muted shadow-xs">
           {region.heroImage && !heroImageFailed ? (
             <img
-              src={region.heroImage}
+              src={getDetailImageUrl(region.heroImage)}
               alt={region.name}
               className="absolute inset-0 h-full w-full object-cover object-center"
               onError={() => setHeroImageFailed(true)}

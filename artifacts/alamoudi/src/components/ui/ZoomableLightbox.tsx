@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { X, ChevronRight, ChevronLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, suppressGhostClicks } from "@/lib/utils";
 
 interface ZoomableLightboxProps {
   images: string[];
@@ -65,17 +65,28 @@ export function ZoomableLightbox({
     onChangeIndex((currentIndex + 1) % images.length);
   }, [currentIndex, images.length, onChangeIndex, resetZoom]);
 
+  const handleSafeClose = useCallback((e?: React.SyntheticEvent | Event) => {
+    if (e) {
+      try {
+        if ("preventDefault" in e && typeof e.preventDefault === "function") e.preventDefault();
+        if ("stopPropagation" in e && typeof e.stopPropagation === "function") e.stopPropagation();
+      } catch {}
+    }
+    suppressGhostClicks(450);
+    onClose();
+  }, [onClose]);
+
   // Keyboard navigation
   useEffect(() => {
     if (currentIndex === null) return;
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleSafeClose(e);
       else if (e.key === "ArrowRight") prev();
       else if (e.key === "ArrowLeft") next();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [currentIndex, onClose, prev, next]);
+  }, [currentIndex, handleSafeClose, prev, next]);
 
   // Lock body scroll while lightbox is open
   useEffect(() => {
@@ -230,7 +241,7 @@ export function ZoomableLightbox({
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget && scale <= 1.05) {
-      onClose();
+      handleSafeClose(e);
     }
   };
 
@@ -248,15 +259,12 @@ export function ZoomableLightbox({
       <button
         type="button"
         className="fixed top-4 right-4 sm:top-5 sm:right-6 z-[1000000] w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 active:scale-90 text-white flex items-center justify-center backdrop-blur-md border-2 border-white/70 shadow-[0_4px_25px_rgba(0,0,0,0.85)] transition-all duration-150 cursor-pointer"
-        onClick={(e) => {
+        onClick={handleSafeClose}
+        onTouchStart={(e) => {
+          e.preventDefault();
           e.stopPropagation();
-          onClose();
         }}
-        onTouchStart={(e) => e.stopPropagation()}
-        onTouchEnd={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
+        onTouchEnd={handleSafeClose}
         aria-label="إغلاق المعرض"
         title="إغلاق (Esc)"
       >
@@ -267,15 +275,12 @@ export function ZoomableLightbox({
       <button
         type="button"
         className="fixed top-4 left-4 sm:top-5 sm:left-6 z-[1000000] w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 active:scale-90 text-white flex items-center justify-center backdrop-blur-md border-2 border-white/70 shadow-[0_4px_25px_rgba(0,0,0,0.85)] transition-all duration-150 cursor-pointer"
-        onClick={(e) => {
+        onClick={handleSafeClose}
+        onTouchStart={(e) => {
+          e.preventDefault();
           e.stopPropagation();
-          onClose();
         }}
-        onTouchStart={(e) => e.stopPropagation()}
-        onTouchEnd={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
+        onTouchEnd={handleSafeClose}
         aria-label="إغلاق المعرض"
         title="إغلاق (Esc)"
       >
@@ -312,10 +317,14 @@ export function ZoomableLightbox({
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               prev();
             }}
-            onTouchStart={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             className="w-11 h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 border-2 border-white/60 flex items-center justify-center shadow-[0_4px_25px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95"
             aria-label="الصورة السابقة"
           >
@@ -338,10 +347,14 @@ export function ZoomableLightbox({
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               next();
             }}
-            onTouchStart={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             className="w-11 h-11 rounded-full bg-black/85 hover:bg-black active:bg-neutral-900 border-2 border-white/60 flex items-center justify-center shadow-[0_4px_25px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer transition-all duration-150 hover:scale-105 active:scale-95"
             aria-label="الصورة التالية"
           >

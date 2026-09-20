@@ -126,3 +126,72 @@ export async function uploadMultipleToCloudinary(
 
   return urls;
 }
+
+export interface CloudinaryOptimizeOptions {
+  width?: number;
+  quality?: "auto" | "auto:best" | "auto:good" | "auto:eco" | "auto:low" | false;
+  format?: "auto" | "webp" | "avif" | "jpg" | "png" | false;
+  crop?: "limit" | "scale" | "fit" | "fill";
+}
+
+/**
+ * Transforms a Cloudinary URL to include automatic format, quality, and proportional sizing.
+ * Crucially preserves 100% of the natural aspect ratio without cropping (using c_limit).
+ * If the URL is not from Cloudinary, it is returned untouched.
+ */
+export function getOptimizedCloudinaryUrl(
+  url: string | null | undefined,
+  options: CloudinaryOptimizeOptions = {}
+): string {
+  if (!url || typeof url !== "string") return "";
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+    return url;
+  }
+
+  const parts = url.split("/upload/");
+  const baseUrl = parts[0];
+  let rest = parts.slice(1).join("/upload/");
+
+  const trans: string[] = [];
+  if (options.format !== false) trans.push(`f_${options.format || "auto"}`);
+  if (options.quality !== false) trans.push(`q_${options.quality || "auto"}`);
+  if (options.width && options.width > 0) {
+    trans.push(`w_${options.width}`);
+    // c_limit maintains natural aspect ratio and never crops edges
+    if (options.crop) trans.push(`c_${options.crop}`);
+  }
+
+  if (trans.length === 0) return url;
+
+  const transStr = trans.join(",");
+
+  // Strip any existing transformation segment before version or path
+  rest = rest.replace(/^(?:(?:[a-z]_[a-zA-Z0-9_.:]+,?)+\/)+/, "");
+
+  return `${baseUrl}/upload/${transStr}/${rest}`;
+}
+
+/**
+ * For Property Cards, Grid Items, and Listings:
+ * 800px max width ensures ultra-sharp display even on 2x Retina screens,
+ * while preserving 100% natural proportions (never cropped by Cloudinary).
+ */
+export function getCardImageUrl(url: string | null | undefined): string {
+  return getOptimizedCloudinaryUrl(url, { width: 800, crop: "limit" });
+}
+
+/**
+ * For small preview thumbnails and navigation strips (250px max width, natural proportions).
+ */
+export function getThumbnailImageUrl(url: string | null | undefined): string {
+  return getOptimizedCloudinaryUrl(url, { width: 250, crop: "limit" });
+}
+
+/**
+ * For Property Details Gallery, Large Hero views, and Lightbox (1920px max width).
+ * Delivers full crystal-clear resolution with automatic format and optimization.
+ */
+export function getDetailImageUrl(url: string | null | undefined): string {
+  return getOptimizedCloudinaryUrl(url, { width: 1920, crop: "limit" });
+}
+

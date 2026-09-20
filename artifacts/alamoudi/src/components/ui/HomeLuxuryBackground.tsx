@@ -1,6 +1,7 @@
 import React from "react";
 import { useTheme } from "next-themes";
 import { useData, type HomeBackgroundSettings } from "@/context/DataContext";
+import { getDetailImageUrl } from "@/lib/cloudinaryService";
 
 interface HomeLuxuryBackgroundProps {
   className?: string;
@@ -89,7 +90,7 @@ export function HomeLuxuryBackground({
       {bgImage ? (
         <img
           key={bgImage}
-          src={bgImage}
+          src={getDetailImageUrl(bgImage)}
           alt=""
           loading="eager"
           decoding="async"

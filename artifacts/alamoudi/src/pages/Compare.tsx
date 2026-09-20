@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import { useData } from "@/context/DataContext";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { cn, formatNumber } from "@/lib/utils";
+import { getCardImageUrl } from "@/lib/cloudinaryService";
 
 const categoryLabels: Record<string, string> = {
   sale: "للبيع", rent: "للإيجار", furnished: "مفروش",
@@ -88,7 +89,7 @@ export default function Compare() {
                           </Button>
                           <div className="h-20 w-full bg-[#0F1317]/80 rounded-[8px] border border-white/10 overflow-hidden mb-2">
                             {p.images?.[0]
-                              ? <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" />
+                              ? <img src={getCardImageUrl(p.images[0])} alt={p.title} className="w-full h-full object-cover" />
                               : <div className="w-full h-full flex items-center justify-center"><MapPin className="h-6 w-6 text-muted-foreground/30" /></div>
                             }
                           </div>

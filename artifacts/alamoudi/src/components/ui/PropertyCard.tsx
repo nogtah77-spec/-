@@ -12,6 +12,7 @@ import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatNumber } from "@/lib/utils";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
+import { getCardImageUrl } from "@/lib/cloudinaryService";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 
@@ -111,7 +112,7 @@ export function PropertyCard({
   const showVideoPoster = videoFirst
     ? (!videoThumb || thumbFailed)
     : !heroImg && propHasVideo && (!videoThumb || thumbFailed);
-  const coverImg = videoFirst ? null : heroImg;
+  const coverImg = videoFirst ? null : (heroImg ? getCardImageUrl(heroImg) : null);
   const imageCount = property.images?.length || 0;
   const isNew = () => {
     try {

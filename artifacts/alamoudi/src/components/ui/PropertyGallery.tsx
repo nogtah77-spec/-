@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { ChevronRight, ChevronLeft, Download, Images, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDetailImageUrl, getThumbnailImageUrl } from "@/lib/cloudinaryService";
 
 interface PropertyGalleryProps {
   images: string[];
@@ -93,7 +94,7 @@ export function PropertyGallery({
         >
           {/* Blurred background fill */}
           <img
-            src={images[current]}
+            src={getThumbnailImageUrl(images[current])}
             aria-hidden
             draggable={false}
             loading="eager"
@@ -103,7 +104,7 @@ export function PropertyGallery({
           />
           {/* Main image — object-contain, never clipped */}
           <img
-            src={images[current]}
+            src={getDetailImageUrl(images[current])}
             alt={title}
             draggable={false}
             decoding="async"
@@ -166,7 +167,7 @@ export function PropertyGallery({
               )}
             >
               <img
-                src={img}
+                src={getThumbnailImageUrl(img)}
                 alt=""
                 loading={i === current ? "eager" : "lazy"}
                 decoding="async"

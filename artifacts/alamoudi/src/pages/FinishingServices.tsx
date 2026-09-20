@@ -14,7 +14,9 @@ import { api } from "@/lib/api";
 import { supabaseService } from "@/lib/supabaseService";
 import { useData } from "@/context/DataContext";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
+import { getCardImageUrl, getDetailImageUrl } from "@/lib/cloudinaryService";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
+import { suppressGhostClicks } from "@/lib/utils";
 import { Link } from "wouter";
 
 const finishingTypes = ["سوبر لوكس", "لوكس", "كلاسيك", "مودرن", "بسيط", "متكامل مع الأثاث"];
@@ -56,6 +58,17 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
 
   const [lightbox, setLightbox] = useState<string | null>(null);
 
+  const closeLightbox = (e?: React.SyntheticEvent | Event) => {
+    if (e) {
+      try {
+        if ("preventDefault" in e && typeof e.preventDefault === "function") e.preventDefault();
+        if ("stopPropagation" in e && typeof e.stopPropagation === "function") e.stopPropagation();
+      } catch {}
+    }
+    suppressGhostClicks(450);
+    setLightbox(null);
+  };
+
   if (images.length === 0) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -85,7 +98,7 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
               className="group aspect-square rounded-[10px] overflow-hidden border border-[#C5A059]/30 hover:border-[#C5A059]/70 bg-muted cursor-zoom-in transition-all duration-300 shadow-md"
             >
               <img
-                src={img.url}
+                src={getCardImageUrl(img.url)}
                 alt={img.title || "صورة تشطيب"}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
@@ -116,20 +129,30 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
       {/* Lightbox */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}
+          className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center p-4 select-none"
+          onClick={closeLightbox}
+          onTouchEnd={closeLightbox}
         >
           <button
+            type="button"
             className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-            onClick={() => setLightbox(null)}
+            onClick={closeLightbox}
+            onTouchEnd={closeLightbox}
           >
             <X className="h-5 w-5" />
           </button>
           <img
-            src={lightbox}
+            src={getDetailImageUrl(lightbox)}
             alt="صورة"
             className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl"
-            onClick={e => e.stopPropagation()}
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchEnd={e => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           />
         </div>
       )}

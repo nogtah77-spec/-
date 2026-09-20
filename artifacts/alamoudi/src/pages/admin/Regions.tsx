@@ -14,7 +14,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { HeroImageAdjuster } from "@/components/admin/HeroImageAdjuster";
 import { compressImage } from "@/lib/imageOptimizer";
 import { checkUserPermission } from "@/lib/permissions";
-import { uploadToCloudinary, getRegionCloudinaryFolder } from "@/lib/cloudinaryService";
+import { uploadToCloudinary, getRegionCloudinaryFolder, getThumbnailImageUrl } from "@/lib/cloudinaryService";
 import { Link } from "wouter";
 
 export default function Regions() {
@@ -265,7 +265,7 @@ export default function Regions() {
                   <TableCell className="font-medium">{region.name}</TableCell>
                   <TableCell>
                     {region.heroImage ? (
-                      <img src={region.heroImage} alt="" className="h-10 w-16 rounded-md object-cover border" />
+                      <img src={getThumbnailImageUrl(region.heroImage)} alt="" className="h-10 w-16 rounded-md object-cover border" />
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                         <ImageIcon className="h-3.5 w-3.5" /> افتراضية
