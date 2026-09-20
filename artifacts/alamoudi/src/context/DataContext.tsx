@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { enqueueOfflineAction, isOnline, processOfflineQueue } from "@/lib/offlineSync";
 import { savePropertiesToIndexedDb, getPropertiesFromIndexedDb, clearPropertiesFromIndexedDb } from "@/lib/indexedDbStorage";
 import { syncThemeColor } from "@/lib/meta";
+import { deleteFromCloudinary, deleteFolderFromCloudinary, getPropertyCloudinaryFolder } from "@/lib/cloudinaryService";
 
 export interface Region { id: string; name: string; active: boolean; heroImage?: string; }
 export interface PropertyType { id: string; name: string; active: boolean; }
@@ -3121,6 +3122,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
       await supabaseService.deleteProperty(id).catch(() => {});
     }
 
+    // 6. Delete property folder and images from Cloudinary
+    if (target) {
+      const propFolder = getPropertyCloudinaryFolder(target.regionId, target.code);
+      void deleteFolderFromCloudinary(propFolder);
+      if (Array.isArray(target.images)) {
+        target.images.forEach(img => {
+          if (img && img.includes("cloudinary.com")) {
+            void deleteFromCloudinary(img);
+          }
+        });
+      }
+    }
+
     sendRealtimeSync("PROPERTY_DELETE", { propertyId: targetId });
     logActivity({
       action: "deleted",
@@ -3182,6 +3196,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (t.id) supabaseService.deleteProperty(t.id).catch(() => {});
       if (t.code) supabaseService.deleteProperty(t.code).catch(() => {});
     }
+
+    // 6. Delete all target folders and images from Cloudinary
+    targets.forEach(t => {
+      const propFolder = getPropertyCloudinaryFolder(t.regionId, t.code);
+      void deleteFolderFromCloudinary(propFolder);
+      if (Array.isArray(t.images)) {
+        t.images.forEach(img => {
+          if (img && img.includes("cloudinary.com")) {
+            void deleteFromCloudinary(img);
+          }
+        });
+      }
+    });
 
     ids.forEach(id => sendRealtimeSync("PROPERTY_DELETE", { propertyId: id }));
     logActivity({

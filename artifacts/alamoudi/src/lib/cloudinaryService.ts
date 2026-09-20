@@ -195,3 +195,43 @@ export function getDetailImageUrl(url: string | null | undefined): string {
   return getOptimizedCloudinaryUrl(url, { width: 1920, crop: "limit" });
 }
 
+/**
+ * Deletes a single image from Cloudinary by URL or publicId
+ */
+export async function deleteFromCloudinary(urlOrPublicId: string): Promise<boolean> {
+  if (!urlOrPublicId || typeof urlOrPublicId !== "string") return false;
+  try {
+    const res = await fetch("/api/cloudinary/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: urlOrPublicId }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Boolean(data?.success);
+  } catch (err) {
+    console.warn("Cloudinary delete failed:", err);
+    return false;
+  }
+}
+
+/**
+ * Deletes an entire folder and all its images from Cloudinary
+ */
+export async function deleteFolderFromCloudinary(folder: string): Promise<boolean> {
+  if (!folder || typeof folder !== "string") return false;
+  try {
+    const res = await fetch("/api/cloudinary/delete-folder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folder }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return Boolean(data?.success);
+  } catch (err) {
+    console.warn("Cloudinary folder delete failed:", err);
+    return false;
+  }
+}
+

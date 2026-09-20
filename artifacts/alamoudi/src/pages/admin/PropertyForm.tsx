@@ -23,7 +23,12 @@ import { checkUserPermission } from "@/lib/permissions";
 
 import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 import { compressMultipleImages } from "@/lib/imageOptimizer";
-import { uploadMultipleToCloudinary, getPropertyCloudinaryFolder, getThumbnailImageUrl } from "@/lib/cloudinaryService";
+import {
+  uploadMultipleToCloudinary,
+  deleteFromCloudinary,
+  getPropertyCloudinaryFolder,
+  getThumbnailImageUrl,
+} from "@/lib/cloudinaryService";
 
 export default function PropertyForm() {
   const { regions, propertyTypes, users, addProperty, updateProperty, properties, brokers } = useData();
@@ -764,7 +769,16 @@ export default function PropertyForm() {
                       <div key={idx} className="relative rounded-lg overflow-hidden aspect-square bg-muted group">
                         <img src={getThumbnailImageUrl(img)} alt="" className="w-full h-full object-cover" />
                         {idx === 0 && <div className="absolute bottom-0 inset-x-0 bg-accent/80 text-accent-foreground text-[9px] font-bold text-center py-0.5">رئيسية</div>}
-                        <button type="button" aria-label="حذف الصورة" onClick={() => setImages(p => p.filter((_, i) => i !== idx))}
+                        <button
+                          type="button"
+                          aria-label="حذف الصورة"
+                          onClick={() => {
+                            const targetImg = images[idx];
+                            if (targetImg && targetImg.includes("cloudinary.com")) {
+                              void deleteFromCloudinary(targetImg);
+                            }
+                            setImages(p => p.filter((_, i) => i !== idx));
+                          }}
                           className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center shadow-md ring-2 ring-white/70 hover:bg-destructive/90 active:scale-95 transition">
                           <X className="h-3.5 w-3.5" />
                         </button>

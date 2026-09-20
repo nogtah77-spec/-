@@ -14,7 +14,13 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { HeroImageAdjuster } from "@/components/admin/HeroImageAdjuster";
 import { compressImage } from "@/lib/imageOptimizer";
 import { checkUserPermission } from "@/lib/permissions";
-import { uploadToCloudinary, getRegionCloudinaryFolder, getThumbnailImageUrl } from "@/lib/cloudinaryService";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  deleteFolderFromCloudinary,
+  getRegionCloudinaryFolder,
+  getThumbnailImageUrl,
+} from "@/lib/cloudinaryService";
 import { Link } from "wouter";
 
 export default function Regions() {
@@ -97,6 +103,12 @@ export default function Regions() {
 
       const saved = await updateRegion(editTarget.id, newName.trim(), finalHeroImage);
       if (!saved) return;
+
+      // If hero image was replaced or deleted, purge the old one from Cloudinary
+      if (editTarget.heroImage && editTarget.heroImage !== finalHeroImage) {
+        void deleteFromCloudinary(editTarget.heroImage);
+      }
+
       setEditTarget(null);
       setNewName("");
       setHeroImage("");
@@ -114,8 +126,15 @@ export default function Regions() {
     if (!deleteTarget) return;
     const deleted = await deleteRegion(deleteTarget.id);
     if (!deleted) return;
+
+    // Purge hero image and region folder from Cloudinary
+    if (deleteTarget.heroImage) {
+      void deleteFromCloudinary(deleteTarget.heroImage);
+    }
+    void deleteFolderFromCloudinary(getRegionCloudinaryFolder(deleteTarget.id));
+
     setDeleteTarget(null);
-    toast({ title: "تم بنجاح", description: "تم حذف المنطقة بنجاح" });
+    toast({ title: "تم بنجاح", description: "تم حذف المنطقة وغلافها السحابي بنجاح" });
   };
 
   const handleToggle = async (id: string) => {
