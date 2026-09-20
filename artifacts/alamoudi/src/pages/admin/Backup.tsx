@@ -55,7 +55,7 @@ export default function Backup() {
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
         const backup = JSON.parse(ev.target?.result as string);
         let count = 0;
@@ -64,7 +64,17 @@ export default function Backup() {
             localStorage.setItem(k, JSON.stringify(backup[k])); count++;
           }
         });
-        toast({ title: "تم استيراد النسخة الاحتياطية", description: `تم استعادة ${count} مجموعة بيانات. يرجى تحديث الصفحة.` });
+
+        // Clear platform reset flag so imported data doesn't get ignored
+        localStorage.removeItem("alm_platform_reset_flag");
+
+        // If properties were included in backup, also sync them directly to Supabase cloud!
+        if (Array.isArray(backup.alamoudi_properties) && backup.alamoudi_properties.length > 0) {
+          const { supabaseService } = await import("@/lib/supabaseService");
+          await supabaseService.savePropertiesBulk(backup.alamoudi_properties);
+        }
+
+        toast({ title: "تم استيراد النسخة الاحتياطية وحفظها سحابياً ✓", description: `تم استعادة ${count} مجموعة بيانات. يرجى تحديث الصفحة.` });
         setTimeout(() => window.location.reload(), 1500);
       } catch {
         toast({ title: "فشل استيراد النسخة الاحتياطية", description: "تأكد من أن الملف صحيح وغير تالف.", variant: "destructive" });

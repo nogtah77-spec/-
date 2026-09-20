@@ -239,6 +239,24 @@ export const supabaseService = {
     }
   },
 
+  // Save / insert multiple properties in bulk
+  async savePropertiesBulk(propertiesList: Property[]): Promise<boolean> {
+    if (!supabase || !propertiesList || propertiesList.length === 0) return false;
+    try {
+      const rows = propertiesList.map(propertyToRow);
+      // Upsert in batches of 50 to respect payload limits
+      for (let i = 0; i < rows.length; i += 50) {
+        const batch = rows.slice(i, i + 50);
+        const { error } = await supabase.from("properties").upsert(batch);
+        if (error) throw error;
+      }
+      return true;
+    } catch (e) {
+      console.warn("Supabase savePropertiesBulk error:", e);
+      return false;
+    }
+  },
+
   // Seed default properties if database is empty
   async seedInitialPropertiesIfEmpty(): Promise<void> {
     if (!supabase) return;

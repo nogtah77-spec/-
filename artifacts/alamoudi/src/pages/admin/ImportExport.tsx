@@ -189,7 +189,9 @@ export default function ImportExport() {
     URL.revokeObjectURL(url);
   };
 
-  const confirmImport = () => {
+  const [importing, setImporting] = useState(false);
+
+  const confirmImport = async () => {
     if (!pending) return;
     const { items, sheets } = pending;
     // Apply fallback region to rows with empty regionId
@@ -204,24 +206,32 @@ export default function ImportExport() {
       toast({ title: "لم يتم العثور على بيانات صالحة", variant: "destructive" });
       return;
     }
-    const { added, updated } = importProperties(valid);
-    setImportResult({ added, updated, errors, sheets });
-    setPending(null);
-    setFallbackRegionId("");
-    toast({
-      title: "تم الاستيراد بنجاح",
-      description: `أُضيف ${added} عقار، حُدّث ${updated}، تخطّي ${errors}`,
-    });
+    setImporting(true);
+    try {
+      const { added, updated } = await importProperties(valid);
+      setImportResult({ added, updated, errors, sheets });
+      setPending(null);
+      setFallbackRegionId("");
+      toast({
+        title: "تم الاستيراد والحفظ السحابي بنجاح ✓",
+        description: `أُضيف ${added} عقار، حُدّث ${updated}، تخطّي ${errors} — تم حفظها في السحابة.`,
+      });
+    } catch (e: any) {
+      toast({ title: "حدث خطأ أثناء الاستيراد", description: e.message || "حاول مرة أخرى", variant: "destructive" });
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleFile = (file: File) => {
     const name = file.name.toLowerCase();
     const isExcel = name.endsWith(".xlsx") || name.endsWith(".xls");
-    const isText = name.endsWith(".csv") || name.endsWith(".txt") || name.endsWith(".tsv");
-    if (!isExcel && !isText) {
+    const isJson = name.endsWith(".json");
+    const isText = name.endsWith(".csv") || name.endsWith(".txt") || name.endsWith(".tsv") || isJson;
+    if (!isExcel && !isText && !isJson) {
       toast({
         title: "صيغة غير مدعومة",
-        description: "يدعم Excel (xlsx/xls) و CSV و TXT",
+        description: "يدعم Excel (xlsx/xls) و CSV و JSON و TXT",
         variant: "destructive",
       });
       return;
@@ -234,6 +244,59 @@ export default function ImportExport() {
           const bytes = new Uint8Array(e.target?.result as ArrayBuffer);
           const { items, sheets } = parseWorkbookBytes(bytes);
           setPending({ items, sheets, fileName: file.name });
+        } else if (isJson) {
+          const text = e.target?.result as string;
+          const parsed = JSON.parse(text);
+          // Check if it is a backup object containing properties or an array of properties
+          let rawProps: any[] = [];
+          if (Array.isArray(parsed)) {
+            rawProps = parsed;
+          } else if (Array.isArray(parsed.alamoudi_properties)) {
+            rawProps = parsed.alamoudi_properties;
+          } else if (Array.isArray(parsed.properties)) {
+            rawProps = parsed.properties;
+          }
+
+          if (rawProps.length === 0) {
+            toast({ title: "لم يتم العثور على عقارات داخل ملف JSON", variant: "destructive" });
+            return;
+          }
+
+          const items: ParsedProperty[] = rawProps.map((p: any) => ({
+            code: String(p.code || "").trim(),
+            title: String(p.title || p.code || "").trim(),
+            description: String(p.description || "").trim(),
+            price: Number(p.price) || 0,
+            area: Number(p.area) || 0,
+            beds: Number(p.beds) || 0,
+            baths: Number(p.baths) || 0,
+            floors: Number(p.floors) || 0,
+            floor: Number(p.floor) || 0,
+            finishing: String(p.finishing || ""),
+            view: String(p.view || ""),
+            typeId: String(p.typeId || "apartment"),
+            regionId: String(p.regionId || ""),
+            category: p.category || "residential",
+            status: p.status || "active",
+            featured: Boolean(p.featured),
+            agentType: p.agentType || "direct",
+            images: Array.isArray(p.images) ? p.images : [],
+            videoUrl: String(p.videoUrl || ""),
+            externalUrl: String(p.externalUrl || ""),
+            mapsUrl: String(p.mapsUrl || ""),
+            unitType: p.unitType || "",
+            subArea: p.subArea || "",
+            layout: p.layout || "",
+            master: p.master || "",
+            elevator: p.elevator || "",
+            parking: p.parking || "",
+            additionalFeatures: p.additionalFeatures || "",
+            floorText: String(p.floorText || p.floor || ""),
+            location: p.location || "",
+            source: p.source || "",
+          }));
+
+          setPending({ items, sheets: [{ name: "JSON", count: items.length }], fileName: file.name });
         } else {
           const text = e.target?.result as string;
           const { items, sheets } = parseDelimitedText(text, regions, propertyTypes);
@@ -241,7 +304,8 @@ export default function ImportExport() {
           setPending({ items, sheets, headerMap, fileName: file.name });
         }
         setImportResult(null);
-      } catch {
+      } catch (err: any) {
+        console.error("File parse error:", err);
         toast({
           title: "خطأ في معالجة الملف",
           description: "تأكد أن الملف بالتنسيق الصحيح",
@@ -418,11 +482,12 @@ export default function ImportExport() {
                 <Button
                   className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90"
                   onClick={confirmImport}
+                  disabled={importing}
                 >
                   <CheckCircle2 className="h-4 w-4 ml-2" />
-                  تأكيد الاستيراد ({pending.items.length} عقار)
+                  {importing ? "جاري الحفظ في السحابة..." : `تأكيد الاستيراد (${pending.items.length} عقار)`}
                 </Button>
-                <Button variant="outline" onClick={() => setPending(null)}>
+                <Button variant="outline" onClick={() => setPending(null)} disabled={importing}>
                   إلغاء
                 </Button>
               </div>

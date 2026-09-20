@@ -517,7 +517,7 @@ interface DataContextType {
   deleteProperty: (id: string) => void;
   bulkDeleteProperties: (ids: string[]) => void;
   bulkUpdateProperties: (ids: string[], updates: Partial<Property>) => void;
-  importProperties: (items: Omit<Property, "id" | "createdAt">[]) => { added: number; updated: number };
+  importProperties: (items: Omit<Property, "id" | "createdAt">[]) => Promise<{ added: number; updated: number }>;
   addUser: (u: Omit<User, "id" | "joinedAt">) => Promise<boolean>;
   updateUser: (id: string, u: Partial<User>) => Promise<boolean>;
   deleteUser: (id: string) => void;
@@ -3272,33 +3272,52 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  const importProperties = (items: Omit<Property, "id" | "createdAt">[]) => {
+  const importProperties = async (items: Omit<Property, "id" | "createdAt">[]) => {
     let added = 0;
     let updated = 0;
     const payload: Property[] = [];
+    const nowIso = new Date().toISOString();
+
     setProperties(prev => {
       const next = [...prev];
       const indexByCode = new Map<string, number>();
-      next.forEach((p, i) => { if (p.code) indexByCode.set(p.code, i); });
+      next.forEach((p, i) => { if (p.code) indexByCode.set(p.code.toUpperCase().trim(), i); });
       for (const item of items) {
-        const code = item.code || genCode();
-        const existingIdx = item.code ? indexByCode.get(item.code) : undefined;
+        const code = (item.code || genCode()).toUpperCase().trim();
+        const existingIdx = code ? indexByCode.get(code) : undefined;
         if (existingIdx !== undefined) {
-          const merged = { ...next[existingIdx], ...item, code };
+          const merged: Property = { ...next[existingIdx], ...item, code, updatedAt: nowIso };
           next[existingIdx] = merged;
           payload.push(merged);
           updated++;
         } else {
-          const created: Property = { ...item, code, id: genId(), createdAt: new Date().toISOString() };
+          const created: Property = { ...item, code, id: genId(), createdAt: nowIso, updatedAt: nowIso };
           indexByCode.set(code, next.length);
           next.push(created);
           payload.push(created);
           added++;
         }
       }
+
+      // Update offline persistence layers
+      try {
+        localStorage.removeItem("alm_platform_reset_flag");
+        savePropertiesToIndexedDb(next).catch(() => {});
+        writeCache({ regions, types: propertyTypes, properties: next, settings });
+      } catch {}
+
       return next;
     });
-    if (payload.length > 0) persist(api.post("/properties/import", payload));
+
+    // Save directly to Supabase cloud in batches
+    if (payload.length > 0) {
+      try {
+        await supabaseService.savePropertiesBulk(payload);
+      } catch (e) {
+        console.warn("[DataContext] Supabase bulk save error:", e);
+      }
+    }
+
     logActivity({
       action: "imported",
       entityType: "property",
