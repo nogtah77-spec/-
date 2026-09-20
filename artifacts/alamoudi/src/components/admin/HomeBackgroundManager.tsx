@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/imageOptimizer";
+import { uploadToCloudinary, getBrandingCloudinaryFolder } from "@/lib/cloudinaryService";
 import { useData, type SiteSettings, type HomeBackgroundSettings } from "@/context/DataContext";
 import { HomeLuxuryBackground } from "@/components/ui/HomeLuxuryBackground";
 
@@ -165,16 +166,20 @@ export function HomeBackgroundManager({
         format: "image/webp",
       });
 
+      toast({ title: "جاري رفع خلفية الصفحة الرئيسية إلى Cloudinary..." });
+      const folder = getBrandingCloudinaryFolder("home_bg");
+      const cloudUrl = await uploadToCloudinary(optimizedDataUrl, folder);
+
       // Synchronize both modes if counterpart was empty so background is visible across all themes
       const patch: Partial<HomeBackgroundSettings> = isDark
         ? {
-            bgImageDark: optimizedDataUrl,
-            bgImageLight: bgConfig.bgImageLight || optimizedDataUrl,
+            bgImageDark: cloudUrl,
+            bgImageLight: bgConfig.bgImageLight || cloudUrl,
             enabled: true,
           }
         : {
-            bgImageLight: optimizedDataUrl,
-            bgImageDark: bgConfig.bgImageDark || optimizedDataUrl,
+            bgImageLight: cloudUrl,
+            bgImageDark: bgConfig.bgImageDark || cloudUrl,
             enabled: true,
           };
 
@@ -182,13 +187,13 @@ export function HomeBackgroundManager({
 
       toast({
         title: "تم رفع وتطبيق الخلفية بنجاح ✓",
-        description: "تم تحسين الصورة وضغطها وتفعيلها فورياً على جميع الأجهزة.",
+        description: "تم رفع الصورة إلى Cloudinary وتفعيلها فورياً على جميع الأجهزة.",
       });
-    } catch (err) {
-      console.error("Image compression error:", err);
+    } catch (err: any) {
+      console.error("[HomeBackgroundManager] Upload error:", err);
       toast({
-        title: "تعذر معالجة الصورة",
-        description: "حدث خطأ أثناء معالجة الصورة. يرجى تجربة صورة أخرى.",
+        title: "تعذر معالجة أو رفع الصورة",
+        description: err.message || "حدث خطأ أثناء الرفع. يرجى تجربة صورة أخرى.",
         variant: "destructive",
       });
     } finally {

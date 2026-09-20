@@ -22,10 +22,13 @@
    - ميزة التحويل والضغط التلقائي لأحدث صيغ الويب (WebP / AVIF) لتوفير أقصى سرعة تصفح وأقل استهلاك للباندويث.
 
 ### ب. هيكل المجلدات المنظم (Organized Folder Hierarchy):
-- تنظيم رفع صور كل عقار في مجلد مخصص ودقيق لمنع العشوائية:
-  `alamoudi_properties/{regionId}/{propertyCode}`
-- مثال: صور عقار `S93` في الشروق تُحفظ في: `alamoudi_properties/shorouk/S93/`
-- الروابط السحابية الناتجة تُخزن في عمود `images` في جدول `properties` بـ Supabase.
+- تنظيم رفع الصور في مجلدات متخصصة ومعزولة لمنع العشوائية والخلط:
+  1. **صور العقارات:** `alamoudi_properties/{regionId}/{propertyCode}` (مثال: `alamoudi_properties/shorouk/S93/`).
+  2. **أغلفة المناطق:** `alamoudi_regions/{regionName}` (مثال: `alamoudi_regions/madinaty/`).
+  3. **خلفيات وهوية المنصة:** `alamoudi_branding/{home_hero | home_bg | login_bg}`.
+  4. **معرض أعمال التشطيبات:** `alamoudi_finishing`.
+- يتم حفظ الروابط السحابية النقية (HTTPS CDN URLs) فقط في Supabase، مما يحافظ على خفة قاعدة البيانات وسرعة استجابتها دون استهلاك أي كوتا للباندويث.
+- عند استبدال أو حذف أي صورة، تُحدث السجلات سحابياً وفورياً وتُزال الإشارات القديمة من Supabase والكاش المحلي.
 
 ### ج. دورة الحذف وإعادة الضبط الشاملة (Clean Delete & Platform Reset):
 1. **حذف العقار الفردي أو المجمّع:**
@@ -38,8 +41,12 @@
    - الإبقاء على حسابات المشرفين والمدير والمدن الأساسية (بما فيها كمبوند وصال) لضمان استقرار النظام.
 
 ## 3. الملفات المتأثرة (Impacted Files)
-- `artifacts/alamoudi/src/lib/cloudinaryService.ts`: خدمة رفع وإدارة صور Cloudinary.
+- `artifacts/alamoudi/src/lib/cloudinaryService.ts`: خدمة رفع وإدارة صور Cloudinary ودوال التوجيه للمجلدات (`alamoudi_properties`, `alamoudi_regions`, `alamoudi_branding`, `alamoudi_finishing`).
 - `artifacts/alamoudi/src/lib/supabaseClient.ts`: بيانات ربط مشروع Supabase الجديد.
 - `artifacts/alamoudi/src/context/DataContext.tsx`: إدارة المزامنة، الدمج، الحذف النظيف، ودالة `resetAllProperties`.
 - `artifacts/alamoudi/src/pages/admin/PropertyForm.tsx`: رفع الصور التلقائي لسحابة Cloudinary وتنظيم المجلدات.
+- `artifacts/alamoudi/src/pages/admin/Regions.tsx`: تحويل أغلفة المناطق لرفع Cloudinary وتخزين الرابط فقط في Supabase.
+- `artifacts/alamoudi/src/pages/admin/Settings.tsx`: رفع صور الهيرو وخلفيات الدخول إلى Cloudinary.
+- `artifacts/alamoudi/src/components/admin/HomeBackgroundManager.tsx`: رفع خلفيات الصفحة الرئيسية إلى Cloudinary.
+- `artifacts/alamoudi/src/pages/admin/FinishingGallery.tsx`: رفع صور معرض أعمال التشطيبات المجمعة مباشرة إلى Cloudinary.
 - `artifacts/alamoudi/src/pages/admin/Backup.tsx`: تفعيل إعادة الضبط والتنظيف الشامل.

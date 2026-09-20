@@ -67,6 +67,7 @@ import { Link } from "wouter";
 import { HomeBackgroundManager } from "@/components/admin/HomeBackgroundManager";
 import { LOGIN_BACKGROUND_PRESETS, type LoginBackgroundPreset } from "@/data/loginPresets";
 import { compressImage } from "@/lib/imageOptimizer";
+import { uploadToCloudinary, getBrandingCloudinaryFolder } from "@/lib/cloudinaryService";
 import { ThemeAppearanceManager } from "@/components/admin/ThemeAppearanceManager";
 import { Layers } from "lucide-react";
 
@@ -451,23 +452,44 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     settings.loginCardBlur,
   ]);
 
-  const handleHeroFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleHeroFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
+    if (!file.type.startsWith("image/")) {
       toast({
-        title: "الصورة كبيرة جداً",
-        description: "يجب أن لا يتجاوز حجم الصورة 4 ميجابايت",
+        title: "نوع الملف غير صالح",
+        description: "يرجى اختيار ملف صورة صالح (JPG, PNG, WEBP)",
         variant: "destructive",
       });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string;
-      setForm((prev) => ({ ...prev, heroImageUrl: result }));
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 25 * 1024 * 1024) {
+      toast({
+        title: "الصورة كبيرة جداً",
+        description: "يجب أن لا يتجاوز حجم الصورة 25 ميجابايت",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      toast({ title: "جاري معالجة ورفع صورة الغلاف السحابية...", description: "يتم ضغط الصورة ورفعها إلى Cloudinary مباشرة." });
+      const optimized = await compressImage(file, { maxWidth: 1920, maxHeight: 1080, quality: 0.82 });
+      const folder = getBrandingCloudinaryFolder("home_hero");
+      const cloudUrl = await uploadToCloudinary(optimized, folder);
+      setForm((prev) => ({ ...prev, heroImageUrl: cloudUrl }));
+      toast({
+        title: "تم رفع صورة الغلاف بنجاح ✓",
+        description: "تم رفع الصورة إلى السحابة. اضغط 'حفظ صورة الغلاف' لتطبيقها على المنصة.",
+      });
+    } catch (err: any) {
+      console.error("[Settings] Hero image upload error:", err);
+      toast({
+        title: "تعذر رفع الصورة",
+        description: err.message || "حدث خطأ أثناء الرفع، يرجى المحاولة مرة أخرى.",
+        variant: "destructive",
+      });
+    }
   };
 
   const [compressingLoginBg, setCompressingLoginBg] = useState(false);
@@ -530,22 +552,26 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
     try {
       // Compress adaptive WebP (max 1920x1920, quality 0.80) to ~80-140KB
       const compressedDataUrl = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.80 });
+      toast({ title: "جاري رفع خلفية الدخول إلى Cloudinary..." });
+      const folder = getBrandingCloudinaryFolder("login_bg");
+      const cloudUrl = await uploadToCloudinary(compressedDataUrl, folder);
+
       loginFormDirtyRef.current = true;
       isFormDirtyRef.current = true;
       setForm((prev) => ({
         ...prev,
-        loginBackgroundImageUrl: compressedDataUrl,
+        loginBackgroundImageUrl: cloudUrl,
         loginBackgroundEnabled: true,
       }));
       toast({
-        title: "تم تجهيز وضغط الصورة بنجاح ✓",
-        description: "أصبحت الصورة خفيفة وسريعة التحميل للغاية. اضغط 'حفظ إعدادات تسجيل الدخول' لتثبيتها.",
+        title: "تم رفع وتجهيز الصورة بنجاح ✓",
+        description: "أصبحت الصورة سحابية وخفيفة للغاية. اضغط 'حفظ إعدادات تسجيل الدخول' لتثبيتها.",
       });
-    } catch (err) {
-      console.error("[Settings] Login background compression error:", err);
+    } catch (err: any) {
+      console.error("[Settings] Login background error:", err);
       toast({
-        title: "تعذر معالجة الصورة",
-        description: "حدث خطأ أثناء ضغط الصورة، يرجى المحاولة مرة أخرى.",
+        title: "تعذر معالجة أو رفع الصورة",
+        description: err.message || "حدث خطأ، يرجى المحاولة مرة أخرى.",
         variant: "destructive",
       });
     } finally {

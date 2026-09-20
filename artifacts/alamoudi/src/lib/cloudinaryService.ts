@@ -19,6 +19,29 @@ export function getPropertyCloudinaryFolder(regionId = "general", propertyCode =
 }
 
 /**
+ * Builds a structured folder path for Region Hero images:
+ * e.g., "alamoudi_regions/madinaty"
+ */
+export function getRegionCloudinaryFolder(regionId = "general"): string {
+  const cleanRegion = (regionId || "general").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  return `alamoudi_regions/${cleanRegion}`;
+}
+
+/**
+ * Folder for site-wide branding and home background images
+ */
+export function getBrandingCloudinaryFolder(subCategory = "home_hero"): string {
+  return `alamoudi_branding/${subCategory}`;
+}
+
+/**
+ * Folder for finishing gallery work showcase images
+ */
+export function getFinishingCloudinaryFolder(): string {
+  return "alamoudi_finishing";
+}
+
+/**
  * Extracts Cloudinary public ID from a URL
  */
 export function extractCloudinaryPublicId(url: string): string | null {

@@ -13,6 +13,8 @@ import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { cn } from "@/lib/utils";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
+import { uploadMultipleToCloudinary, getFinishingCloudinaryFolder } from "@/lib/cloudinaryService";
+
 interface GalleryImage { id: string; url: string; title: string }
 interface GalleryVideo { id: string; url: string; title: string }
 interface GalleryConfig { interval: number; images: GalleryImage[]; videos: GalleryVideo[] }
@@ -117,12 +119,17 @@ export default function FinishingGallery() {
     if (!files.length) return;
     setUploading(true);
     try {
+      toast({ title: `جاري ضغط ومعالجة ${files.length} صورة...` });
       const compressed = await Promise.all(files.map(f => compressImage(f)));
-      const newImgs: GalleryImage[] = compressed.map(url => ({ id: uid(), url, title: "" }));
+      toast({ title: `جاري رفع الصور إلى سحابة Cloudinary السريعة...` });
+      const folder = getFinishingCloudinaryFolder();
+      const cloudUrls = await uploadMultipleToCloudinary(compressed, folder);
+      const newImgs: GalleryImage[] = cloudUrls.map(url => ({ id: uid(), url, title: "" }));
       setConfig(c => ({ ...c, images: [...c.images, ...newImgs] }));
-      toast({ title: `تم رفع ${files.length} ${files.length === 1 ? "صورة" : "صور"}` });
-    } catch {
-      toast({ title: "فشل ضغط الصور", variant: "destructive" });
+      toast({ title: `تم رفع ${cloudUrls.length} ${cloudUrls.length === 1 ? "صورة بنجاح ✓" : "صور بنجاح ✓"}` });
+    } catch (err: any) {
+      console.error("[FinishingGallery] Upload error:", err);
+      toast({ title: "فشل رفع الصور السحابية", description: err.message || "حاول مرة أخرى", variant: "destructive" });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";

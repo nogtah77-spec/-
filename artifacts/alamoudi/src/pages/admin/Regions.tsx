@@ -14,6 +14,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { HeroImageAdjuster } from "@/components/admin/HeroImageAdjuster";
 import { compressImage } from "@/lib/imageOptimizer";
 import { checkUserPermission } from "@/lib/permissions";
+import { uploadToCloudinary, getRegionCloudinaryFolder } from "@/lib/cloudinaryService";
 import { Link } from "wouter";
 
 export default function Regions() {
@@ -33,6 +34,7 @@ export default function Regions() {
   const [gradientOpacity, setGradientOpacity] = useState(60);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   if (!canManageRegions) {
@@ -54,35 +56,55 @@ export default function Regions() {
     );
   }
 
-
-
-    const handleAdd = async () => {
+  const handleAdd = async () => {
     if (!newName.trim()) return;
     setSaving(true);
     try {
-      const saved = await addRegion(newName.trim(), heroImage.trim());
+      let finalHeroImage = heroImage.trim();
+      // Offload to Cloudinary if it is a base64 image
+      if (finalHeroImage.startsWith("data:image/")) {
+        toast({ title: "جاري رفع غلاف المنطقة إلى Cloudinary..." });
+        const folder = getRegionCloudinaryFolder(newName.trim());
+        finalHeroImage = await uploadToCloudinary(finalHeroImage, folder);
+      }
+
+      const saved = await addRegion(newName.trim(), finalHeroImage);
       if (!saved) return;
       setNewName("");
       setHeroImage("");
       setRawHeroImage("");
       setShowAddDialog(false);
-      toast({ title: "تم بنجاح", description: "تمت إضافة المنطقة بنجاح" });
+      toast({ title: "تم بنجاح ✓", description: "تمت إضافة المنطقة ورفع غلافها السحابي بنجاح" });
+    } catch (err: any) {
+      console.error("[Regions] Add error:", err);
+      toast({ title: "تعذر حفظ المنطقة", description: err.message || "حاول مرة أخرى", variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
-    const handleEdit = async () => {
+  const handleEdit = async () => {
     if (!editTarget || !newName.trim()) return;
     setSaving(true);
     try {
-      const saved = await updateRegion(editTarget.id, newName.trim(), heroImage.trim());
+      let finalHeroImage = heroImage.trim();
+      // If user cleared the image or replaced it
+      if (finalHeroImage.startsWith("data:image/")) {
+        toast({ title: "جاري رفع غلاف المنطقة الجديد إلى Cloudinary..." });
+        const folder = getRegionCloudinaryFolder(editTarget.id || newName.trim());
+        finalHeroImage = await uploadToCloudinary(finalHeroImage, folder);
+      }
+
+      const saved = await updateRegion(editTarget.id, newName.trim(), finalHeroImage);
       if (!saved) return;
       setEditTarget(null);
       setNewName("");
       setHeroImage("");
       setRawHeroImage("");
-      toast({ title: "تم بنجاح", description: "تم تحديث المنطقة بنجاح" });
+      toast({ title: "تم بنجاح ✓", description: "تم تحديث المنطقة وغلافها السحابي بنجاح" });
+    } catch (err: any) {
+      console.error("[Regions] Edit error:", err);
+      toast({ title: "تعذر تحديث المنطقة", description: err.message || "حاول مرة أخرى", variant: "destructive" });
     } finally {
       setSaving(false);
     }
