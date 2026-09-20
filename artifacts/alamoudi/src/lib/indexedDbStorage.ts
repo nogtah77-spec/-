@@ -46,19 +46,16 @@ export async function savePropertiesToIndexedDb(properties: any[]): Promise<bool
           if (p?.code) existingMap.set(p.code.toLowerCase().trim(), p);
         });
 
-        // Merge, guaranteeing that we combine and accumulate all unique images
+        // Use fresh images without accumulating legacy duplicates
         const merged = properties.map((p) => {
           const old = existingMap.get(p.id) || (p.code ? existingMap.get(p.code.toLowerCase().trim()) : null);
+          const newImgs: string[] = (Array.isArray(p.images) ? p.images : []).filter((u: any) => typeof u === "string" && !u.startsWith("data:image/"));
           if (old) {
-            const oldImgs: string[] = Array.isArray(old.images) ? old.images : [];
-            const newImgs: string[] = Array.isArray(p.images) ? p.images : [];
-            const combined = [...newImgs];
-            for (const img of oldImgs) {
-              if (img && !combined.includes(img)) combined.push(img);
-            }
-            return { ...old, ...p, images: combined };
+            const oldImgs: string[] = (Array.isArray(old.images) ? old.images : []).filter((u: any) => typeof u === "string" && !u.startsWith("data:image/"));
+            const chosenImgs = newImgs.length > 0 ? newImgs : oldImgs;
+            return { ...old, ...p, images: chosenImgs };
           }
-          return p;
+          return { ...p, images: newImgs };
         });
 
         store.put({ key: "cached_properties", data: merged, timestamp: Date.now() });

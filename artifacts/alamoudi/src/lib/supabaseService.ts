@@ -88,13 +88,13 @@ export function parsePropertyImages(rawImages: any): string[] {
         if (u && typeof u === "string" && u.trim()) flat.push(u.trim());
       }
     }
-    return Array.from(new Set(flat.filter(Boolean)));
+    return Array.from(new Set(flat.filter(Boolean))).filter(url => !url.startsWith("data:image/"));
   }
 
   // 2. If string
   if (typeof rawImages === "string") {
     const trimmed = rawImages.trim();
-    if (!trimmed) return [];
+    if (!trimmed || trimmed.startsWith("data:image/")) return [];
 
     // JSON Array string
     if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
@@ -122,7 +122,7 @@ export function parsePropertyImages(rawImages: any): string[] {
       }
     }
 
-    return [trimmed];
+    return trimmed.startsWith("data:image/") ? [] : [trimmed];
   }
 
   return [];

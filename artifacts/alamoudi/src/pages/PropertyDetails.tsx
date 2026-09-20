@@ -108,16 +108,10 @@ export default function PropertyDetails() {
       }
     }
 
-    if (bestFound && directProperty) {
-      const foundImgs = Array.isArray(bestFound.images) ? bestFound.images : [];
-      const directImgs = Array.isArray(directProperty.images) ? directProperty.images : [];
-      const combined = [...directImgs];
-      for (const img of foundImgs) {
-        if (img && !combined.includes(img)) combined.push(img);
-      }
-      return { ...bestFound, ...directProperty, images: combined };
+    if (directProperty) {
+      return { ...bestFound, ...directProperty };
     }
-    return directProperty || bestFound;
+    return bestFound;
   }, [properties, cleanId, directProperty]);
 
   // 2. Direct fallback to Supabase if not in memory or if memory has <= 1 image
@@ -144,28 +138,17 @@ export default function PropertyDetails() {
 
     void (async () => {
       try {
-        // Query by id OR by code, order by created_at desc, and inspect ALL returned rows
+        // Query by id OR by code, order by created_at desc
         const { data, error } = await supabase
           .from("properties")
           .select("*")
           .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
           .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(1);
 
         if (cancelled) return;
         if (data && data.length > 0) {
-          // Combine all unique images across any matching rows for this property
-          const allImages: string[] = [];
-          for (const r of data) {
-            const imgs = parsePropertyImages(r.images);
-            for (const img of imgs) {
-              if (img && !allImages.includes(img)) allImages.push(img);
-            }
-          }
           const primaryProp = rowToProperty(data[0]);
-          if (allImages.length > (primaryProp.images?.length || 0)) {
-            primaryProp.images = allImages;
-          }
           setDirectProperty(primaryProp);
         }
       } catch (err) {

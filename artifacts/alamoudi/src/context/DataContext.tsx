@@ -591,7 +591,7 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v9";
+const CACHE_KEY = "alm_cache_v10";
 // الـ cache بيُعرض فوراً حتى لو قديم، والـ API دايماً بيرفّش في الخلفية
 // TTL طويل جداً (7 أيام) كـ safety net بس للـ cache القديم جداً
 const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -600,10 +600,15 @@ const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
 if (typeof window !== "undefined") {
   try {
     localStorage.removeItem("alm_property_overrides");
+    localStorage.removeItem("alm_recent_property_edits");
+    localStorage.removeItem("alm_cache_v9");
     localStorage.removeItem("alm_cache_v8");
     localStorage.removeItem("alm_cache_v7");
     localStorage.removeItem("alm_cache_v6");
     localStorage.removeItem("alm_cache_v5");
+    if (window.indexedDB) {
+      window.indexedDB.deleteDatabase("alm_properties_db");
+    }
   } catch {}
 }
 
@@ -784,12 +789,9 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     } else {
       const existImgs = parsePropertyImages(existing.images);
       const fpImgs = parsePropertyImages(fp.images);
-      const combined = [...fpImgs];
-      for (const img of existImgs) {
-        if (img && !combined.includes(img)) combined.push(img);
-      }
+      const chosenImgs = fpImgs.length > 0 ? fpImgs : existImgs;
       const newer = new Date(fp.updatedAt || fp.createdAt || 0) >= new Date(existing.updatedAt || existing.createdAt || 0) ? fp : existing;
-      const mergedProp = { ...existing, ...newer, images: combined };
+      const mergedProp = { ...existing, ...newer, images: chosenImgs };
       map.set(codeKey, mergedProp);
       if (fp.id) map.set(fp.id, mergedProp);
       if (existing.id) map.set(existing.id, mergedProp);
@@ -808,11 +810,8 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
         const existing = map.get(codeKey) || map.get(item.property.id);
         const existImgs = parsePropertyImages(existing?.images);
         const inImgs = parsePropertyImages(item.property.images);
-        const combined = [...inImgs];
-        for (const img of existImgs) {
-          if (img && !combined.includes(img)) combined.push(img);
-        }
-        const mergedProp = { ...existing, ...item.property, images: combined };
+        const chosenImgs = inImgs.length > 0 ? inImgs : existImgs;
+        const mergedProp = { ...existing, ...item.property, images: chosenImgs };
         map.set(codeKey, mergedProp);
         map.set(item.property.id, mergedProp);
       }
@@ -833,11 +832,8 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
             const existing = map.get(codeKey) || map.get(it.property.id);
             const existImgs = parsePropertyImages(existing?.images);
             const inImgs = parsePropertyImages(it.property.images);
-            const combined = [...inImgs];
-            for (const img of existImgs) {
-              if (img && !combined.includes(img)) combined.push(img);
-            }
-            const mergedProp = { ...existing, ...it.property, images: combined };
+            const chosenImgs = inImgs.length > 0 ? inImgs : existImgs;
+            const mergedProp = { ...existing, ...it.property, images: chosenImgs };
             map.set(codeKey, mergedProp);
             map.set(it.property.id, mergedProp);
           }
@@ -857,11 +853,8 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     } else {
       const existImgs = parsePropertyImages(existing.images);
       const newImgs = parsePropertyImages(p.images);
-      const combined = [...newImgs];
-      for (const img of existImgs) {
-        if (img && !combined.includes(img)) combined.push(img);
-      }
-      uniqueMap.set(key, { ...existing, ...p, images: combined });
+      const chosenImgs = newImgs.length > 0 ? newImgs : existImgs;
+      uniqueMap.set(key, { ...existing, ...p, images: chosenImgs });
     }
   }
 
@@ -1038,11 +1031,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const tCache = new Date(p.updatedAt || p.createdAt || 0).getTime();
             const existImgs = parsePropertyImages(existing.images);
             const pImgs = parsePropertyImages(p.images);
-            const combined = [...pImgs];
-            for (const img of existImgs) {
-              if (img && !combined.includes(img)) combined.push(img);
-            }
-            const newer = tCache >= tExist ? { ...existing, ...p, images: combined } : { ...p, ...existing, images: combined };
+            const chosenImgs = pImgs.length > 0 ? pImgs : existImgs;
+            const newer = tCache >= tExist ? { ...existing, ...p, images: chosenImgs } : { ...p, ...existing, images: chosenImgs };
             map.set(codeKey, newer);
             map.set(p.id, newer);
           } else {
@@ -1237,11 +1227,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (!existing) return fresh;
             const freshImgs = parsePropertyImages(fresh.images);
             const existImgs = parsePropertyImages(existing.images);
-            const combined = [...freshImgs];
-            for (const img of existImgs) {
-              if (img && !combined.includes(img)) combined.push(img);
-            }
-            return { ...existing, ...fresh, images: combined };
+            const chosenImgs = freshImgs.length > 0 ? freshImgs : existImgs;
+            return { ...existing, ...fresh, images: chosenImgs };
           });
           const deletedSet = getDeletedPropertyIds();
           prev.forEach(p => {
@@ -1410,11 +1397,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 const tC = new Date(p.updatedAt || p.createdAt || 0).getTime();
                 const existImgs = parsePropertyImages(existing.images);
                 const pImgs = parsePropertyImages(p.images);
-                const combined = [...pImgs];
-                for (const img of existImgs) {
-                  if (img && !combined.includes(img)) combined.push(img);
-                }
-                const newer = tC >= tE ? { ...existing, ...p, images: combined } : { ...p, ...existing, images: combined };
+                const chosenImgs = pImgs.length > 0 ? pImgs : existImgs;
+                const newer = tC >= tE ? { ...existing, ...p, images: chosenImgs } : { ...p, ...existing, images: chosenImgs };
                 map.set(codeKey, newer);
                 map.set(p.id, newer);
               }
@@ -1466,11 +1450,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (full) {
               const prevImgs = parsePropertyImages(p.images);
               const fullImgs = parsePropertyImages(full.images);
-              const combined = [...prevImgs];
-              for (const img of fullImgs) {
-                if (img && !combined.includes(img)) combined.push(img);
-              }
-              return { ...p, images: combined };
+              const chosenImgs = fullImgs.length > 0 ? fullImgs : prevImgs;
+              return { ...p, images: chosenImgs };
             }
             return p;
           });
@@ -1510,11 +1491,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (!existing) return fresh;
             const freshImgs = parsePropertyImages(fresh.images);
             const existImgs = parsePropertyImages(existing.images);
-            const combined = [...freshImgs];
-            for (const img of existImgs) {
-              if (img && !combined.includes(img)) combined.push(img);
-            }
-            return { ...existing, ...fresh, images: combined };
+            const chosenImgs = freshImgs.length > 0 ? freshImgs : existImgs;
+            return { ...existing, ...fresh, images: chosenImgs };
           });
           const deletedSet = getDeletedPropertyIds();
           prev.forEach(p => {

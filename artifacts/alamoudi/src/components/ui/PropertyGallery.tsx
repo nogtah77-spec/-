@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { ChevronRight, ChevronLeft, Download, Images, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDetailImageUrl, getThumbnailImageUrl } from "@/lib/cloudinaryService";
@@ -24,13 +24,24 @@ export function PropertyGallery({
   onDownloadAll,
   className,
 }: PropertyGalleryProps) {
+  // Deduplicate and filter out base64 strings if valid URLs exist
+  const cleanImages = useMemo(() => {
+    const arr = Array.isArray(images) ? images : [];
+    const unique = Array.from(new Set(arr.filter(Boolean)));
+    const hasRealUrls = unique.some(u => u.startsWith("http://") || u.startsWith("https://") || u.startsWith("/"));
+    if (hasRealUrls) {
+      return unique.filter(u => !u.startsWith("data:image/"));
+    }
+    return unique;
+  }, [images]);
+
   const [current, setCurrent] = useState(0);
   const dragRef = useRef<{ startX: number; startY: number; dragging: boolean; moved: boolean }>({
     startX: 0, startY: 0, dragging: false, moved: false,
   });
 
-  const prev = useCallback(() => setCurrent(i => (i - 1 + images.length) % images.length), [images.length]);
-  const next = useCallback(() => setCurrent(i => (i + 1) % images.length), [images.length]);
+  const prev = useCallback(() => setCurrent(i => (i - 1 + cleanImages.length) % cleanImages.length), [cleanImages.length]);
+  const next = useCallback(() => setCurrent(i => (i + 1) % cleanImages.length), [cleanImages.length]);
 
   const DRAG_THRESHOLD = 35;
   const AXIS_LOCK = 10;
@@ -62,9 +73,9 @@ export function PropertyGallery({
     if (!dragRef.current.moved) onClickImage?.(current);
   };
 
-  if (images.length === 0) return null;
+  if (cleanImages.length === 0) return null;
 
-  const showNav = images.length > 1;
+  const showNav = cleanImages.length > 1;
 
   return (
     <div className={cn("rounded-2xl overflow-hidden bg-muted select-none", className)}>
@@ -94,7 +105,7 @@ export function PropertyGallery({
         >
           {/* Blurred background fill */}
           <img
-            src={getThumbnailImageUrl(images[current])}
+            src={getThumbnailImageUrl(cleanImages[current])}
             aria-hidden
             draggable={false}
             loading="eager"
@@ -104,7 +115,7 @@ export function PropertyGallery({
           />
           {/* Main image — object-contain, never clipped */}
           <img
-            src={getDetailImageUrl(images[current])}
+            src={getDetailImageUrl(cleanImages[current])}
             alt={title}
             draggable={false}
             decoding="async"
@@ -116,7 +127,7 @@ export function PropertyGallery({
           {/* Dots (bottom of image) */}
           {showNav && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-none">
-              {images.length <= 12 && images.map((_, i) => (
+              {cleanImages.length <= 12 && cleanImages.map((_: string, i: number) => (
                 <span
                   key={i}
                   className={cn(
@@ -127,9 +138,9 @@ export function PropertyGallery({
                   )}
                 />
               ))}
-              {images.length > 12 && (
+              {cleanImages.length > 12 && (
                 <span className="bg-black/50 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-0.5 rounded-full">
-                  {current + 1} / {images.length}
+                  {current + 1} / {cleanImages.length}
                 </span>
               )}
             </div>
@@ -155,9 +166,9 @@ export function PropertyGallery({
         <div className="flex gap-1.5 p-2 bg-black/25 backdrop-blur-sm overflow-x-auto scrollbar-none">
           {/* counter chip */}
           <div className="flex-shrink-0 flex items-center px-2 text-white/70 text-xs font-medium">
-            {current + 1}/{images.length}
+            {current + 1}/{cleanImages.length}
           </div>
-          {images.map((img, i) => (
+          {cleanImages.map((img: string, i: number) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
@@ -192,7 +203,7 @@ export function PropertyGallery({
             <Download className="h-3.5 w-3.5" />
             تحميل الصورة
           </button>
-          {images.length > 1 && (
+          {cleanImages.length > 1 && (
             <button
               type="button"
               onClick={onDownloadAll}
