@@ -3286,7 +3286,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const code = (item.code || genCode()).toUpperCase().trim();
         const existingIdx = code ? indexByCode.get(code) : undefined;
         if (existingIdx !== undefined) {
-          const merged: Property = { ...next[existingIdx], ...item, code, updatedAt: nowIso };
+          const existing = next[existingIdx];
+          const merged: Property = {
+            ...existing,
+            ...item,
+            code,
+            // Preserve existing photos if imported item has no photos
+            images: (Array.isArray(item.images) && item.images.length > 0) ? item.images : (existing.images || []),
+            // Preserve specific existing metadata if imported row had empty values
+            unitType: item.unitType || existing.unitType || "",
+            floorText: item.floorText || existing.floorText || "",
+            master: item.master || existing.master || "",
+            elevator: item.elevator || existing.elevator || "",
+            floors: item.floors || existing.floors || 0,
+            location: item.location || existing.location || "",
+            updatedAt: nowIso,
+          };
           next[existingIdx] = merged;
           payload.push(merged);
           updated++;

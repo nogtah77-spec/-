@@ -190,13 +190,18 @@ function normalizeHeader(h: string): string {
 
 // All valid aliases per internal field name (normalised).
 const FIELD_ALIASES: Record<string, string[]> = {
-  unitType:  ["النوع", "نوع الوحدة", "نوع_الوحدة", "type", "unittype"],
+  // Facade / Orientation (الواجهة / اتجاه الوحدة)
+  unitType:  ["الواجهة", "واجهة", "اتجاه_الوحدة", "اتجاهالوحدة", "اتجاه", "نوع_الواجهة", "facade", "orientation", "unittype"],
+  // Property Type (نوع العقار)
+  propertyType: ["النوع", "نوع العقار", "نوع_العقار", "نوع_الوحدة", "نوعالوحدة", "فئة_العقار", "type", "propertytype"],
   code:      ["الكود", "كود", "رقم الوحدة", "رقم_الوحدة", "code", "رقم"],
   subArea:   ["المنطقة", "المنطقة الفرعية", "منطقة_فرعية", "المنطقةالفرعية", "subarea", "حي", "الحي"],
   area:      ["المساحة", "مساحة", "area", "م2", "م²"],
-  floorText: ["الدور", "دور", "floor", "الطابق", "طابق"],
+  floor:     ["الدور", "دور", "floor", "الطابق", "طابق", "رقم_الدور", "رقم الدور"],
+  floorText: ["الدريسنج", "دريسنج", "غرفة_ملابس", "غرفة ملابس", "غرفةالملابس", "dressing", "floortext"],
+  floors:    ["عدد طوابق العقار", "عدد_طوابق_العقار", "عدد الطوابق", "عدد_الطوابق", "عدد طوابق العمارة", "طوابق", "floors"],
   layout:    ["التوزيع", "توزيع", "layout", "الغرف", "غرف"],
-  master:    ["ماستر", "master"],
+  master:    ["ماستر", "ماستر روم", "ماستر_روم", "غرفة_ماستر", "غرفة ماستر", "master", "masterroom"],
   finishing: ["التشطيب", "تشطيب", "finishing"],
   elevator:  ["أسانسير", "اسانسير", "مصعد", "elevator", "lift"],
   parking:   ["موقف سيارة", "موقف سيارات", "موقف_سيارة", "جراج", "باركينج", "parking", "garage"],
@@ -205,6 +210,8 @@ const FIELD_ALIASES: Record<string, string[]> = {
   price:     ["السعر", "سعر", "price"],
   source:    ["المصدر", "مصدر", "source"],
   location:  ["الموقع", "موقع", "location"],
+  listingType: ["نوع_العقد", "نوع العقد", "listingtype", "contracttype"],
+  images:    ["الصور", "صور", "روابط_الصور", "روابط الصور", "images", "photos"],
   // Extended CSV fields
   title:      ["العنوان", "عنوان", "title"],
   description:["الوصف", "وصف", "description"],
@@ -214,7 +221,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
   beds:       ["غرف_النوم", "غرفالنوم", "الغرف", "beds", "غرف"],
   baths:      ["الحمامات", "حمامات", "baths"],
   featured:   ["مميز", "مُميز", "featured"],
-  agentType:  ["نوع_العرض", "نوعالعرض", "agenttype", "agenttype"],
+  agentType:  ["نوع_العرض", "نوعالعرض", "agenttype"],
   videoUrl:   ["رابط_الفيديو", "الفيديو", "رابطالفيديو", "videourl", "tiktok"],
   mapsUrl:    ["رابط_الخريطة", "الخريطة", "رابطالخريطة", "mapsurl"],
   externalUrl:["رابط_خارجي", "رابطخارجي", "externalurl"],
@@ -232,18 +239,60 @@ function mapHeader(raw: string): string | undefined {
   return ALIAS_TO_FIELD.get(normalizeHeader(raw));
 }
 
-// ─── Excel sheet parsing (unchanged logic, using new header mapper) ──
+// Universal Image Parser for CSV/JSON
+export function parseImagesList(raw: string): string[] {
+  if (!raw || !raw.trim()) return [];
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+    } catch {}
+  }
+  return trimmed
+    .split(/[\n,;]+/)
+    .map(s => s.trim().replace(/^['"]+|['"]+$/g, ""))
+    .filter(s => s.startsWith("http://") || s.startsWith("https://") || s.startsWith("data:image/"));
+}
+
+export const KNOWN_PROPERTY_TYPES = new Set([
+  "شقة", "فيلا", "دوبلكس", "تاون هاوس", "تاونهاوس", "بنتهاوس", "روف", "شاليه", "محل", "مكتب", "إداري", "تجاري", "عمارة", "أرض", "استوديو",
+  "apartment", "villa", "duplex", "townhouse", "penthouse", "roof", "chalet", "commercial", "office", "administrative", "building", "land", "studio"
+]);
+
+export function sanitizeDressing(raw: string, floorNum?: number): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  // If it's a pure number identical to the floor number or simply a floor digit, it's a floor number not a dressing!
+  if (/^\d+$/.test(arabicToWestern(trimmed))) {
+    const n = parseInt(arabicToWestern(trimmed), 10);
+    if (floorNum === undefined || n === floorNum || n <= 20) return "";
+  }
+  return trimmed;
+}
+
+// ─── Excel sheet parsing ──────────────────────────────────────────
 const HEADER_FIELD: Record<string, string> = {
-  "النوع": "unitType",
+  "النوع": "propertyType",
+  "نوع العقار": "propertyType",
+  "الواجهة": "unitType",
+  "واجهة": "unitType",
   "الكود": "code",
   "المنطقة": "subArea",
   "المساحة": "area",
-  "الدور": "floorText",
+  "الدور": "floor",
+  "الدريسنج": "floorText",
+  "غرفة ملابس": "floorText",
+  "عدد طوابق العقار": "floors",
+  "عدد الطوابق": "floors",
   "التوزيع": "layout",
   "ماستر": "master",
+  "ماستر روم": "master",
   "التشطيب": "finishing",
   "أسانسير": "elevator",
   "اسانسير": "elevator",
+  "مصعد": "elevator",
   "موقف سيارة": "parking",
   "موقف سيارات": "parking",
   "جراج": "parking",
@@ -254,6 +303,9 @@ const HEADER_FIELD: Record<string, string> = {
   "السعر": "price",
   "المصدر": "source",
   "الموقع": "location",
+  "نوع_العقد": "listingType",
+  "نوع العقد": "listingType",
+  "الصور": "images",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -288,11 +340,14 @@ function rowToProperty(
     return idx !== undefined ? cleanCell(row[Number(idx)]) : "";
   };
 
-  const unitType = get("unitType");
+  let unitType = get("unitType");
+  const propTypeRaw = get("propertyType");
   const code = get("code");
   const subArea = get("subArea");
   const areaRaw = get("area");
-  const floorText = get("floorText");
+  const floorRaw = get("floor");
+  const floorTextRaw = get("floorText");
+  const floorsRaw = get("floors");
   const layoutRaw = get("layout");
   const master = get("master");
   const finishing = get("finishing");
@@ -303,8 +358,10 @@ function rowToProperty(
   const priceRaw = get("price");
   const source = get("source");
   const location = get("location");
+  const listingTypeRaw = get("listingType");
+  const imagesRaw = get("images");
 
-  const hasData = [unitType, code, subArea, areaRaw, layoutRaw, priceRaw].some(Boolean);
+  const hasData = [unitType, propTypeRaw, code, subArea, areaRaw, layoutRaw, priceRaw].some(Boolean);
   if (!hasData) return null;
 
   const area = parseArea(areaRaw);
@@ -312,11 +369,35 @@ function rowToProperty(
   const price = parsePrice(priceRaw);
   const layout = arabicToWestern(layoutRaw);
 
+  // Smart check: If unitType is actually a property type (e.g. "شقة"), do NOT set it as facade
+  const candidateType = (propTypeRaw || (KNOWN_PROPERTY_TYPES.has(unitType.trim().toLowerCase()) ? unitType : "")).trim().toLowerCase();
+  let typeId = "apartment";
+  if (candidateType) {
+    if (candidateType.includes("فيلا") || candidateType === "villa") typeId = "villa";
+    else if (candidateType.includes("دوبلكس") || candidateType === "duplex") typeId = "duplex";
+    else if (candidateType.includes("تاون") || candidateType === "townhouse") typeId = "townhouse";
+    else if (candidateType.includes("بنتهاوس") || candidateType === "penthouse") typeId = "penthouse";
+    else if (candidateType.includes("روف") || candidateType === "roof") typeId = "roof";
+    else if (candidateType.includes("شاليه") || candidateType === "chalet") typeId = "chalet";
+    else if (candidateType.includes("محل") || candidateType.includes("تجاري") || candidateType === "commercial") typeId = "commercial";
+    else if (candidateType.includes("مكتب") || candidateType.includes("إداري") || candidateType === "administrative" || candidateType === "office") typeId = "administrative";
+    else if (candidateType.includes("عمارة") || candidateType === "building") typeId = "building";
+    else if (candidateType.includes("أرض") || candidateType === "land") typeId = "land";
+    else typeId = "apartment";
+  }
+  if (KNOWN_PROPERTY_TYPES.has(unitType.trim().toLowerCase())) {
+    unitType = "";
+  }
+
+  const numericFloor = parseFloorNumber(floorRaw || floorTextRaw);
+  const dressing = sanitizeDressing(floorTextRaw, numericFloor);
+  const images = parseImagesList(imagesRaw);
+
   return {
     code: code || "",
     title: buildTitle({ area, regionName: meta.regionName, subArea, category: meta.category }),
     description: buildDescription([
-      unitType ? `النوع: ${unitType}` : "",
+      unitType ? `الواجهة: ${unitType}` : "",
       layout || "",
       finishing ? `التشطيب: ${finishing}` : "",
       view ? `الفيو: ${view}` : "",
@@ -326,17 +407,17 @@ function rowToProperty(
     area,
     beds,
     baths,
-    floors: 0,
-    floor: parseFloorNumber(floorText),
+    floors: parseInt(arabicToWestern(floorsRaw), 10) || 0,
+    floor: numericFloor,
     finishing,
     view,
-    typeId: "apartment",
+    typeId,
     regionId: meta.regionId,
     category: meta.category,
     status: "active",
     featured: false,
     agentType: sourceToAgentType(source),
-    images: [],
+    images,
     videoUrl: "",
     externalUrl: "",
     mapsUrl: "",
@@ -347,7 +428,7 @@ function rowToProperty(
     elevator,
     parking,
     additionalFeatures,
-    floorText: arabicToWestern(floorText),
+    floorText: dressing,
     location,
     source,
   };
@@ -511,12 +592,15 @@ export function parseDelimitedText(
     const source = pick(cells, "source");
     const finishing = pick(cells, "finishing");
     const view = pick(cells, "view");
-    const typeRaw = pick(cells, "unitType");
+    const facadeRaw = pick(cells, "unitType");
+    const propTypeRaw = pick(cells, "propertyType");
     const statusRaw = pick(cells, "status").trim().toLowerCase();
     const featuredRaw = pick(cells, "featured").trim();
     const agentRaw = pick(cells, "agentType").trim().toLowerCase();
     const description = pick(cells, "description");
-    const floorRaw = pick(cells, "floorText");
+    const floorRaw = pick(cells, "floor");
+    const dressingRaw = pick(cells, "floorText");
+    const floorsRaw = pick(cells, "floors");
     const location = pick(cells, "location");
     const master = pick(cells, "master");
     const elevator = pick(cells, "elevator");
@@ -526,6 +610,8 @@ export function parseDelimitedText(
     const videoUrl = pick(cells, "videoUrl");
     const mapsUrl = pick(cells, "mapsUrl");
     const externalUrl = pick(cells, "externalUrl");
+    const listingTypeRaw = pick(cells, "listingType");
+    const imagesRaw = pick(cells, "images");
 
     // Skip rows without any useful data
     if (!code && !title && !priceRaw && !areaRaw) continue;
@@ -536,14 +622,27 @@ export function parseDelimitedText(
 
     const regionId = regionByName.get(regionName.trim()) || resolveRegionId(regionName, regions);
     const category = catByLabel[catRaw.trim()] || "sale";
-    const typeKey = typeRaw.trim();
+
+    // Smart Facade vs Property Type separation:
+    let unitType = facadeRaw.trim();
+    const candidateType = (propTypeRaw || (KNOWN_PROPERTY_TYPES.has(unitType.toLowerCase()) ? unitType : "")).trim();
+    if (KNOWN_PROPERTY_TYPES.has(unitType.toLowerCase())) {
+      unitType = "";
+    }
+    const typeKey = candidateType || "شقة";
     const typeId = typeByName.get(typeKey) || (typeIds.has(typeKey) ? typeKey : "apartment");
+
     const status = (STATUS_VALUES.has(statusRaw) ? statusRaw : "active") as PropertyStatus;
     const featured = /^(نعم|true|1|yes)$/i.test(featuredRaw);
     const agentType: "direct" | "broker" =
       agentRaw === "broker" || agentRaw === "بروكر" ? "broker"
       : agentRaw === "direct" || agentRaw === "مباشر" ? "direct"
       : sourceToAgentType(source);
+
+    const numericFloor = parseFloorNumber(floorRaw || (fieldByIdx.includes("floorText") ? "" : dressingRaw));
+    const floorText = sanitizeDressing(dressingRaw, numericFloor);
+    const images = parseImagesList(imagesRaw);
+    const floors = parseInt(arabicToWestern(floorsRaw), 10) || 0;
 
     // Build a clean title if not provided
     const finalTitle = title || buildTitle({ area, regionName, category });
@@ -556,8 +655,8 @@ export function parseDelimitedText(
       area,
       beds: bedsRaw ? parseInt(arabicToWestern(bedsRaw), 10) || 0 : lb,
       baths: bathsRaw ? parseInt(arabicToWestern(bathsRaw), 10) || 0 : lba,
-      floors: 0,
-      floor: parseFloorNumber(floorRaw),
+      floors,
+      floor: numericFloor,
       finishing,
       view,
       typeId,
@@ -566,18 +665,18 @@ export function parseDelimitedText(
       status,
       featured,
       agentType,
-      images: [],
+      images,
       videoUrl,
       externalUrl,
       mapsUrl,
-      unitType: typeRaw,
+      unitType,
       subArea,
       layout: arabicToWestern(layoutRaw),
       master,
       elevator,
       parking,
       additionalFeatures,
-      floorText: arabicToWestern(floorRaw),
+      floorText,
       location,
       source,
     });

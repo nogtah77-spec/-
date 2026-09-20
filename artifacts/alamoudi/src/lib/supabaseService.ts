@@ -21,7 +21,6 @@ export function propertyToRow(p: Property) {
       numericFloor = parsed;
     } else {
       numericFloor = 0;
-      if (!derivedFloorText) derivedFloorText = rawFloor.trim();
     }
   }
 

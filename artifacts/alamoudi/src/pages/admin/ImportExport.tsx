@@ -19,12 +19,14 @@ import {
   parseDelimitedText,
   detectHeaders,
   type ParsedProperty,
+  KNOWN_PROPERTY_TYPES,
+  sanitizeDressing,
 } from "@/lib/propertyImport";
 
 const TEMPLATE_HEADERS =
-  "الكود,العنوان,الوصف,النوع,المنطقة,الفئة,الحالة,السعر,المساحة,غرف_النوم,الحمامات,الدور,التشطيب,الفيو,موقف_سيارة,مميزات_إضافية,المصدر,مميز,نوع_العرض,رابط_الفيديو,رابط_الخريطة,رابط_خارجي";
+  "الكود,العنوان,الوصف,السعر,المساحة,غرف_النوم,الحمامات,الدور,عدد_طوابق_العقار,الواجهة,الفيو,ماستر_روم,الدريسنج,أسانسير,موقف_سيارة,التشطيب,مميزات_إضافية,الموقع,الفئة,نوع_العقد,الحالة,مميز,نوع_العرض,رابط_الخريطة,رابط_الفيديو,رابط_خارجي,المنطقة,النوع,الصور";
 const TEMPLATE_ROW =
-  "ALM-1001,شقة فاخرة بمدينتي,وصف مختصر للعقار,شقة,مدينتي,للبيع,active,2500000,120,3,2,4,super-lux,بحري,يوجد,أمن وجراج,مباشر,لا,direct,,,";
+  'ALM-1001,شقة فاخرة بالشروق,وصف العقار بالتفصيل,3500000,180,3,3,2,5,بحري,شارع رئيسي,غرفة ماستر بحمام,يوجد غرفة دريسنج,يوجد,جراج خاص,ألترا سوبر لوكس,أمن وحراسة,الحي الأول,residential,sale,active,نعم,direct,,,,مدينة الشروق,شقة,"https://res.cloudinary.com/example/image1.jpg ; https://res.cloudinary.com/example/image2.jpg"';
 
 function toCSV(rows: Record<string, unknown>[], headers: string[]): string {
   const escape = (v: unknown) => {
@@ -38,30 +40,35 @@ const FIELD_LABELS: Record<string, string> = {
   code: "الكود",
   title: "العنوان",
   description: "الوصف",
-  unitType: "النوع",
-  subArea: "المنطقة",
-  regionName: "المنطقة الرئيسية",
-  category: "الفئة",
-  status: "الحالة",
   price: "السعر",
   area: "المساحة",
-  beds: "الغرف",
+  beds: "غرف النوم",
   baths: "الحمامات",
-  floorText: "الدور",
-  finishing: "التشطيب",
+  floor: "الدور",
+  floors: "عدد طوابق العقار",
+  unitType: "الواجهة",
   view: "الفيو",
-  source: "المصدر",
+  master: "ماستر روم",
+  floorText: "الدريسنج",
+  elevator: "أسانسير",
+  parking: "موقف سيارة",
+  finishing: "التشطيب",
+  additionalFeatures: "مميزات إضافية",
+  location: "الموقع",
+  category: "الفئة",
+  listingType: "نوع العقد",
+  status: "الحالة",
   featured: "مميز",
   agentType: "نوع العرض",
+  propertyType: "نوع العقار",
+  subArea: "المنطقة الفرعية",
+  regionName: "المنطقة الرئيسية",
   videoUrl: "رابط الفيديو",
   mapsUrl: "رابط الخريطة",
   externalUrl: "رابط خارجي",
-  master: "ماستر",
-  elevator: "أسانسير",
-  parking: "موقف سيارة",
-  additionalFeatures: "مميزات إضافية",
-  location: "الموقع",
   layout: "التوزيع",
+  source: "المصدر",
+  images: "الصور",
 };
 
 interface PendingImport {
@@ -114,24 +121,33 @@ export default function ImportExport() {
         return properties.map((p) => ({
           الكود: p.code,
           العنوان: p.title,
-          الوصف: p.description,
+          الوصف: p.description || "",
           السعر: p.price,
           المساحة: p.area,
           غرف_النوم: p.beds,
           الحمامات: p.baths,
           الدور: p.floor,
-          التشطيب: p.finishing,
-          الفيو: p.view,
-          موقف_سيارة: p.parking,
-          مميزات_إضافية: p.additionalFeatures,
-          الفئة: p.category,
-          الحالة: p.status,
+          عدد_طوابق_العقار: p.floors || "",
+          الواجهة: p.unitType || "",
+          الفيو: p.view || "",
+          ماستر_روم: p.master || "",
+          الدريسنج: p.floorText || "",
+          أسانسير: p.elevator || "",
+          موقف_سيارة: p.parking || "",
+          التشطيب: p.finishing || "",
+          مميزات_إضافية: p.additionalFeatures || "",
+          الموقع: p.location || "",
+          الفئة: p.category || "residential",
+          نوع_العقد: p.listingType || "sale",
+          الحالة: p.status || "active",
           مميز: p.featured ? "نعم" : "لا",
-          نوع_العرض: p.agentType,
-          رابط_الخريطة: p.mapsUrl,
-          رابط_الفيديو: p.videoUrl,
+          نوع_العرض: p.agentType || "direct",
+          رابط_الخريطة: p.mapsUrl || "",
+          رابط_الفيديو: p.videoUrl || "",
+          رابط_خارجي: p.externalUrl || "",
           المنطقة: regions.find((r) => r.id === p.regionId)?.name ?? p.regionId,
           النوع: propertyTypes.find((t) => t.id === p.typeId)?.name ?? p.typeId,
+          الصور: Array.isArray(p.images) ? p.images.join(" ; ") : "",
           تاريخ_الإضافة: new Date(p.createdAt).toLocaleDateString("ar-SA-u-nu-latn"),
         }));
       case "users":
@@ -284,14 +300,14 @@ export default function ImportExport() {
             videoUrl: String(p.videoUrl || ""),
             externalUrl: String(p.externalUrl || ""),
             mapsUrl: String(p.mapsUrl || ""),
-            unitType: p.unitType || "",
+            unitType: (KNOWN_PROPERTY_TYPES.has(String(p.unitType || "").trim().toLowerCase()) ? "" : String(p.unitType || "").trim()),
             subArea: p.subArea || "",
             layout: p.layout || "",
             master: p.master || "",
             elevator: p.elevator || "",
             parking: p.parking || "",
             additionalFeatures: p.additionalFeatures || "",
-            floorText: String(p.floorText || p.floor || ""),
+            floorText: sanitizeDressing(String(p.floorText || ""), Number(p.floor) || 0),
             location: p.location || "",
             source: p.source || "",
           }));
@@ -570,7 +586,7 @@ export default function ImportExport() {
               <div className="space-y-2 pt-1">
                 <p className="text-xs font-medium text-muted-foreground">أسماء الأعمدة المدعومة:</p>
                 <div className="flex flex-wrap gap-1">
-                  {["الكود", "العنوان", "الوصف", "النوع", "المنطقة", "الفئة", "الحالة", "السعر", "المساحة", "غرف_النوم", "الحمامات", "الدور", "التشطيب", "الفيو", "المصدر"].map((h) => (
+                  {["الكود", "العنوان", "الوصف", "السعر", "المساحة", "غرف_النوم", "الحمامات", "الدور", "عدد_طوابق_العقار", "الواجهة", "الفيو", "ماستر_روم", "الدريسنج", "أسانسير", "موقف_سيارة", "التشطيب", "مميزات_إضافية", "الموقع", "الفئة", "نوع_العقد", "الحالة", "مميز", "نوع_العرض", "النوع", "المنطقة", "الصور"].map((h) => (
                     <Badge key={h} variant="outline" className="text-[10px] text-muted-foreground">{h}</Badge>
                   ))}
                 </div>
