@@ -4,11 +4,13 @@ import { Router, type IRouter, type Request, type Response } from "express";
 const router: IRouter = Router();
 
 const DEFAULT_CLOUD_NAME = "vis04evc";
+const DEFAULT_API_KEY = "657172733186433";
+const DEFAULT_API_SECRET = "btYELgnhR-2E54LxI1OwivkvAfY";
 
 function getCloudinaryCredentials() {
   let cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.VITE_CLOUDINARY_CLOUD_NAME || DEFAULT_CLOUD_NAME;
-  let apiKey = process.env.CLOUDINARY_API_KEY;
-  let apiSecret = process.env.CLOUDINARY_API_SECRET;
+  let apiKey = process.env.CLOUDINARY_API_KEY || DEFAULT_API_KEY;
+  let apiSecret = process.env.CLOUDINARY_API_SECRET || DEFAULT_API_SECRET;
 
   if (process.env.CLOUDINARY_URL) {
     try {
