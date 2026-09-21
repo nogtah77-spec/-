@@ -602,6 +602,8 @@ if (typeof window !== "undefined") {
   try {
     localStorage.removeItem("alm_property_overrides");
     localStorage.removeItem("alm_recent_property_edits");
+    localStorage.removeItem("alm_deleted_properties");
+    localStorage.removeItem("alm_cache_v10");
     localStorage.removeItem("alm_cache_v9");
     localStorage.removeItem("alm_cache_v8");
     localStorage.removeItem("alm_cache_v7");
@@ -774,8 +776,7 @@ export function isPropertyDeleted(p: { id?: string; code?: string } | null | und
   if (!p) return true;
   const delSet = deletedSet || getDeletedPropertyIds();
   const id = String(p.id || "").trim();
-  const code = String(p.code || "").trim();
-  return delSet.has(id) || delSet.has(id.toLowerCase()) || delSet.has(code) || delSet.has(code.toLowerCase());
+  return delSet.has(id) || delSet.has(id.toLowerCase());
 }
 
 export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
@@ -2976,10 +2977,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sourcePhones: sanitizedSourcePhones,
       id: genId(),
       createdAt: nowIso,
-      updatedAt: nowIso,
     };
-
     recordRecentEdit(property);
+
+    // Un-blacklist this id or code if ever recorded in deleted list
+    try {
+      const delArr: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
+      const idLower = (property.id || "").toLowerCase().trim();
+      const codeLower = (property.code || "").toLowerCase().trim();
+      const cleaned = delArr.filter(x => {
+        const s = String(x).toLowerCase().trim();
+        return s !== idLower && s !== codeLower;
+      });
+      localStorage.setItem("alm_deleted_properties", JSON.stringify(cleaned));
+    } catch {}
 
     setProperties(prev => {
       const updated = [property, ...prev];
@@ -3092,7 +3103,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     try {
       const deletedArr: string[] = JSON.parse(localStorage.getItem("alm_deleted_properties") || "[]");
       const delSet = new Set(deletedArr);
-      [id, targetId, targetIdLower, targetCode, targetCodeLower].filter(Boolean).forEach(k => delSet.add(k));
+      [id, targetId, targetIdLower].filter(Boolean).forEach(k => delSet.add(k));
       localStorage.setItem("alm_deleted_properties", JSON.stringify(Array.from(delSet)));
     } catch {}
 
@@ -3151,11 +3162,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const keysToPurge: string[] = [];
     targets.forEach(t => {
       if (t.id) { keysToPurge.push(t.id); keysToPurge.push(t.id.toLowerCase().trim()); }
-      if (t.code) { keysToPurge.push(t.code); keysToPurge.push(t.code.toLowerCase().trim()); }
     });
     ids.forEach(id => {
-      keysToPurge.push(id);
-      keysToPurge.push(id.toLowerCase().trim());
+      const matchingTarget = targets.find(t => (t.code || "").toLowerCase().trim() === id);
+      if (matchingTarget && matchingTarget.id) {
+        keysToPurge.push(matchingTarget.id);
+        keysToPurge.push(matchingTarget.id.toLowerCase().trim());
+      } else {
+        keysToPurge.push(id);
+        keysToPurge.push(id.toLowerCase().trim());
+      }
     });
 
     // 1. Purge from recent edits
