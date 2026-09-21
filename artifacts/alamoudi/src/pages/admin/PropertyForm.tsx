@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -211,9 +211,26 @@ export default function PropertyForm() {
   const [saving, setSaving] = useState(false);
   const [compressing, setCompressing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+    const currentForm = formRef.current;
+    const currentRegion = (currentForm.regionId || "").trim();
+    const currentCode = (currentForm.code || "").trim();
+
+    if (!currentRegion || !currentCode) {
+      toast({
+        title: "تنبيه: يُرجى اختيار المنطقة وكود العقار أولاً",
+        description: "لتوجيه الصور وحفظها تلقائياً داخل المجلد الخاص بها في كلاوديناري",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const remainingSlots = 20 - images.length;
     if (remainingSlots <= 0) {
       toast({ title: "تم الوصول للحد الأقصى للصور (20 صورة)", variant: "destructive" });
@@ -224,10 +241,10 @@ export default function PropertyForm() {
       const optimized = await compressMultipleImages(files, remainingSlots);
       if (optimized.length > 0) {
         toast({ title: `جاري رفع ${optimized.length} صورة إلى السحابة السريعة...` });
-        const folder = getPropertyCloudinaryFolder(form.regionId, form.code);
+        const folder = getPropertyCloudinaryFolder(currentRegion, currentCode);
         const uploaded = await uploadMultipleToCloudinary(optimized, folder);
         setImages(prev => [...prev, ...uploaded]);
-        toast({ title: `تم رفع ${uploaded.length} صورة بنجاح إلى السحابة ✓` });
+        toast({ title: `تم رفع ${uploaded.length} صورة بنجاح إلى مجلد (${currentCode}) في السحابة ✓` });
       }
     } catch (err) {
       toast({ title: "تعذر معالجة بعض الصور", variant: "destructive" });
@@ -238,8 +255,18 @@ export default function PropertyForm() {
   }, [images.length, toast]);
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); setDragging(false);
+    e.preventDefault();
+    setDragging(false);
     if (!compressing) {
+      const currentForm = formRef.current;
+      if (!currentForm.regionId || !currentForm.code?.trim()) {
+        toast({
+          title: "تنبيه: يُرجى اختيار المنطقة وكود العقار أولاً",
+          description: "لتوجيه الصور وحفظها تلقائياً داخل المجلد الخاص بها في كلاوديناري",
+          variant: "destructive",
+        });
+        return;
+      }
       handleFiles(e.dataTransfer.files);
     }
   };
@@ -761,8 +788,25 @@ export default function PropertyForm() {
 
             {/* Images */}
             <Card>
-              <CardHeader><CardTitle className="text-sm">الصور ({images.length}/20)</CardTitle></CardHeader>
+              <CardHeader className="pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <CardTitle className="text-sm font-bold">الصور ({images.length}/20)</CardTitle>
+                  {form.regionId && form.code?.trim() ? (
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/25">
+                      <Folder className="h-3.5 w-3.5 text-emerald-500" />
+                      <span className="font-medium">المجلد السحابي:</span>
+                      <span className="font-mono font-bold dir-ltr">{getPropertyCloudinaryFolder(form.regionId, form.code)}</span>
+                    </div>
+                  ) : null}
+                </div>
+              </CardHeader>
               <CardContent className="space-y-4">
+                {(!form.regionId || !form.code?.trim()) && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
+                    <span>يُرجى تحديد <strong>المدينة / المنطقة</strong> و<strong>كود العقار</strong> أولاً ليتم حفظ الصور فوراً داخل المجلد المخصص للعقار في كلاوديناري.</span>
+                  </div>
+                )}
                 {images.length > 0 && (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                     {images.map((img, idx) => (
@@ -794,7 +838,18 @@ export default function PropertyForm() {
                   onDragOver={e => { e.preventDefault(); setDragging(true); }}
                   onDragLeave={() => setDragging(false)}
                   onDrop={handleDrop}
-                  onClick={() => !compressing && fileRef.current?.click()}
+                  onClick={() => {
+                    if (compressing) return;
+                    if (!form.regionId || !form.code?.trim()) {
+                      toast({
+                        title: "تنبيه: يُرجى اختيار المنطقة وكود العقار أولاً",
+                        description: "لتوجيه الصور وحفظها تلقائياً داخل المجلد الخاص بها في كلاوديناري",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    fileRef.current?.click();
+                  }}
                 >
                   {compressing ? (
                     <div className="py-2 space-y-2">

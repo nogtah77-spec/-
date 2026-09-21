@@ -180,6 +180,7 @@ export const REAL_ESTATE_SYNONYMS: Record<string, string[]> = {
   "بيت الوطن": ["بيت الوطن", "بيت وطن"],
   "مدينه نصر": ["مدينه نصر", "مدينة نصر", "نصر"],
   "هليوبوليس": ["هليوبوليس", "هليوبوليس الجديده", "هليوبوليس الجديدة"],
+  "العاصمة الإدارية": ["العاصمة الإدارية", "العاصمه الاداريه", "العاصمة الادارية", "العاصمة", "العاصمه", "new capital"],
 };
 
 // Words to treat as descriptive qualifiers/soft words (do not break matching if omitted from listing)

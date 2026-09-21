@@ -434,6 +434,8 @@ export function parsePropertyText(text: string): ParsedPropertyData {
     result.regionId = "nasr_city";
   } else if (/(?:هليوبوليس|new\s*heliopolis)/i.test(cleanText)) {
     result.regionId = "new_heliopolis";
+  } else if (/(?:العاصمة\s*الإدارية|العاصمة\s*الادارية|العاصمة|new\s*capital)/i.test(cleanText)) {
+    result.regionId = "new_capital";
   } else if (/(?:تجمع|التجمع|new\s*cairo|القاهرة\s*الجديدة)/i.test(cleanText)) {
     result.regionId = "tagamoa";
   }

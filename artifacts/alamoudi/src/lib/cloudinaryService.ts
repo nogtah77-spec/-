@@ -11,12 +11,63 @@ export const CLOUDINARY_CONFIG = {
 };
 
 /**
+ * Resolves a clean, standardized folder name for a region in Cloudinary.
+ * Handles IDs (e.g. "shorouk", "new_heliopolis") and Arabic names (e.g. "مدينة الشروق", "هليوبوليس الجديدة").
+ */
+export function resolveRegionFolderName(regionIdOrName = "general"): string {
+  if (!regionIdOrName || !regionIdOrName.trim()) return "general";
+  const norm = regionIdOrName.trim().toLowerCase();
+
+  // Heliopolis (هليوبوليس الجديدة)
+  if (norm.includes("heliopolis") || norm.includes("هليوبوليس")) {
+    return "new_heliopolis";
+  }
+  // Shorouk (مدينة الشروق)
+  if (norm.includes("shorouk") || norm.includes("شروق")) {
+    return "shorouk";
+  }
+  // Madinaty (مدينتي)
+  if (norm.includes("madinaty") || norm.includes("مدينتي")) {
+    return "madinaty";
+  }
+  // Wasal / Wesal (كمبوند وصال)
+  if (norm.includes("wasal") || norm.includes("wesal") || norm.includes("وصال")) {
+    return "wasal";
+  }
+  // Tagamoa / New Cairo (التجمع / القاهرة الجديدة)
+  if (norm.includes("tagamoa") || norm.includes("تجمع") || norm.includes("cairo") || norm.includes("القاهرة الجديدة") || norm.includes("القاهره الجديده")) {
+    return "tagamoa";
+  }
+  // Beit El Watan (بيت الوطن)
+  if (norm.includes("beit") || norm.includes("watan") || norm.includes("الوطن")) {
+    return "beit_elwatan";
+  }
+  // Nasr City (مدينة نصر)
+  if (norm.includes("nasr") || norm.includes("نصر")) {
+    return "nasr_city";
+  }
+  // Badr (مدينة بدر)
+  if (norm.includes("badr") || norm.includes("بدر")) {
+    return "badr";
+  }
+  // New Capital (العاصمة الإدارية)
+  if (norm.includes("capital") || norm.includes("عاصمة") || norm.includes("عاصمه")) {
+    return "new_capital";
+  }
+
+  // Fallback: clean Latin characters or slug
+  const clean = norm.replace(/[^a-z0-9_-]/g, "_").replace(/^_+|_+$/g, "");
+  return clean || "general";
+}
+
+/**
  * Builds a structured folder path for Cloudinary:
  * e.g., "alamoudi_properties/shorouk/S93"
+ * or "alamoudi_properties/new_heliopolis/VS1"
  */
-export function getPropertyCloudinaryFolder(regionId = "general", propertyCode = "unassigned"): string {
-  const cleanRegion = (regionId || "general").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
-  const cleanCode = (propertyCode || "unassigned").toUpperCase().replace(/[^A-Z0-9_-]/g, "_");
+export function getPropertyCloudinaryFolder(regionIdOrName = "general", propertyCode = "unassigned"): string {
+  const cleanRegion = resolveRegionFolderName(regionIdOrName);
+  const cleanCode = (propertyCode || "unassigned").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "_") || "UNASSIGNED";
   return `alamoudi_properties/${cleanRegion}/${cleanCode}`;
 }
 
@@ -25,7 +76,7 @@ export function getPropertyCloudinaryFolder(regionId = "general", propertyCode =
  * e.g., "alamoudi_regions/madinaty"
  */
 export function getRegionCloudinaryFolder(regionId = "general"): string {
-  const cleanRegion = (regionId || "general").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  const cleanRegion = resolveRegionFolderName(regionId);
   return `alamoudi_regions/${cleanRegion}`;
 }
 

@@ -671,6 +671,7 @@ export const DEFAULT_REGIONS: Region[] = [
   { id: "beit_elwatan", name: "بيت الوطن", active: true },
   { id: "nasr_city", name: "مدينة نصر", active: true },
   { id: "new_heliopolis", name: "هليوبوليس الجديدة", active: true },
+  { id: "new_capital", name: "العاصمة الإدارية", active: true },
 ];
 
 export const DEFAULT_PROPERTY_TYPES: PropertyType[] = [
