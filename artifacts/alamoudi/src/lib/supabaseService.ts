@@ -9,20 +9,22 @@ export function propertyToRow(p: Property) {
     return Number.isFinite(n) ? n : fallback;
   };
 
-  const rawFloor = p.floor;
+  const rawFloorStr = p.floor !== undefined && p.floor !== null ? String(p.floor).trim() : "";
   let numericFloor = 0;
-  let derivedFloorText = p.floorText || "";
+  let derivedFloorText = "";
 
-  if (typeof rawFloor === "number") {
-    numericFloor = rawFloor;
-  } else if (typeof rawFloor === "string" && rawFloor.trim()) {
-    const parsed = parseFloat(rawFloor);
-    if (!isNaN(parsed)) {
-      numericFloor = parsed;
-    } else {
-      numericFloor = 0;
-    }
+  if (/^\d+$/.test(rawFloorStr)) {
+    numericFloor = parseInt(rawFloorStr, 10);
+    derivedFloorText = rawFloorStr;
+  } else if (rawFloorStr === "") {
+    numericFloor = -1;
+    derivedFloorText = "__NONE__";
+  } else {
+    numericFloor = 0;
+    derivedFloorText = rawFloorStr;
   }
+
+  const dressingValue = p.layout || p.floorText || "";
 
   return {
     id: p.id,
@@ -50,7 +52,7 @@ export function propertyToRow(p: Property) {
     maps_url: p.mapsUrl || "",
     unit_type: p.unitType || "",
     sub_area: p.subArea || "",
-    layout: p.layout || "",
+    layout: dressingValue,
     floor_text: derivedFloorText,
     master: p.master || "",
     location: p.location || "",
@@ -130,6 +132,25 @@ export function parsePropertyImages(rawImages: any): string[] {
 
 // Helper to convert DB Row to Property
 export function rowToProperty(r: any): Property {
+  const rawFt = typeof r.floor_text === "string" ? r.floor_text.trim() : "";
+  let finalFloor: string | number = "";
+
+  if (rawFt === "__NONE__" || r.floor === -1) {
+    finalFloor = "";
+  } else if (rawFt && rawFt !== "غرفة دريسنج" && rawFt !== "يوجد") {
+    finalFloor = rawFt;
+  } else if (r.floor !== null && r.floor !== undefined) {
+    if (r.floor > 0) {
+      finalFloor = r.floor;
+    } else if (r.floor === 0) {
+      finalFloor = "أرضي";
+    } else {
+      finalFloor = "";
+    }
+  }
+
+  const finalDressing = r.layout || (rawFt === "غرفة دريسنج" || rawFt === "يوجد" ? rawFt : "");
+
   return {
     id: r.id,
     code: r.code,
@@ -140,7 +161,7 @@ export function rowToProperty(r: any): Property {
     beds: Number(r.beds) || 0,
     baths: Number(r.baths) || 0,
     floors: Number(r.floors) || 0,
-    floor: Number(r.floor) || 0,
+    floor: finalFloor,
     finishing: r.finishing || "",
     view: r.view || "",
     typeId: r.type_id || "",
@@ -157,7 +178,7 @@ export function rowToProperty(r: any): Property {
     unitType: r.unit_type || "",
     subArea: r.sub_area || "",
     layout: r.layout || "",
-    floorText: r.floor_text || "",
+    floorText: finalDressing,
     master: r.master || "",
     location: r.location || "",
     additionalFeatures: r.additional_features || "",

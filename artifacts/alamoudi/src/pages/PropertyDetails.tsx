@@ -663,11 +663,18 @@ export default function PropertyDetails() {
                       { label: "الحمامات", value: property.baths || null },
                       {
                         label: "الدور",
-                        value: property.floor !== null && property.floor !== undefined && property.floor !== ""
-                          ? (typeof property.floor === "number"
-                              ? (property.floor > 0 ? `الدور ${property.floor}` : "أرضي")
-                              : (property.floor === "0" ? "أرضي" : property.floor))
-                          : null
+                        value: (() => {
+                          if (property.floor === null || property.floor === undefined || property.floor === "" || property.floor === "__NONE__" || property.floor === -1) {
+                            return null;
+                          }
+                          const str = String(property.floor).trim();
+                          if (!str || str === "__NONE__" || str === "-1") return null;
+                          if (/^\d+$/.test(str)) {
+                            const num = parseInt(str, 10);
+                            return num > 0 ? `الدور ${num}` : "أرضي";
+                          }
+                          return str;
+                        })()
                       },
                       { label: "عدد طوابق العقار", value: Number(property.floors) > 0 ? property.floors : null },
                       { label: "الواجهة", value: property.unitType || null },
