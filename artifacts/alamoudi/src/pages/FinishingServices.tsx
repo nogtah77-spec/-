@@ -17,6 +17,7 @@ import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { getCardImageUrl, getDetailImageUrl } from "@/lib/cloudinaryService";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { suppressGhostClicks } from "@/lib/utils";
+import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import { Link } from "wouter";
 
 const finishingTypes = ["سوبر لوكس", "لوكس", "كلاسيك", "مودرن", "بسيط", "متكامل مع الأثاث"];
@@ -57,17 +58,6 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
     : [null, null, null, null];
 
   const [lightbox, setLightbox] = useState<string | null>(null);
-
-  const closeLightbox = (e?: React.SyntheticEvent | Event) => {
-    if (e) {
-      try {
-        if ("preventDefault" in e && typeof e.preventDefault === "function") e.preventDefault();
-        if ("stopPropagation" in e && typeof e.stopPropagation === "function") e.stopPropagation();
-      } catch {}
-    }
-    suppressGhostClicks(450);
-    setLightbox(null);
-  };
 
   if (images.length === 0) {
     return (
@@ -126,36 +116,15 @@ function ImageSlideshow({ images, interval }: { images: GalleryImage[]; interval
         </div>
       )}
 
-      {/* Lightbox */}
-      {lightbox && (
-        <div
-          className="fixed inset-0 z-50 bg-black/92 flex items-center justify-center p-4 select-none"
-          onClick={closeLightbox}
-          onTouchEnd={closeLightbox}
-        >
-          <button
-            type="button"
-            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-            onClick={closeLightbox}
-            onTouchEnd={closeLightbox}
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <img
-            src={getDetailImageUrl(lightbox)}
-            alt="صورة"
-            className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl"
-            onClick={e => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onTouchEnd={e => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          />
-        </div>
-      )}
+      {/* Zoomable Lightbox */}
+      <ZoomableLightbox
+        images={images.map(img => img.url)}
+        currentIndex={lightbox ? images.findIndex(img => img.url === lightbox) : null}
+        onClose={() => setLightbox(null)}
+        onChangeIndex={(idx) => {
+          if (images[idx]) setLightbox(images[idx].url);
+        }}
+      />
     </>
   );
 }

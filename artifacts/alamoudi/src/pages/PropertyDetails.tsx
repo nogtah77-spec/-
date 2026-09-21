@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { PropertyCard } from "@/components/ui/PropertyCard";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PropertyGallery } from "@/components/ui/PropertyGallery";
+import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
@@ -175,72 +175,6 @@ export default function PropertyDetails() {
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
   const [downloadAllPending, setDownloadAllPending] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const lbTouch = useRef<{ x: number; y: number; target: HTMLElement | null } | null>(null);
-
-  const closeLightbox = useCallback((e?: React.SyntheticEvent | Event) => {
-    if (e) {
-      try {
-        if ("preventDefault" in e && typeof e.preventDefault === "function") e.preventDefault();
-        if ("stopPropagation" in e && typeof e.stopPropagation === "function") e.stopPropagation();
-      } catch {}
-    }
-    suppressGhostClicks(450);
-    setLightboxIdx(null);
-  }, []);
-
-  const lbPrev = useCallback(() => setLightboxIdx(i => i === null ? null : (i - 1 + images.length) % images.length), [images.length]);
-  const lbNext = useCallback(() => setLightboxIdx(i => i === null ? null : (i + 1) % images.length), [images.length]);
-
-  const lbTouchStart = (e: React.TouchEvent) => {
-    lbTouch.current = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
-      target: e.target as HTMLElement,
-    };
-  };
-  const lbTouchEnd = (e: React.TouchEvent) => {
-    if (!lbTouch.current) return;
-    const dx = e.changedTouches[0].clientX - lbTouch.current.x;
-    const dy = e.changedTouches[0].clientY - lbTouch.current.y;
-    const dist = Math.hypot(dx, dy);
-    const startTarget = lbTouch.current.target;
-    lbTouch.current = null;
-
-    // Swipe horizontal to navigate images
-    if (Math.abs(dx) > Math.abs(dy) + 10 && Math.abs(dx) >= 30) {
-      if (images.length > 1) {
-        if (dx > 0) lbPrev(); else lbNext();
-      }
-      return;
-    }
-
-    // Tap on empty area outside image -> close lightbox safely with zero ghost clicks
-    if (dist < 15) {
-      const endTarget = e.target as HTMLElement;
-      const isStartOnImgOrBtn = startTarget?.tagName?.toLowerCase() === "img" || !!startTarget?.closest("button");
-      const isEndOnImgOrBtn = endTarget?.tagName?.toLowerCase() === "img" || !!endTarget?.closest("button");
-      if (!isStartOnImgOrBtn && !isEndOnImgOrBtn) {
-        closeLightbox(e);
-      }
-    }
-  };
-
-  // Lightbox keyboard controls (Esc to close, arrows to navigate) and body scroll lock
-  useEffect(() => {
-    if (lightboxIdx === null) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeLightbox(e);
-      else if (e.key === "ArrowRight") lbPrev();
-      else if (e.key === "ArrowLeft") lbNext();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [lightboxIdx, lbPrev, lbNext]);
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
@@ -455,193 +389,13 @@ export default function PropertyDetails() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
-      {/* Lightbox Portal */}
-      {lightboxIdx !== null && images.length > 0 && typeof document !== "undefined" && createPortal(
-        <div
-          className="fixed inset-0 z-[1000000] bg-black/95 flex flex-col items-center justify-center select-none"
-          onClick={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.tagName.toLowerCase() !== "img" && !target.closest("button")) {
-              e.preventDefault();
-              e.stopPropagation();
-              closeLightbox(e);
-            }
-          }}
-          onTouchStart={lbTouchStart}
-          onTouchEnd={lbTouchEnd}
-        >
-
-          {/* X على اليمين — لضمان الرؤية من أي زاوية */}
-          <button
-            type="button"
-            className="fixed top-4 right-4 sm:top-6 sm:right-6 z-[1000005] w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              closeLightbox(e);
-            }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              closeLightbox(e);
-            }}
-            aria-label="إغلاق"
-            title="إغلاق (Esc)"
-          >
-            <X className="w-6 h-6 text-white stroke-[2.5]" />
-          </button>
-
-          {/* العداد بأعلى المنتصف */}
-          <div className="fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-[1000005] text-white/95 text-xs sm:text-sm font-bold tabular-nums px-4 py-1.5 rounded-full bg-[#161B20] border border-white/50 shadow-xl pointer-events-none select-none">
-            {lightboxIdx + 1} / {images.length}
-          </div>
-
-          {/* سهم التنقل الأيمن - في منتصف الشاشة عمودياً */}
-          {images.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                lbPrev();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                lbPrev();
-              }}
-              className="fixed top-1/2 -translate-y-1/2 right-3 sm:right-6 z-[1000005] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
-              aria-label="الصورة السابقة"
-              title="السابق"
-            >
-              <ChevronRight className="w-7 h-7 sm:w-8 sm:h-8 text-white stroke-[2.5]" />
-            </button>
-          )}
-
-          {/* سهم التنقل الأيسر - في منتصف الشاشة عمودياً */}
-          {images.length > 1 && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                lbNext();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                lbNext();
-              }}
-              className="fixed top-1/2 -translate-y-1/2 left-3 sm:left-6 z-[1000005] w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#161B20] hover:bg-black active:bg-neutral-950 active:scale-95 text-white flex items-center justify-center border-2 border-white shadow-[0_4px_25px_rgba(0,0,0,0.95)] cursor-pointer transition-all"
-              aria-label="الصورة التالية"
-              title="التالي"
-            >
-              <ChevronLeft className="w-7 h-7 sm:w-8 sm:h-8 text-white stroke-[2.5]" />
-            </button>
-          )}
-
-          {/* الصورة الرئيسية */}
-          <div className="relative max-h-[80vh] max-w-[88vw] flex items-center justify-center pointer-events-none">
-            <img
-              src={getDetailImageUrl(images[lightboxIdx])}
-              alt=""
-              draggable={false}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onTouchEnd={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className="max-h-[78vh] max-w-[86vw] w-auto h-auto object-contain rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.95)] select-none pointer-events-auto"
-            />
-          </div>
-
-          {/* شريط التحكم السفلي والأسهم والمؤشر */}
-          <div
-            className="fixed z-[1000005] flex items-center gap-3 px-4 py-2 rounded-full bg-[#161B20] border border-white/50 shadow-2xl"
-            style={{ bottom: "max(1.5rem, calc(env(safe-area-inset-bottom, 16px) + 16px))", left: "50%", transform: "translateX(-50%)" }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            {images.length > 1 ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  lbPrev();
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  lbPrev();
-                }}
-                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 active:scale-90 flex items-center justify-center text-white cursor-pointer transition-all"
-                aria-label="السابق"
-              >
-                <ChevronRight className="w-5 h-5 text-white stroke-[2.5]" />
-              </button>
-            ) : (
-              <div
-                className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/30 cursor-not-allowed select-none"
-                title="صورة وحيدة"
-              >
-                <ChevronRight className="w-5 h-5 text-white/30 stroke-[2]" />
-              </div>
-            )}
-
-            <div className="flex items-center gap-1.5 px-2">
-              {images.length > 1 && images.length <= 12 &&
-                images.map((_: string, i: number) => (
-                  <span
-                    key={i}
-                    className={cn(
-                      "block rounded-full transition-all duration-200",
-                      i === lightboxIdx
-                        ? "w-4 h-1.5 bg-[#C5A059] shadow"
-                        : "w-1.5 h-1.5 bg-white/40"
-                    )}
-                  />
-                ))}
-              <span className="text-white/95 text-xs font-bold tabular-nums pr-1">
-                {lightboxIdx + 1} / {images.length}
-              </span>
-            </div>
-
-            {images.length > 1 ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  lbNext();
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  lbNext();
-                }}
-                className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 active:scale-90 flex items-center justify-center text-white cursor-pointer transition-all"
-                aria-label="التالي"
-              >
-                <ChevronLeft className="w-5 h-5 text-white stroke-[2.5]" />
-              </button>
-            ) : (
-              <div
-                className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center text-white/30 cursor-not-allowed select-none"
-                title="صورة وحيدة"
-              >
-                <ChevronLeft className="w-5 h-5 text-white/30 stroke-[2]" />
-              </div>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Zoomable Lightbox with Pinch-to-zoom & Double-click */}
+      <ZoomableLightbox
+        images={images}
+        currentIndex={lightboxIdx}
+        onClose={() => setLightboxIdx(null)}
+        onChangeIndex={(i) => setLightboxIdx(i)}
+      />
 
       <main className="flex-1 pb-16">
         {/* Breadcrumb */}
