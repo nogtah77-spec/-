@@ -10,7 +10,7 @@ import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
-  Mail, Link as LinkIcon, FileText, Camera
+  Mail, Link as LinkIcon, FileText, Camera, Check
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
@@ -175,6 +175,7 @@ export default function PropertyDetails() {
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
   const [downloadAllPending, setDownloadAllPending] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [copiedDesc, setCopiedDesc] = useState(false);
 
   useEffect(() => { setDetailThumbFailed(false); }, [id]);
 
@@ -330,6 +331,31 @@ export default function PropertyDetails() {
   const handleCopy = () => {
     navigator.clipboard.writeText(property.code);
     toast({ title: "تم نسخ الكود", description: property.code });
+  };
+
+  const handleCopyDescription = async () => {
+    if (!property?.description) return;
+    try {
+      await navigator.clipboard.writeText(property.description);
+      setCopiedDesc(true);
+      toast({
+        title: "تم نسخ وصف العقار بنجاح ✓",
+        description: "تم حفظ الوصف في الحافظة للمشاركة السريعة",
+      });
+      setTimeout(() => setCopiedDesc(false), 2000);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = property.description;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopiedDesc(true);
+      toast({ title: "تم نسخ وصف العقار بنجاح ✓" });
+      setTimeout(() => setCopiedDesc(false), 2000);
+    }
   };
 
   const canDownloadImages = currentUser?.role === "admin"
@@ -634,8 +660,31 @@ export default function PropertyDetails() {
               {property.description && (
                 <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)]">
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
-                  <CardHeader className="pb-3 border-b border-white/10">
+                  <CardHeader className="pb-3 border-b border-white/10 flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-base text-[#C5A059] font-bold">وصف العقار</CardTitle>
+                    <button
+                      type="button"
+                      onClick={handleCopyDescription}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 select-none border shadow-xs",
+                        copiedDesc
+                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                          : "text-[#C5A059] bg-[#C5A059]/10 hover:bg-[#C5A059]/20 border-[#C5A059]/30 hover:border-[#C5A059]/50"
+                      )}
+                      title="نسخ وصف العقار"
+                    >
+                      {copiedDesc ? (
+                        <>
+                          <Check className="h-3.5 w-3.5 text-emerald-400" />
+                          <span className="text-[11px] font-bold">تم النسخ</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5 text-[#C5A059]" />
+                          <span className="text-[11px]">نسخ الوصف</span>
+                        </>
+                      )}
+                    </button>
                   </CardHeader>
                   <CardContent className="pt-3">
                     <p className="text-foreground/90 leading-relaxed text-sm whitespace-pre-line break-words [overflow-wrap:anywhere]">{property.description}</p>
