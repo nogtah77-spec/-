@@ -181,7 +181,7 @@ export function PropertyCard({
           </>
         )}
         {/* Right Side: Image Box (Locked size & aspect with absolute image) */}
-        <div className={cn("relative self-stretch shrink-0 overflow-hidden bg-muted/80", emphasized ? "w-36 sm:w-44" : "w-32 sm:w-40")}>
+        <div className={cn("relative self-stretch shrink-0 overflow-hidden bg-muted/80", emphasized ? "w-[126px] min-[400px]:w-36 sm:w-44" : "w-[115px] min-[400px]:w-32 sm:w-40")}>
           {showVideoCover ? (
             <img
               src={videoThumb!}
@@ -268,7 +268,7 @@ export function PropertyCard({
         </div>
 
         {/* Left Side: Content & Details (Redesigned with Luxury Layout) */}
-        <div className="flex min-w-0 flex-1 flex-col justify-between p-3 sm:p-3.5">
+        <div className="flex min-w-0 flex-1 flex-col justify-between p-2.5 min-[400px]:p-3 sm:p-3.5">
           {/* Top Row: Code & Quick Actions */}
           <div>
             <div className="flex items-center justify-between gap-2">
@@ -338,35 +338,58 @@ export function PropertyCard({
             </div>
 
             {/* Specs Row: Beds, Baths, Area (Clean Golden Line) */}
-            <div dir="rtl" className="grid grid-cols-3 gap-1.5 text-[10px] font-bold">
-              {property.beds > 0 ? (
-                <div className={cn(
-                  "flex items-center justify-center gap-1 py-1 rounded text-foreground/90",
-                  glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
-                )}>
+            <div
+              dir="rtl"
+              className={cn(
+                "grid gap-1 sm:gap-1.5 text-[10px] font-bold w-full",
+                property.beds > 0 && property.baths > 0
+                  ? "grid-cols-3"
+                  : property.beds > 0 || property.baths > 0
+                  ? "grid-cols-2"
+                  : "grid-cols-1"
+              )}
+            >
+              {property.beds > 0 && (
+                <div
+                  className={cn(
+                    "flex items-center justify-center gap-1 py-1 px-1 rounded text-foreground/90 min-w-0 overflow-hidden",
+                    glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
+                  )}
+                  title={`${property.beds} غرف`}
+                >
                   <Bed className={cn("h-3 w-3 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
-                  <span>{property.beds} <span className="text-[9px] text-muted-foreground font-normal">غرف</span></span>
+                  <span className="truncate">{property.beds}</span>
+                  <span className="text-[8.5px] sm:text-[9px] text-muted-foreground font-normal shrink-0">غرف</span>
                 </div>
-              ) : <div />}
+              )}
 
-              {property.baths > 0 ? (
-                <div className={cn(
-                  "flex items-center justify-center gap-1 py-1 rounded text-foreground/90",
-                  glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
-                )}>
+              {property.baths > 0 && (
+                <div
+                  className={cn(
+                    "flex items-center justify-center gap-1 py-1 px-1 rounded text-foreground/90 min-w-0 overflow-hidden",
+                    glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
+                  )}
+                  title={`${property.baths} حمام`}
+                >
                   <Bath className={cn("h-3 w-3 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
-                  <span>{property.baths} <span className="text-[9px] text-muted-foreground font-normal">حمام</span></span>
+                  <span className="truncate">{property.baths}</span>
+                  <span className="text-[8.5px] sm:text-[9px] text-muted-foreground font-normal shrink-0">حمام</span>
                 </div>
-              ) : <div />}
+              )}
 
-              <div dir="ltr" className={cn(
-                "flex items-center justify-center gap-1 py-1 rounded text-foreground/90",
-                glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
-              )}>
-                <span className="text-[9px] text-muted-foreground font-normal">م²</span>
-                <span>{property.area}</span>
-                <Square className={cn("h-3 w-3 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
-              </div>
+              {property.area > 0 && (
+                <div
+                  className={cn(
+                    "flex items-center justify-center gap-1 py-1 px-1 rounded text-foreground/90 min-w-0 overflow-hidden",
+                    glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
+                  )}
+                  title={`${property.area} م²`}
+                >
+                  <Square className={cn("h-3 w-3 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
+                  <span className="truncate">{property.area}</span>
+                  <span className="text-[8.5px] sm:text-[9px] text-muted-foreground font-normal shrink-0">م²</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -575,35 +598,58 @@ export function PropertyCard({
           </div>
 
           {/* Specs Grid */}
-          <div dir="rtl" className="grid grid-cols-3 gap-2 text-xs font-bold">
-            {property.beds > 0 ? (
-              <div className={cn(
-                "flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-foreground/90",
-                glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
-              )}>
+          <div
+            dir="rtl"
+            className={cn(
+              "grid gap-2 text-xs font-bold w-full",
+              property.beds > 0 && property.baths > 0
+                ? "grid-cols-3"
+                : property.beds > 0 || property.baths > 0
+                ? "grid-cols-2"
+                : "grid-cols-1"
+            )}
+          >
+            {property.beds > 0 && (
+              <div
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-1.5 px-1.5 rounded-lg text-foreground/90 min-w-0 overflow-hidden",
+                  glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
+                )}
+                title={`${property.beds} غرف`}
+              >
                 <Bed className={cn("h-3.5 w-3.5 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
-                <span>{property.beds} <span className="text-[10px] text-muted-foreground font-normal">غرف</span></span>
+                <span className="truncate">{property.beds}</span>
+                <span className="text-[10px] text-muted-foreground font-normal shrink-0">غرف</span>
               </div>
-            ) : <div />}
+            )}
 
-            {property.baths > 0 ? (
-              <div className={cn(
-                "flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-foreground/90",
-                glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
-              )}>
+            {property.baths > 0 && (
+              <div
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-1.5 px-1.5 rounded-lg text-foreground/90 min-w-0 overflow-hidden",
+                  glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
+                )}
+                title={`${property.baths} حمام`}
+              >
                 <Bath className={cn("h-3.5 w-3.5 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
-                <span>{property.baths} <span className="text-[10px] text-muted-foreground font-normal">حمام</span></span>
+                <span className="truncate">{property.baths}</span>
+                <span className="text-[10px] text-muted-foreground font-normal shrink-0">حمام</span>
               </div>
-            ) : <div />}
+            )}
 
-            <div dir="ltr" className={cn(
-              "flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-foreground/90",
-              glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
-            )}>
-              <span className="text-[10px] text-muted-foreground font-normal">م²</span>
-              <span>{property.area}</span>
-              <Square className={cn("h-3.5 w-3.5 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
-            </div>
+            {property.area > 0 && (
+              <div
+                className={cn(
+                  "flex items-center justify-center gap-1.5 py-1.5 px-1.5 rounded-lg text-foreground/90 min-w-0 overflow-hidden",
+                  glass ? "bg-[#0F1317]/65 border border-white/10 backdrop-blur-md" : "bg-muted/40 border border-border/40"
+                )}
+                title={`${property.area} م²`}
+              >
+                <Square className={cn("h-3.5 w-3.5 shrink-0", glass ? "text-[#C5A059]" : "text-accent")} />
+                <span className="truncate">{property.area}</span>
+                <span className="text-[10px] text-muted-foreground font-normal shrink-0">م²</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>
