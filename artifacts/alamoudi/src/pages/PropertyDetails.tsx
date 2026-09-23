@@ -10,7 +10,7 @@ import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
-  Mail, Link as LinkIcon, FileText, Camera, Check
+  Mail, Link as LinkIcon, FileText, Camera, Check, Star
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
@@ -451,7 +451,12 @@ export default function PropertyDetails() {
                     جديد
                   </span>
                 )}
-                {property.featured && <Badge className="bg-accent text-accent-foreground font-black shadow-xs">مميز VIP</Badge>}
+                {property.featured && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#A9927D] text-[#10202D] font-black text-xs shadow-xs border border-[#10202D]/10">
+                    <Star className="h-3.5 w-3.5 fill-[#FFB800] text-[#D97706]" />
+                    <span>مميز</span>
+                  </span>
+                )}
                 {property.status === "rented" && <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">مؤجر</Badge>}
                 {property.status === "sold" && <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">مباع</Badge>}
                 {property.status === "reserved" && <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border border-yellow-500/30 font-bold">محجوز</Badge>}

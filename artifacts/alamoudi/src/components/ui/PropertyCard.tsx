@@ -259,7 +259,7 @@ export function PropertyCard({
               )}
               {property.featured && (
                 <span className="inline-flex items-center gap-0.5 rounded bg-[#A9927D] text-[#10202D] font-bold px-1.5 py-0.5 shadow-xs border border-[#10202D]/10">
-                  <Star className="h-2 w-2 fill-[#10202D] text-[#10202D]" />
+                  <Star className="h-2 w-2 fill-[#FFB800] text-[#D97706]" />
                   مميز
                 </span>
               )}
@@ -463,8 +463,8 @@ export function PropertyCard({
             )}
             {property.featured && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#A9927D]/85 text-[#10202D] font-black text-[11px] shadow-md border border-white/20 backdrop-blur-md">
-                <Star className="h-3 w-3 fill-[#10202D] text-[#10202D]" />
-                مميز VIP
+                <Star className="h-3 w-3 fill-[#FFB800] text-[#D97706]" />
+                مميز
               </span>
             )}
           </div>
