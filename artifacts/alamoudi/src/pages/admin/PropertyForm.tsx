@@ -237,32 +237,52 @@ export default function PropertyForm() {
     }
   }, [isEdit]);
 
+  // Save helper function
+  const triggerSaveDraftNow = useCallback(() => {
+    if (hasMeaningfulData(form, images, aiText)) {
+      const previewCode = form.code?.trim() || "";
+      const reg = regions.find(r => r.id === form.regionId)?.name;
+      const typeN = propertyTypes.find(t => t.id === form.typeId)?.name;
+      const previewTitle = previewCode
+        ? `كود ${previewCode}`
+        : (typeN && reg ? `${typeN} في ${reg}` : (reg ? `عقار في ${reg}` : "عقار جديد"));
+
+      savePropertyDraft({
+        form,
+        images,
+        aiText,
+        sourceUrl: isEdit && params.id ? `/admin/properties/${params.id}/edit` : "/admin/properties/new",
+        updatedAt: Date.now(),
+        previewTitle,
+        isEdit,
+        editPropertyId: params.id,
+      });
+    }
+  }, [form, images, aiText, isEdit, params.id, regions, propertyTypes]);
+
   // Real-time debounced auto-saving (TikTok style)
   useEffect(() => {
     if (!isDirtyRef.current) return;
-    const timer = setTimeout(() => {
-      if (hasMeaningfulData(form, images, aiText)) {
-        const previewCode = form.code?.trim() || "";
-        const reg = regions.find(r => r.id === form.regionId)?.name;
-        const typeN = propertyTypes.find(t => t.id === form.typeId)?.name;
-        const previewTitle = previewCode
-          ? `كود ${previewCode}`
-          : (typeN && reg ? `${typeN} في ${reg}` : (reg ? `عقار في ${reg}` : "عقار جديد"));
-
-        savePropertyDraft({
-          form,
-          images,
-          aiText,
-          updatedAt: Date.now(),
-          previewTitle,
-          isEdit,
-          editPropertyId: params.id,
-        });
-      }
-    }, 600);
-
+    const timer = setTimeout(triggerSaveDraftNow, 300);
     return () => clearTimeout(timer);
-  }, [form, images, aiText, isEdit, params.id, regions, propertyTypes]);
+  }, [triggerSaveDraftNow]);
+
+  // Immediate flush when app is minimized, tab hidden, or page unloaded
+  useEffect(() => {
+    const handleHide = () => {
+      if (isDirtyRef.current) {
+        triggerSaveDraftNow();
+      }
+    };
+    document.addEventListener("visibilitychange", handleHide);
+    window.addEventListener("pagehide", handleHide);
+    window.addEventListener("beforeunload", handleHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleHide);
+      window.removeEventListener("pagehide", handleHide);
+      window.removeEventListener("beforeunload", handleHide);
+    };
+  }, [triggerSaveDraftNow]);
 
   const handleDiscardDraft = () => {
     if (window.confirm("هل تريد تفريغ النموذج وحذف المسودة المحفوظة نهائياً للبدء من جديد؟")) {

@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
-import { FileEdit, ArrowLeft, Bookmark, X, Clock, Trash2 } from "lucide-react";
+import { FileEdit, ArrowLeft, Bookmark, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatNumber } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -18,54 +18,69 @@ export function DraftRecoveryBanner() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const isFormPage =
-    location === "/admin/properties/new" ||
-    (location.startsWith("/admin/properties/") && location.endsWith("/edit"));
-
-  const checkDraft = () => {
+  const checkDraft = useCallback(() => {
     if (isDraftBannerDismissed()) {
       setDraft(null);
       return;
     }
     const currentDraft = loadPropertyDraft();
     setDraft(currentDraft);
-  };
+  }, []);
 
   useEffect(() => {
     checkDraft();
 
-    const handleDraftChanged = () => {
-      checkDraft();
+    // Re-check when window regains focus or user un-minimizes the browser
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkDraft();
+      }
     };
 
-    window.addEventListener("alm-property-draft-changed", handleDraftChanged);
-    window.addEventListener("storage", handleDraftChanged);
+    const onFocus = () => checkDraft();
+
+    window.addEventListener("alm-property-draft-changed", checkDraft);
+    window.addEventListener("storage", checkDraft);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    // Regular light heartbeat to catch drafts immediately
+    const interval = setInterval(checkDraft, 2500);
 
     return () => {
-      window.removeEventListener("alm-property-draft-changed", handleDraftChanged);
-      window.removeEventListener("storage", handleDraftChanged);
+      window.removeEventListener("alm-property-draft-changed", checkDraft);
+      window.removeEventListener("storage", checkDraft);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      clearInterval(interval);
     };
-  }, [location]);
+  }, [checkDraft, location]);
 
-  if (!draft || isFormPage) {
+  // Don't show if no draft exists
+  if (!draft) return null;
+
+  // Don't show if user is currently inside the form
+  const isFormPage =
+    location === "/admin/properties/new" ||
+    location === "/add-property" ||
+    (location.startsWith("/admin/properties/") && location.endsWith("/edit"));
+
+  if (isFormPage) {
     return null;
   }
 
   const handleResume = () => {
-    if (draft.isEdit && draft.editPropertyId) {
-      setLocation(`/admin/properties/${draft.editPropertyId}/edit`);
-    } else {
-      setLocation("/admin/properties/new");
-    }
+    const target = draft.sourceUrl || (draft.isEdit && draft.editPropertyId ? `/admin/properties/${draft.editPropertyId}/edit` : "/admin/properties/new");
+    setLocation(target);
   };
 
   const handleKeepInDrafts = () => {
     dismissDraftBanner();
     setDraft(null);
     toast({
-      title: "تم حفظ المسودة بأمان ✓",
-      description: "يمكنك العودة وإكمال إدخال العقار في أي وقت من لوحة التحكم.",
-      duration: 3000,
+      title: "تم حفظ المسودة في جهازك بنجاح ✓",
+      description: "يمكنك العودة وإكمال إدخال العقار في أي وقت.",
+      duration: 3500,
     });
   };
 
@@ -81,23 +96,29 @@ export function DraftRecoveryBanner() {
     }
   };
 
-  const codeOrTitle = draft.previewTitle || draft.form.code || "عقار جديد";
+  const codeOrTitle =
+    draft.previewTitle ||
+    draft.form.code ||
+    draft.form.title ||
+    draft.form.ownerName ||
+    "عقار قيد الإدخال";
+
   const price = Number(draft.form.price);
   const timeAgo = formatArabicRelativeTime(draft.updatedAt);
 
   return (
     <div
       dir="rtl"
-      className="fixed bottom-4 inset-x-2 sm:bottom-6 sm:inset-x-auto sm:right-6 sm:max-w-xl z-50 animate-in slide-in-from-bottom-5 fade-in duration-300"
+      className="fixed top-16 md:top-20 inset-x-2 sm:inset-x-auto sm:right-6 sm:max-w-xl z-[9999] animate-in slide-in-from-top-4 fade-in duration-300"
     >
-      <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-b from-[#22272D]/98 via-[#181C20]/98 to-[#14171A]/98 border border-[#C5A059]/40 shadow-[0_16px_40px_rgba(0,0,0,0.65)] p-3 sm:p-4 backdrop-blur-2xl">
+      <div className="relative overflow-hidden rounded-[14px] bg-gradient-to-b from-[#22272D]/98 via-[#181C20]/98 to-[#14171A]/98 border border-[#C5A059]/50 shadow-[0_16px_45px_rgba(0,0,0,0.75)] p-3 sm:p-4 backdrop-blur-2xl ring-1 ring-[#C5A059]/20">
         {/* Luxury Top Ambient Glow Line */}
         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#C5A059] to-transparent pointer-events-none" />
 
         <div className="flex items-start justify-between gap-3">
           {/* Right Icon + Text */}
           <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#C5A059]/15 border border-[#C5A059]/30 flex items-center justify-center shrink-0 text-[#C5A059] shadow-inner mt-0.5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#C5A059]/15 border border-[#C5A059]/35 flex items-center justify-center shrink-0 text-[#C5A059] shadow-inner mt-0.5">
               <FileEdit className="w-5 h-5 animate-pulse" />
             </div>
 
@@ -148,7 +169,7 @@ export function DraftRecoveryBanner() {
           <Button
             type="button"
             onClick={handleResume}
-            className="flex-1 h-8.5 sm:h-9 text-xs sm:text-sm font-bold bg-[#C5A059] hover:bg-[#b08e4d] text-[#10202D] shadow-sm hover:shadow transition-all duration-200 gap-1.5 rounded-lg active:scale-98"
+            className="flex-1 h-8.5 sm:h-9 text-xs sm:text-sm font-bold bg-[#C5A059] hover:bg-[#b08e4d] text-[#10202D] shadow-sm hover:shadow transition-all duration-200 gap-1.5 rounded-lg active:scale-98 cursor-pointer"
           >
             <span>إكمال الإدخال</span>
             <ArrowLeft className="w-3.5 h-3.5" />
@@ -159,7 +180,7 @@ export function DraftRecoveryBanner() {
             type="button"
             variant="outline"
             onClick={handleKeepInDrafts}
-            className="flex-1 h-8.5 sm:h-9 text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-white/90 border-white/15 hover:border-white/25 rounded-lg gap-1.5 transition-colors"
+            className="flex-1 h-8.5 sm:h-9 text-xs sm:text-sm font-semibold bg-white/5 hover:bg-white/10 text-white/90 border-white/15 hover:border-white/25 rounded-lg gap-1.5 transition-colors cursor-pointer"
           >
             <Bookmark className="w-3.5 h-3.5 text-[#C5A059]" />
             <span>حفظ في المسودة</span>

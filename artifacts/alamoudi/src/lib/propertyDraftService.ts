@@ -7,6 +7,7 @@ export interface PropertyDraftData {
   form: Record<string, any>;
   images: string[];
   aiText?: string;
+  sourceUrl: string; // The exact URL where the user was editing (/admin/properties/new or /add-property)
   updatedAt: number; // timestamp ms
   previewTitle: string;
   previewSummary?: string;
@@ -18,22 +19,33 @@ const STORAGE_KEY = "alm_property_form_active_draft";
 const DISMISS_SESSION_KEY = "alm_draft_banner_dismissed_until";
 
 /**
- * Checks if the current form has meaningful data worth saving
+ * Checks if the current form has any meaningful data entered
  */
-export function hasMeaningfulData(form: Record<string, any>, images: string[], aiText?: string): boolean {
+export function hasMeaningfulData(form: Record<string, any>, images: string[] = [], aiText?: string): boolean {
   if (images && images.length > 0) return true;
-  if (aiText && aiText.trim().length > 10) return true;
-  if (form.code && form.code.trim().length > 0) return true;
-  if (form.price && Number(form.price) > 0) return true;
-  if (form.area && Number(form.area) > 0) return true;
-  if (form.description && form.description.trim().length > 10) return true;
-  if (form.location && form.location.trim().length > 3) return true;
-  if (form.subArea && form.subArea.trim().length > 2) return true;
+  if (aiText && aiText.trim().length > 0) return true;
+  if (!form) return false;
+
+  for (const [key, val] of Object.entries(form)) {
+    // Ignore default static enum values
+    if (["category", "listingType", "status", "agentType", "coverPriority"].includes(key)) {
+      continue;
+    }
+    if (typeof val === "string" && val.trim().length > 0) {
+      return true;
+    }
+    if (typeof val === "number" && val > 0) {
+      return true;
+    }
+    if (Array.isArray(val) && val.some(v => typeof v === "string" && v.trim().length > 0)) {
+      return true;
+    }
+  }
   return false;
 }
 
 /**
- * Saves the draft to localStorage and dispatches change event
+ * Saves the draft to localStorage immediately and dispatches change event
  */
 export function savePropertyDraft(draft: PropertyDraftData): void {
   try {
@@ -105,7 +117,7 @@ export function isDraftBannerDismissed(): boolean {
 }
 
 /**
- * Formats relative time in Arabic (منذ دقيقتين، منذ ساعة، إلخ)
+ * Formats relative time in Arabic (الآن، منذ دقيقة، إلخ)
  */
 export function formatArabicRelativeTime(timestamp: number): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);

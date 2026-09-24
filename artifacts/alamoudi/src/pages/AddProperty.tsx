@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, FormEvent } from "react";
+import { useState, useRef, useEffect, useCallback, ChangeEvent, FormEvent } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,12 @@ import { api } from "@/lib/api";
 import { Link } from "wouter";
 import { formatNumericInput, toNumericString } from "@/lib/utils";
 import { getThumbnailImageUrl } from "@/lib/cloudinaryService";
+import {
+  savePropertyDraft,
+  loadPropertyDraft,
+  clearPropertyDraft,
+  hasMeaningfulData,
+} from "@/lib/propertyDraftService";
 
 interface FormState {
   ownerName: string;
@@ -72,18 +78,80 @@ export default function AddProperty() {
   const [loading, setLoading] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const isDirtyRef = useRef(false);
+
+  // Restore draft on mount if exists
+  useEffect(() => {
+    const draft = loadPropertyDraft();
+    if (draft && draft.sourceUrl === "/add-property" && hasMeaningfulData(draft.form, draft.images)) {
+      setForm(prev => ({ ...prev, ...draft.form }));
+      if (draft.images && draft.images.length > 0) {
+        setImages(draft.images);
+      }
+      isDirtyRef.current = true;
+      toast({
+        title: "تم استرجاع مسودة عقارك السابقة تلقائياً ✓",
+        description: "يمكنك متابعة تعبئة تفاصيل العقار الآن.",
+        duration: 3500,
+      });
+    }
+  }, []);
+
+  // Save helper function
+  const triggerSaveDraft = useCallback(() => {
+    if (hasMeaningfulData(form, images)) {
+      const reg = regions.find(r => r.id === form.regionId)?.name;
+      const typeN = propertyTypes.find(t => t.id === form.propertyTypeId)?.name;
+      const previewTitle = form.ownerName?.trim()
+        ? `طلب عقار: ${form.ownerName.trim()}`
+        : (typeN && reg ? `${typeN} في ${reg}` : (reg ? `عقار في ${reg}` : "طلب عرض عقار"));
+
+      savePropertyDraft({
+        form,
+        images,
+        sourceUrl: "/add-property",
+        updatedAt: Date.now(),
+        previewTitle,
+      });
+    }
+  }, [form, images, regions, propertyTypes]);
+
+  // Real-time debounced auto-save
+  useEffect(() => {
+    if (!isDirtyRef.current) return;
+    const timer = setTimeout(triggerSaveDraft, 300);
+    return () => clearTimeout(timer);
+  }, [triggerSaveDraft]);
+
+  // Immediate flush on minimize/hide/unload
+  useEffect(() => {
+    const handleHide = () => {
+      if (isDirtyRef.current) triggerSaveDraft();
+    };
+    document.addEventListener("visibilitychange", handleHide);
+    window.addEventListener("pagehide", handleHide);
+    window.addEventListener("beforeunload", handleHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleHide);
+      window.removeEventListener("pagehide", handleHide);
+      window.removeEventListener("beforeunload", handleHide);
+    };
+  }, [triggerSaveDraft]);
 
   const set = (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    isDirtyRef.current = true;
     setForm(p => ({ ...p, [key]: e.target.value }));
     setErrors(p => ({ ...p, [key]: undefined }));
   };
 
   const setSelect = (key: keyof FormState) => (val: string) => {
+    isDirtyRef.current = true;
     setForm(p => ({ ...p, [key]: val }));
     setErrors(p => ({ ...p, [key]: undefined }));
   };
 
   const handleImages = (e: ChangeEvent<HTMLInputElement>) => {
+    isDirtyRef.current = true;
     const files = Array.from(e.target.files || []);
     let skipped = 0;
     files.slice(0, 10 - images.length).forEach(file => {
@@ -134,6 +202,7 @@ export default function AddProperty() {
         status: "new",
         createdAt: new Date().toISOString(),
       });
+      clearPropertyDraft();
       setSubmitted(true);
     } catch {
       toast({
