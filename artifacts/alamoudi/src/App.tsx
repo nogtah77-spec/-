@@ -63,6 +63,7 @@ const FinishingGallery     = lazyWithRetry(() => import("@/pages/admin/Finishing
 const PushNotifications    = lazyWithRetry(() => import("@/pages/admin/PushNotifications"));
 const AIChatWidget = lazyWithRetry(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
 import { PushNotificationPrompt } from "@/components/ui/PushNotificationPrompt";
+import { DraftRecoveryBanner } from "@/components/ui/DraftRecoveryBanner";
 
 const queryClient = new QueryClient();
 
@@ -351,6 +352,9 @@ function App() {
                     </ErrorBoundary>
                     <ErrorBoundary fallback={null}>
                       <OfflineStatusBar />
+                    </ErrorBoundary>
+                    <ErrorBoundary fallback={null}>
+                      <DraftRecoveryBanner />
                     </ErrorBoundary>
                     {AI_ASSISTANT_ENABLED && (
                       <ErrorBoundary fallback={null}>

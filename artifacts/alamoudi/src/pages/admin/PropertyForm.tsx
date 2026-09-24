@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2 } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,12 @@ import { parsePropertyText } from "@/lib/aiPropertyParser";
 import { parsePropertyWithGemini } from "@/lib/geminiApi";
 import { supabase } from "@/lib/supabaseClient";
 import { rowToProperty } from "@/lib/supabaseService";
+import {
+  savePropertyDraft,
+  loadPropertyDraft,
+  clearPropertyDraft,
+  hasMeaningfulData,
+} from "@/lib/propertyDraftService";
 
 import { useAuth } from "@/context/AuthContext";
 import { checkUserPermission } from "@/lib/permissions";
@@ -207,6 +213,110 @@ export default function PropertyForm() {
     }
   }, [isEdit, activeProperty]);
 
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
+  // Restore unfinished draft on mount if adding a new property
+  useEffect(() => {
+    if (isEdit) return;
+    const draft = loadPropertyDraft();
+    if (draft && hasMeaningfulData(draft.form, draft.images, draft.aiText)) {
+      setForm(prev => ({ ...prev, ...draft.form }));
+      if (draft.images && draft.images.length > 0) {
+        setImages(draft.images);
+      }
+      if (draft.aiText) {
+        setAiText(draft.aiText);
+      }
+      setHasRestoredDraft(true);
+      isDirtyRef.current = true;
+      toast({
+        title: "تم استرجاع مسودة العقار السابقة تلقائياً ✓",
+        description: "يمكنك إكمال التفاصيل الآن أو البدء بنموذج جديد فارغ.",
+        duration: 4000,
+      });
+    }
+  }, [isEdit]);
+
+  // Real-time debounced auto-saving (TikTok style)
+  useEffect(() => {
+    if (!isDirtyRef.current) return;
+    const timer = setTimeout(() => {
+      if (hasMeaningfulData(form, images, aiText)) {
+        const previewCode = form.code?.trim() || "";
+        const reg = regions.find(r => r.id === form.regionId)?.name;
+        const typeN = propertyTypes.find(t => t.id === form.typeId)?.name;
+        const previewTitle = previewCode
+          ? `كود ${previewCode}`
+          : (typeN && reg ? `${typeN} في ${reg}` : (reg ? `عقار في ${reg}` : "عقار جديد"));
+
+        savePropertyDraft({
+          form,
+          images,
+          aiText,
+          updatedAt: Date.now(),
+          previewTitle,
+          isEdit,
+          editPropertyId: params.id,
+        });
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [form, images, aiText, isEdit, params.id, regions, propertyTypes]);
+
+  const handleDiscardDraft = () => {
+    if (window.confirm("هل تريد تفريغ النموذج وحذف المسودة المحفوظة نهائياً للبدء من جديد؟")) {
+      clearPropertyDraft();
+      setForm({
+        code: "",
+        description: "",
+        price: 0,
+        area: 0,
+        beds: 0,
+        baths: 0,
+        floors: 0,
+        floor: "",
+        finishing: "",
+        view: "",
+        typeId: "",
+        regionId: "",
+        category: "residential" as PropertyCategory,
+        listingType: "sale" as "sale" | "rent" | "furnished",
+        status: "active" as PropertyStatus,
+        featured: false,
+        agentType: "unspecified" as "direct" | "broker" | "unspecified",
+        videoUrl: "",
+        externalUrl: "",
+        mapsUrl: "",
+        unitType: "",
+        subArea: "",
+        layout: "",
+        master: "",
+        elevator: "",
+        parking: "",
+        additionalFeatures: "",
+        floorText: "",
+        location: "",
+        source: "",
+        sourcePhones: [""],
+        sourceEmail: "",
+        sourceLocation: "",
+        sourceNotes: "",
+        assignedStaffId: "",
+        brokerId: "",
+        coverPriority: "image",
+      });
+      setImages([]);
+      setAiText("");
+      setHasRestoredDraft(false);
+      isDirtyRef.current = false;
+      toast({
+        title: "تم تفريغ النموذج",
+        description: "تم مسح المسودة والبدء بنموذج عقار جديد فارغ.",
+      });
+    }
+  };
+
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [compressing, setCompressing] = useState(false);
@@ -385,6 +495,7 @@ export default function PropertyForm() {
           ? "تم تحديث بيانات العقار."
           : (notifySubscribers ? "تم إضافة العقار الجديد وبث التنبيه لجميع المشتركين." : "تم إضافة العقار الجديد بنجاح."),
       });
+      clearPropertyDraft();
       setLocation("/admin/properties");
     } finally {
       setSaving(false);
@@ -504,6 +615,29 @@ export default function PropertyForm() {
             </Button>
           </div>
         </div>
+
+        {/* ── Active Restored Draft Notice Banner ── */}
+        {!isEdit && hasRestoredDraft && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[#C5A059]/10 border border-[#C5A059]/30 text-foreground shadow-sm animate-in fade-in duration-300">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#C5A059] animate-pulse shrink-0" />
+              <div className="text-xs sm:text-sm">
+                <span className="font-bold text-[#C5A059]">تم استرجاع مسودتك المحفوظة تلقائياً: </span>
+                <span className="text-muted-foreground">تستطيع إكمال باقي التفاصيل الآن وحفظ العقار، أو البدء بنموذج فارغ.</span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDiscardDraft}
+              className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 gap-1.5 h-8 rounded-lg"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>بدء نموذج فارغ جديد</span>
+            </Button>
+          </div>
+        )}
 
         {/* ── AI Smart Property Parser Card ── */}
         {!isEdit && (
