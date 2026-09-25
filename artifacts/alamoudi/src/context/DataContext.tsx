@@ -592,25 +592,31 @@ const DataContext = createContext<DataContextType | null>(null);
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
 
-const CACHE_KEY = "alm_cache_v10";
+const CACHE_KEY = "alm_cache_v12";
+const CACHE_VERSION_KEY = "alm_cache_version_v12_applied";
 // الـ cache بيُعرض فوراً حتى لو قديم، والـ API دايماً بيرفّش في الخلفية
 // TTL طويل جداً (7 أيام) كـ safety net بس للـ cache القديم جداً
 const CACHE_HARD_TTL = 7 * 24 * 60 * 60 * 1000;
 
-// One-time startup purge of zombie legacy caches
+// One-time startup purge of zombie legacy caches (only on version upgrade)
 if (typeof window !== "undefined") {
   try {
-    localStorage.removeItem("alm_property_overrides");
-    localStorage.removeItem("alm_recent_property_edits");
-    localStorage.removeItem("alm_deleted_properties");
-    localStorage.removeItem("alm_cache_v10");
-    localStorage.removeItem("alm_cache_v9");
-    localStorage.removeItem("alm_cache_v8");
-    localStorage.removeItem("alm_cache_v7");
-    localStorage.removeItem("alm_cache_v6");
-    localStorage.removeItem("alm_cache_v5");
-    if (window.indexedDB) {
-      window.indexedDB.deleteDatabase("alm_properties_db");
+    if (localStorage.getItem(CACHE_VERSION_KEY) !== "true") {
+      localStorage.removeItem("alm_property_overrides");
+      localStorage.removeItem("alm_recent_property_edits");
+      localStorage.removeItem("alm_deleted_properties");
+      localStorage.removeItem("alm_cache_v11");
+      localStorage.removeItem("alm_cache_v10");
+      localStorage.removeItem("alm_cache_v9");
+      localStorage.removeItem("alm_cache_v8");
+      localStorage.removeItem("alm_cache_v7");
+      localStorage.removeItem("alm_cache_v6");
+      localStorage.removeItem("alm_cache_v5");
+      if (window.indexedDB) {
+        window.indexedDB.deleteDatabase("alm_estate_db");
+        window.indexedDB.deleteDatabase("alm_properties_db");
+      }
+      localStorage.setItem(CACHE_VERSION_KEY, "true");
     }
   } catch {}
 }
