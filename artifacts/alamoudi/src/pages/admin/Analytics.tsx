@@ -14,7 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { RollingNumber } from "@/components/ui/RollingNumber";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
