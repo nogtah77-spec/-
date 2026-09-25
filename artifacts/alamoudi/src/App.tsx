@@ -88,49 +88,58 @@ function VisitorTracker() {
   return null;
 }
 
+function getActiveManagerKey(user: any): string {
+  if (user?.id) return `alm_bubble_pref_mgr_${String(user.id).trim()}`;
+  if (user?.username) return `alm_bubble_pref_mgr_${String(user.username).trim()}`;
+  try {
+    const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u?.id) return `alm_bubble_pref_mgr_${String(u.id).trim()}`;
+      if (u?.username) return `alm_bubble_pref_mgr_${String(u.username).trim()}`;
+    }
+  } catch {}
+  return "alm_bubble_pref_mgr_admin";
+}
+
 function StaffLiveBubble() {
   const { isStaff, currentUser } = useAuth();
   const [location] = useLocation();
 
-  const userKey = currentUser?.id || currentUser?.username || "admin";
+  const managerKey = getActiveManagerKey(currentUser);
+
   const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
     try {
-      const userPref = localStorage.getItem(`alm_live_bubble_enabled_${userKey}`);
-      if (userPref !== null) return userPref === "true";
-      const globalPref = localStorage.getItem("alm_live_bubble_enabled");
-      if (globalPref !== null) return globalPref === "true";
-      return true;
+      const pref = localStorage.getItem(managerKey);
+      if (pref !== null) return pref === "true";
+      return true; // Default is true (enabled for this manager)
     } catch {
       return true;
     }
   });
 
   useEffect(() => {
-    const handlePrefChange = () => {
+    const checkPref = () => {
       try {
-        const userPref = localStorage.getItem(`alm_live_bubble_enabled_${userKey}`);
-        if (userPref !== null) {
-          setBubbleEnabled(userPref === "true");
-          return;
+        const pref = localStorage.getItem(managerKey);
+        if (pref !== null) {
+          setBubbleEnabled(pref === "true");
+        } else {
+          setBubbleEnabled(true);
         }
-        const globalPref = localStorage.getItem("alm_live_bubble_enabled");
-        if (globalPref !== null) {
-          setBubbleEnabled(globalPref === "true");
-          return;
-        }
-        setBubbleEnabled(true);
       } catch {
         setBubbleEnabled(true);
       }
     };
 
-    window.addEventListener("alm-live-bubble-pref-changed", handlePrefChange);
-    window.addEventListener("storage", handlePrefChange);
+    checkPref();
+    window.addEventListener("alm-live-bubble-pref-changed", checkPref);
+    window.addEventListener("storage", checkPref);
     return () => {
-      window.removeEventListener("alm-live-bubble-pref-changed", handlePrefChange);
-      window.removeEventListener("storage", handlePrefChange);
+      window.removeEventListener("alm-live-bubble-pref-changed", checkPref);
+      window.removeEventListener("storage", checkPref);
     };
-  }, [userKey]);
+  }, [managerKey]);
 
   const isStaffResolved = Boolean(
     isStaff ||
