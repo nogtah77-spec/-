@@ -7,7 +7,7 @@ import {
   Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange,
   CalendarClock, LineChart, ShieldAlert, TrendingUp, Sparkles, Trophy,
   DollarSign, ArrowUpRight, CheckCircle2, Flame, PieChart as PieIcon,
-  BarChart3, Activity, Compass, Layers
+  BarChart3, Activity, Compass, Layers, Sliders
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +16,8 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
 import { formatNumber } from "@/lib/utils";
 import { Link } from "wouter";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer,
   PieChart,
@@ -79,6 +81,37 @@ export default function Analytics() {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === "admin";
   const canViewAnalytics = isAdmin || checkUserPermission(currentUser, "التقارير-عرض التحليلات");
+
+  const { toast } = useToast();
+  const userKey = currentUser?.id || currentUser?.username || "admin";
+  const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
+    try {
+      const userPref = localStorage.getItem(`alm_live_bubble_enabled_${userKey}`);
+      if (userPref !== null) return userPref === "true";
+      const globalPref = localStorage.getItem("alm_live_bubble_enabled");
+      if (globalPref !== null) return globalPref === "true";
+      return true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleBubble = (checked: boolean) => {
+    setBubbleEnabled(checked);
+    try {
+      localStorage.setItem(`alm_live_bubble_enabled_${userKey}`, String(checked));
+      localStorage.setItem("alm_live_bubble_enabled", String(checked));
+      window.dispatchEvent(new Event("alm-live-bubble-pref-changed"));
+    } catch {}
+
+    toast({
+      title: checked ? "تم تفعيل ويدجت المتواجدون الآن بنجاح ✓" : "تم إخفاء ويدجت المتواجدون الآن",
+      description: checked
+        ? "سيظهر لك ويدجت إحصائيات المتواجدين الآن في الصفحة الرئيسية للمنصة."
+        : "تم إخفاء الويدجت العائم من واجهة المنصة لحسابك كمدير.",
+      duration: 3500,
+    });
+  };
 
   useEffect(() => {
     refreshVisitorStats();
@@ -303,6 +336,40 @@ export default function Analytics() {
           eyebrow="ذكاء الأعمال والبيانات"
           icon={LineChart}
         />
+
+        {/* بطاقة تحكم مخصصة للمدير: تفعيل أو إخفاء ويدجت المتواجدون الآن */}
+        <div className="rounded-2xl border-2 border-amber-500/30 bg-gradient-to-r from-[#10202D] via-[#173044] to-[#10202D] p-4 sm:p-5 shadow-xl ring-1 ring-amber-400/20">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-md">
+                <Radio className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm font-bold text-white">ويدجت "المتواجدون الآن" على واجهة المنصة</h3>
+                  <Badge variant="outline" className="border-amber-400/50 text-amber-300 bg-amber-400/10 text-[10px] py-0 px-2 font-bold">
+                    إعداد شخصي للمدير
+                  </Badge>
+                </div>
+                <p className="text-xs text-white/75 leading-relaxed max-w-2xl">
+                  يتيح لك هذا الزر كمدير التحكم الكامل في ظهور أو إخفاء الويدجت العائم للمتواجدين الآن في الصفحة الرئيسية لحسابك الخاص بحرية وسهولة تامة.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 self-end sm:self-center bg-black/40 px-3.5 py-2 rounded-xl border border-white/10 shrink-0">
+              <span className={cn("text-xs font-bold", bubbleEnabled ? "text-emerald-400" : "text-slate-400")}>
+                {bubbleEnabled ? "ظاهر في الواجهة ✓" : "مخفي حالياً"}
+              </span>
+              <Switch
+                checked={bubbleEnabled}
+                onCheckedChange={handleToggleBubble}
+                className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-slate-700"
+                aria-label="تفعيل أو إخفاء ويدجت المتواجدون الآن"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Live Visitor Stats Cards */}
         <div className="space-y-3">

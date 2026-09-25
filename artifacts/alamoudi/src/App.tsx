@@ -92,6 +92,46 @@ function StaffLiveBubble() {
   const { isStaff, currentUser } = useAuth();
   const [location] = useLocation();
 
+  const userKey = currentUser?.id || currentUser?.username || "admin";
+  const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
+    try {
+      const userPref = localStorage.getItem(`alm_live_bubble_enabled_${userKey}`);
+      if (userPref !== null) return userPref === "true";
+      const globalPref = localStorage.getItem("alm_live_bubble_enabled");
+      if (globalPref !== null) return globalPref === "true";
+      return true;
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    const handlePrefChange = () => {
+      try {
+        const userPref = localStorage.getItem(`alm_live_bubble_enabled_${userKey}`);
+        if (userPref !== null) {
+          setBubbleEnabled(userPref === "true");
+          return;
+        }
+        const globalPref = localStorage.getItem("alm_live_bubble_enabled");
+        if (globalPref !== null) {
+          setBubbleEnabled(globalPref === "true");
+          return;
+        }
+        setBubbleEnabled(true);
+      } catch {
+        setBubbleEnabled(true);
+      }
+    };
+
+    window.addEventListener("alm-live-bubble-pref-changed", handlePrefChange);
+    window.addEventListener("storage", handlePrefChange);
+    return () => {
+      window.removeEventListener("alm-live-bubble-pref-changed", handlePrefChange);
+      window.removeEventListener("storage", handlePrefChange);
+    };
+  }, [userKey]);
+
   const isStaffResolved = Boolean(
     isStaff ||
     (currentUser && (
@@ -117,6 +157,7 @@ function StaffLiveBubble() {
   );
 
   if (!isStaffResolved) return null;
+  if (!bubbleEnabled) return null;
   if (location.startsWith("/admin") || location === "/login") return null;
   return <LiveVisitorsBubble />;
 }
