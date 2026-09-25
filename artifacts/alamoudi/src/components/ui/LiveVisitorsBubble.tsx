@@ -5,9 +5,9 @@ import { useData } from "@/context/DataContext";
 import { RollingNumber } from "@/components/ui/RollingNumber";
 import { cn } from "@/lib/utils";
 
-const POS_KEY   = "alamoudi_live_bubble_pos";
-const STATE_KEY = "alamoudi_live_bubble_collapsed";
-const MINI_KEY  = "alamoudi_live_bubble_is_mini";
+const POS_KEY   = "alamoudi_live_bubble_pos_v2";
+const STATE_KEY = "alamoudi_live_bubble_collapsed_v2";
+const MINI_KEY  = "alamoudi_live_bubble_is_mini_v2";
 
 type Pos = { x: number; y: number };
 
@@ -16,15 +16,15 @@ const W_MINI   = 132;
 const H_MINI   = 36;
 const H_BAR    = 46;
 const H_DRAWER = 210;
-const MARGIN   = 12;
+const MARGIN   = 16;
 
 function clampToViewport(x: unknown, y: unknown, w: number, h: number): Pos {
   const winW = typeof window !== "undefined" ? window.innerWidth : 390;
   const winH = typeof window !== "undefined" ? window.innerHeight : 844;
   const numX = typeof x === "number" && Number.isFinite(x) ? x : MARGIN;
-  const numY = typeof y === "number" && Number.isFinite(y) ? y : Math.max(MARGIN + 60, winH - h - 90);
+  const numY = typeof y === "number" && Number.isFinite(y) ? y : Math.max(MARGIN + 60, winH - h - 95);
   const maxX = Math.max(MARGIN, winW - w - MARGIN);
-  const maxY = Math.max(MARGIN + 60, winH - h - 75);
+  const maxY = Math.max(MARGIN + 60, winH - h - 80);
   return { x: Math.min(Math.max(MARGIN, numX), maxX), y: Math.min(Math.max(MARGIN + 60, numY), maxY) };
 }
 
@@ -32,7 +32,7 @@ function getSafePosition(stored: unknown, w: number, h: number): Pos {
   const winW = typeof window !== "undefined" ? window.innerWidth : 390;
   const winH = typeof window !== "undefined" ? window.innerHeight : 844;
   const defaultX = MARGIN;
-  const defaultY = Math.max(MARGIN + 60, winH - h - 90);
+  const defaultY = Math.max(MARGIN + 60, winH - h - 95);
 
   if (!stored || typeof stored !== "object") {
     return { x: defaultX, y: defaultY };
@@ -88,7 +88,7 @@ export function LiveVisitorsBubble() {
       }
     } catch {}
     const winH = typeof window !== "undefined" ? window.innerHeight : 800;
-    return { x: MARGIN, y: Math.max(MARGIN + 60, winH - H_BAR - 90) };
+    return { x: MARGIN, y: Math.max(MARGIN + 60, winH - H_BAR - 95) };
   });
 
   const drag = useRef<{ dx: number; dy: number; startX: number; startY: number; moved: boolean } | null>(null);
@@ -114,7 +114,7 @@ export function LiveVisitorsBubble() {
       }
     } catch {}
     const winH = typeof window !== "undefined" ? window.innerHeight : 800;
-    setPos({ x: MARGIN, y: Math.max(MARGIN + 60, winH - currentH - 90) });
+    setPos({ x: MARGIN, y: Math.max(MARGIN + 60, winH - currentH - 95) });
   }, []);
 
   // Clamp position on window resize

@@ -111,7 +111,7 @@ export default function Analytics() {
     return { id: "admin", name: "المدير العام", username: "admin", role: "admin" };
   }, [currentUser]);
 
-  const managerPrefKey = `alm_bubble_pref_mgr_${activeManager.id}`;
+  const managerPrefKey = `alm_bubble_pref_v2_${activeManager.id}`;
 
   const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
     try {

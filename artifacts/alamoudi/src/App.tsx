@@ -89,17 +89,17 @@ function VisitorTracker() {
 }
 
 function getActiveManagerKey(user: any): string {
-  if (user?.id) return `alm_bubble_pref_mgr_${String(user.id).trim()}`;
-  if (user?.username) return `alm_bubble_pref_mgr_${String(user.username).trim()}`;
-  try {
-    const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
-    if (raw) {
-      const u = JSON.parse(raw);
-      if (u?.id) return `alm_bubble_pref_mgr_${String(u.id).trim()}`;
-      if (u?.username) return `alm_bubble_pref_mgr_${String(u.username).trim()}`;
-    }
-  } catch {}
-  return "alm_bubble_pref_mgr_admin";
+  const resolvedId = user?.id || user?.username || (() => {
+    try {
+      const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
+      if (raw) {
+        const u = JSON.parse(raw);
+        return u?.id || u?.username;
+      }
+    } catch {}
+    return "admin";
+  })();
+  return `alm_bubble_pref_v2_${String(resolvedId || "admin").trim()}`;
 }
 
 function StaffLiveBubble() {
@@ -112,7 +112,7 @@ function StaffLiveBubble() {
     try {
       const pref = localStorage.getItem(managerKey);
       if (pref !== null) return pref === "true";
-      return true; // Default is true (enabled for this manager)
+      return true; // Default is always true (enabled for managers)
     } catch {
       return true;
     }
@@ -141,11 +141,14 @@ function StaffLiveBubble() {
     };
   }, [managerKey]);
 
-  const isStaffResolved = Boolean(
+  // Strict manager verification: ONLY authentic authenticated staff/admins can see this.
+  // Regular visitors (الزوار) will ALWAYS be false and will NEVER see the widget!
+  const isManager = Boolean(
     isStaff ||
     (currentUser && (
       currentUser.role === "admin" ||
       currentUser.role === "agent" ||
+      currentUser.role === "staff" ||
       currentUser.username === "saeed" ||
       currentUser.id === "staff-1"
     )) ||
@@ -155,19 +158,22 @@ function StaffLiveBubble() {
         if (raw) {
           const u = JSON.parse(raw);
           const r = String(u?.role || "").trim().toLowerCase();
-          if (r === "admin" || r === "agent" || r === "staff" || u?.username === "saeed" || u?.id === "staff-1" || u?.name?.includes("سعيد")) return true;
+          return r === "admin" || r === "agent" || r === "staff" || u?.username === "saeed" || u?.id === "staff-1" || u?.name?.includes("سعيد");
         }
-        if (localStorage.getItem("alm_last_admin_access") === "true") return true;
-      } catch {
-        return false;
-      }
+      } catch {}
       return false;
     })()
   );
 
-  if (!isStaffResolved) return null;
+  // If not an authorized manager/staff (i.e. any regular visitor) -> strictly hide!
+  if (!isManager) return null;
+
+  // If the manager explicitly toggled it off -> hide
   if (!bubbleEnabled) return null;
+
+  // Never render on internal admin pages or login
   if (location.startsWith("/admin") || location === "/login") return null;
+
   return <LiveVisitorsBubble />;
 }
 
