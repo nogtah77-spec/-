@@ -18,17 +18,20 @@ const W_MINI      = 82;
 const H_MINI      = 36;
 const MARGIN      = 12;
 
-function clampToViewport(x: number, y: number, w: number, h: number): Pos {
-  const maxX = Math.max(MARGIN, window.innerWidth  - w - MARGIN);
-  const maxY = Math.max(MARGIN, window.innerHeight - h - MARGIN);
-  return { x: Math.min(Math.max(MARGIN, x), maxX), y: Math.min(Math.max(MARGIN, y), maxY) };
+function clampToViewport(x: unknown, y: unknown, w: number, h: number): Pos {
+  const winW = typeof window !== "undefined" ? window.innerWidth : 390;
+  const winH = typeof window !== "undefined" ? window.innerHeight : 844;
+  const numX = typeof x === "number" && Number.isFinite(x) ? x : MARGIN;
+  const numY = typeof y === "number" && Number.isFinite(y) ? y : Math.max(MARGIN, winH - h - MARGIN - 64);
+  const maxX = Math.max(MARGIN, winW - w - MARGIN);
+  const maxY = Math.max(MARGIN, winH - h - MARGIN);
+  return { x: Math.min(Math.max(MARGIN, numX), maxX), y: Math.min(Math.max(MARGIN, numY), maxY) };
 }
 
 export function LiveVisitorsBubble() {
   const { visitorStats, refreshVisitorStats, properties, inquiries, finishingRequests, propertyRequests } = useData();
   const [, navigate] = useLocation();
 
-  const [pos, setPos] = useState<Pos | null>(null);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem(STATE_KEY) === "true"; } catch { return true; }
   });
@@ -36,12 +39,31 @@ export function LiveVisitorsBubble() {
     try { return localStorage.getItem(MINI_KEY) === "true"; } catch { return false; }
   });
 
+  const currentW = isMini ? W_MINI : W_COLLAPSED;
+  const currentH = isMini ? H_MINI : (collapsed ? H_COLLAPSED : H_COLLAPSED + 120);
+
+  const [pos, setPos] = useState<Pos>(() => {
+    const initW = W_COLLAPSED;
+    const initH = H_COLLAPSED;
+    try {
+      if (typeof window !== "undefined") {
+        const raw = localStorage.getItem(POS_KEY);
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && typeof p.x === "number" && Number.isFinite(p.x) && typeof p.y === "number" && Number.isFinite(p.y)) {
+            return clampToViewport(p.x, p.y, initW, initH);
+          }
+        }
+        const winH = window.innerHeight || 800;
+        return clampToViewport(MARGIN, winH - initH - MARGIN - 64, initW, initH);
+      }
+    } catch {}
+    return { x: MARGIN, y: 500 };
+  });
+
   const drag = useRef<{ dx: number; dy: number; startX: number; startY: number; moved: boolean } | null>(null);
   const posRef = useRef<Pos | null>(null);
   posRef.current = pos;
-
-  const currentW = isMini ? W_MINI : W_COLLAPSED;
-  const currentH = isMini ? H_MINI : (collapsed ? H_COLLAPSED : H_COLLAPSED + 120);
 
   // refresh visitor stats periodically
   useEffect(() => {
@@ -56,11 +78,14 @@ export function LiveVisitorsBubble() {
       const raw = localStorage.getItem(POS_KEY);
       if (raw) {
         const p = JSON.parse(raw) as Pos;
-        setPos(clampToViewport(p.x, p.y, currentW, currentH));
-        return;
+        if (p && typeof p.x === "number" && Number.isFinite(p.x) && typeof p.y === "number" && Number.isFinite(p.y)) {
+          setPos(clampToViewport(p.x, p.y, currentW, currentH));
+          return;
+        }
       }
     } catch {}
-    setPos(clampToViewport(MARGIN, window.innerHeight - currentH - MARGIN - 12, currentW, currentH));
+    const winH = typeof window !== "undefined" ? window.innerHeight : 800;
+    setPos(clampToViewport(MARGIN, winH - currentH - MARGIN - 64, currentW, currentH));
   }, []);
 
   // clamp position on window resize
@@ -127,11 +152,11 @@ export function LiveVisitorsBubble() {
     });
   }, []);
 
-  // Hide behind any open Radix sheet/dialog (z-50) so it never blocks overlays
+  // Hide behind any open modal dialog (z-50) so it never blocks dialog overlays
   const [modalOpen, setModalOpen] = useState(false);
   useEffect(() => {
     const check = () => setModalOpen(
-      !!document.querySelector('[data-radix-popper-content-wrapper], [role="dialog"][data-state="open"]')
+      !!document.querySelector('[role="dialog"][data-state="open"]')
     );
     const obs = new MutationObserver(check);
     obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state"] });
@@ -140,16 +165,19 @@ export function LiveVisitorsBubble() {
 
   if (!pos) return null;
 
-  const realProperties = properties.filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__"));
-  const totalLeads   = inquiries.length + finishingRequests.length + propertyRequests.length;
-  const totalViews   = realProperties.reduce((s, p) => s + (p.views ?? 0), 0);
-  const activeCount  = realProperties.filter(p => p.status === "active" || p.status === "listed").length;
+  const safeProperties = Array.isArray(properties) ? properties : [];
+  const realProperties = safeProperties.filter(p => !p?.id?.startsWith("__") && !p?.code?.startsWith("__"));
+  const totalLeads   = (inquiries?.length || 0) + (finishingRequests?.length || 0) + (propertyRequests?.length || 0);
+  const totalViews   = realProperties.reduce((s, p) => s + (p?.views ?? 0), 0);
+  const activeCount  = realProperties.filter(p => p?.status === "active" || p?.status === "listed").length;
+  const onlineCount  = visitorStats?.online ?? 1;
+  const todayCount   = visitorStats?.today ?? 0;
 
   const metrics = [
     { icon: Eye,          label: "إجمالي المشاهدات",   value: totalViews },
     { icon: Users,        label: "إجمالي العملاء",      value: totalLeads },
     { icon: TrendingUp,   label: "عقارات نشطة",         value: activeCount },
-    { icon: CalendarDays, label: "زوار اليوم",           value: visitorStats.today },
+    { icon: CalendarDays, label: "زوار اليوم",           value: todayCount },
   ];
 
   return (
@@ -160,7 +188,7 @@ export function LiveVisitorsBubble() {
         top: pos.y,
         width: currentW,
         touchAction: "none",
-        zIndex: modalOpen ? 40 : 60,
+        zIndex: modalOpen ? 40 : 70,
         pointerEvents: modalOpen ? "none" : "auto",
       }}
       className="select-none transition-[width] duration-200"
@@ -185,7 +213,7 @@ export function LiveVisitorsBubble() {
 
           {/* Visitor count */}
           <span className="text-sm font-black text-white tabular-nums drop-shadow-sm">
-            <RollingNumber value={visitorStats.online} />
+            <RollingNumber value={onlineCount} />
           </span>
 
           {/* Expand toggle button */}
@@ -220,7 +248,7 @@ export function LiveVisitorsBubble() {
             <div className="flex min-w-0 flex-1 flex-col leading-none">
               <span className="text-[9px] font-semibold text-amber-200/90">متواجدون الآن</span>
               <span className="text-lg font-black text-white leading-tight drop-shadow-sm tabular-nums">
-                <RollingNumber value={visitorStats.online} />
+                <RollingNumber value={onlineCount} />
               </span>
             </div>
 
@@ -259,7 +287,7 @@ export function LiveVisitorsBubble() {
                     <span className="text-[9px] text-white/70 truncate">{m.label}</span>
                   </div>
                   <span className="text-xs font-bold text-white tabular-nums">
-                    {m.value.toLocaleString("en-US")}
+                    {(m.value ?? 0).toLocaleString("en-US")}
                   </span>
                 </div>
               ))}

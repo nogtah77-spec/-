@@ -38,8 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
 
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
+
     try {
-      const user = await api.get<User | null>("/auth/me");
+      const user = await api.get<User | null>("/auth/me", controller?.signal);
+      if (timeoutId) clearTimeout(timeoutId);
       if (user) {
         if (deletedIds.includes(user.id)) {
           try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
@@ -65,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentUser(null);
       return null;
     } catch {
+      if (timeoutId) clearTimeout(timeoutId);
       // Offline / standalone Vercel mode: restore from local storage
       try {
         const saved = localStorage.getItem(AUTH_STORAGE_KEY);

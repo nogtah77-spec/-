@@ -86,9 +86,9 @@ function VisitorTracker() {
 }
 
 function StaffLiveBubble() {
-  const { authReady, isStaff } = useAuth();
+  const { isStaff } = useAuth();
   const [location] = useLocation();
-  if (!authReady || !isStaff) return null;
+  if (!isStaff) return null;
   if (location.startsWith("/admin") || location === "/login") return null;
   return <LiveVisitorsBubble />;
 }
