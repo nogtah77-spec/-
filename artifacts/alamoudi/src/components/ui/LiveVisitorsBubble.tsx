@@ -5,17 +5,17 @@ import { useData } from "@/context/DataContext";
 import { RollingNumber } from "@/components/ui/RollingNumber";
 import { cn } from "@/lib/utils";
 
-const POS_KEY   = "alamoudi_live_bubble_pos_v3";
-const STATE_KEY = "alamoudi_live_bubble_collapsed_v3";
-const MINI_KEY  = "alamoudi_live_bubble_mini_v3";
+const POS_KEY   = "alamoudi_live_bubble_pos_v4";
+const STATE_KEY = "alamoudi_live_bubble_collapsed_v4";
+const MINI_KEY  = "alamoudi_live_bubble_mini_v4";
 
 type Pos = { x: number; y: number };
 
-const W_NORMAL    = 185;
-const W_MINI      = 96;
-const H_MINI      = 38;
-const H_COLLAPSED = 48;
-const H_EXPANDED  = 205;
+const W_NORMAL    = 210;
+const W_MINI      = 145;
+const H_MINI      = 42;
+const H_COLLAPSED = 50;
+const H_EXPANDED  = 215;
 const MARGIN      = 16;
 
 function clampToViewport(x: number, y: number, w: number, h: number): Pos {
@@ -34,7 +34,7 @@ function getSafePosition(stored: unknown, w: number, h: number): Pos {
   const winH = typeof window !== "undefined" ? window.innerHeight : 800;
   const defaultPos: Pos = {
     x: MARGIN,
-    y: Math.max(MARGIN, winH - h - MARGIN - 20),
+    y: Math.max(MARGIN, winH - h - MARGIN - 24),
   };
 
   if (!stored || typeof stored !== "object") return defaultPos;
@@ -73,7 +73,6 @@ export function LiveVisitorsBubble() {
     }
   });
 
-  // Dragging state
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const currentW = isMini ? W_MINI : W_NORMAL;
@@ -89,7 +88,7 @@ export function LiveVisitorsBubble() {
       }
     } catch {}
     const winH = typeof window !== "undefined" ? window.innerHeight : 800;
-    return { x: MARGIN, y: Math.max(MARGIN, winH - H_COLLAPSED - MARGIN - 20) };
+    return { x: MARGIN, y: Math.max(MARGIN, winH - H_COLLAPSED - MARGIN - 24) };
   });
 
   const drag = useRef<{ dx: number; dy: number; startX: number; startY: number; moved: boolean } | null>(null);
@@ -97,19 +96,19 @@ export function LiveVisitorsBubble() {
   posRef.current = pos;
   const rafId = useRef<number | null>(null);
 
-  // Refresh visitor stats periodically every 10 seconds
+  // Refresh visitor stats periodically
   useEffect(() => {
     refreshVisitorStats();
     const id = setInterval(refreshVisitorStats, 10_000);
     return () => clearInterval(id);
   }, [refreshVisitorStats]);
 
-  // Ensure position stays clamped when dimensions change (e.g. toggle mini or collapse)
+  // Keep clamped to viewport whenever dimensions change
   useEffect(() => {
     setPos(prev => clampToViewport(prev.x, prev.y, currentW, currentH));
   }, [currentW, currentH]);
 
-  // Clamp position on window resize
+  // Clamp on window resize
   useEffect(() => {
     const onResize = () => {
       setPos(prev => clampToViewport(prev.x, prev.y, currentW, currentH));
@@ -123,8 +122,12 @@ export function LiveVisitorsBubble() {
   };
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    // Only drag with left mouse button or touch
+    if (e.button !== 0) return;
     const p = posRef.current;
-    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    try {
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    } catch {}
     drag.current = { dx: e.clientX - p.x, dy: e.clientY - p.y, startX: e.clientX, startY: e.clientY, moved: false };
     setIsDragging(true);
   }, []);
@@ -151,28 +154,35 @@ export function LiveVisitorsBubble() {
     const p = posRef.current;
     if (p) savePos(p);
 
-    // If clicked without dragging in mini mode -> expand back to normal!
+    // If clicked without dragging while in mini mode -> expand back to normal!
     if (!d.moved && isMini) {
       setIsMini(false);
       try { localStorage.setItem(MINI_KEY, "false"); } catch {}
     }
   }, [isMini]);
 
-  // Toggle Mini Mode (تصغير إلى كبسولة صغيرة جداً أو تكبيرها)
-  const toggleMini = useCallback((e?: React.MouseEvent) => {
+  // Expand from Mini Mode back to Normal Mode
+  const expandFromMini = useCallback((e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
-    setIsMini(prev => {
-      const next = !prev;
-      try { localStorage.setItem(MINI_KEY, String(next)); } catch {}
-      return next;
-    });
+    setIsMini(false);
+    try { localStorage.setItem(MINI_KEY, "false"); } catch {}
+  }, []);
+
+  // Minimize into Mini Mode
+  const minimizeToMini = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setIsMini(true);
+    try { localStorage.setItem(MINI_KEY, "true"); } catch {}
   }, []);
 
   // Toggle Curtain (فتح / قفل الستارة لعرض أو إخفاء تفاصيل المؤشرات)
-  const toggleCollapse = useCallback((e?: React.MouseEvent) => {
+  const toggleCurtain = useCallback((e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
@@ -182,17 +192,6 @@ export function LiveVisitorsBubble() {
       try { localStorage.setItem(STATE_KEY, String(next)); } catch {}
       return next;
     });
-  }, []);
-
-  // Modal check to prevent blocking overlays
-  const [modalOpen, setModalOpen] = useState(false);
-  useEffect(() => {
-    const check = () => setModalOpen(
-      !!document.querySelector('[data-radix-popper-content-wrapper], [role="dialog"][data-state="open"]')
-    );
-    const obs = new MutationObserver(check);
-    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-state"] });
-    return () => obs.disconnect();
   }, []);
 
   const safeProperties = Array.isArray(properties) ? properties : [];
@@ -211,16 +210,17 @@ export function LiveVisitorsBubble() {
   ];
 
   return (
-    <div
+    <aside
+      aria-label="المتواجدون الآن"
       style={{
         position: "fixed",
         left: pos.x,
         top: pos.y,
         width: currentW,
         touchAction: "none",
-        zIndex: modalOpen ? 40 : 9999,
-        pointerEvents: modalOpen ? "none" : "auto",
-        transition: isDragging ? "none" : "width 0.2s cubic-bezier(0.16, 1, 0.3, 1), left 0.15s ease, top 0.15s ease",
+        zIndex: 99999,
+        pointerEvents: "auto",
+        transition: isDragging ? "none" : "width 0.25s cubic-bezier(0.16, 1, 0.3, 1), left 0.15s ease, top 0.15s ease",
         willChange: isDragging ? "left, top" : "auto",
       }}
       className="select-none font-sans"
@@ -231,39 +231,46 @@ export function LiveVisitorsBubble() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          className="group flex items-center justify-between gap-1 px-2.5 py-1.5 rounded-full border border-amber-400/60 bg-gradient-to-r from-[#10202D]/95 via-[#173044]/95 to-[#10202D]/95 backdrop-blur-md shadow-xl shadow-black/60 ring-1 ring-amber-400/30 cursor-grab active:cursor-grabbing hover:border-amber-300 transition-all hover:scale-105"
-          title="المتواجدون الآن - انقر للتكبير أو اسحب للتحريك"
+          onClick={expandFromMini}
+          className="group flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-full border-2 border-amber-400 bg-gradient-to-r from-[#10202D] via-[#173044] to-[#10202D] backdrop-blur-md shadow-2xl shadow-black/80 ring-2 ring-amber-400/30 cursor-pointer hover:border-amber-300 hover:scale-105 transition-all"
+          title="متواجدون الآن (مصغر) - انقر للتكبير أو اسحب للتحريك"
         >
-          {/* Live pulsing dot */}
-          <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-xs">
-            <Radio className="h-2.5 w-2.5" />
-            <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
+          {/* Live pulsing beacon */}
+          <div className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-xs">
+            <Radio className="h-3 w-3 text-white" />
+            <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 ring-1 ring-[#10202D]" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#10202D]" />
             </span>
           </div>
 
-          {/* Visitor count */}
-          <span className="text-sm font-black text-white tabular-nums drop-shadow-sm px-0.5">
-            <RollingNumber value={onlineCount} />
-          </span>
+          {/* Label and Count */}
+          <div className="flex items-center gap-1 leading-none min-w-0">
+            <span className="text-[10px] font-bold text-amber-200 whitespace-nowrap">الآن:</span>
+            <span className="text-sm font-black text-white tabular-nums drop-shadow-xs">
+              <RollingNumber value={onlineCount} />
+            </span>
+          </div>
 
-          {/* Expand toggle button */}
-          <button
-            type="button"
-            onPointerDown={e => e.stopPropagation()}
-            onClick={toggleMini}
-            className="w-5 h-5 flex items-center justify-center rounded text-amber-200/80 hover:text-white hover:bg-white/10 transition-colors shrink-0"
-            title="تكبير النافذة (استعادة الحجم الطبيعي)"
-            aria-label="تكبير"
-          >
-            <Maximize2 className="h-3 w-3" />
-          </button>
+          {/* Action to expand */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              onPointerDown={e => e.stopPropagation()}
+              onPointerUp={e => e.stopPropagation()}
+              onClick={expandFromMini}
+              className="w-5 h-5 flex items-center justify-center rounded-full text-amber-300 hover:text-white hover:bg-white/10 transition-colors"
+              title="تكبير واستعادة الحجم الطبيعي"
+              aria-label="تكبير"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       ) : (
-        /* ── Mode 2: Full / Normal Mode (الشريط الطبيعي مع إمكانية فتح الستارة) ── */
-        <div className="rounded-2xl border border-amber-300/50 bg-gradient-to-br from-[#10202D]/95 via-[#173044]/95 to-[#0D1B27]/95 backdrop-blur-md shadow-2xl shadow-black/70 ring-1 ring-white/15 overflow-hidden transition-all duration-300">
-          {/* Header row — draggable */}
+        /* ── Mode 2: Full / Normal Mode (الشريط الطبيعي مع إمكانية فتح الستارة والتصغير) ── */
+        <div className="rounded-2xl border-2 border-amber-400/60 bg-gradient-to-br from-[#10202D] via-[#173044] to-[#0D1B27] backdrop-blur-md shadow-2xl shadow-black/85 ring-1 ring-white/20 overflow-hidden transition-all duration-300">
+          {/* Header row — fully draggable */}
           <div
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -272,57 +279,68 @@ export function LiveVisitorsBubble() {
           >
             {/* Live beacon */}
             <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-xs">
-              <Radio className="h-3.5 w-3.5" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-2 w-2">
+              <Radio className="h-3.5 w-3.5 text-white" />
+              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 ring-1 ring-[#10202D]" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-[#10202D]" />
               </span>
             </div>
 
             {/* Title & Count */}
             <div className="flex min-w-0 flex-1 flex-col leading-none">
-              <span className="text-[9px] font-semibold text-amber-200/90">متواجدون الآن</span>
-              <span className="text-lg font-black text-white leading-tight drop-shadow-sm tabular-nums">
+              <span className="text-[10px] font-bold text-amber-200">متواجدون الآن</span>
+              <span className="text-base font-black text-white leading-tight drop-shadow-xs tabular-nums">
                 <RollingNumber value={onlineCount} />
               </span>
             </div>
 
-            {/* Minimize to mini pill button (سهمين متوجهين لبعض - تصغير لكبسولة صغيرة) */}
-            <button
-              type="button"
-              onPointerDown={e => e.stopPropagation()}
-              onClick={toggleMini}
-              className="w-5 h-5 flex items-center justify-center text-amber-200/70 hover:text-white hover:bg-white/10 transition-colors rounded"
-              title="تصغير إلى كبسولة صغيرة جداً"
-              aria-label="تصغير إلى كبسولة"
-            >
-              <Minimize2 className="h-3 w-3" />
-            </button>
+            {/* أزرار التحكم */}
+            <div className="flex items-center gap-1 shrink-0">
+              {/* زر الستارة (السهم): ChevronDown عند الإغلاق لفتح الستارة، و ChevronUp عند الفتح لقفلها */}
+              <button
+                type="button"
+                onPointerDown={e => e.stopPropagation()}
+                onPointerUp={e => e.stopPropagation()}
+                onClick={toggleCurtain}
+                className="w-6 h-6 flex items-center justify-center text-amber-200/90 hover:text-white hover:bg-white/10 active:scale-95 transition-all rounded"
+                title={collapsed ? "فتح الستارة (عرض تفاصيل المؤشرات)" : "قفل الستارة (إخفاء التفاصيل)"}
+                aria-label={collapsed ? "فتح الستارة" : "قفل الستارة"}
+              >
+                {collapsed ? (
+                  <ChevronDown className="h-4 w-4 transition-transform duration-200 hover:translate-y-0.5" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 transition-transform duration-200 hover:-translate-y-0.5" />
+                )}
+              </button>
 
-            {/* Expand/Collapse curtain button (سهم لفتح أو قفل الستارة) */}
-            <button
-              type="button"
-              onPointerDown={e => e.stopPropagation()}
-              onClick={toggleCollapse}
-              className="w-5 h-5 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-colors rounded"
-              title={collapsed ? "عرض تفاصيل المؤشرات (فتح الستارة)" : "إخفاء تفاصيل المؤشرات (قفل الستارة)"}
-              aria-label={collapsed ? "فتح الستارة" : "قفل الستارة"}
-            >
-              {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-            </button>
+              {/* زر التصغير الصريح: Minimize2 لتصغير الويدجت لكبسولة صغيرة عائمة */}
+              <button
+                type="button"
+                onPointerDown={e => e.stopPropagation()}
+                onPointerUp={e => e.stopPropagation()}
+                onClick={minimizeToMini}
+                className="w-6 h-6 flex items-center justify-center text-amber-300 hover:text-white hover:bg-amber-400/20 active:scale-95 transition-all rounded"
+                title="تصغير إلى كبسولة صغيرة جداً"
+                aria-label="تصغير إلى كبسولة"
+              >
+                <Minimize2 className="h-3.5 w-3.5 hover:scale-110 transition-transform" />
+              </button>
 
-            {/* Grip handle */}
-            <GripVertical className="h-3.5 w-3.5 shrink-0 text-white/30" aria-hidden="true" />
+              {/* Grip drag handle */}
+              <div className="cursor-grab active:cursor-grabbing p-0.5 text-white/40 hover:text-white/70 transition-colors">
+                <GripVertical className="h-4 w-4" aria-hidden="true" />
+              </div>
+            </div>
           </div>
 
-          {/* Expanded curtain metrics */}
+          {/* Detailed Metrics Drawer (الستارة: تفاصيل المؤشرات) */}
           {!collapsed && (
-            <div className="border-t border-white/10 px-2.5 py-2 space-y-1.5 bg-black/25 animate-in fade-in duration-200">
+            <div className="border-t border-white/15 px-2.5 py-2 space-y-1.5 bg-black/35 animate-in fade-in duration-200">
               {metrics.map((m, i) => (
                 <div key={i} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <m.icon className="h-3 w-3 text-amber-300/80 flex-shrink-0" />
-                    <span className="text-[9px] text-white/75 truncate">{m.label}</span>
+                    <m.icon className="h-3 w-3 text-amber-300 flex-shrink-0" />
+                    <span className="text-[9.5px] text-white/85 truncate">{m.label}</span>
                   </div>
                   <span className="text-xs font-bold text-white tabular-nums">
                     {(m.value ?? 0).toLocaleString("en-US")}
@@ -333,12 +351,13 @@ export function LiveVisitorsBubble() {
                 <button
                   type="button"
                   onPointerDown={e => e.stopPropagation()}
+                  onPointerUp={e => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate("/admin/analytics");
                   }}
                   className={cn(
-                    "w-full text-[9px] font-bold text-amber-300 hover:text-amber-200 hover:underline transition-all text-center py-1 block rounded bg-amber-400/10 hover:bg-amber-400/20"
+                    "w-full text-[9.5px] font-bold text-amber-300 hover:text-amber-200 hover:underline transition-all text-center py-1 block rounded bg-amber-400/15 hover:bg-amber-400/25"
                   )}
                 >
                   عرض التحليلات الكاملة ←
@@ -348,6 +367,6 @@ export function LiveVisitorsBubble() {
           )}
         </div>
       )}
-    </div>
+    </aside>
   );
 }

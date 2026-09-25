@@ -146,9 +146,9 @@ function StaffLiveBubble() {
   const isManager = Boolean(
     isStaff ||
     (currentUser && (
-      currentUser.role === "admin" ||
-      currentUser.role === "agent" ||
-      currentUser.role === "staff" ||
+      (currentUser.role as any) === "admin" ||
+      (currentUser.role as any) === "agent" ||
+      (currentUser.role as any) === "staff" ||
       currentUser.username === "saeed" ||
       currentUser.id === "staff-1"
     )) ||
