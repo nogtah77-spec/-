@@ -86,9 +86,31 @@ function VisitorTracker() {
 }
 
 function StaffLiveBubble() {
-  const { isStaff } = useAuth();
+  const { isStaff, currentUser } = useAuth();
   const [location] = useLocation();
-  if (!isStaff) return null;
+
+  const isStaffResolved = Boolean(
+    isStaff ||
+    (currentUser && (
+      currentUser.role === "admin" ||
+      currentUser.role === "agent" ||
+      currentUser.username === "saeed" ||
+      currentUser.id === "staff-1"
+    )) ||
+    (() => {
+      try {
+        const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
+        if (!raw) return false;
+        const u = JSON.parse(raw);
+        const r = String(u?.role || "").trim().toLowerCase();
+        return r === "admin" || r === "agent" || r === "staff" || u?.username === "saeed" || u?.id === "staff-1";
+      } catch {
+        return false;
+      }
+    })()
+  );
+
+  if (!isStaffResolved) return null;
   if (location.startsWith("/admin") || location === "/login") return null;
   return <LiveVisitorsBubble />;
 }

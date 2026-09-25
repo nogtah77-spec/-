@@ -22,10 +22,33 @@ function clampToViewport(x: unknown, y: unknown, w: number, h: number): Pos {
   const winW = typeof window !== "undefined" ? window.innerWidth : 390;
   const winH = typeof window !== "undefined" ? window.innerHeight : 844;
   const numX = typeof x === "number" && Number.isFinite(x) ? x : MARGIN;
-  const numY = typeof y === "number" && Number.isFinite(y) ? y : Math.max(MARGIN, winH - h - MARGIN - 64);
+  const numY = typeof y === "number" && Number.isFinite(y) ? y : Math.max(MARGIN + 60, winH - h - 90);
   const maxX = Math.max(MARGIN, winW - w - MARGIN);
-  const maxY = Math.max(MARGIN, winH - h - MARGIN);
-  return { x: Math.min(Math.max(MARGIN, numX), maxX), y: Math.min(Math.max(MARGIN, numY), maxY) };
+  const maxY = Math.max(MARGIN + 60, winH - h - 80);
+  return { x: Math.min(Math.max(MARGIN, numX), maxX), y: Math.min(Math.max(MARGIN + 60, numY), maxY) };
+}
+
+function getSafePosition(stored: unknown, w: number, h: number): Pos {
+  const winW = typeof window !== "undefined" ? window.innerWidth : 390;
+  const winH = typeof window !== "undefined" ? window.innerHeight : 844;
+  const defaultX = MARGIN;
+  const defaultY = Math.max(MARGIN + 60, winH - h - 90);
+
+  if (!stored || typeof stored !== "object") {
+    return { x: defaultX, y: defaultY };
+  }
+
+  const p = stored as { x?: unknown; y?: unknown };
+  if (typeof p.x !== "number" || !Number.isFinite(p.x) || typeof p.y !== "number" || !Number.isFinite(p.y)) {
+    return { x: defaultX, y: defaultY };
+  }
+
+  // If saved position is off-screen or inside bottom toolbar danger zone:
+  if (p.x < MARGIN || p.x > winW - 40 || p.y < 50 || p.y > winH - 75) {
+    return { x: defaultX, y: defaultY };
+  }
+
+  return clampToViewport(p.x, p.y, w, h);
 }
 
 export function LiveVisitorsBubble() {
@@ -33,11 +56,9 @@ export function LiveVisitorsBubble() {
   const [, navigate] = useLocation();
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try { return localStorage.getItem(STATE_KEY) === "true"; } catch { return true; }
+    try { return localStorage.getItem(STATE_KEY) === "true"; } catch { return false; }
   });
-  const [isMini, setIsMini] = useState<boolean>(() => {
-    try { return localStorage.getItem(MINI_KEY) === "true"; } catch { return false; }
-  });
+  const [isMini, setIsMini] = useState<boolean>(false);
 
   const currentW = isMini ? W_MINI : W_COLLAPSED;
   const currentH = isMini ? H_MINI : (collapsed ? H_COLLAPSED : H_COLLAPSED + 120);
@@ -49,16 +70,12 @@ export function LiveVisitorsBubble() {
       if (typeof window !== "undefined") {
         const raw = localStorage.getItem(POS_KEY);
         if (raw) {
-          const p = JSON.parse(raw);
-          if (p && typeof p.x === "number" && Number.isFinite(p.x) && typeof p.y === "number" && Number.isFinite(p.y)) {
-            return clampToViewport(p.x, p.y, initW, initH);
-          }
+          return getSafePosition(JSON.parse(raw), initW, initH);
         }
-        const winH = window.innerHeight || 800;
-        return clampToViewport(MARGIN, winH - initH - MARGIN - 64, initW, initH);
       }
     } catch {}
-    return { x: MARGIN, y: 500 };
+    const winH = typeof window !== "undefined" ? window.innerHeight : 800;
+    return { x: MARGIN, y: Math.max(MARGIN + 60, winH - initH - 90) };
   });
 
   const drag = useRef<{ dx: number; dy: number; startX: number; startY: number; moved: boolean } | null>(null);
@@ -77,15 +94,12 @@ export function LiveVisitorsBubble() {
     try {
       const raw = localStorage.getItem(POS_KEY);
       if (raw) {
-        const p = JSON.parse(raw) as Pos;
-        if (p && typeof p.x === "number" && Number.isFinite(p.x) && typeof p.y === "number" && Number.isFinite(p.y)) {
-          setPos(clampToViewport(p.x, p.y, currentW, currentH));
-          return;
-        }
+        setPos(getSafePosition(JSON.parse(raw), currentW, currentH));
+        return;
       }
     } catch {}
     const winH = typeof window !== "undefined" ? window.innerHeight : 800;
-    setPos(clampToViewport(MARGIN, winH - currentH - MARGIN - 64, currentW, currentH));
+    setPos({ x: MARGIN, y: Math.max(MARGIN + 60, winH - currentH - 90) });
   }, []);
 
   // clamp position on window resize
@@ -188,8 +202,8 @@ export function LiveVisitorsBubble() {
         top: pos.y,
         width: currentW,
         touchAction: "none",
-        zIndex: modalOpen ? 40 : 70,
-        pointerEvents: modalOpen ? "none" : "auto",
+        zIndex: modalOpen ? 40 : 9990,
+        pointerEvents: "auto",
       }}
       className="select-none transition-[width] duration-200"
     >
