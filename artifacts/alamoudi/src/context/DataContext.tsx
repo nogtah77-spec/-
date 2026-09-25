@@ -1011,45 +1011,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return !isPropertyDeleted(p, deletedSet);
     };
     const cached = readCache();
-    const map = new Map<string, Property>();
     const isReset = typeof window !== "undefined" && localStorage.getItem("alm_platform_reset_flag") === "true";
-    // 1. First add all master seed properties if not explicitly reset (indexed by code and id)
+
+    // 1. If we already have clean cached properties from prior session or cloud, use them directly
+    if (cached?.properties && cached.properties.length > 0) {
+      const cleanCached = cached.properties.filter(isClean);
+      if (cleanCached.length > 0) {
+        return cleanCached.sort((a, b) => {
+          const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+          const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+          return tB - tA;
+        });
+      }
+    }
+
+    // 2. Only if no cached properties exist and not reset, load initial seeds (deduplicated by ID)
     if (!isReset) {
+      const map = new Map<string, Property>();
       for (const p of SEED_PROPERTIES) {
-        if (p && p.id && !isPropertyDeleted(p, deletedSet)) {
-          const codeKey = (p.code || p.id).trim().toLowerCase();
-          map.set(codeKey, p);
+        if (p && p.id && isClean(p)) {
           map.set(p.id, p);
         }
       }
+      return Array.from(map.values()).sort((a, b) => {
+        const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return tB - tA;
+      });
     }
-    // 2. Overlay any cached updates/edits, preserving all photos
-    if (cached?.properties && cached.properties.length > 0) {
-      for (const p of cached.properties) {
-        if (p && p.id && !isPropertyDeleted(p, deletedSet)) {
-          const codeKey = (p.code || p.id).trim().toLowerCase();
-          const existing = map.get(codeKey) || map.get(p.id);
-          if (existing) {
-            const tExist = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
-            const tCache = new Date(p.updatedAt || p.createdAt || 0).getTime();
-            const existImgs = parsePropertyImages(existing.images);
-            const pImgs = parsePropertyImages(p.images);
-            const chosenImgs = pImgs.length > 0 ? pImgs : existImgs;
-            const newer = tCache >= tExist ? { ...existing, ...p, images: chosenImgs } : { ...p, ...existing, images: chosenImgs };
-            map.set(codeKey, newer);
-            map.set(p.id, newer);
-          } else {
-            map.set(codeKey, p);
-            map.set(p.id, p);
-          }
-        }
-      }
-    }
-    return Array.from(map.values()).filter(isClean).sort((a, b) => {
-      const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
-      const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
-      return tB - tA;
-    });
+
+    return [];
   });
   const [users, setUsers] = useState<User[]>(() => {
     try {
@@ -1217,7 +1208,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         try { localStorage.setItem("alm_types", JSON.stringify(freshTypes.value)); } catch {}
       }
       if (freshProps.status === "fulfilled" && freshProps.value) {
-        const protectedList = mergeFreshWithRecentEdits(freshProps.value);
+        const protectedList = mergeFreshWithRecentEdits(freshProps.value).filter(p => !isSystemStoreProperty(p) && !isDummyProperty(p));
         setProperties(prev => {
           const prevMap = new Map<string, Property>();
           prev.forEach(p => {
@@ -1232,12 +1223,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const existImgs = parsePropertyImages(existing.images);
             const chosenImgs = freshImgs.length > 0 ? freshImgs : existImgs;
             return { ...existing, ...fresh, images: chosenImgs };
-          });
-          const deletedSet = getDeletedPropertyIds();
-          prev.forEach(p => {
-            if (p?.id && !merged.some(m => m.id === p.id || (m.code && p.code && m.code.toLowerCase().trim() === p.code.toLowerCase().trim())) && !isPropertyDeleted(p, deletedSet)) {
-              merged.push(p);
-            }
           });
           writeCache({ regions, types: propertyTypes, properties: merged, settings });
           return merged;
@@ -1382,37 +1367,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (cached) {
       if (cached.properties && cached.properties.length > 0) {
-        setProperties(prev => {
-          const map = new Map<string, Property>();
-          prev.forEach(p => {
-            if (p?.code) map.set(p.code.toLowerCase().trim(), p);
-            if (p?.id) map.set(p.id, p);
-          });
-          cached.properties.forEach(p => {
-            if (p) {
-              const codeKey = (p.code || p.id).toLowerCase().trim();
-              const existing = map.get(codeKey) || map.get(p.id);
-              if (!existing) {
-                map.set(codeKey, p);
-                map.set(p.id, p);
-              } else {
-                const tE = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
-                const tC = new Date(p.updatedAt || p.createdAt || 0).getTime();
-                const existImgs = parsePropertyImages(existing.images);
-                const pImgs = parsePropertyImages(p.images);
-                const chosenImgs = pImgs.length > 0 ? pImgs : existImgs;
-                const newer = tC >= tE ? { ...existing, ...p, images: chosenImgs } : { ...p, ...existing, images: chosenImgs };
-                map.set(codeKey, newer);
-                map.set(p.id, newer);
-              }
-            }
-          });
-          return Array.from(new Set(map.values())).sort((a, b) => {
+        const deletedSet = getDeletedPropertyIds();
+        const cleanCached = cached.properties.filter(p => p && !isSystemStoreProperty(p) && !isDummyProperty(p) && !isPropertyDeleted(p, deletedSet));
+        if (cleanCached.length > 0) {
+          setProperties(cleanCached.sort((a, b) => {
             const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
             const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
             return tB - tA;
-          });
-        });
+          }));
+        }
       }
       setSettings(prev => ({
         ...DEFAULT_SETTINGS,
@@ -1481,7 +1444,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     supabaseService.fetchProperties().then(supabaseProps => {
       if (destroyed) return;
       if (supabaseProps && supabaseProps.length > 0) {
-        const protectedList = mergeFreshWithRecentEdits(supabaseProps);
+        const protectedList = mergeFreshWithRecentEdits(supabaseProps).filter(p => !isSystemStoreProperty(p) && !isDummyProperty(p));
         setProperties(prev => {
           const prevMap = new Map<string, Property>();
           prev.forEach(p => {
@@ -1496,12 +1459,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const existImgs = parsePropertyImages(existing.images);
             const chosenImgs = freshImgs.length > 0 ? freshImgs : existImgs;
             return { ...existing, ...fresh, images: chosenImgs };
-          });
-          const deletedSet = getDeletedPropertyIds();
-          prev.forEach(p => {
-            if (p?.id && !merged.some(m => m.id === p.id || (m.code && p.code && m.code.toLowerCase().trim() === p.code.toLowerCase().trim())) && !isPropertyDeleted(p, deletedSet)) {
-              merged.push(p);
-            }
           });
           writeCache({
             regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
