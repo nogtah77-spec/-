@@ -69,6 +69,9 @@ const queryClient = new QueryClient();
 
 function Protected({ component: Component, adminOnly = false }: { component: ComponentType; adminOnly?: boolean }) {
   const { currentUser, isStaff, authReady } = useAuth();
+  if (isStaff || currentUser?.role === "admin") {
+    try { localStorage.setItem("alm_last_admin_access", "true"); } catch {}
+  }
   if (!authReady) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">جارٍ التحميل…</div>;
   if (!isStaff) return <Redirect to="/login" />;
   if (adminOnly && currentUser?.role !== "admin") return <Redirect to="/admin" />;
@@ -100,13 +103,16 @@ function StaffLiveBubble() {
     (() => {
       try {
         const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
-        if (!raw) return false;
-        const u = JSON.parse(raw);
-        const r = String(u?.role || "").trim().toLowerCase();
-        return r === "admin" || r === "agent" || r === "staff" || u?.username === "saeed" || u?.id === "staff-1";
+        if (raw) {
+          const u = JSON.parse(raw);
+          const r = String(u?.role || "").trim().toLowerCase();
+          if (r === "admin" || r === "agent" || r === "staff" || u?.username === "saeed" || u?.id === "staff-1" || u?.name?.includes("سعيد")) return true;
+        }
+        if (localStorage.getItem("alm_last_admin_access") === "true") return true;
       } catch {
         return false;
       }
+      return false;
     })()
   );
 
