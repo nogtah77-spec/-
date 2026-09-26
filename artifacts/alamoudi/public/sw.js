@@ -1,4 +1,4 @@
-const MEDIA_CACHE = "alamoudi-media-v18";
+const MEDIA_CACHE = "alamoudi-media-v20";
 
 // Install: Activate immediately without waiting
 self.addEventListener("install", (event) => {

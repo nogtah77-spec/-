@@ -7,7 +7,7 @@ import {
   Building2, Eye, MapPin, Users, Radio, CalendarDays, CalendarRange,
   CalendarClock, LineChart, ShieldAlert, TrendingUp, Sparkles, Trophy,
   DollarSign, ArrowUpRight, CheckCircle2, Flame, PieChart as PieIcon,
-  BarChart3, Activity, Compass, Layers, Sliders, ShieldCheck
+  BarChart3, Activity, Compass, Layers, Sliders
 } from "lucide-react";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -16,8 +16,6 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
 import { formatNumber, cn } from "@/lib/utils";
 import { Link } from "wouter";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
 import {
   ResponsiveContainer,
   PieChart,
@@ -82,86 +80,7 @@ export default function Analytics() {
   const isAdmin = currentUser?.role === "admin";
   const canViewAnalytics = isAdmin || checkUserPermission(currentUser, "التقارير-عرض التحليلات");
 
-  const { toast } = useToast();
 
-  // Resolve logged-in manager info safely
-  const activeManager = useMemo(() => {
-    if (currentUser && (currentUser.name || currentUser.username || currentUser.id)) {
-      return {
-        id: String(currentUser.id || currentUser.username).trim(),
-        name: String(currentUser.name || currentUser.username).trim(),
-        username: String(currentUser.username || "admin").trim(),
-        role: String(currentUser.role || "admin").trim(),
-      };
-    }
-    try {
-      const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
-      if (raw) {
-        const u = JSON.parse(raw);
-        if (u?.name || u?.username || u?.id) {
-          return {
-            id: String(u.id || u.username).trim(),
-            name: String(u.name || u.username).trim(),
-            username: String(u.username || "admin").trim(),
-            role: String(u.role || "admin").trim(),
-          };
-        }
-      }
-    } catch {}
-    return { id: "admin", name: "المدير العام", username: "admin", role: "admin" };
-  }, [currentUser]);
-
-  const managerPrefKey = `alm_bubble_pref_v2_${activeManager.id}`;
-
-  const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
-    try {
-      const pref = localStorage.getItem(managerPrefKey);
-      if (pref !== null) return pref === "true";
-      return true; // Default is always enabled for this manager
-    } catch {
-      return true;
-    }
-  });
-
-  // Keep state synced if manager logs in or key changes
-  useEffect(() => {
-    try {
-      const pref = localStorage.getItem(managerPrefKey);
-      if (pref !== null) {
-        setBubbleEnabled(pref === "true");
-      } else {
-        setBubbleEnabled(true);
-      }
-    } catch {
-      setBubbleEnabled(true);
-    }
-  }, [managerPrefKey]);
-
-  const handleToggleBubble = (checked: boolean) => {
-    setBubbleEnabled(checked);
-    try {
-      // 1. Save ONLY to this manager's personal key
-      localStorage.setItem(managerPrefKey, String(checked));
-
-      // 2. Remove any old global key to prevent overriding other managers
-      localStorage.removeItem("alm_live_bubble_enabled");
-
-      // 3. Dispatch custom event with manager details
-      window.dispatchEvent(
-        new CustomEvent("alm-live-bubble-pref-changed", {
-          detail: { managerId: activeManager.id, enabled: checked }
-        })
-      );
-    } catch {}
-
-    toast({
-      title: checked ? `تم تفعيل الويدجت لحسابك (${activeManager.name}) ✓` : `تم إخفاء الويدجت لحسابك (${activeManager.name})`,
-      description: checked
-        ? "سيظهر لك ويدجت المتواجدون الآن في الصفحة الرئيسية لحسابك كمدير."
-        : "تم إخفاء الويدجت من واجهة حسابك فقط، ولن يتأثر أي مدير آخر.",
-      duration: 3500,
-    });
-  };
 
   useEffect(() => {
     refreshVisitorStats();
@@ -387,56 +306,7 @@ export default function Analytics() {
           icon={LineChart}
         />
 
-        {/* بطاقة تحكم مخصصة للمدير: تفعيل أو إخفاء ويدجت المتواجدون الآن */}
-        <div className="rounded-2xl border-2 border-amber-500/30 bg-gradient-to-r from-[#10202D] via-[#173044] to-[#10202D] p-4 sm:p-5 shadow-xl ring-1 ring-amber-400/20">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-md">
-                <Radio className="h-5 w-5" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-bold text-white">ويدجت "المتواجدون الآن" على واجهة المنصة</h3>
-                  <Badge variant="outline" className="border-amber-400/50 text-amber-300 bg-amber-400/10 text-[10px] py-0 px-2 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-amber-400" />
-                    <span>إعداد شخصي مستقل للمدير</span>
-                  </Badge>
-                </div>
-                <p className="text-xs text-white/75 leading-relaxed max-w-2xl">
-                  هذا الخيار خاص بحسابك كمدير، يمكنك من خلاله إظهار أو إخفاء الويدجت العائم للمتواجدين الآن في الصفحة الرئيسية لواجهتك بحرية تامة دون أن يتأثر أي مدير آخر.
-                </p>
-              </div>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-3.5 self-stretch lg:self-center justify-between sm:justify-end bg-black/40 px-4 py-2.5 rounded-xl border border-white/10 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300">
-                  <ShieldCheck className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col text-right">
-                  <span className="text-[10px] text-white/60 leading-none">المدير الحالي</span>
-                  <span className="text-xs font-bold text-amber-300 leading-tight">
-                    {activeManager.name}
-                  </span>
-                </div>
-              </div>
-
-              <div className="h-6 w-px bg-white/15 hidden sm:block" />
-
-              <div className="flex items-center gap-2.5">
-                <span className={cn("text-xs font-bold transition-colors", bubbleEnabled ? "text-emerald-400" : "text-rose-400")}>
-                  {bubbleEnabled ? "ظاهر في واجهتك ✓" : "مخفي عنك ✕"}
-                </span>
-                <Switch
-                  checked={bubbleEnabled}
-                  onCheckedChange={handleToggleBubble}
-                  className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-slate-700 shadow-md"
-                  aria-label="تفعيل أو إخفاء ويدجت المتواجدون الآن"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Live Visitor Stats Cards */}
         <div className="space-y-3">

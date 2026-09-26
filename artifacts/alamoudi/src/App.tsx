@@ -11,8 +11,6 @@ import { UserPrefsProvider } from "@/context/UserPrefsContext";
 import { AIChatProvider } from "@/context/AIChatContext";
 import { AI_ASSISTANT_ENABLED } from "@/config/features";
 import { api } from "@/lib/api";
-import { getVisitorId } from "@/lib/visitorTracking";
-import { LiveVisitorsBubble } from "@/components/ui/LiveVisitorsBubble";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTopButton } from "@/components/ui/ScrollToTopButton";
 import { InstallPwaPrompt } from "@/components/ui/InstallPwaPrompt";
@@ -88,99 +86,7 @@ function VisitorTracker() {
   return null;
 }
 
-function getActiveManagerKey(user: any): string {
-  const resolvedId = user?.id || user?.username || (() => {
-    try {
-      const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
-      if (raw) {
-        const u = JSON.parse(raw);
-        return u?.id || u?.username;
-      }
-    } catch {}
-    return "admin";
-  })();
-  return `alm_bubble_pref_v2_${String(resolvedId || "admin").trim()}`;
-}
 
-function StaffLiveBubble() {
-  const { isStaff, currentUser } = useAuth();
-  const [location] = useLocation();
-
-  const managerKey = getActiveManagerKey(currentUser);
-
-  const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
-    try {
-      if (localStorage.getItem("alm_bubble_pref_reset_v3") !== "done") {
-        localStorage.setItem(managerKey, "true");
-        localStorage.setItem("alm_bubble_pref_reset_v3", "done");
-        return true;
-      }
-      const pref = localStorage.getItem(managerKey);
-      if (pref !== null) return pref === "true";
-      return true; // Default is always true (enabled for managers)
-    } catch {
-      return true;
-    }
-  });
-
-  useEffect(() => {
-    const checkPref = () => {
-      try {
-        const pref = localStorage.getItem(managerKey);
-        if (pref !== null) {
-          setBubbleEnabled(pref === "true");
-        } else {
-          setBubbleEnabled(true);
-        }
-      } catch {
-        setBubbleEnabled(true);
-      }
-    };
-
-    checkPref();
-    window.addEventListener("alm-live-bubble-pref-changed", checkPref);
-    window.addEventListener("storage", checkPref);
-    return () => {
-      window.removeEventListener("alm-live-bubble-pref-changed", checkPref);
-      window.removeEventListener("storage", checkPref);
-    };
-  }, [managerKey]);
-
-  // Strict manager verification: ONLY authentic authenticated staff/admins can see this.
-  // Regular visitors (الزوار) will ALWAYS be false and will NEVER see the widget!
-  const isManager = Boolean(
-    isStaff ||
-    (currentUser && (
-      (currentUser.role as any) === "admin" ||
-      (currentUser.role as any) === "agent" ||
-      (currentUser.role as any) === "staff" ||
-      currentUser.username === "saeed" ||
-      currentUser.id === "staff-1"
-    )) ||
-    (() => {
-      try {
-        const raw = localStorage.getItem("alm_auth_user") || sessionStorage.getItem("alm_auth_user");
-        if (raw) {
-          const u = JSON.parse(raw);
-          const r = String(u?.role || "").trim().toLowerCase();
-          return r === "admin" || r === "agent" || r === "staff" || u?.username === "saeed" || u?.id === "staff-1" || u?.name?.includes("سعيد");
-        }
-      } catch {}
-      return false;
-    })()
-  );
-
-  // If not an authorized manager/staff (i.e. any regular visitor) -> strictly hide!
-  if (!isManager) return null;
-
-  // If the manager explicitly toggled it off -> hide
-  if (!bubbleEnabled) return null;
-
-  // Never render on internal admin pages or login
-  if (location.startsWith("/admin") || location === "/login") return null;
-
-  return <LiveVisitorsBubble />;
-}
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -430,9 +336,7 @@ function App() {
                     <ErrorBoundary fallback={null}>
                       <ScrollToTopButton />
                     </ErrorBoundary>
-                    <ErrorBoundary fallback={null}>
-                      <StaffLiveBubble />
-                    </ErrorBoundary>
+
                     <ErrorBoundary fallback={null}>
                       <InstallPwaPrompt />
                     </ErrorBoundary>

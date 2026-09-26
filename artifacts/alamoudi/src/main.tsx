@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 // Service Worker handling: active only in production to prevent caching issues during local dev
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -37,4 +38,8 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
   }
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);

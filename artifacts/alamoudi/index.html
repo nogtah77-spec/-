@@ -58,12 +58,48 @@
             msNav.setAttribute("content", tc);
           }
         } catch (e) {}
+
+        // Clean up all legacy bubble keys completely
+        try {
+          var keysToRemove = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && (k.indexOf("live_bubble") !== -1 || k.indexOf("bubble_pref") !== -1)) {
+              keysToRemove.push(k);
+            }
+          }
+          for (var j = 0; j < keysToRemove.length; j++) {
+            localStorage.removeItem(keysToRemove[j]);
+          }
+        } catch (e) {}
+
+        // Global hard reset function for instant recovery
+        window.almHardReset = function() {
+          try {
+            if ("caches" in window) {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              });
+            }
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              });
+            }
+          } catch (err) {}
+          setTimeout(function() {
+            var cleanUrl = window.location.href.replace(/([?&])_r=\d+/, "");
+            var sep = cleanUrl.indexOf("?") !== -1 ? "&" : "?";
+            window.location.replace(cleanUrl + sep + "_r=" + Date.now());
+          }, 150);
+        };
+
         // Instant Auto-Heal: Purge legacy static caches to prevent any stale chunk errors
         try {
           if ("caches" in window) {
             caches.keys().then(function(keys) {
               for (var i = 0; i < keys.length; i++) {
-                if (keys[i].indexOf("static") !== -1 || keys[i].indexOf("data-v") !== -1) {
+                if (keys[i].indexOf("static") !== -1 || keys[i].indexOf("data-v") !== -1 || keys[i].indexOf("media-v1") !== -1) {
                   caches.delete(keys[i]);
                 }
               }
@@ -100,10 +136,33 @@
           }
         }
       }, true);
+
+      // Watchdog: If React hasn't mounted in 3.5 seconds, reveal the instant reload button
+      setTimeout(function() {
+        var loader = document.getElementById("alm-initial-loader");
+        var btn = document.getElementById("alm-reload-action");
+        if (loader && btn) {
+          btn.style.display = "block";
+        }
+      }, 3500);
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="alm-initial-loader" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#10202D;color:#ffffff;font-family:'Cairo',sans-serif;flex-direction:column;gap:18px;text-align:center;padding:20px;">
+        <div style="width:64px;height:64px;border-radius:18px;background:rgba(187,165,145,0.15);border:1px solid rgba(187,165,145,0.3);display:flex;align-items:center;justify-content:center;">
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="#BBA591" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z" fill-opacity="0.3"/>
+            <path d="M50 20 L72 33 L72 67 L50 80 L28 67 L28 33 Z"/>
+          </svg>
+        </div>
+        <div style="font-size:16px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">العمودي للتسويق العقاري</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.65);">جارٍ تحميل المنصة بأحدث إصدار...</div>
+        <div id="alm-reload-action" style="display:none;margin-top:12px;">
+          <button onclick="window.almHardReset()" style="background:#BBA591;color:#10202D;font-weight:700;font-size:13px;border:none;padding:10px 22px;border-radius:10px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.3);">تحديث المنصة فوراً</button>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
