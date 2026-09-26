@@ -110,6 +110,11 @@ function StaffLiveBubble() {
 
   const [bubbleEnabled, setBubbleEnabled] = useState<boolean>(() => {
     try {
+      if (localStorage.getItem("alm_bubble_pref_reset_v3") !== "done") {
+        localStorage.setItem(managerKey, "true");
+        localStorage.setItem("alm_bubble_pref_reset_v3", "done");
+        return true;
+      }
       const pref = localStorage.getItem(managerKey);
       if (pref !== null) return pref === "true";
       return true; // Default is always true (enabled for managers)
