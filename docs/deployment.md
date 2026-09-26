@@ -38,7 +38,7 @@ pnpm --filter @workspace/db run push
 
 ```text
 Build Command: pnpm build
-Output Directory: artifacts/alamoudi/dist/public
+Output Directory: artifacts/alamoudi/dist
 Install Command: pnpm install --frozen-lockfile
 ```
 
