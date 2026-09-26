@@ -4,10 +4,10 @@
  */
 
 export const CLOUDINARY_CONFIG = {
-  cloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "vis04evc",
-  uploadPreset: import.meta.env.VITE_CLOUDINARY_PRESET || "h2ft0erz",
-  apiKey: import.meta.env.VITE_CLOUDINARY_API_KEY || "657172733186433",
-  apiSecret: import.meta.env.VITE_CLOUDINARY_API_SECRET || "btYELgnhR-2E54LxI1OwivkvAfY",
+  cloudName: import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME || "vis04evc",
+  uploadPreset: import.meta.env?.VITE_CLOUDINARY_PRESET || "h2ft0erz",
+  apiKey: import.meta.env?.VITE_CLOUDINARY_API_KEY || "657172733186433",
+  apiSecret: import.meta.env?.VITE_CLOUDINARY_API_SECRET || "btYELgnhR-2E54LxI1OwivkvAfY",
 };
 
 /**

@@ -587,7 +587,7 @@ export const DEFAULT_INITIAL_ACTIVITIES: ActivityLog[] = [
   },
 ];
 
-const DataContext = createContext<DataContextType | null>(null);
+export const DataContext = createContext<DataContextType | null>(null);
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 function genCode() { return "ALM-" + Math.floor(10000 + Math.random() * 90000); }
