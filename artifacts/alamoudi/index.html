@@ -58,7 +58,7 @@
             msNav.setAttribute("content", tc);
           }
         } catch (e) {}
-        // Instant Auto-Heal: Purge legacy static caches to prevent any stale chunk errors on mobile/WhatsApp
+        // Instant Auto-Heal: Purge legacy static caches to prevent any stale chunk errors
         try {
           if ("caches" in window) {
             caches.keys().then(function(keys) {
@@ -69,13 +69,37 @@
               }
             });
           }
-          if ((window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && "serviceWorker" in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(regs) {
-              regs.forEach(function(r) { r.unregister(); });
-            });
-          }
         } catch (e) {}
       })();
+      // Bulletproof Desktop/PWA Error Trap: Auto recover from stale chunks or script load failures
+      window.addEventListener("error", function(e) {
+        var msg = (e && e.message) ? String(e.message) : "";
+        var isScriptFailure = (e && e.target && e.target.tagName === "SCRIPT") ||
+          msg.indexOf("ChunkLoadError") !== -1 ||
+          msg.indexOf("dynamically imported module") !== -1 ||
+          msg.indexOf("Unexpected token") !== -1;
+        if (isScriptFailure) {
+          try {
+            if ("caches" in window) {
+              caches.keys().then(function(keys) {
+                keys.forEach(function(k) { caches.delete(k); });
+              });
+            }
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs) {
+                regs.forEach(function(r) { r.unregister(); });
+              });
+            }
+          } catch (err) {}
+          var healKey = "alm_desktop_heal_reload";
+          var last = sessionStorage.getItem(healKey);
+          if (!last || Date.now() - parseInt(last, 10) > 6000) {
+            sessionStorage.setItem(healKey, String(Date.now()));
+            var sep = window.location.href.indexOf("?") !== -1 ? "&" : "?";
+            window.location.replace(window.location.href.replace(/([?&])_r=\d+/, "") + sep + "_r=" + Date.now());
+          }
+        }
+      }, true);
     </script>
   </head>
   <body>
