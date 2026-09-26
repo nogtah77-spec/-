@@ -84,7 +84,7 @@ router.post("/cloudinary/delete", async (req: Request, res: Response): Promise<v
       body: formData.toString(),
     });
 
-    const result = await cloudRes.json().catch(() => ({}));
+    const result = (await cloudRes.json().catch(() => ({}))) as Record<string, any>;
     res.json({ success: result?.result === "ok", result, publicId: targetId });
   } catch (error: any) {
     res.status(500).json({ error: error?.message || "Failed to delete Cloudinary asset" });

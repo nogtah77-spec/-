@@ -59,17 +59,17 @@ router.post("/regions", requireStaff, async (req, res): Promise<void> => {
       row = { ...row, heroImage: heroImage ?? "" };
     }
   }
-  await logActivity(
-    "created",
-    "region",
-    `إضافة منطقة جديدة: ${row?.name ?? parsed.data.name}`,
-    actorFromReq(req),
-  );
+  await logActivity({
+    action: "created",
+    entityType: "region",
+    title: `إضافة منطقة جديدة: ${row?.name ?? parsed.data.name}`,
+    actor: actorFromReq(req),
+  });
   res.status(201).json(row);
 });
 
 router.patch("/regions/:id", requireStaff, async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const parsed = insertRegionSchema.partial().safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -120,28 +120,33 @@ router.patch("/regions/:id", requireStaff, async (req, res): Promise<void> => {
     res.status(404).json({ error: "Region not found" });
     return;
   }
-  await logActivity(
-    "updated",
-    "region",
-    `تعديل المنطقة: ${row.name}`,
-    actorFromReq(req),
-  );
+  await logActivity({
+    action: "updated",
+    entityType: "region",
+    title: `تعديل المنطقة: ${row.name}`,
+    actor: actorFromReq(req),
+  });
   res.json(row);
 });
 
 router.delete("/regions/:id", requireStaff, async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const [row] = await db.delete(regionsTable).where(eq(regionsTable.id, id)).returning();
   if (!row) {
     res.status(404).json({ error: "Region not found" });
     return;
   }
-  await logActivity("deleted", "region", `حذف المنطقة: ${row.name}`, actorFromReq(req));
+  await logActivity({
+    action: "deleted",
+    entityType: "region",
+    title: `حذف المنطقة: ${row.name}`,
+    actor: actorFromReq(req),
+  });
   res.json({ success: true, region: row });
 });
 
 router.post("/regions/:id/toggle", requireStaff, async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const [existing] = await db.select().from(regionsTable).where(eq(regionsTable.id, id));
   if (!existing) {
     res.status(404).json({ error: "Region not found" });
@@ -152,12 +157,12 @@ router.post("/regions/:id/toggle", requireStaff, async (req, res): Promise<void>
     .set({ active: !existing.active })
     .where(eq(regionsTable.id, id))
     .returning();
-  await logActivity(
-    "status",
-    "region",
-    `${updated.active ? "تفعيل" : "تعطيل"} المنطقة: ${updated.name}`,
-    actorFromReq(req),
-  );
+  await logActivity({
+    action: "status",
+    entityType: "region",
+    title: `${updated.active ? "تفعيل" : "تعطيل"} المنطقة: ${updated.name}`,
+    actor: actorFromReq(req),
+  });
   res.json(updated);
 });
 
