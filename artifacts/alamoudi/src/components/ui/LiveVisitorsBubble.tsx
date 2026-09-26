@@ -5,25 +5,24 @@ import { useData } from "@/context/DataContext";
 import { RollingNumber } from "@/components/ui/RollingNumber";
 import { cn } from "@/lib/utils";
 
-// Clean, fresh storage keys (removes any stale or corrupted coordinates/states from previous versions)
-const POS_KEY   = "alm_live_bubble_pos_v6";
-const STATE_KEY = "alm_live_bubble_collapsed_v6";
-const MINI_KEY  = "alm_live_bubble_mini_v6";
+const POS_KEY   = "alm_live_bubble_pos_v7";
+const STATE_KEY = "alm_live_bubble_collapsed_v7";
+const MINI_KEY  = "alm_live_bubble_mini_v7";
 
 type Pos = { x: number; y: number };
 
-const W_NORMAL    = 220;
-const W_MINI      = 142;
-const H_MINI      = 42;
-const H_COLLAPSED = 50;
-const H_EXPANDED  = 220;
-const MARGIN      = 20;
+const W_NORMAL           = 220;
+const W_MINI             = 145;
+const H_MINI             = 42;
+const H_NORMAL_COLLAPSED = 50;
+const H_NORMAL_EXPANDED  = 220;
+const MARGIN             = 20;
 
 function getDefaultPos(): Pos {
   const winH = typeof window !== "undefined" ? window.innerHeight : 800;
   return {
     x: MARGIN,
-    y: Math.max(MARGIN, winH - H_COLLAPSED - MARGIN - 20),
+    y: Math.max(MARGIN, winH - H_NORMAL_COLLAPSED - MARGIN - 20),
   };
 }
 
@@ -54,18 +53,6 @@ export function LiveVisitorsBubble() {
   const { visitorStats, refreshVisitorStats, properties, inquiries, finishingRequests, propertyRequests } = useData();
   const [, navigate] = useLocation();
 
-  // One-time cleanup of legacy keys on mount
-  useEffect(() => {
-    try {
-      localStorage.removeItem("alamoudi_live_bubble_pos_v4");
-      localStorage.removeItem("alamoudi_live_bubble_pos_v5");
-      localStorage.removeItem("alamoudi_live_bubble_mini_v4");
-      localStorage.removeItem("alamoudi_live_bubble_mini_v5");
-      localStorage.removeItem("alamoudi_live_bubble_collapsed_v4");
-      localStorage.removeItem("alamoudi_live_bubble_collapsed_v5");
-    } catch {}
-  }, []);
-
   // Collapsed state (الستارة: true = مقفلة / شريط فقط، false = مفتوحة / تفاصيل المؤشرات معروضة)
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
@@ -91,14 +78,14 @@ export function LiveVisitorsBubble() {
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const currentW = isMini ? W_MINI : W_NORMAL;
-  const currentH = isMini ? H_MINI : (collapsed ? H_COLLAPSED : H_EXPANDED);
+  const currentH = isMini ? H_MINI : (collapsed ? H_NORMAL_COLLAPSED : H_NORMAL_EXPANDED);
 
   const [pos, setPos] = useState<Pos>(() => {
     try {
       if (typeof window !== "undefined") {
         const raw = localStorage.getItem(POS_KEY);
         if (raw) {
-          return getSafePosition(JSON.parse(raw), W_NORMAL, H_COLLAPSED);
+          return getSafePosition(JSON.parse(raw), W_NORMAL, H_NORMAL_COLLAPSED);
         }
       }
     } catch {}
@@ -110,6 +97,7 @@ export function LiveVisitorsBubble() {
   posRef.current = pos;
   const rafId = useRef<number | null>(null);
   const justDraggedRef = useRef<boolean>(false);
+  const minimizeTimestampRef = useRef<number>(0);
 
   // Refresh visitor stats periodically
   useEffect(() => {
@@ -171,7 +159,7 @@ export function LiveVisitorsBubble() {
     if (d?.moved) {
       setTimeout(() => {
         justDraggedRef.current = false;
-      }, 120);
+      }, 150);
     } else {
       justDraggedRef.current = false;
     }
@@ -193,20 +181,23 @@ export function LiveVisitorsBubble() {
     } catch {}
   }, []);
 
-  // Minimize into Mini Mode (يقلص العنصر في مكانه فوراً بدون حذف الـ DOM)
+  // Minimize into Mini Mode
   const minimizeToMini = useCallback((e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
+    minimizeTimestampRef.current = Date.now();
     setIsMini(true);
     try {
       localStorage.setItem(MINI_KEY, "true");
     } catch {}
   }, []);
 
-  // Handle tap / click on capsule container (expands only if not dragged)
+  // Handle tap / click on capsule container (prevents accidental expand from click-through)
   const handleCapsuleClick = useCallback((e: React.MouseEvent) => {
+    // Cooldown prevents immediate click-through right when clicking minimize button
+    if (Date.now() - minimizeTimestampRef.current < 400) return;
     if (justDraggedRef.current) return;
     expandFromMini(e);
   }, [expandFromMini]);
@@ -251,17 +242,19 @@ export function LiveVisitorsBubble() {
         width: currentW,
         minWidth: currentW,
         maxWidth: currentW,
+        height: isMini ? H_MINI : (collapsed ? H_NORMAL_COLLAPSED : "auto"),
+        minHeight: isMini ? H_MINI : H_NORMAL_COLLAPSED,
         touchAction: "none",
         zIndex: 99999,
         pointerEvents: "auto",
-        transition: isDragging ? "none" : "width 0.25s cubic-bezier(0.16, 1, 0.3, 1), left 0.15s ease, top 0.15s ease, border-radius 0.25s ease",
+        transition: isDragging ? "none" : "width 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s ease, left 0.15s ease, top 0.15s ease, border-radius 0.25s ease",
         willChange: isDragging ? "left, top" : "auto",
       }}
       className={cn(
-        "select-none font-sans overflow-hidden border-2 bg-gradient-to-br from-[#10202D] via-[#173044] to-[#0D1B27] backdrop-blur-md shadow-2xl shadow-black/85 transition-all duration-300",
+        "select-none font-sans overflow-hidden border-2 shadow-2xl backdrop-blur-md transition-all duration-300",
         isMini
-          ? "border-amber-400 rounded-full ring-2 ring-amber-400/40 h-[42px] cursor-pointer hover:border-amber-300 hover:scale-105"
-          : "border-amber-400/70 rounded-2xl ring-1 ring-white/20 h-auto"
+          ? "border-amber-400 rounded-full bg-[#10202D] ring-2 ring-amber-400/40 shadow-black/90 cursor-pointer hover:scale-105"
+          : "border-amber-400/70 rounded-2xl bg-gradient-to-br from-[#10202D] via-[#173044] to-[#0D1B27] ring-1 ring-white/20 shadow-black/85"
       )}
     >
       {/* ── وضع الكبسولة المصغرة جداً (Mini Capsule Mode) ── */}
@@ -271,7 +264,7 @@ export function LiveVisitorsBubble() {
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onClick={handleCapsuleClick}
-          className="flex items-center justify-between gap-1.5 px-3 h-[38px] w-full"
+          className="flex items-center justify-between gap-1.5 px-3 w-full h-full"
           title="متواجدون الآن (مصغر) - انقر للتكبير أو اسحب للتحريك"
         >
           {/* Live pulsing beacon */}
@@ -297,7 +290,7 @@ export function LiveVisitorsBubble() {
             onPointerDown={e => e.stopPropagation()}
             onPointerUp={e => e.stopPropagation()}
             onClick={expandFromMini}
-            className="w-6 h-6 flex items-center justify-center rounded-full text-amber-300 hover:text-white hover:bg-white/10 active:scale-95 transition-all shrink-0"
+            className="w-6 h-6 flex items-center justify-center rounded-full text-amber-300 hover:text-white hover:bg-white/10 active:scale-90 transition-all shrink-0"
             title="تكبير واستعادة الحجم الطبيعي"
             aria-label="تكبير"
           >
@@ -312,7 +305,7 @@ export function LiveVisitorsBubble() {
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
-            className="flex items-center gap-2 px-3 py-2 cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors"
+            className="flex items-center gap-2 px-3 h-[46px] cursor-grab active:cursor-grabbing hover:bg-white/5 transition-colors"
           >
             {/* Live beacon */}
             <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#BBA591] to-[#917B67] text-white shadow-xs">
@@ -339,7 +332,7 @@ export function LiveVisitorsBubble() {
                 onPointerDown={e => e.stopPropagation()}
                 onPointerUp={e => e.stopPropagation()}
                 onClick={toggleCurtain}
-                className="w-6 h-6 flex items-center justify-center text-amber-200/90 hover:text-white hover:bg-white/10 active:scale-95 transition-all rounded"
+                className="w-6 h-6 flex items-center justify-center text-amber-200/90 hover:text-white hover:bg-white/10 active:scale-90 transition-all rounded"
                 title={collapsed ? "فتح الستارة (عرض تفاصيل المؤشرات)" : "قفل الستارة (إخفاء التفاصيل)"}
                 aria-label={collapsed ? "فتح الستارة" : "قفل الستارة"}
               >
@@ -356,7 +349,7 @@ export function LiveVisitorsBubble() {
                 onPointerDown={e => e.stopPropagation()}
                 onPointerUp={e => e.stopPropagation()}
                 onClick={minimizeToMini}
-                className="w-6 h-6 flex items-center justify-center text-amber-300 hover:text-white hover:bg-amber-400/20 active:scale-95 transition-all rounded"
+                className="w-6 h-6 flex items-center justify-center text-amber-300 hover:text-white hover:bg-amber-400/20 active:scale-90 transition-all rounded"
                 title="تصغير إلى كبسولة صغيرة جداً"
                 aria-label="تصغير إلى كبسولة"
               >
