@@ -92,7 +92,7 @@ export function syncThemeColor(themeId?: string, isLightMode?: boolean) {
   // Classic Theme: #10202D (Midnight Blue)
   let targetColor = "#10202D";
   if (currentTheme === "obsidian") {
-    targetColor = isDark ? "#090D12" : "#F8FAFC";
+    targetColor = isDark ? "#07090E" : "#F8FAFC";
   } else if (currentTheme === "midnight") {
     targetColor = isDark ? "#202332" : "#F8FAFC";
   } else if (currentTheme === "charcoal") {

@@ -48,7 +48,7 @@
         try {
           var t = localStorage.getItem("alm_active_theme") || "classic";
           document.documentElement.setAttribute("data-theme", t);
-          var tc = t === "obsidian" ? "#090D12" : (t === "charcoal" ? "#181C20" : (t === "midnight" ? "#202332" : "#10202D"));
+          var tc = t === "obsidian" ? "#07090E" : (t === "charcoal" ? "#181C20" : (t === "midnight" ? "#202332" : "#10202D"));
           var metaThemeColor = document.querySelector('meta[name="theme-color"]');
           if (metaThemeColor) {
             metaThemeColor.setAttribute("content", tc);

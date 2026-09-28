@@ -371,16 +371,17 @@ export function ThemeAppearanceManager({
           </div>
 
           <p className="text-[11px] text-muted-foreground leading-snug mb-3">
-            سواد أوبسيديان ملكي نقي وعميق (#090D12)، زجاج أوبسيدياني فاخر (#121720)، لمسات تيفاني ملكي متوهج (#0D9488) وذهب دافئ (#E5A93C).
+            سواد أوبسيديان ملكي (#07090E)، تيفاني متوهج (#00B4A7)، أحمر قرمزي ملكي (#E11D48)، وأصفر ذهبي مشبع (#F59E0B) مع عاجي كريستالي.
           </p>
 
-          {/* Mini Color Dots */}
+          {/* Mini Color Dots (All 5 signature palette colors) */}
           <div className="flex items-center justify-between gap-1 pt-2 border-t border-border/50">
             <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded-full bg-[#090D12] border border-white/20 shadow-2xs" title="أسود أوبسيديان #090D12" />
-              <span className="w-4 h-4 rounded-full bg-[#121720] border border-white/20 shadow-2xs" title="زجاج أوبسيديان #121720" />
-              <span className="w-4 h-4 rounded-full bg-[#0D9488] border border-white/20 shadow-2xs" title="تيفاني متوهج #0D9488" />
-              <span className="w-4 h-4 rounded-full bg-[#E5A93C] border border-white/20 shadow-2xs" title="ذهب أمبر دافئ #E5A93C" />
+              <span className="w-4 h-4 rounded-full bg-[#07090E] border border-white/20 shadow-2xs" title="أسود أوبسيديان #07090E" />
+              <span className="w-4 h-4 rounded-full bg-[#00B4A7] border border-white/20 shadow-2xs" title="تيفاني ملكي متوهج #00B4A7" />
+              <span className="w-4 h-4 rounded-full bg-[#E11D48] border border-white/20 shadow-2xs" title="أحمر قرمزي ملكي #E11D48" />
+              <span className="w-4 h-4 rounded-full bg-[#F59E0B] border border-white/20 shadow-2xs" title="أصفر ذهبي مشبع #F59E0B" />
+              <span className="w-4 h-4 rounded-full bg-[#F8FAFC] border border-slate-400 shadow-2xs" title="عاجي نقي #F8FAFC" />
             </div>
 
             <Button
@@ -391,7 +392,7 @@ export function ThemeAppearanceManager({
                 e.stopPropagation();
                 handleApplyTheme("obsidian");
               }}
-              className="h-7 px-2.5 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] text-white font-bold text-[11px]"
+              className="h-7 px-2.5 rounded-lg bg-[#00B4A7] hover:bg-[#0D9488] text-white font-bold text-[11px]"
             >
               {currentDeviceTheme === "obsidian" 
                 ? (themeScope === "admin_only" ? "معاين حالياً" : "مفعّل للجميع")
@@ -619,26 +620,29 @@ export function ThemeAppearanceManager({
 
         {currentDeviceTheme === "obsidian" ? (
           /* Compact Obsidian Mockup */
-          <div className="p-2.5 rounded-lg bg-[#090D12] border border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="p-2.5 rounded-lg bg-[#07090E] border border-[#1E2634] flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
-              <div className="px-2.5 py-1 rounded-md bg-[#0D9488] text-white text-[10px] font-bold shadow-2xs flex items-center gap-1">
+              <div className="px-2.5 py-1 rounded-md bg-[#00B4A7] text-white text-[10px] font-bold shadow-2xs flex items-center gap-1">
                 <Plus className="h-3 w-3 stroke-[2.5]" />
                 أعرض عقارك
               </div>
-              <div className="px-2 py-1 rounded-md bg-[#121720] border border-[#1E293B] text-[#F8FAFC] text-[10px] font-medium">
+              <div className="px-2 py-1 rounded-md bg-[#0F141D] border border-[#1E2634] text-[#F8FAFC] text-[10px] font-medium">
                 التشطيبات
               </div>
-              <div className="px-1.5 py-0.5 rounded bg-[#E5A93C]/15 border border-[#E5A93C]/40 text-[#E5A93C] text-[9px] font-bold">
-                VIP
+              <div className="px-2 py-0.5 rounded bg-[#E11D48] text-white text-[9.5px] font-bold shadow-2xs">
+                جديد
+              </div>
+              <div className="px-2 py-0.5 rounded bg-[#F59E0B] text-[#07090E] text-[9.5px] font-black shadow-2xs">
+                الكل
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-[#121720] border border-[#1E293B] flex-1 max-w-sm w-full justify-between">
+            <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-[#0F141D] border border-[#00B4A7]/30 flex-1 max-w-sm w-full justify-between">
               <div className="flex items-center gap-1 text-[10px] text-[#94A3B8]">
-                <Search className="h-3 w-3 text-[#14B8A6]" />
+                <Search className="h-3 w-3 text-[#00D1C1]" />
                 <span>ابحث عن عقار...</span>
               </div>
-              <span className="px-2 py-0.5 rounded bg-[#0D9488] text-white text-[9px] font-bold">
+              <span className="px-2 py-0.5 rounded bg-[#00B4A7] text-white text-[9px] font-bold">
                 بحث
               </span>
             </div>
