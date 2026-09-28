@@ -88,8 +88,10 @@ export function ThemeAppearanceManager({
     }
   };
 
+  type ThemeId = "classic" | "charcoal" | "midnight" | "obsidian";
+
   // Apply or Preview a theme
-  const handleApplyTheme = async (themeId: "classic" | "charcoal" | "midnight") => {
+  const handleApplyTheme = async (themeId: ThemeId) => {
     setIsApplying(true);
     setCurrentDeviceTheme(themeId);
 
@@ -135,7 +137,7 @@ export function ThemeAppearanceManager({
   // Publish current private preview to all visitors
   const handlePublishPreviewToAll = async () => {
     setIsApplying(true);
-    const themeToPublish = currentDeviceTheme as "classic" | "charcoal" | "midnight";
+    const themeToPublish = currentDeviceTheme as ThemeId;
     try {
       setThemeScope("all");
       localStorage.setItem("alm_theme_scope", "all");
@@ -158,7 +160,7 @@ export function ThemeAppearanceManager({
 
   // Discard private preview and return to public cloud theme
   const handleDiscardPreview = () => {
-    const target = (settings.activeThemeId || "midnight") as "classic" | "charcoal" | "midnight";
+    const target = (settings.activeThemeId || "midnight") as ThemeId;
     setThemeScope("all");
     setCurrentDeviceTheme(target);
     try {
@@ -174,6 +176,7 @@ export function ThemeAppearanceManager({
   };
 
   function getThemeName(id: string) {
+    if (id === "obsidian") return "الأسود الملكي والتيفاني المتوهج";
     if (id === "midnight") return "الليل الفولاذي وذهب الصحراء";
     if (id === "charcoal") return "الفحم والذهب الساتان العصري";
     return "الثيم الملكي الكلاسيكي";
@@ -326,10 +329,78 @@ export function ThemeAppearanceManager({
         )}
       </div>
 
-      {/* ── 3. Theme Selection Cards Grid (3 Themes) ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* ── 3. Theme Selection Cards Grid (4 Themes) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 
-        {/* Theme 1: Midnight Steel & Desert Gold */}
+        {/* Theme 1: Obsidian Black & Royal Electric Teal */}
+        <div 
+          className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
+            currentDeviceTheme === "obsidian"
+              ? "border-[#0D9488] shadow-sm ring-1 ring-[#0D9488]/40" 
+              : "border-border/70 hover:border-border"
+          }`}
+          onClick={() => handleApplyTheme("obsidian")}
+        >
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-[#090D12] border border-[#0D9488]/60 flex items-center justify-center text-[#14B8A6] shrink-0">
+                <Sparkles className="h-3.5 w-3.5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-foreground leading-tight">الأسود الملكي والتيفاني المتوهج</h4>
+                <span className="text-[10px] text-muted-foreground font-mono">Obsidian & Electric Teal</span>
+              </div>
+            </div>
+
+            {currentDeviceTheme === "obsidian" ? (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                themeScope === "admin_only"
+                  ? "bg-amber-500 text-black"
+                  : "bg-[#0D9488] text-white"
+              }`}>
+                <Check className="h-2.5 w-2.5 stroke-[3]" />
+                {themeScope === "admin_only" ? "قيد المعاينة" : "مفعّل للجميع"}
+              </span>
+            ) : publicTheme === "obsidian" ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-[9px] font-medium shrink-0">
+                المعتمد للزوار
+              </span>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">انقر للتفعيل</span>
+            )}
+          </div>
+
+          <p className="text-[11px] text-muted-foreground leading-snug mb-3">
+            سواد أوبسيديان ملكي نقي وعميق (#090D12)، زجاج أوبسيدياني فاخر (#121720)، لمسات تيفاني ملكي متوهج (#0D9488) وذهب دافئ (#E5A93C).
+          </p>
+
+          {/* Mini Color Dots */}
+          <div className="flex items-center justify-between gap-1 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-[#090D12] border border-white/20 shadow-2xs" title="أسود أوبسيديان #090D12" />
+              <span className="w-4 h-4 rounded-full bg-[#121720] border border-white/20 shadow-2xs" title="زجاج أوبسيديان #121720" />
+              <span className="w-4 h-4 rounded-full bg-[#0D9488] border border-white/20 shadow-2xs" title="تيفاني متوهج #0D9488" />
+              <span className="w-4 h-4 rounded-full bg-[#E5A93C] border border-white/20 shadow-2xs" title="ذهب أمبر دافئ #E5A93C" />
+            </div>
+
+            <Button
+              type="button"
+              size="sm"
+              disabled={isApplying || currentDeviceTheme === "obsidian"}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleApplyTheme("obsidian");
+              }}
+              className="h-7 px-2.5 rounded-lg bg-[#0D9488] hover:bg-[#0F766E] text-white font-bold text-[11px]"
+            >
+              {currentDeviceTheme === "obsidian" 
+                ? (themeScope === "admin_only" ? "معاين حالياً" : "مفعّل للجميع")
+                : (themeScope === "admin_only" ? "معاينة على جهازي" : "تفعيل للجميع")}
+            </Button>
+          </div>
+        </div>
+
+        {/* Theme 2: Midnight Steel & Desert Gold */}
         <div 
           className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
             currentDeviceTheme === "midnight"
@@ -397,7 +468,7 @@ export function ThemeAppearanceManager({
           </div>
         </div>
         
-        {/* Theme 2: Modern Dark Charcoal & Royal Satin Gold */}
+        {/* Theme 3: Modern Dark Charcoal & Royal Satin Gold */}
         <div 
           className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
             currentDeviceTheme === "charcoal"
@@ -465,7 +536,7 @@ export function ThemeAppearanceManager({
           </div>
         </div>
 
-        {/* Theme 3: Classic Imperial Gold & Midnight Navy */}
+        {/* Theme 4: Classic Imperial Gold & Midnight Navy */}
         <div 
           className={`p-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer relative bg-card ${
             currentDeviceTheme === "classic" 
@@ -546,7 +617,33 @@ export function ThemeAppearanceManager({
           </span>
         </div>
 
-        {currentDeviceTheme === "midnight" ? (
+        {currentDeviceTheme === "obsidian" ? (
+          /* Compact Obsidian Mockup */
+          <div className="p-2.5 rounded-lg bg-[#090D12] border border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2">
+              <div className="px-2.5 py-1 rounded-md bg-[#0D9488] text-white text-[10px] font-bold shadow-2xs flex items-center gap-1">
+                <Plus className="h-3 w-3 stroke-[2.5]" />
+                أعرض عقارك
+              </div>
+              <div className="px-2 py-1 rounded-md bg-[#121720] border border-[#1E293B] text-[#F8FAFC] text-[10px] font-medium">
+                التشطيبات
+              </div>
+              <div className="px-1.5 py-0.5 rounded bg-[#E5A93C]/15 border border-[#E5A93C]/40 text-[#E5A93C] text-[9px] font-bold">
+                VIP
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-[#121720] border border-[#1E293B] flex-1 max-w-sm w-full justify-between">
+              <div className="flex items-center gap-1 text-[10px] text-[#94A3B8]">
+                <Search className="h-3 w-3 text-[#14B8A6]" />
+                <span>ابحث عن عقار...</span>
+              </div>
+              <span className="px-2 py-0.5 rounded bg-[#0D9488] text-white text-[9px] font-bold">
+                بحث
+              </span>
+            </div>
+          </div>
+        ) : currentDeviceTheme === "midnight" ? (
           /* Compact Midnight Mockup */
           <div className="p-2.5 rounded-lg bg-[#202332] border border-[#434E60] flex flex-col sm:flex-row items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
