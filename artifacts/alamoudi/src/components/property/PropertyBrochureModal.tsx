@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileDown, Printer, Download, MapPin, Bed, Bath, Square, Building2,
-  Phone, Mail, Layers, Compass, Car, Sparkles, CheckCircle2, ShieldCheck, Loader2
+  Phone, Mail, Layers, Compass, Car, Sparkles, CheckCircle2, ShieldCheck, Loader2,
+  Eye, Crown, Shirt
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { Property, Region, PropertyType, type QrCodeItem } from "@/context/DataContext";
@@ -133,6 +134,85 @@ export function PropertyBrochureModal({
   const activePdfQrs = (qrCodes || []).filter(
     (q) => q.active !== false && q.showInPdf !== false
   );
+
+  // ── Compute clean, accurate specifications matching PropertyDetails ────────
+  const floorDisplay = (() => {
+    if (
+      property.floor === null ||
+      property.floor === undefined ||
+      property.floor === "" ||
+      property.floor === "__NONE__" ||
+      property.floor === -1
+    ) {
+      return null;
+    }
+    const str = String(property.floor).trim();
+    if (!str || str === "__NONE__" || str === "-1") return null;
+    if (/^\d+$/.test(str)) {
+      const num = parseInt(str, 10);
+      return num > 0 ? `الدور ${num}` : "أرضي";
+    }
+    return str;
+  })();
+
+  const dressingDisplay = (() => {
+    const raw =
+      (property.layout && property.layout.trim()) ||
+      (property.floorText && (property.floorText === "نعم" || property.floorText === "غرفة دريسنج") ? property.floorText : "");
+    if (!raw || !raw.trim() || raw === "لا" || raw === "لا يوجد") return null;
+    return raw === "نعم" ? "يوجد غرفة دريسنج" : raw;
+  })();
+
+  const masterDisplay = (() => {
+    const raw = property.master && property.master.trim();
+    if (!raw || raw === "لا" || raw === "لا يوجد") return null;
+    return raw === "نعم" ? "يوجد غرفة ماستر" : raw;
+  })();
+
+  const elevatorDisplay = (() => {
+    const raw = property.elevator && property.elevator.trim();
+    if (!raw) return null;
+    if (raw === "لا" || raw === "لا يوجد") return "لا يوجد أسانسير";
+    if (raw === "نعم" || raw === "يوجد") return "يوجد أسانسير";
+    return raw;
+  })();
+
+  const parkingDisplay = (() => {
+    const raw = property.parking && property.parking.trim();
+    if (!raw) return null;
+    if (raw === "لا" || raw === "لا يوجد") return "لا يوجد موقف";
+    if (raw === "نعم" || raw === "يوجد") return "يوجد موقف سيارة";
+    return raw;
+  })();
+
+  // Candidate specifications list
+  const candidateSpecs = [
+    { key: "area", label: "المساحة", value: property.area ? `${property.area} م²` : null, icon: Square },
+    { key: "beds", label: "الغرف", value: property.beds > 0 ? `${property.beds} غرف` : (property.beds === 0 ? "استوديو" : null), icon: Bed },
+    { key: "baths", label: "الحمامات", value: property.baths > 0 ? `${property.baths} حمام` : null, icon: Bath },
+    { key: "floor", label: "الدور", value: floorDisplay, icon: Layers },
+    { key: "floors", label: "طوابق العقار", value: Number(property.floors) > 0 ? `${property.floors} طوابق` : null, icon: Building2 },
+    { key: "finishing", label: "التشطيب", value: finishingLabel || property.finishing || null, icon: Sparkles },
+    { key: "unitType", label: "الواجهة", value: property.unitType && property.unitType.trim() ? property.unitType : null, icon: Compass },
+    { key: "view", label: "الإطلالة (الفيو)", value: property.view && property.view.trim() ? property.view : null, icon: Eye },
+    { key: "master", label: "غرفة ماستر", value: masterDisplay, icon: Crown },
+    { key: "dressing", label: "غرفة دريسنج", value: dressingDisplay, icon: Shirt },
+    { key: "elevator", label: "المصعد", value: elevatorDisplay, icon: Sparkles },
+    { key: "parking", label: "الجراج", value: parkingDisplay, icon: Car },
+    { key: "additionalFeatures", label: "المميزات الإضافية", value: property.additionalFeatures && property.additionalFeatures.trim() ? property.additionalFeatures : null, icon: CheckCircle2 },
+  ];
+
+  // Active items with values
+  const activeSpecs = candidateSpecs.filter((item) => item.value != null && item.value !== "");
+
+  // Safe fallback if few items defined
+  const displaySpecs = activeSpecs.length >= 4 ? activeSpecs : [
+    { key: "area", label: "المساحة", value: property.area ? `${property.area} م²` : "غير محدد", icon: Square },
+    { key: "beds", label: "الغرف", value: property.beds > 0 ? `${property.beds} غرف` : (property.beds === 0 ? "استوديو" : "غير محدد"), icon: Bed },
+    { key: "baths", label: "الحمامات", value: property.baths > 0 ? `${property.baths} حمام` : "غير محدد", icon: Bath },
+    { key: "floor", label: "الدور", value: floorDisplay || "غير محدد", icon: Layers },
+    { key: "finishing", label: "التشطيب", value: finishingLabel || property.finishing || "غير محدد", icon: Building2 },
+  ];
 
   return (
     <Dialog>
@@ -297,83 +377,29 @@ export function PropertyBrochureModal({
               </div>
             )}
 
-            {/* 4. Specifications Matrix (Centered Grid) */}
+            {/* 4. Specifications Matrix (Dynamic & Pure Data Reflection) */}
             <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 text-right">
                 المواصفات والبيانات الأساسية
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm text-right">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Square className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">المساحة</span>
-                    <span className="font-bold text-[#10202D]">{property.area ? `${property.area} م²` : "غير محدد"}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Bed className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">الغرف</span>
-                    <span className="font-bold text-[#10202D]">{property.beds > 0 ? `${property.beds} غرف` : (property.beds === 0 ? "استوديو" : "غير محدد")}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Bath className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">الحمامات</span>
-                    <span className="font-bold text-[#10202D]">{property.baths > 0 ? `${property.baths} حمام` : "غير محدد"}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Layers className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">الدور</span>
-                    <span className="font-bold text-[#10202D]">
-                      {property.floor === 0 || property.floor === "0"
-                        ? "أرضي"
-                        : (property.floorText && property.floorText.trim())
-                          ? property.floorText
-                          : (property.floor !== undefined && property.floor !== null && property.floor !== "")
-                            ? `الدور ${property.floor}`
-                            : "غير محدد"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Building2 className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">التشطيب</span>
-                    <span className="font-bold text-[#10202D]">{finishingLabel || property.finishing || "غير محدد"}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Compass className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">الإطلالة / الواجهة</span>
-                    <span className="font-bold text-[#10202D]">{property.view || property.unitType || "غير محدد"}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Sparkles className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">المصعد (الأسانسير)</span>
-                    <span className="font-bold text-[#10202D]">{property.elevator && property.elevator.trim() ? property.elevator : "غير محدد"}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-gray-200">
-                  <Car className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                  <div>
-                    <span className="block text-[10px] text-gray-500">مكان الجراج</span>
-                    <span className="font-bold text-[#10202D]">{property.parking && property.parking.trim() ? property.parking : "غير محدد"}</span>
-                  </div>
-                </div>
+                {displaySpecs.map((spec) => {
+                  const IconComp = spec.icon;
+                  return (
+                    <div
+                      key={spec.key}
+                      className="flex items-center gap-2 p-2.5 rounded-lg bg-white border border-gray-200 shadow-xs min-h-[54px]"
+                    >
+                      <IconComp className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <span className="block text-[10px] text-gray-500 font-medium truncate">{spec.label}</span>
+                        <span className="font-bold text-[#10202D] block truncate text-xs sm:text-sm mt-0.5">
+                          {spec.value}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
