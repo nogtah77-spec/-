@@ -10,7 +10,7 @@ import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
-  Mail, Link as LinkIcon, FileText, Camera, Check, Star
+  Mail, Link as LinkIcon, FileText, Camera, Check, Star, Download, Loader2
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
@@ -24,7 +24,7 @@ import { formatNumber, getFeaturedTypeLabel } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn, suppressGhostClicks } from "@/lib/utils";
-import { downloadImage, downloadImagesAsZip } from "@/lib/imageDownloads";
+import { downloadImage, downloadImagesAsZip, downloadVideo, isDirectVideoUrl } from "@/lib/imageDownloads";
 import { PropertyBrochureModal } from "@/components/property/PropertyBrochureModal";
 import { PropertyShareModal } from "@/components/property/PropertyShareModal";
 import { updatePageMeta } from "@/lib/meta";
@@ -394,6 +394,23 @@ export default function PropertyDetails() {
     }
   };
 
+  const [videoDownloading, setVideoDownloading] = useState(false);
+
+  const handleDownloadVideo = async () => {
+    if (!property?.videoUrl || !isDirectVideoUrl(property.videoUrl) || videoDownloading) return;
+    setVideoDownloading(true);
+    try {
+      toast({ title: "جاري بدء تحميل فيديو العقار..." });
+      const fileName = property.code ? `فيديو_عقار_${property.code}` : (property.title || "فيديو_عقار_العمودي");
+      await downloadVideo(property.videoUrl, fileName);
+      toast({ title: "تم تنزيل الفيديو بنجاح ✓" });
+    } catch {
+      toast({ title: "تعذر تحميل الفيديو", variant: "destructive" });
+    } finally {
+      setVideoDownloading(false);
+    }
+  };
+
   const propHasVideo = hasVideo(property.videoUrl);
   const detailVideoThumb = images.length === 0 ? getVideoThumbnailUrl(property.videoUrl) : null;
   const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
@@ -559,6 +576,21 @@ export default function PropertyDetails() {
                 <span className="text-xs font-bold">فيديو العقار</span>
               </button>
             )}
+            {property.videoUrl && isDirectVideoUrl(property.videoUrl) && (
+              <button
+                onClick={handleDownloadVideo}
+                disabled={videoDownloading}
+                className="flex items-center gap-1.5 bg-[#161B20] border border-[#C5A059]/40 text-[#C5A059] hover:bg-[#C5A059]/20 font-bold rounded-[10px] px-3 py-2 text-sm transition-colors cursor-pointer shadow-md disabled:opacity-60"
+                title="تحميل فيديو العقار"
+              >
+                {videoDownloading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span className="text-xs font-bold">تحميل الفيديو</span>
+              </button>
+            )}
           </div>
 
           {/* Gallery */}
@@ -571,6 +603,8 @@ export default function PropertyDetails() {
               downloadAllPending={downloadAllPending}
               onDownloadImage={handleDownloadImage}
               onDownloadAll={handleDownloadAllImages}
+              onDownloadVideo={property.videoUrl && isDirectVideoUrl(property.videoUrl) ? handleDownloadVideo : undefined}
+              videoDownloadPending={videoDownloading}
               className="mb-10"
             />
           ) : showDetailVideoCover || showDetailVideoPoster ? (
@@ -657,6 +691,21 @@ export default function PropertyDetails() {
                   >
                     <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
                     <span className="text-xs font-bold">فيديو العقار</span>
+                  </button>
+                )}
+                {property.videoUrl && isDirectVideoUrl(property.videoUrl) && (
+                  <button
+                    onClick={handleDownloadVideo}
+                    disabled={videoDownloading}
+                    className="flex items-center gap-1.5 bg-[#161B20] border border-[#C5A059]/40 text-[#C5A059] hover:bg-[#C5A059]/20 font-bold rounded-[10px] px-3 py-2 text-sm transition-colors cursor-pointer shadow-md disabled:opacity-60"
+                    title="تحميل فيديو العقار"
+                  >
+                    {videoDownloading ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
+                    <span className="text-xs font-bold">تحميل الفيديو</span>
                   </button>
                 )}
               </div>
@@ -1044,6 +1093,8 @@ export default function PropertyDetails() {
           open={videoModalOpen}
           onClose={() => setVideoModalOpen(false)}
           videoUrl={property.videoUrl}
+          propertyTitle={property.title}
+          propertyCode={property.code}
         />
       )}
     </div>

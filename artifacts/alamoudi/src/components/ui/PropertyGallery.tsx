@@ -11,6 +11,8 @@ interface PropertyGalleryProps {
   downloadAllPending?: boolean;
   onDownloadImage?: (index: number) => void;
   onDownloadAll?: () => void;
+  onDownloadVideo?: () => void;
+  videoDownloadPending?: boolean;
   className?: string;
 }
 
@@ -22,6 +24,8 @@ export function PropertyGallery({
   downloadAllPending = false,
   onDownloadImage,
   onDownloadAll,
+  onDownloadVideo,
+  videoDownloadPending = false,
   className,
 }: PropertyGalleryProps) {
   // Deduplicate and filter out base64 strings if valid URLs exist
@@ -217,6 +221,23 @@ export function PropertyGallery({
                 <Images className="h-3.5 w-3.5" />
               )}
               {downloadAllPending ? "جاري التجهيز..." : "تحميل كل الصور"}
+            </button>
+          )}
+          {onDownloadVideo && (
+            <button
+              type="button"
+              onClick={onDownloadVideo}
+              disabled={videoDownloadPending}
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#C5A059]/20 border border-[#C5A059]/40 px-2.5 py-1.5 text-xs text-[#C5A059] font-bold transition-colors hover:bg-[#C5A059]/30 disabled:opacity-70 cursor-pointer"
+              aria-label="تحميل فيديو العقار"
+              title="تحميل فيديو العقار مباشرة"
+            >
+              {videoDownloadPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {videoDownloadPending ? "جاري التحميل..." : "تحميل الفيديو"}
             </button>
           )}
         </div>

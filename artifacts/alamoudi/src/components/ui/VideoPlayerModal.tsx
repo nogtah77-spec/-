@@ -5,17 +5,17 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  Maximize,
-  Minimize,
   RotateCcw,
   RotateCw,
   X,
   ExternalLink,
   Loader2,
+  Download,
 } from "lucide-react";
 import { extractVideoUrl } from "@/lib/videoThumbnail";
 import { getOptimizedVideoUrl } from "@/lib/cloudinaryService";
 import { suppressGhostClicks } from "@/lib/utils";
+import { isDirectVideoUrl, downloadVideo } from "@/lib/imageDownloads";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -37,12 +37,7 @@ function detectPlatform(url: string): Platform {
   if (!url) return "other";
   if (/youtu(be\.com|\.be)/i.test(url)) return "youtube";
   if (/(^|\.)tiktok\.com/i.test(url)) return "tiktok";
-  // Cloudinary video or direct video file extensions
-  if (
-    url.includes("cloudinary.com") ||
-    /\.(mp4|mov|webm|m4v|ogv)(\?.*)?$/i.test(url) ||
-    url.includes("/video/upload/")
-  ) {
+  if (isDirectVideoUrl(url)) {
     return "direct";
   }
   return "other";
@@ -55,11 +50,12 @@ function formatTime(seconds: number): string {
   return `${m < 10 ? "0" : ""}${m}:${s < 10 ? "0" : ""}${s}`;
 }
 
-// ─── Direct Custom Luxury Video Player ──────────────────────────────────────
+// ─── Direct Custom Luxury Video Player (Autoplay & Natural Aspect Ratio) ────
 
 interface CustomDirectPlayerProps {
   url: string;
   onClose: () => void;
+  fileName?: string;
 }
 
 function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
@@ -72,9 +68,10 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [isVertical, setIsVertical] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [doubleTapFeedback, setDoubleTapFeedback] = useState<{
     side: "left" | "right";
     label: string;
@@ -99,6 +96,34 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
   const resetControlsTimeout = useCallback(() => {
     setShowControls(true);
     scheduleHideControls();
+  }, [scheduleHideControls]);
+
+  // Attempt autoplay on mount
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+
+    const playPromise = vid.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+          scheduleHideControls();
+        })
+        .catch(() => {
+          // If browser policy prevents unmuted autoplay, try muted
+          vid.muted = true;
+          setIsMuted(true);
+          vid.play().then(() => {
+            setIsPlaying(true);
+            setIsLoading(false);
+            scheduleHideControls();
+          }).catch(() => {
+            setIsLoading(false);
+          });
+        });
+    }
   }, [scheduleHideControls]);
 
   // Toggle Play / Pause
@@ -142,17 +167,15 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
     if (timeSinceLast < 320 && distSinceLast < 60) {
       // Double Tap detected!
       if (isRightSide) {
-        // Right side: Forward 10s
         seekRelative(10);
         showDoubleTapBadge("right", "+10 ثوانٍ");
       } else {
-        // Left side: Rewind 10s
         seekRelative(-10);
         showDoubleTapBadge("left", "-10 ثوانٍ");
       }
       lastTapRef.current = { time: 0, x: 0 };
     } else {
-      // Single tap: record and toggle controls
+      // Single tap: toggle controls
       lastTapRef.current = { time: now, x: clientX };
       setShowControls((prev) => !prev);
     }
@@ -194,39 +217,6 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
     resetControlsTimeout();
   };
 
-  // Toggle Fullscreen
-  const toggleFullscreen = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const container = containerRef.current;
-    if (!container) return;
-
-    try {
-      if (!document.fullscreenElement) {
-        if (container.requestFullscreen) {
-          await container.requestFullscreen();
-        } else if ((container as any).webkitRequestFullscreen) {
-          await (container as any).webkitRequestFullscreen();
-        }
-        setIsFullscreen(true);
-      } else {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        }
-        setIsFullscreen(false);
-      }
-    } catch {}
-    resetControlsTimeout();
-  };
-
-  // Sync fullscreen change
-  useEffect(() => {
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", handleFsChange);
-    return () => document.removeEventListener("fullscreenchange", handleFsChange);
-  }, []);
-
   // Update buffer progress
   const updateBuffer = () => {
     const vid = videoRef.current;
@@ -236,7 +226,7 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
     }
   };
 
-  // Keyboard accessibility: space for pause/play, arrows for seek
+  // Keyboard accessibility
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " " || e.key === "k") {
@@ -248,9 +238,6 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         seekRelative(-5);
-      } else if (e.key === "f") {
-        e.preventDefault();
-        toggleFullscreen({ stopPropagation: () => {} } as any);
       } else if (e.key === "m") {
         e.preventDefault();
         toggleMute({ stopPropagation: () => {} } as any);
@@ -279,14 +266,24 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
       ref={containerRef}
       onMouseMove={resetControlsTimeout}
       onClick={handleTouchOrClick}
-      className="relative w-full max-w-5xl max-h-[85vh] sm:max-h-[90vh] aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95)] border border-white/10 flex items-center justify-center cursor-pointer select-none group"
+      style={
+        isVertical && aspectRatio
+          ? { aspectRatio: `${aspectRatio}` }
+          : undefined
+      }
+      className={`relative bg-black rounded-2xl overflow-hidden shadow-[0_25px_80px_rgba(0,0,0,0.95)] border border-white/10 flex items-center justify-center cursor-pointer select-none group transition-all duration-300 ${
+        isVertical
+          ? "h-[85vh] sm:h-[88vh] w-auto max-w-[94vw]"
+          : "w-full max-w-5xl max-h-[85vh] sm:max-h-[90vh] aspect-video"
+      }`}
     >
-      {/* HTML5 Native Video Tag */}
+      {/* HTML5 Native Video Tag with Autoplay */}
       <video
         ref={videoRef}
         src={optimizedSrc}
+        autoPlay
         playsInline
-        preload="metadata"
+        preload="auto"
         crossOrigin="anonymous"
         className="w-full h-full object-contain"
         onTimeUpdate={() => {
@@ -297,12 +294,25 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
         }}
         onLoadedMetadata={() => {
           if (videoRef.current) {
+            const w = videoRef.current.videoWidth;
+            const h = videoRef.current.videoHeight;
+            if (w > 0 && h > 0) {
+              setAspectRatio(w / h);
+              setIsVertical(h > w);
+            }
             setDuration(videoRef.current.duration);
             setIsLoading(false);
+            // Autoplay trigger
+            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
           }
         }}
         onWaiting={() => setIsLoading(true)}
-        onCanPlay={() => setIsLoading(false)}
+        onCanPlay={() => {
+          setIsLoading(false);
+          if (videoRef.current?.paused) {
+            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+          }
+        }}
         onPlaying={() => {
           setIsLoading(false);
           setIsPlaying(true);
@@ -323,7 +333,7 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
         </div>
       )}
 
-      {/* Big Center Play / Pause Indicator (Fades when playing) */}
+      {/* Big Center Play Indicator (Only shown when explicitly paused or ended) */}
       {!isPlaying && !isLoading && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-[#C5A059] text-[#10202D] flex items-center justify-center shadow-[0_8px_32px_rgba(197,160,89,0.5)] border-2 border-white/40 transform transition-transform group-hover:scale-110">
@@ -336,7 +346,7 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
       {doubleTapFeedback && (
         <div
           className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-black/80 border border-white/20 text-white backdrop-blur-md animate-in zoom-in-75 duration-200 ${
-            doubleTapFeedback.side === "right" ? "right-12 sm:right-20" : "left-12 sm:left-20"
+            doubleTapFeedback.side === "right" ? "right-8 sm:right-16" : "left-8 sm:left-16"
           }`}
         >
           {doubleTapFeedback.side === "right" ? (
@@ -387,7 +397,7 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
 
         {/* Action Controls Row */}
         <div className="flex items-center justify-between text-white text-xs sm:text-sm">
-          {/* Left Controls (Playback & Times) */}
+          {/* Playback & Seek */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Play/Pause */}
             <button
@@ -439,9 +449,8 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
             </div>
           </div>
 
-          {/* Right Controls (Mute & Fullscreen) */}
+          {/* Sound Mute Toggle */}
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Mute Toggle */}
             <button
               type="button"
               onClick={toggleMute}
@@ -452,20 +461,6 @@ function CustomDirectPlayer({ url, onClose }: CustomDirectPlayerProps) {
                 <VolumeX className="w-4 h-4 text-red-400" />
               ) : (
                 <Volume2 className="w-4 h-4 text-white" />
-              )}
-            </button>
-
-            {/* Fullscreen Toggle */}
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer"
-              title={isFullscreen ? "تصغير الشاشة" : "ملء الشاشة"}
-            >
-              {isFullscreen ? (
-                <Minimize className="w-4 h-4 text-white" />
-              ) : (
-                <Maximize className="w-4 h-4 text-white" />
               )}
             </button>
           </div>
@@ -582,44 +577,95 @@ export interface VideoPlayerModalProps {
   open: boolean;
   onClose: () => void;
   videoUrl: string;
+  propertyTitle?: string;
+  propertyCode?: string;
 }
 
-export function VideoPlayerModal({ open, onClose, videoUrl }: VideoPlayerModalProps) {
+export function VideoPlayerModal({
+  open,
+  onClose,
+  videoUrl,
+  propertyTitle,
+  propertyCode,
+}: VideoPlayerModalProps) {
+  const [downloading, setDownloading] = useState(false);
+
   if (!open || !videoUrl) return null;
 
   const url = extractVideoUrl(videoUrl);
   const platform = detectPlatform(url);
+  const canDownload = isDirectVideoUrl(url);
 
   const handleClose = () => {
     suppressGhostClicks(450);
     onClose();
   };
 
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canDownload || downloading) return;
+    setDownloading(true);
+    try {
+      const fileName = propertyCode ? `فيديو_عقار_${propertyCode}` : (propertyTitle || "فيديو_عقار_العمودي");
+      await downloadVideo(url, fileName);
+    } catch (err) {
+      console.error("Video download error:", err);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[999999] bg-black/92 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-[999999] bg-black/92 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 select-none animate-in fade-in duration-200"
       style={{ touchAction: "manipulation" }}
-      // CRITICAL REQUIREMENT: Clicking the backdrop does NOTHING.
-      // We deliberately do NOT attach an onClick on this backdrop to ensure the user never exits by mistake.
+      // CRITICAL: Backdrop click does NOTHING. The user never exits by mistake.
     >
-      {/* ── Isolated Close (X) Button ── */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleClose();
-        }}
-        className="fixed top-4 left-4 sm:top-6 sm:left-6 z-[1000005] w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-black text-white/90 hover:text-white flex items-center justify-center border border-white/25 shadow-2xl transition-all active:scale-90 cursor-pointer backdrop-blur-lg"
-        aria-label="إغلاق الفيديو"
-      >
-        <X className="w-5 h-5 stroke-[2.5]" />
-      </button>
+      {/* ── Top Header Actions (Close X & Download Button) ── */}
+      <div className="fixed top-4 inset-x-4 sm:top-6 sm:inset-x-6 z-[1000005] flex items-center justify-between pointer-events-none">
+        {/* Isolated Close (X) Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClose();
+          }}
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-black text-white/90 hover:text-white flex items-center justify-center border border-white/25 shadow-2xl transition-all active:scale-90 cursor-pointer backdrop-blur-lg pointer-events-auto"
+          aria-label="إغلاق الفيديو"
+        >
+          <X className="w-5 h-5 stroke-[2.5]" />
+        </button>
+
+        {/* Video Download Button (Only visible for direct uploaded videos, NOT external links) */}
+        {canDownload && (
+          <button
+            type="button"
+            onClick={handleDownload}
+            disabled={downloading}
+            className="px-3.5 py-2 rounded-full bg-black/80 hover:bg-black text-white/95 flex items-center gap-2 border border-white/25 shadow-2xl transition-all active:scale-95 cursor-pointer backdrop-blur-lg pointer-events-auto text-xs font-bold"
+            title="تحميل الفيديو على جهازك"
+          >
+            {downloading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#C5A059]" />
+            ) : (
+              <Download className="w-4 h-4 stroke-[2.5] text-[#C5A059]" />
+            )}
+            <span className="hidden sm:inline">تحميل الفيديو</span>
+          </button>
+        )}
+      </div>
 
       {/* ── Video Player Core ── */}
       <div onClick={(e) => e.stopPropagation()} className="relative z-[1000001] w-full flex items-center justify-center">
-        {platform === "direct" && <CustomDirectPlayer url={url} onClose={handleClose} />}
+        {platform === "direct" && (
+          <CustomDirectPlayer
+            url={url}
+            onClose={handleClose}
+            fileName={propertyCode || propertyTitle}
+          />
+        )}
         {platform === "youtube" && <YoutubePlayer url={url} />}
         {platform === "tiktok" && <TiktokPlayer url={url} />}
         {platform === "other" && <FallbackPlayer url={url} />}

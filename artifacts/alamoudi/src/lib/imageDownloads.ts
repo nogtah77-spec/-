@@ -188,3 +188,56 @@ export async function downloadImagesAsZip(
   }
   return { downloaded: entries.length, failed };
 }
+
+/**
+ * Checks whether a video URL is a direct uploaded video (Cloudinary / direct file)
+ * and NOT an external embedding like YouTube or TikTok.
+ */
+export function isDirectVideoUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
+  const clean = url.trim().toLowerCase();
+  if (clean.includes("youtube.com") || clean.includes("youtu.be") || clean.includes("tiktok.com")) {
+    return false;
+  }
+  return (
+    clean.includes("cloudinary.com") ||
+    clean.includes("/video/upload/") ||
+    /\.(mp4|mov|webm|m4v)(\?.*)?$/i.test(clean)
+  );
+}
+
+/**
+ * Direct video downloader for uploaded videos (Cloudinary / direct mp4/mov/webm).
+ * For Cloudinary URLs, injects fl_attachment to force direct browser download without leaving the page.
+ */
+export async function downloadVideo(url: string, filename = "video"): Promise<void> {
+  if (!url) return;
+
+  let downloadUrl = url;
+  if (url.includes("cloudinary.com") && url.includes("/video/upload/")) {
+    if (!url.includes("fl_attachment")) {
+      downloadUrl = url.replace("/video/upload/", "/video/upload/fl_attachment/");
+    }
+  }
+
+  const cleanName = safeFileName(filename);
+  const ext = url.match(/\.(mp4|mov|webm|m4v)/i)?.[1] || "mp4";
+  const fullName = `${cleanName}.${ext}`;
+
+  try {
+    const response = await fetch(downloadUrl, { credentials: "omit", mode: "cors" });
+    if (!response.ok) throw new Error("Fetch failed");
+    const blob = await response.blob();
+    downloadBlob(blob, fullName);
+  } catch {
+    // Fallback: direct anchor with download attribute
+    const anchor = document.createElement("a");
+    anchor.href = downloadUrl;
+    anchor.download = fullName;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+}
