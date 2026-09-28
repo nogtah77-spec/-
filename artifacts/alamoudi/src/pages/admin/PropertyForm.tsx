@@ -31,6 +31,7 @@ import { FINISHING_OPTIONS as finishingOptions } from "@/lib/finishingOptions";
 import { compressMultipleImages } from "@/lib/imageOptimizer";
 import {
   uploadMultipleToCloudinary,
+  uploadVideoToCloudinary,
   deleteFromCloudinary,
   getPropertyCloudinaryFolder,
   getThumbnailImageUrl,
@@ -340,11 +341,69 @@ export default function PropertyForm() {
   const [dragging, setDragging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [compressing, setCompressing] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoFileRef = useRef<HTMLInputElement>(null);
   const formRef = useRef(form);
   useEffect(() => {
     formRef.current = form;
   }, [form]);
+
+  const handleVideoUpload = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    const currentForm = formRef.current;
+    const currentRegion = (currentForm.regionId || "").trim();
+    const currentCode = (currentForm.code || "").trim();
+
+    if (!currentRegion || !currentCode) {
+      toast({
+        title: "تنبيه: يُرجى اختيار المنطقة وكود العقار أولاً",
+        description: "لتوجيه الفيديو وحفظه تلقائياً داخل مجلد العقار في كلاوديناري",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type.startsWith("video/") && !/\.(mp4|mov|webm|m4v)$/i.test(file.name)) {
+      toast({
+        title: "صيغة غير مدعومة",
+        description: "يرجى اختيار ملف فيديو بصيغة MP4 أو MOV أو WebM",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVideoUploading(true);
+    setVideoUploadProgress(0);
+    try {
+      toast({ title: `جاري رفع الفيديو إلى مجلد (${currentCode}) في السحابة...` });
+      const folder = getPropertyCloudinaryFolder(currentRegion, currentCode);
+      const uploadedUrl = await uploadVideoToCloudinary(file, folder, (percent) => {
+        setVideoUploadProgress(percent);
+      });
+
+      setForm((prev) => ({ ...prev, videoUrl: uploadedUrl }));
+      isDirtyRef.current = true;
+      toast({
+        title: "تم رفع الفيديو بنجاح ✓",
+        description: `تم حفظ ومعالجة الفيديو في مجلد (${currentCode}) بسحابة Cloudinary وتجهيزه للبث فائق السرعة`,
+      });
+    } catch (err: any) {
+      console.error("Video upload failed:", err);
+      toast({
+        title: "تعذر رفع الفيديو",
+        description: err?.message || "حدث خطأ أثناء رفع الفيديو إلى Cloudinary",
+        variant: "destructive",
+      });
+    } finally {
+      setVideoUploading(false);
+      setVideoUploadProgress(0);
+      if (videoFileRef.current) videoFileRef.current.value = "";
+    }
+  }, [toast]);
 
   const handleFiles = useCallback(async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -1024,17 +1083,137 @@ export default function PropertyForm() {
               </CardContent>
             </Card>
 
-            {/* Links */}
+            {/* Links, Video & Location */}
             <Card className="border-border/80 shadow-sm">
-              <CardHeader className="pb-3"><CardTitle className="text-sm font-bold flex items-center gap-2"><LinkIcon className="h-4 w-4 text-accent" />الروابط والفيديو والموقع</CardTitle></CardHeader>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <Play className="h-4 w-4 text-[#C5A059]" />
+                  فيديو العقار والروابط والموقع
+                </CardTitle>
+              </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold">رابط فيديو للعقار</Label>
-                  <Input value={form.videoUrl} onChange={e => set("videoUrl", e.target.value)} placeholder="مثال: رابط YouTube، TikTok، Telegram، Drive..." dir="ltr" />
-                  <p className="text-[11px] text-muted-foreground">يدعم جميع منصات الفيديو لعرض المعاينة للعميل</p>
+                
+                {/* ── Video Upload & Direct Cloudinary Storage ── */}
+                <div className="space-y-2.5 p-3.5 rounded-xl bg-card border border-border/70 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold flex items-center gap-1.5">
+                      <Play className="h-3.5 w-3.5 text-accent" />
+                      فيديو العقار (Cloudinary)
+                    </Label>
+                    {form.videoUrl && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-bold">
+                        فيديو متوفر ✓
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Upload State / Progress Bar */}
+                  {videoUploading ? (
+                    <div className="p-4 rounded-lg bg-muted/60 border border-border space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="flex items-center gap-1.5 text-accent">
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          جاري رفع وضغط الفيديو على Cloudinary...
+                        </span>
+                        <span className="font-mono text-foreground font-black">{videoUploadProgress}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-accent to-emerald-500 transition-all duration-200"
+                          style={{ width: `${videoUploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-[10.5px] text-muted-foreground">
+                        الرفع مستمر في الخلفية حتى لو قمت بتصغير المتصفح أو التطبيق.
+                      </p>
+                    </div>
+                  ) : form.videoUrl ? (
+                    /* Existing Video Preview & Action Buttons */
+                    <div className="p-3 rounded-lg bg-muted/40 border border-border/80 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-9 h-9 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
+                          <Play className="h-4 w-4 text-accent fill-accent" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate" dir="ltr">
+                            {form.videoUrl}
+                          </p>
+                          <span className="text-[10.5px] text-muted-foreground">
+                            {form.videoUrl.includes("cloudinary.com") ? "فيديو عالي الدقة ومضغوط سحابياً" : "رابط فيديو خارجي"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => videoFileRef.current?.click()}
+                          className="h-7 text-xs font-bold px-2.5"
+                        >
+                          استبدال
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => set("videoUrl", "")}
+                          className="h-7 w-7 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          title="حذف الفيديو"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Upload Button */
+                    <div
+                      onClick={() => videoFileRef.current?.click()}
+                      className="border-2 border-dashed border-border/80 hover:border-accent/60 rounded-xl p-4 text-center cursor-pointer transition-all hover:bg-accent/5 group"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-1.5">
+                        <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <UploadCloud className="h-5 w-5 text-accent" />
+                        </div>
+                        <span className="text-xs font-bold text-foreground">
+                          اضغط لرفع فيديو العقار مباشرة (MP4 / MOV / WebM)
+                        </span>
+                        <span className="text-[10.5px] text-muted-foreground">
+                          يُرفع إلى نفس مجلد صور العقار على Cloudinary، ويُعالج تلقائياً بأعلى نقاء وأخف حجم
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <input
+                    ref={videoFileRef}
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/webm,video/m4v"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files) handleVideoUpload(e.target.files);
+                    }}
+                    disabled={videoUploading}
+                  />
+
+                  {/* Manual Video URL Alternative */}
+                  <div className="pt-2">
+                    <Label className="text-[11px] text-muted-foreground font-semibold mb-1 block">
+                      أو الصق رابط فيديو خارجي (YouTube / TikTok / Telegram / Drive):
+                    </Label>
+                    <Input
+                      value={form.videoUrl}
+                      onChange={(e) => set("videoUrl", e.target.value)}
+                      placeholder="مثال: رابط YouTube، TikTok، Telegram، Drive..."
+                      dir="ltr"
+                      className="h-8 text-xs"
+                      disabled={videoUploading}
+                    />
+                  </div>
                 </div>
 
-                {/* Cover Priority */}
+                {/* ── Cover Priority (التحكم في أولوية الغلاف) ── */}
                 <div className="space-y-2">
                   <Label className="text-xs font-bold">أولوية غلاف البطاقة</Label>
                   <div className="flex rounded-lg border border-border overflow-hidden text-sm">
@@ -1048,7 +1227,7 @@ export default function PropertyForm() {
                       }`}
                     >
                       <Camera className="h-3.5 w-3.5" />
-                      الصورة أولاً
+                      الصورة أولاً (الغلاف من صور العقار)
                     </button>
                     <button
                       type="button"
@@ -1060,10 +1239,12 @@ export default function PropertyForm() {
                       }`}
                     >
                       <Play className="h-3.5 w-3.5" />
-                      الفيديو أولاً
+                      الفيديو أولاً (الغلاف من لقطة الفيديو)
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">اختر ما يظهر كغلاف للبطاقة عند توفّر الاثنين معاً</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    عند اختيار "الصورة أولاً"، ستكون أول صورة في المعرض (أو الصورة التي اخترتها) هي الغلاف الرسمي للبطاقة.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold">رابط خارجي للعقار</Label>

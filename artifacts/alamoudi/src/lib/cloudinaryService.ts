@@ -358,3 +358,109 @@ export async function deleteFolderFromCloudinary(folder: string): Promise<boolea
   return false;
 }
 
+/**
+ * Uploads a video file directly to Cloudinary using XMLHttpRequest for background resilience and progress tracking.
+ * Organizes videos into the exact same folder structure as property images:
+ * e.g., "alamoudi_properties/shorouk/S74"
+ */
+export function uploadVideoToCloudinary(
+  file: File,
+  folder = "alamoudi_properties",
+  onProgress?: (percent: number) => void
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const { cloudName, uploadPreset } = CLOUDINARY_CONFIG;
+    if (!cloudName || !uploadPreset) {
+      reject(new Error("إعدادات Cloudinary غير متوفرة"));
+      return;
+    }
+
+    const endpoint = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset);
+    if (folder) {
+      formData.append("folder", folder);
+    }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", endpoint, true);
+
+    // Track real-time progress for smooth percentage UI
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && e.total > 0) {
+          const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
+          onProgress(percent);
+        }
+      };
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data.secure_url || data.url) {
+            if (onProgress) onProgress(100);
+            resolve(data.secure_url || data.url);
+          } else {
+            reject(new Error("لم يتم استلام رابط الفيديو من Cloudinary"));
+          }
+        } catch {
+          reject(new Error("فشل قراءة استجابة خادم Cloudinary"));
+        }
+      } else {
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          reject(new Error(errData?.error?.message || `فشل الرفع: رمز الخطأ ${xhr.status}`));
+        } catch {
+          reject(new Error(`فشل رفع الفيديو: رمز الخطأ ${xhr.status}`));
+        }
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("خطأ في الاتصال بالشبكة أثناء رفع الفيديو"));
+    };
+
+    xhr.ontimeout = () => {
+      reject(new Error("انتهت مهلة الاتصال أثناء رفع الفيديو"));
+    };
+
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Injects Cloudinary maximum streaming and compression transformations:
+ * - q_auto:eco: Intelligent visual compression saving up to 80% bandwidth
+ * - vc_auto: Automatic video codec (H.264/H.265/AV1) tailored to the client device
+ * - f_auto: Optimal video container format
+ * - w_1280: Crisp 720p/HD resolution without oversized files
+ */
+export function getOptimizedVideoUrl(url: string | undefined | null): string {
+  if (!url) return "";
+  const clean = url.trim();
+  if (clean.includes("cloudinary.com") && clean.includes("/video/upload/")) {
+    if (clean.includes("/q_auto") || clean.includes("/vc_auto")) {
+      return clean;
+    }
+    return clean.replace("/video/upload/", "/video/upload/q_auto:eco,vc_auto,w_1280/");
+  }
+  return clean;
+}
+
+/**
+ * Extracts a high-definition auto-generated thumbnail from a Cloudinary video.
+ */
+export function getCloudinaryVideoThumbnail(url: string | undefined | null): string | null {
+  if (!url) return null;
+  const clean = url.trim();
+  if (clean.includes("cloudinary.com") && clean.includes("/video/upload/")) {
+    return clean
+      .replace(/\.[a-zA-Z0-9]+$/, ".jpg")
+      .replace("/video/upload/", "/video/upload/so_1,q_auto,f_auto,w_800/");
+  }
+  return null;
+}
+

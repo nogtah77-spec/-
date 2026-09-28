@@ -1,3 +1,5 @@
+import { getCloudinaryVideoThumbnail } from "./cloudinaryService";
+
 // Extracts a clean, canonical URL from whatever the user pastes for a video:
 // a plain link, a short link, OR a full TikTok "Embed" code (<blockquote>…</blockquote>).
 export function extractVideoUrl(raw: string | undefined | null): string {
@@ -24,6 +26,11 @@ export function getVideoThumbnailUrl(videoUrl: string | undefined | null): strin
   if (!videoUrl) return null;
   const url = extractVideoUrl(videoUrl);
   if (!url) return null;
+
+  // Cloudinary video automated smart thumbnail
+  const cloudThumb = getCloudinaryVideoThumbnail(url);
+  if (cloudThumb) return cloudThumb;
+
   const yt = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/,
   );
