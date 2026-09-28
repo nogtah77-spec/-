@@ -20,7 +20,7 @@ import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
 import { checkUserPermission } from "@/lib/permissions";
 import { useData, type Property } from "@/context/DataContext";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getFeaturedTypeLabel } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn, suppressGhostClicks } from "@/lib/utils";
@@ -454,7 +454,7 @@ export default function PropertyDetails() {
                 {property.featured && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#A9927D] text-[#10202D] font-black text-xs shadow-xs border border-[#10202D]/10">
                     <Star className="h-3.5 w-3.5 fill-[#FFB800] text-[#D97706]" />
-                    <span>مميز</span>
+                    <span>{getFeaturedTypeLabel(typeName)}</span>
                   </span>
                 )}
                 {property.status === "rented" && <Badge className="bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">مؤجر</Badge>}

@@ -134,3 +134,37 @@ export function suppressGhostClicks(durationMs = 450) {
   }, durationMs);
 }
 
+const FEMININE_PROPERTY_TYPES = new Set([
+  "شقة", "شقه", "فيلا", "فيله", "عمارة", "عماره", "أرض", "ارض",
+  "عيادة", "عياده", "صيدلية", "صيدليه", "مزرعة", "مزرعه", "استراحة", "استراحه",
+  "غرفة", "غرفه", "سويت", "فيلا دوبلكس"
+]);
+
+/**
+ * Returns a grammatically matched smart featured label for real estate types in Arabic.
+ * Examples:
+ * - "دوبلكس" -> "دوبلكس مميز"
+ * - "شقة" -> "شقة مميزة"
+ * - "فيلا" -> "فيلا مميزة"
+ * - "محل" -> "محل مميز"
+ * - "عمارة" -> "عمارة مميزة"
+ * - "أرض" -> "أرض مميزة"
+ * - undefined / empty -> "مميز"
+ */
+export function getFeaturedTypeLabel(typeName?: string): string {
+  if (!typeName || !typeName.trim()) return "مميز";
+  const name = typeName.trim();
+
+  const isFeminine =
+    FEMININE_PROPERTY_TYPES.has(name) ||
+    name.includes("فيلا") ||
+    name.includes("شقة") ||
+    name.includes("عمارة") ||
+    name.includes("أرض") ||
+    name.includes("ارض") ||
+    (name.endsWith("ة") && !name.includes("شاليه")) ||
+    (name.endsWith("ه") && !name.includes("شاليه") && !name.includes("تاون") && !name.includes("بنت"));
+
+  return isFeminine ? `${name} مميزة` : `${name} مميز`;
+}
+

@@ -10,7 +10,7 @@ import { getTiktokUrl, getTiktokName } from "@/lib/socials";
 import { normalizePhoneForWa } from "@/lib/phone";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, formatNumber, getFeaturedTypeLabel } from "@/lib/utils";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { getCardImageUrl } from "@/lib/cloudinaryService";
 import { useLocation } from "wouter";
@@ -243,27 +243,31 @@ export function PropertyCard({
             )}
           </div>
 
-          {/* Bottom Indicators inside Image */}
-          <div className="absolute bottom-2 inset-x-2 z-20 flex flex-wrap items-center justify-between gap-1 text-[9px]">
-            {property.typeName ? (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black text-white bg-black/55 backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.35)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                {property.typeName}
+          {/* Bottom Indicators inside Image (Strict flex-nowrap to guarantee single line) */}
+          <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-between gap-1 flex-nowrap text-[9px] pointer-events-none">
+            {/* Smart Type & Featured Badge */}
+            {property.featured ? (
+              <span className="inline-flex items-center gap-1 px-1.5 min-[400px]:px-2 py-0.5 rounded text-[9.5px] min-[400px]:text-[10px] font-black bg-[#A9927D] text-[#10202D] shadow-xs border border-white/20 backdrop-blur-md truncate min-w-0 max-w-[calc(100%-26px)] leading-tight">
+                <Star className="h-2.5 w-2.5 fill-[#FFB800] text-[#D97706] shrink-0" />
+                <span className="truncate">{getFeaturedTypeLabel(property.typeName)}</span>
               </span>
-            ) : <span />}
+            ) : property.typeName ? (
+              <span className="inline-flex items-center px-1.5 min-[400px]:px-2 py-0.5 rounded text-[9.5px] min-[400px]:text-[10px] font-black text-white bg-black/60 backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.35)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] truncate min-w-0 max-w-[calc(100%-26px)] leading-tight">
+                <span className="truncate">{property.typeName}</span>
+              </span>
+            ) : (
+              <span />
+            )}
 
-            <div className="flex items-center gap-1">
-              {propHasVideo && (
-                <span className="flex items-center gap-0.5 rounded bg-black/65 px-1.5 py-0.5 text-white backdrop-blur-sm">
-                  <Play className="h-2 w-2 fill-white" />
-                </span>
-              )}
-              {property.featured && (
-                <span className="inline-flex items-center gap-0.5 rounded bg-[#A9927D] text-[#10202D] font-bold px-1.5 py-0.5 shadow-xs border border-[#10202D]/10">
-                  <Star className="h-2 w-2 fill-[#FFB800] text-[#D97706]" />
-                  مميز
-                </span>
-              )}
-            </div>
+            {/* Video Indicator (Fixed size, never wraps, never forces line break) */}
+            {propHasVideo && (
+              <span 
+                className="flex items-center justify-center shrink-0 w-5 h-5 rounded bg-black/70 text-white backdrop-blur-md border border-white/20 shadow-xs" 
+                title="يحتوي على فيديو"
+              >
+                <Play className="h-2.5 w-2.5 fill-white text-white ml-0.5" />
+              </span>
+            )}
           </div>
         </div>
 
@@ -484,7 +488,7 @@ export function PropertyCard({
                 محجوز
               </span>
             )}
-            {property.featured && (
+            {property.featured && !property.typeName && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#A9927D]/85 text-[#10202D] font-black text-[11px] shadow-md border border-white/20 backdrop-blur-md">
                 <Star className="h-3 w-3 fill-[#FFB800] text-[#D97706]" />
                 مميز
@@ -521,12 +525,17 @@ export function PropertyCard({
         {/* Bottom Badges inside Image */}
         <div className="absolute inset-x-3 bottom-3 z-20 flex items-center justify-between gap-2 text-xs">
           {/* Type Badge & Location */}
-          <div className="flex items-center gap-1.5">
-            {property.typeName && (
+          <div className="flex items-center gap-1.5 min-w-0">
+            {property.featured ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-[#A9927D] text-[#10202D] font-black text-[10.5px] shadow-sm border border-white/20 backdrop-blur-md">
+                <Star className="h-2.5 w-2.5 fill-[#FFB800] text-[#D97706] shrink-0" />
+                <span>{getFeaturedTypeLabel(property.typeName)}</span>
+              </span>
+            ) : property.typeName ? (
               <span className="inline-flex items-center px-2 py-0.5 rounded bg-black/55 backdrop-blur-md text-white font-black border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.35)] text-[10.5px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
                 {property.typeName}
               </span>
-            )}
+            ) : null}
             {property.regionName && (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-white/90 text-[11px]">
                 <MapPin className="h-3 w-3 text-accent" />
