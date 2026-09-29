@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
 import { QrCodeView } from "@/components/ui/QrCodeView";
+import { getCardImageUrl } from "@/lib/cloudinaryService";
 
 interface PropertyBrochureModalProps {
   property: Property;
@@ -26,25 +27,6 @@ interface PropertyBrochureModalProps {
   whatsapp?: string;
   email?: string;
   qrCodes?: QrCodeItem[];
-}
-
-/**
- * Transforms Cloudinary image URLs on the fly to deliver optimized, lightweight images.
- * Reduces 3-5MB raw images to ~40KB WebP/JPEG, making mobile preview and PDF generation instantaneous.
- */
-function getOptimizedBrochureImageUrl(url?: string): string {
-  if (!url || typeof url !== "string") return "";
-  const trimmed = url.trim();
-  if (!trimmed) return "";
-
-  if (trimmed.includes("cloudinary.com") && trimmed.includes("/upload/")) {
-    if (trimmed.includes("/upload/w_") || trimmed.includes("/upload/c_") || trimmed.includes("/upload/f_")) {
-      return trimmed;
-    }
-    return trimmed.replace("/upload/", "/upload/w_800,c_limit,q_auto:good,f_auto/");
-  }
-
-  return trimmed;
 }
 
 export function PropertyBrochureModal({
@@ -63,69 +45,48 @@ export function PropertyBrochureModal({
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
 
-  // ── Optimized Raw Images List ──
-  const rawOptimizedImages = useMemo(() => {
+  // ── Instant Preview Images (Optimized 800px URLs for instant 0ms mobile render) ──
+  const previewImages = useMemo(() => {
     return (property.images && property.images.length > 0 ? property.images.slice(0, 3) : [])
-      .map(getOptimizedBrochureImageUrl)
+      .map(getCardImageUrl)
       .filter(Boolean);
   }, [property.images]);
 
-  // ── Image Preloading System (Guarantees photos appear on mobile & in PDF) ──
-  const [loadedImages, setLoadedImages] = useState<string[]>([]);
-  const [imagesLoading, setImagesLoading] = useState(false);
-  const imagesLoadingPromise = useRef<Promise<any> | null>(null);
+  // ── Background Base64 Cache for PDF Export (100% non-blocking for modal preview) ──
+  const base64ImagesRef = useRef<string[]>([]);
 
   useEffect(() => {
     let isMounted = true;
-    if (rawOptimizedImages.length === 0) {
-      setLoadedImages([]);
+    if (previewImages.length === 0) {
+      base64ImagesRef.current = [];
       return;
     }
 
-    setImagesLoading(true);
-
-    const promise = Promise.all(
-      rawOptimizedImages.map((src) => {
+    const urlToBase64 = async (url: string): Promise<string> => {
+      try {
+        const res = await fetch(url, { mode: "cors" });
+        const blob = await res.blob();
         return new Promise<string>((resolve) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => {
-            try {
-              const canvas = document.createElement("canvas");
-              canvas.width = img.naturalWidth || img.width;
-              canvas.height = img.naturalHeight || img.height;
-              const ctx = canvas.getContext("2d");
-              if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-                resolve(dataUrl);
-                return;
-              }
-            } catch {
-              // Canvas tainted fallback
-            }
-            resolve(src);
-          };
-          img.onerror = () => resolve(src);
-          img.src = src;
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string) || url);
+          reader.onerror = () => resolve(url);
+          reader.readAsDataURL(blob);
         });
-      })
-    ).then((resolved) => {
+      } catch {
+        return url;
+      }
+    };
+
+    Promise.all(previewImages.map(urlToBase64)).then((b64List) => {
       if (isMounted) {
-        setLoadedImages(resolved);
-        setImagesLoading(false);
+        base64ImagesRef.current = b64List;
       }
     });
-
-    imagesLoadingPromise.current = promise;
 
     return () => {
       isMounted = false;
     };
-  }, [rawOptimizedImages]);
-
-  // Safe instant images: fallback to rawOptimizedImages immediately so preview has ZERO delay
-  const displayImages = loadedImages.length > 0 ? loadedImages : rawOptimizedImages;
+  }, [previewImages]);
 
   const getListingTypeArabic = (type?: string) => {
     if (type === "rent") return "للإيجار";
@@ -230,13 +191,26 @@ export function PropertyBrochureModal({
     setDownloading(true);
 
     try {
-      // 1. Wait for images to finish preloading if still in flight
-      if (imagesLoadingPromise.current) {
-        await Promise.race([
-          imagesLoadingPromise.current,
-          new Promise((r) => setTimeout(r, 2000)),
-        ]);
-      }
+      // 1. Ensure all images are converted to Base64 for the export clone so toJpeg never fails or taints canvas
+      const exportImages =
+        base64ImagesRef.current.length === previewImages.length && base64ImagesRef.current.length > 0
+          ? base64ImagesRef.current
+          : await Promise.all(
+              previewImages.map(async (url) => {
+                try {
+                  const res = await fetch(url, { mode: "cors" });
+                  const blob = await res.blob();
+                  return new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve((reader.result as string) || url);
+                    reader.onerror = () => resolve(url);
+                    reader.readAsDataURL(blob);
+                  });
+                } catch {
+                  return url;
+                }
+              })
+            );
 
       const element = printRef.current;
 
@@ -265,9 +239,9 @@ export function PropertyBrochureModal({
         specsGrid.classList.add("grid-cols-4");
       }
 
-      // Explicitly set clone images to resolved sources
+      // Explicitly set clone images to resolved base64 sources
       const cloneImages = clone.querySelectorAll("img");
-      displayImages.forEach((src, idx) => {
+      exportImages.forEach((src, idx) => {
         if (cloneImages[idx] && src) {
           cloneImages[idx].src = src;
         }
@@ -295,7 +269,7 @@ export function PropertyBrochureModal({
       const lineCount = desc.split("\n").length;
       const isLongDescription = desc.length > 200 || lineCount > 4;
       const isLargeSpecs = displaySpecs.length > 8;
-      const hasPhotos = displayImages.length > 0;
+      const hasPhotos = previewImages.length > 0;
       const totalHeight = clone.scrollHeight;
 
       // Deterministic check: If photos exist AND (long description OR large specs OR total height exceeds A4)
@@ -575,39 +549,29 @@ export function PropertyBrochureModal({
                 </div>
               </div>
 
-              {/* 3. Photo Showcase Grid (Preloaded & Resilient) */}
-              {displayImages.length > 0 && (
-                <div className="relative grid grid-cols-3 gap-2.5">
-                  {imagesLoading && (
-                    <div className="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10 rounded-xl">
-                      <div className="flex items-center gap-2 bg-[#10202D] text-[#A9927D] px-3.5 py-1.5 rounded-full text-xs font-bold shadow-lg">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        <span>جاري تحميل الصور...</span>
-                      </div>
-                    </div>
-                  )}
+              {/* 3. Photo Showcase Grid (Instant & Lightweight) */}
+              {previewImages.length > 0 && (
+                <div className="grid grid-cols-3 gap-2.5">
                   <div className="col-span-2 overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
                     <img
-                      src={displayImages[0]}
+                      src={previewImages[0]}
                       alt={property.title}
                       className="h-full w-full object-cover"
-                      crossOrigin="anonymous"
                       loading="eager"
                     />
                   </div>
                   <div className="grid grid-rows-2 gap-2.5">
-                    {displayImages.slice(1, 3).map((img, i) => (
+                    {previewImages.slice(1, 3).map((img, i) => (
                       <div key={i} className="overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
                         <img
                           src={img}
                           alt={`${property.title} - ${i + 2}`}
                           className="h-full w-full object-cover"
-                          crossOrigin="anonymous"
                           loading="eager"
                         />
                       </div>
                     ))}
-                    {displayImages.length === 2 && (
+                    {previewImages.length === 2 && (
                       <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center p-2 text-center text-gray-400">
                         <Building2 className="h-8 w-8 text-gray-300" />
                       </div>
