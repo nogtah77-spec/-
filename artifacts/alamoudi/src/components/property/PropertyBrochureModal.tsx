@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,25 @@ interface PropertyBrochureModalProps {
   qrCodes?: QrCodeItem[];
 }
 
+/**
+ * Transforms Cloudinary image URLs on the fly to deliver optimized, lightweight images.
+ * Reduces 3-5MB raw images to ~40KB WebP/JPEG, making mobile preview and PDF generation instantaneous.
+ */
+function getOptimizedBrochureImageUrl(url?: string): string {
+  if (!url || typeof url !== "string") return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+
+  if (trimmed.includes("cloudinary.com") && trimmed.includes("/upload/")) {
+    if (trimmed.includes("/upload/w_") || trimmed.includes("/upload/c_") || trimmed.includes("/upload/f_")) {
+      return trimmed;
+    }
+    return trimmed.replace("/upload/", "/upload/w_800,c_limit,q_auto:good,f_auto/");
+  }
+
+  return trimmed;
+}
+
 export function PropertyBrochureModal({
   property,
   region,
@@ -44,6 +63,13 @@ export function PropertyBrochureModal({
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
 
+  // ── Optimized Raw Images List ──
+  const rawOptimizedImages = useMemo(() => {
+    return (property.images && property.images.length > 0 ? property.images.slice(0, 3) : [])
+      .map(getOptimizedBrochureImageUrl)
+      .filter(Boolean);
+  }, [property.images]);
+
   // ── Image Preloading System (Guarantees photos appear on mobile & in PDF) ──
   const [loadedImages, setLoadedImages] = useState<string[]>([]);
   const [imagesLoading, setImagesLoading] = useState(false);
@@ -51,8 +77,7 @@ export function PropertyBrochureModal({
 
   useEffect(() => {
     let isMounted = true;
-    const rawImages = property.images && property.images.length > 0 ? property.images.slice(0, 3) : [];
-    if (rawImages.length === 0) {
+    if (rawOptimizedImages.length === 0) {
       setLoadedImages([]);
       return;
     }
@@ -60,7 +85,7 @@ export function PropertyBrochureModal({
     setImagesLoading(true);
 
     const promise = Promise.all(
-      rawImages.map((src) => {
+      rawOptimizedImages.map((src) => {
         return new Promise<string>((resolve) => {
           const img = new Image();
           img.crossOrigin = "anonymous";
@@ -97,188 +122,10 @@ export function PropertyBrochureModal({
     return () => {
       isMounted = false;
     };
-  }, [property.images]);
+  }, [rawOptimizedImages]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  // ── Luxury PDF Exporter (Isolated Off-Screen Canvas & Zero Squashing) ───────
-  const handleDownloadPdf = async () => {
-    if (!printRef.current || downloading) return;
-    setDownloading(true);
-
-    try {
-      // 1. Wait for images to finish preloading if still in flight
-      if (imagesLoadingPromise.current) {
-        await Promise.race([
-          imagesLoadingPromise.current,
-          new Promise((r) => setTimeout(r, 2500)),
-        ]);
-      }
-
-      const element = printRef.current;
-
-      // 2. Clone to an isolated off-screen sandbox.
-      // CRITICAL: The visible element in the dialog is NEVER mutated or resized,
-      // so the user's mobile screen and buttons NEVER jump or stretch!
-      const clone = element.cloneNode(true) as HTMLElement;
-      clone.id = "printable-brochure-export-clone";
-      clone.style.width = "794px";
-      clone.style.minWidth = "794px";
-      clone.style.maxWidth = "794px";
-      clone.style.position = "fixed";
-      clone.style.top = "0";
-      clone.style.left = "0";
-      clone.style.zIndex = "-9999";
-      clone.style.opacity = "1";
-      clone.style.pointerEvents = "none";
-      document.body.appendChild(clone);
-
-      // Enforce 4-columns layout and non-wrapping header row on the export clone
-      const headerRow = clone.querySelector("[data-header-row]");
-      const specsGrid = clone.querySelector("[data-specs-grid]");
-      if (headerRow) headerRow.classList.remove("flex-wrap");
-      if (specsGrid) {
-        specsGrid.classList.remove("grid-cols-2");
-        specsGrid.classList.add("grid-cols-4");
-      }
-
-      // Small reflow tick
-      await new Promise((resolve) => setTimeout(resolve, 80));
-
-      // 3. Dynamically resolve jsPDF constructor
-      const PDFClass = (jsPDF as any).jsPDF || jsPDF;
-      const pdf = new PDFClass({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
-      const margin = 8; // 8mm margins
-      const maxW = pdfWidth - margin * 2; // 194mm
-      const maxH = pdfHeight - margin * 2; // 281mm
-
-      // Check if document fits in 1 page or requires intelligent section splitting
-      const totalHeight = clone.scrollHeight;
-
-      if (totalHeight <= 1180) {
-        // ── Single Page Mode (Standard listings, 100% complete on 1 A4 page) ──
-        const dataUrl = await toJpeg(clone, {
-          quality: 0.96,
-          backgroundColor: "#ffffff",
-          pixelRatio: 2,
-          cacheBust: true,
-        });
-
-        const img = new Image();
-        img.src = dataUrl;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-        });
-
-        const imgRatio = img.width / img.height;
-        let renderW = maxW;
-        let renderH = maxW / imgRatio;
-
-        if (renderH > maxH) {
-          renderH = maxH;
-          renderW = maxH * imgRatio;
-        }
-
-        const xOffset = margin + (maxW - renderW) / 2;
-        const yOffset = margin + (maxH - renderH) / 2;
-
-        pdf.addImage(dataUrl, "JPEG", xOffset, yOffset, renderW, renderH);
-      } else {
-        // ── Clean Multi-Page Mode (Never slices tables or cards in half) ──
-        // Page 1: Header, Photos, and Specifications Matrix (Complete)
-        const part1 = clone.querySelector("[data-section='part-1']") as HTMLElement;
-        const part2 = clone.querySelector("[data-section='part-2']") as HTMLElement;
-
-        if (part1 && part2) {
-          const dataUrl1 = await toJpeg(part1, {
-            quality: 0.96,
-            backgroundColor: "#ffffff",
-            pixelRatio: 2,
-          });
-
-          const img1 = new Image();
-          img1.src = dataUrl1;
-          await new Promise((resolve) => { img1.onload = resolve; });
-
-          const r1 = img1.width / img1.height;
-          let w1 = maxW;
-          let h1 = maxW / r1;
-          if (h1 > maxH) { h1 = maxH; w1 = maxH * r1; }
-          const x1 = margin + (maxW - w1) / 2;
-          const y1 = margin + (maxH - h1) / 2;
-
-          pdf.addImage(dataUrl1, "JPEG", x1, y1, w1, h1);
-
-          // Page 2: Description, Additional Details, and Contact Footer
-          pdf.addPage();
-
-          const dataUrl2 = await toJpeg(part2, {
-            quality: 0.96,
-            backgroundColor: "#ffffff",
-            pixelRatio: 2,
-          });
-
-          const img2 = new Image();
-          img2.src = dataUrl2;
-          await new Promise((resolve) => { img2.onload = resolve; });
-
-          const r2 = img2.width / img2.height;
-          let w2 = maxW;
-          let h2 = maxW / r2;
-          if (h2 > maxH) { h2 = maxH; w2 = maxH * r2; }
-          const x2 = margin + (maxW - w2) / 2;
-          const y2 = margin + (maxH - h2) / 2;
-
-          pdf.addImage(dataUrl2, "JPEG", x2, y2, w2, h2);
-        } else {
-          // Fallback single page with aspect ratio guarantee
-          const dataUrl = await toJpeg(clone, { quality: 0.96, backgroundColor: "#ffffff", pixelRatio: 2 });
-          const img = new Image();
-          img.src = dataUrl;
-          await new Promise((resolve) => { img.onload = resolve; });
-          const r = img.width / img.height;
-          let w = maxW;
-          let h = maxW / r;
-          if (h > maxH) { h = maxH; w = maxH * r; }
-          pdf.addImage(dataUrl, "JPEG", margin + (maxW - w) / 2, margin + (maxH - h) / 2, w, h);
-        }
-      }
-
-      // Cleanup clone from DOM
-      clone.remove();
-
-      const sanitizedCode = (property.code || property.title || "property").replace(/[\/\\:*?"<>|]/g, "_");
-      pdf.save(`بروشور_عقار_${sanitizedCode}.pdf`);
-
-      toast({
-        title: "تم تحميل ملف الـ PDF بنجاح 📄✨",
-        description: `تم حفظ البروشور الفاخر باسم: بروشور_عقار_${sanitizedCode}.pdf`,
-      });
-    } catch (err: any) {
-      console.error("PDF generation error:", err);
-      toast({
-        title: "تعذر توليد ملف الـ PDF",
-        description: err?.message || "يرجى استخدام زر الطباعة المباشرة كبديل فوري.",
-        variant: "destructive",
-      });
-    } finally {
-      // Clean up clone if it remained due to error
-      const strayClone = document.getElementById("printable-brochure-export-clone");
-      if (strayClone) strayClone.remove();
-      setDownloading(false);
-    }
-  };
-
-  const displayImages = loadedImages.length > 0 ? loadedImages : (property.images?.slice(0, 3) || []);
+  // Safe instant images: fallback to rawOptimizedImages immediately so preview has ZERO delay
+  const displayImages = loadedImages.length > 0 ? loadedImages : rawOptimizedImages;
 
   const getListingTypeArabic = (type?: string) => {
     if (type === "rent") return "للإيجار";
@@ -372,6 +219,227 @@ export function PropertyBrochureModal({
     { key: "floor", label: "الدور", value: floorDisplay || "غير محدد", icon: Layers },
     { key: "finishing", label: "التشطيب", value: finishingLabel || property.finishing || "غير محدد", icon: Building2 },
   ];
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // ── Luxury PDF Exporter (Isolated Off-Screen Canvas & Zero Squashing) ───────
+  const handleDownloadPdf = async () => {
+    if (!printRef.current || downloading) return;
+    setDownloading(true);
+
+    try {
+      // 1. Wait for images to finish preloading if still in flight
+      if (imagesLoadingPromise.current) {
+        await Promise.race([
+          imagesLoadingPromise.current,
+          new Promise((r) => setTimeout(r, 2000)),
+        ]);
+      }
+
+      const element = printRef.current;
+
+      // 2. Clone to an isolated off-screen sandbox.
+      // CRITICAL: The visible element in the dialog is NEVER mutated or resized,
+      // so the user's mobile screen and buttons NEVER jump or stretch!
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.id = "printable-brochure-export-clone";
+      clone.style.width = "794px";
+      clone.style.minWidth = "794px";
+      clone.style.maxWidth = "794px";
+      clone.style.position = "fixed";
+      clone.style.top = "0";
+      clone.style.left = "0";
+      clone.style.zIndex = "-9999";
+      clone.style.opacity = "1";
+      clone.style.pointerEvents = "none";
+      document.body.appendChild(clone);
+
+      // Enforce 4-columns layout and non-wrapping header row on the export clone
+      const headerRow = clone.querySelector("[data-header-row]");
+      const specsGrid = clone.querySelector("[data-specs-grid]");
+      if (headerRow) headerRow.classList.remove("flex-wrap");
+      if (specsGrid) {
+        specsGrid.classList.remove("grid-cols-2");
+        specsGrid.classList.add("grid-cols-4");
+      }
+
+      // Explicitly set clone images to resolved sources
+      const cloneImages = clone.querySelectorAll("img");
+      displayImages.forEach((src, idx) => {
+        if (cloneImages[idx] && src) {
+          cloneImages[idx].src = src;
+        }
+      });
+
+      // Small reflow tick
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      // 3. Dynamically resolve jsPDF constructor
+      const PDFClass = (jsPDF as any).jsPDF || jsPDF;
+      const pdf = new PDFClass({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const margin = 8; // 8mm margins
+      const maxW = pdfWidth - margin * 2; // 194mm
+      const maxH = pdfHeight - margin * 2; // 281mm
+
+      // Check whether listing warrants multi-page mode (Deterministic & Content-based)
+      const desc = property.description?.trim() || "";
+      const lineCount = desc.split("\n").length;
+      const isLongDescription = desc.length > 200 || lineCount > 4;
+      const isLargeSpecs = displaySpecs.length > 8;
+      const hasPhotos = displayImages.length > 0;
+      const totalHeight = clone.scrollHeight;
+
+      // Deterministic check: If photos exist AND (long description OR large specs OR total height exceeds A4)
+      const isMultiPage = hasPhotos && (isLongDescription || isLargeSpecs || totalHeight > 1050);
+
+      if (!isMultiPage) {
+        // ── Single Page Mode (Standard listings, 100% complete on 1 A4 page) ──
+        const dataUrl = await toJpeg(clone, {
+          quality: 0.96,
+          backgroundColor: "#ffffff",
+          pixelRatio: 2,
+          cacheBust: true,
+        });
+
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+
+        const imgRatio = img.width / img.height;
+        let renderW = maxW;
+        let renderH = maxW / imgRatio;
+
+        if (renderH > maxH) {
+          renderH = maxH;
+          renderW = maxH * imgRatio;
+        }
+
+        const xOffset = margin + (maxW - renderW) / 2;
+        const yOffset = margin; // Top-aligned! Starts at top margin, never pushed down!
+
+        pdf.addImage(dataUrl, "JPEG", xOffset, yOffset, renderW, renderH);
+      } else {
+        // ── Clean Multi-Page Mode (Never slices tables, cards or boxes in half) ──
+        // Page 1: Header, Photos, and Specifications Matrix (Complete)
+        const part1 = clone.querySelector("[data-section='part-1']") as HTMLElement;
+        const part2 = clone.querySelector("[data-section='part-2']") as HTMLElement;
+
+        if (part1 && part2) {
+          // Style Part 1 container for pristine A4 export
+          part1.style.background = "#ffffff";
+          part1.style.padding = "24px 20px 16px 20px";
+
+          // Ensure Page 1 footer badge is visible
+          const page1Footer = part1.querySelector("[data-page-1-footer]") as HTMLElement;
+          if (page1Footer) page1Footer.style.display = "flex";
+
+          const dataUrl1 = await toJpeg(part1, {
+            quality: 0.96,
+            backgroundColor: "#ffffff",
+            pixelRatio: 2,
+          });
+
+          const img1 = new Image();
+          img1.src = dataUrl1;
+          await new Promise((resolve) => { img1.onload = resolve; });
+
+          const r1 = img1.width / img1.height;
+          let w1 = maxW;
+          let h1 = maxW / r1;
+          if (h1 > maxH) {
+            h1 = maxH;
+            w1 = maxH * r1;
+          }
+          const x1 = margin + (maxW - w1) / 2;
+          const y1 = margin; // Top-aligned! Starts directly at top margin (8mm)!
+
+          pdf.addImage(dataUrl1, "JPEG", x1, y1, w1, h1);
+
+          // ── Page 2: Description, Additional Details, and Contact Footer ──
+          pdf.addPage();
+
+          // Style Part 2 container for pristine A4 export with full height distribution
+          part2.style.background = "#ffffff";
+          part2.style.padding = "24px 20px 16px 20px";
+          part2.style.display = "flex";
+          part2.style.flexDirection = "column";
+          part2.style.justifyContent = "space-between";
+          part2.style.minHeight = "960px";
+
+          // Ensure Page 2 luxury header bar is visible on Page 2
+          const page2Header = part2.querySelector("[data-page-2-header]") as HTMLElement;
+          if (page2Header) page2Header.style.display = "flex";
+
+          const dataUrl2 = await toJpeg(part2, {
+            quality: 0.96,
+            backgroundColor: "#ffffff",
+            pixelRatio: 2,
+          });
+
+          const img2 = new Image();
+          img2.src = dataUrl2;
+          await new Promise((resolve) => { img2.onload = resolve; });
+
+          const r2 = img2.width / img2.height;
+          let w2 = maxW;
+          let h2 = maxW / r2;
+          if (h2 > maxH) {
+            h2 = maxH;
+            w2 = maxH * r2;
+          }
+          const x2 = margin + (maxW - w2) / 2;
+          const y2 = margin; // Top-aligned! Starts directly at top margin (8mm)!
+
+          pdf.addImage(dataUrl2, "JPEG", x2, y2, w2, h2);
+        } else {
+          // Fallback single page with aspect ratio guarantee
+          const dataUrl = await toJpeg(clone, { quality: 0.96, backgroundColor: "#ffffff", pixelRatio: 2 });
+          const img = new Image();
+          img.src = dataUrl;
+          await new Promise((resolve) => { img.onload = resolve; });
+          const r = img.width / img.height;
+          let w = maxW;
+          let h = maxW / r;
+          if (h > maxH) { h = maxH; w = maxH * r; }
+          pdf.addImage(dataUrl, "JPEG", margin + (maxW - w) / 2, margin, w, h);
+        }
+      }
+
+      // Cleanup clone from DOM
+      clone.remove();
+
+      const sanitizedCode = (property.code || property.title || "property").replace(/[\/\\:*?"<>|]/g, "_");
+      pdf.save(`بروشور_عقار_${sanitizedCode}.pdf`);
+
+      toast({
+        title: "تم تحميل ملف الـ PDF بنجاح 📄✨",
+        description: `تم حفظ البروشور الفاخر باسم: بروشور_عقار_${sanitizedCode}.pdf`,
+      });
+    } catch (err: any) {
+      console.error("[PropertyBrochureModal] Failed to generate PDF:", err);
+      toast({
+        title: "تعذر توليد ملف الـ PDF",
+        description: err?.message || "يرجى استخدام زر الطباعة المباشرة كبديل فوري.",
+        variant: "destructive",
+      });
+    } finally {
+      // Clean up clone if it remained due to error
+      const strayClone = document.getElementById("printable-brochure-export-clone");
+      if (strayClone) strayClone.remove();
+      setDownloading(false);
+    }
+  };
 
   return (
     <Dialog>
@@ -524,6 +592,7 @@ export function PropertyBrochureModal({
                       alt={property.title}
                       className="h-full w-full object-cover"
                       crossOrigin="anonymous"
+                      loading="eager"
                     />
                   </div>
                   <div className="grid grid-rows-2 gap-2.5">
@@ -534,6 +603,7 @@ export function PropertyBrochureModal({
                           alt={`${property.title} - ${i + 2}`}
                           className="h-full w-full object-cover"
                           crossOrigin="anonymous"
+                          loading="eager"
                         />
                       </div>
                     ))}
@@ -571,25 +641,59 @@ export function PropertyBrochureModal({
                   })}
                 </div>
               </div>
+
+              {/* Page 1 Subtle Footer Note (Activated on multi-page export / print) */}
+              <div
+                data-page-1-footer
+                className="hidden items-center justify-between pt-2 border-t border-gray-200 text-[10px] text-gray-500 font-bold"
+              >
+                <span>{companyName} • بروشور عقاري رسمي</span>
+                <span>صفحة 1 من 2</span>
+              </div>
             </div>
 
             {/* ── PART 2: Description, Additional Details & Contact Footer ── */}
-            <div data-section="part-2" className="space-y-4 pt-2">
+            <div data-section="part-2" className="space-y-4 pt-2 print:break-before-page">
+              {/* Page 2 Luxury Top Header Bar (Activated on multi-page export / print) */}
+              <div
+                data-page-2-header
+                className="hidden items-center justify-between border-b-2 border-[#A9927D]/40 pb-3 mb-2"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-[#10202D] flex items-center justify-center text-[#A9927D] font-black text-sm">
+                    ع
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-sm font-black text-[#10202D] leading-tight">{companyName}</h3>
+                    <p className="text-[10px] font-bold text-[#A9927D] uppercase">ALAMOUDI REAL ESTATE & INVESTMENT</p>
+                  </div>
+                </div>
+
+                <div className="text-left" dir="ltr">
+                  <div className="inline-block rounded-lg border border-[#A9927D]/40 bg-[#A9927D]/10 px-2.5 py-0.5 text-xs font-black text-[#10202D]">
+                    REF: {property.code || "ALM"}
+                  </div>
+                  <p className="text-[10px] text-gray-500 font-bold mt-0.5">
+                    صفحة 2 من 2
+                  </p>
+                </div>
+              </div>
+
               {/* 5. Property Description & Additional Details */}
               {property.description && (
-                <div className="space-y-1.5 text-right">
+                <div className="space-y-1.5 text-right flex-1">
                   <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
                     <FileText className="h-4 w-4 text-[#A9927D]" />
                     تفاصيل ومميزات العقار
                   </h3>
-                  <p className="text-xs sm:text-sm font-medium text-gray-800 leading-relaxed whitespace-pre-line bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <p className="text-xs sm:text-[13.5px] font-semibold text-gray-800 leading-relaxed whitespace-pre-line bg-gray-50/90 p-4 rounded-xl border border-gray-200">
                     {property.description}
                   </p>
                 </div>
               )}
 
               {/* 6. Footer Contact & Dynamic QR Stamps */}
-              <div className="flex items-center justify-between border-t-2 border-[#A9927D]/40 pt-4 text-xs gap-4">
+              <div className="flex items-center justify-between border-t-2 border-[#A9927D]/40 pt-4 text-xs gap-4 mt-auto">
                 <div className="space-y-1 text-right flex-1">
                   <span className="font-bold text-[#10202D] text-xs sm:text-sm block">للحجز والاستفسار المباشر:</span>
                   <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-gray-700 text-xs sm:text-sm font-bold">
