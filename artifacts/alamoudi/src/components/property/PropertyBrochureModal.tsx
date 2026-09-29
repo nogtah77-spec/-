@@ -54,16 +54,50 @@ export function PropertyBrochureModal({
 
     try {
       const element = printRef.current;
-      
-      // Capture element using modern browser SVG foreignObject (supports OKLCH & Tailwind v4 natively)
+
+      // 1. Temporarily enforce exact A4 print canvas dimensions (760px) during capture
+      // This guarantees that whether clicked from an iPhone (375px) or Desktop (1920px),
+      // html-to-image captures the pristine, un-squashed, full-proportioned A4 flyer!
+      const prevWidth = element.style.width;
+      const prevMinWidth = element.style.minWidth;
+      const prevMaxWidth = element.style.maxWidth;
+
+      element.style.width = "760px";
+      element.style.minWidth = "760px";
+      element.style.maxWidth = "760px";
+
+      // Enforce 4-columns layout and non-wrapping header row on print canvas
+      const headerRow = element.querySelector("[data-header-row]");
+      const specsGrid = element.querySelector("[data-specs-grid]");
+
+      if (headerRow) headerRow.classList.remove("flex-wrap");
+      if (specsGrid) {
+        specsGrid.classList.remove("grid-cols-2");
+        specsGrid.classList.add("grid-cols-4");
+      }
+
+      // Small tick for DOM reflow
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      // 2. Capture element using modern browser SVG foreignObject (supports OKLCH & Tailwind v4 natively)
       const dataUrl = await toJpeg(element, {
-        quality: 0.95,
+        quality: 0.96,
         backgroundColor: "#ffffff",
         pixelRatio: 2,
         cacheBust: true,
       });
 
-      // Dynamically resolve jsPDF constructor
+      // 3. Immediately restore original styles and classes
+      element.style.width = prevWidth;
+      element.style.minWidth = prevMinWidth;
+      element.style.maxWidth = prevMaxWidth;
+      if (headerRow) headerRow.classList.add("flex-wrap");
+      if (specsGrid) {
+        specsGrid.classList.remove("grid-cols-4");
+        specsGrid.classList.add("grid-cols-2");
+      }
+
+      // 4. Dynamically resolve jsPDF constructor
       const PDFClass = (jsPDF as any).jsPDF || jsPDF;
       const pdf = new PDFClass({
         orientation: "portrait",
@@ -73,31 +107,39 @@ export function PropertyBrochureModal({
 
       const pdfWidth = pdf.internal.pageSize.getWidth(); // 210mm
       const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
-      const margin = 10; // 10mm margins
-      const targetWidth = pdfWidth - margin * 2;
+      const margin = 8; // 8mm margins
+      const maxW = pdfWidth - margin * 2; // 194mm
+      const maxH = pdfHeight - margin * 2; // 281mm
 
-      // Calculate aspect ratio
+      // Load captured image to get exact natural dimensions
       const img = new Image();
       img.src = dataUrl;
       await new Promise((resolve) => {
         img.onload = resolve;
       });
 
-      const targetHeight = (img.height * targetWidth) / img.width;
+      // 5. Strict Aspect Ratio Preservation (Zero Squashing Guaranteed)
+      const imgRatio = img.width / img.height;
 
-      // Position vertically centered if it fits within A4
-      let yOffset = margin;
-      if (targetHeight < pdfHeight - margin * 2) {
-        yOffset = (pdfHeight - targetHeight) / 2;
+      let renderW = maxW;
+      let renderH = maxW / imgRatio;
+
+      if (renderH > maxH) {
+        renderH = maxH;
+        renderW = maxH * imgRatio;
       }
+
+      // Center perfectly on A4 page with balanced margins
+      const xOffset = margin + (maxW - renderW) / 2;
+      const yOffset = margin + (maxH - renderH) / 2;
 
       pdf.addImage(
         dataUrl,
         "JPEG",
-        margin,
+        xOffset,
         yOffset,
-        targetWidth,
-        Math.min(targetHeight, pdfHeight - margin * 2)
+        renderW,
+        renderH
       );
 
       const sanitizedCode = (property.code || property.title || "property").replace(/[\/\\:*?"<>|]/g, "_");
@@ -115,6 +157,16 @@ export function PropertyBrochureModal({
         variant: "destructive",
       });
     } finally {
+      // Safety cleanup in case of error
+      if (printRef.current) {
+        const headerRow = printRef.current.querySelector("[data-header-row]");
+        const specsGrid = printRef.current.querySelector("[data-specs-grid]");
+        if (headerRow) headerRow.classList.add("flex-wrap");
+        if (specsGrid) {
+          specsGrid.classList.remove("grid-cols-4");
+          specsGrid.classList.add("grid-cols-2");
+        }
+      }
       setDownloading(false);
     }
   };
@@ -306,7 +358,7 @@ export function PropertyBrochureModal({
             </div>
 
             {/* 2. Main Title & Golden Price Card */}
-            <div className="flex flex-wrap items-start justify-between gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
+            <div data-header-row className="flex flex-wrap items-start justify-between gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
               <div className="space-y-2 max-w-lg">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-block rounded-md bg-[#10202D] px-2.5 py-0.5 text-xs font-bold text-white">
@@ -382,7 +434,7 @@ export function PropertyBrochureModal({
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 text-right">
                 المواصفات والبيانات الأساسية
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm text-right">
+              <div data-specs-grid className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm text-right">
                 {displaySpecs.map((spec) => {
                   const IconComp = spec.icon;
                   return (
