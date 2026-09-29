@@ -1,11 +1,11 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   FileDown, Printer, Download, MapPin, Bed, Bath, Square, Building2,
   Phone, Mail, Layers, Compass, Car, Sparkles, CheckCircle2, ShieldCheck, Loader2,
-  Eye, Crown, Shirt
+  Eye, Crown, Shirt, FileText
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { Property, Region, PropertyType, type QrCodeItem } from "@/context/DataContext";
@@ -44,60 +44,110 @@ export function PropertyBrochureModal({
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
 
+  // ── Image Preloading System (Guarantees photos appear on mobile & in PDF) ──
+  const [loadedImages, setLoadedImages] = useState<string[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const imagesLoadingPromise = useRef<Promise<any> | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const rawImages = property.images && property.images.length > 0 ? property.images.slice(0, 3) : [];
+    if (rawImages.length === 0) {
+      setLoadedImages([]);
+      return;
+    }
+
+    setImagesLoading(true);
+
+    const promise = Promise.all(
+      rawImages.map((src) => {
+        return new Promise<string>((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.naturalWidth || img.width;
+              canvas.height = img.naturalHeight || img.height;
+              const ctx = canvas.getContext("2d");
+              if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+                resolve(dataUrl);
+                return;
+              }
+            } catch {
+              // Canvas tainted fallback
+            }
+            resolve(src);
+          };
+          img.onerror = () => resolve(src);
+          img.src = src;
+        });
+      })
+    ).then((resolved) => {
+      if (isMounted) {
+        setLoadedImages(resolved);
+        setImagesLoading(false);
+      }
+    });
+
+    imagesLoadingPromise.current = promise;
+
+    return () => {
+      isMounted = false;
+    };
+  }, [property.images]);
+
   const handlePrint = () => {
     window.print();
   };
 
+  // ── Luxury PDF Exporter (Isolated Off-Screen Canvas & Zero Squashing) ───────
   const handleDownloadPdf = async () => {
     if (!printRef.current || downloading) return;
     setDownloading(true);
 
     try {
+      // 1. Wait for images to finish preloading if still in flight
+      if (imagesLoadingPromise.current) {
+        await Promise.race([
+          imagesLoadingPromise.current,
+          new Promise((r) => setTimeout(r, 2500)),
+        ]);
+      }
+
       const element = printRef.current;
 
-      // 1. Temporarily enforce exact A4 print canvas dimensions (760px) during capture
-      // This guarantees that whether clicked from an iPhone (375px) or Desktop (1920px),
-      // html-to-image captures the pristine, un-squashed, full-proportioned A4 flyer!
-      const prevWidth = element.style.width;
-      const prevMinWidth = element.style.minWidth;
-      const prevMaxWidth = element.style.maxWidth;
+      // 2. Clone to an isolated off-screen sandbox.
+      // CRITICAL: The visible element in the dialog is NEVER mutated or resized,
+      // so the user's mobile screen and buttons NEVER jump or stretch!
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.id = "printable-brochure-export-clone";
+      clone.style.width = "794px";
+      clone.style.minWidth = "794px";
+      clone.style.maxWidth = "794px";
+      clone.style.position = "fixed";
+      clone.style.top = "0";
+      clone.style.left = "0";
+      clone.style.zIndex = "-9999";
+      clone.style.opacity = "1";
+      clone.style.pointerEvents = "none";
+      document.body.appendChild(clone);
 
-      element.style.width = "760px";
-      element.style.minWidth = "760px";
-      element.style.maxWidth = "760px";
-
-      // Enforce 4-columns layout and non-wrapping header row on print canvas
-      const headerRow = element.querySelector("[data-header-row]");
-      const specsGrid = element.querySelector("[data-specs-grid]");
-
+      // Enforce 4-columns layout and non-wrapping header row on the export clone
+      const headerRow = clone.querySelector("[data-header-row]");
+      const specsGrid = clone.querySelector("[data-specs-grid]");
       if (headerRow) headerRow.classList.remove("flex-wrap");
       if (specsGrid) {
         specsGrid.classList.remove("grid-cols-2");
         specsGrid.classList.add("grid-cols-4");
       }
 
-      // Small tick for DOM reflow
+      // Small reflow tick
       await new Promise((resolve) => setTimeout(resolve, 80));
 
-      // 2. Capture element using modern browser SVG foreignObject (supports OKLCH & Tailwind v4 natively)
-      const dataUrl = await toJpeg(element, {
-        quality: 0.96,
-        backgroundColor: "#ffffff",
-        pixelRatio: 2,
-        cacheBust: true,
-      });
-
-      // 3. Immediately restore original styles and classes
-      element.style.width = prevWidth;
-      element.style.minWidth = prevMinWidth;
-      element.style.maxWidth = prevMaxWidth;
-      if (headerRow) headerRow.classList.add("flex-wrap");
-      if (specsGrid) {
-        specsGrid.classList.remove("grid-cols-4");
-        specsGrid.classList.add("grid-cols-2");
-      }
-
-      // 4. Dynamically resolve jsPDF constructor
+      // 3. Dynamically resolve jsPDF constructor
       const PDFClass = (jsPDF as any).jsPDF || jsPDF;
       const pdf = new PDFClass({
         orientation: "portrait",
@@ -111,43 +161,107 @@ export function PropertyBrochureModal({
       const maxW = pdfWidth - margin * 2; // 194mm
       const maxH = pdfHeight - margin * 2; // 281mm
 
-      // Load captured image to get exact natural dimensions
-      const img = new Image();
-      img.src = dataUrl;
-      await new Promise((resolve) => {
-        img.onload = resolve;
-      });
+      // Check if document fits in 1 page or requires intelligent section splitting
+      const totalHeight = clone.scrollHeight;
 
-      // 5. Strict Aspect Ratio Preservation (Zero Squashing Guaranteed)
-      const imgRatio = img.width / img.height;
+      if (totalHeight <= 1180) {
+        // ── Single Page Mode (Standard listings, 100% complete on 1 A4 page) ──
+        const dataUrl = await toJpeg(clone, {
+          quality: 0.96,
+          backgroundColor: "#ffffff",
+          pixelRatio: 2,
+          cacheBust: true,
+        });
 
-      let renderW = maxW;
-      let renderH = maxW / imgRatio;
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
 
-      if (renderH > maxH) {
-        renderH = maxH;
-        renderW = maxH * imgRatio;
+        const imgRatio = img.width / img.height;
+        let renderW = maxW;
+        let renderH = maxW / imgRatio;
+
+        if (renderH > maxH) {
+          renderH = maxH;
+          renderW = maxH * imgRatio;
+        }
+
+        const xOffset = margin + (maxW - renderW) / 2;
+        const yOffset = margin + (maxH - renderH) / 2;
+
+        pdf.addImage(dataUrl, "JPEG", xOffset, yOffset, renderW, renderH);
+      } else {
+        // ── Clean Multi-Page Mode (Never slices tables or cards in half) ──
+        // Page 1: Header, Photos, and Specifications Matrix (Complete)
+        const part1 = clone.querySelector("[data-section='part-1']") as HTMLElement;
+        const part2 = clone.querySelector("[data-section='part-2']") as HTMLElement;
+
+        if (part1 && part2) {
+          const dataUrl1 = await toJpeg(part1, {
+            quality: 0.96,
+            backgroundColor: "#ffffff",
+            pixelRatio: 2,
+          });
+
+          const img1 = new Image();
+          img1.src = dataUrl1;
+          await new Promise((resolve) => { img1.onload = resolve; });
+
+          const r1 = img1.width / img1.height;
+          let w1 = maxW;
+          let h1 = maxW / r1;
+          if (h1 > maxH) { h1 = maxH; w1 = maxH * r1; }
+          const x1 = margin + (maxW - w1) / 2;
+          const y1 = margin + (maxH - h1) / 2;
+
+          pdf.addImage(dataUrl1, "JPEG", x1, y1, w1, h1);
+
+          // Page 2: Description, Additional Details, and Contact Footer
+          pdf.addPage();
+
+          const dataUrl2 = await toJpeg(part2, {
+            quality: 0.96,
+            backgroundColor: "#ffffff",
+            pixelRatio: 2,
+          });
+
+          const img2 = new Image();
+          img2.src = dataUrl2;
+          await new Promise((resolve) => { img2.onload = resolve; });
+
+          const r2 = img2.width / img2.height;
+          let w2 = maxW;
+          let h2 = maxW / r2;
+          if (h2 > maxH) { h2 = maxH; w2 = maxH * r2; }
+          const x2 = margin + (maxW - w2) / 2;
+          const y2 = margin + (maxH - h2) / 2;
+
+          pdf.addImage(dataUrl2, "JPEG", x2, y2, w2, h2);
+        } else {
+          // Fallback single page with aspect ratio guarantee
+          const dataUrl = await toJpeg(clone, { quality: 0.96, backgroundColor: "#ffffff", pixelRatio: 2 });
+          const img = new Image();
+          img.src = dataUrl;
+          await new Promise((resolve) => { img.onload = resolve; });
+          const r = img.width / img.height;
+          let w = maxW;
+          let h = maxW / r;
+          if (h > maxH) { h = maxH; w = maxH * r; }
+          pdf.addImage(dataUrl, "JPEG", margin + (maxW - w) / 2, margin + (maxH - h) / 2, w, h);
+        }
       }
 
-      // Center perfectly on A4 page with balanced margins
-      const xOffset = margin + (maxW - renderW) / 2;
-      const yOffset = margin + (maxH - renderH) / 2;
-
-      pdf.addImage(
-        dataUrl,
-        "JPEG",
-        xOffset,
-        yOffset,
-        renderW,
-        renderH
-      );
+      // Cleanup clone from DOM
+      clone.remove();
 
       const sanitizedCode = (property.code || property.title || "property").replace(/[\/\\:*?"<>|]/g, "_");
       pdf.save(`بروشور_عقار_${sanitizedCode}.pdf`);
 
       toast({
         title: "تم تحميل ملف الـ PDF بنجاح 📄✨",
-        description: `تم حفظ البروشور باسم: بروشور_عقار_${sanitizedCode}.pdf`,
+        description: `تم حفظ البروشور الفاخر باسم: بروشور_عقار_${sanitizedCode}.pdf`,
       });
     } catch (err: any) {
       console.error("PDF generation error:", err);
@@ -157,21 +271,14 @@ export function PropertyBrochureModal({
         variant: "destructive",
       });
     } finally {
-      // Safety cleanup in case of error
-      if (printRef.current) {
-        const headerRow = printRef.current.querySelector("[data-header-row]");
-        const specsGrid = printRef.current.querySelector("[data-specs-grid]");
-        if (headerRow) headerRow.classList.add("flex-wrap");
-        if (specsGrid) {
-          specsGrid.classList.remove("grid-cols-4");
-          specsGrid.classList.add("grid-cols-2");
-        }
-      }
+      // Clean up clone if it remained due to error
+      const strayClone = document.getElementById("printable-brochure-export-clone");
+      if (strayClone) strayClone.remove();
       setDownloading(false);
     }
   };
 
-  const images = property.images && property.images.length > 0 ? property.images.slice(0, 4) : [];
+  const displayImages = loadedImages.length > 0 ? loadedImages : (property.images?.slice(0, 3) || []);
 
   const getListingTypeArabic = (type?: string) => {
     if (type === "rent") return "للإيجار";
@@ -249,7 +356,7 @@ export function PropertyBrochureModal({
     { key: "view", label: "الإطلالة (الفيو)", value: property.view && property.view.trim() ? property.view : null, icon: Eye },
     { key: "master", label: "غرفة ماستر", value: masterDisplay, icon: Crown },
     { key: "dressing", label: "غرفة دريسنج", value: dressingDisplay, icon: Shirt },
-    { key: "elevator", label: "المصعد", value: elevatorDisplay, icon: Sparkles },
+    { key: "elevator", label: "المصعد", value: elevatorDisplay, icon: ShieldCheck },
     { key: "parking", label: "الجراج", value: parkingDisplay, icon: Car },
     { key: "additionalFeatures", label: "المميزات الإضافية", value: property.additionalFeatures && property.additionalFeatures.trim() ? property.additionalFeatures : null, icon: CheckCircle2 },
   ];
@@ -296,7 +403,7 @@ export function PropertyBrochureModal({
             <Button
               onClick={handleDownloadPdf}
               disabled={downloading}
-              className="flex-1 sm:flex-initial gap-2 rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-md"
+              className="flex-1 sm:flex-initial gap-2 rounded-xl bg-accent text-accent-foreground hover:bg-accent/90 font-bold shadow-md cursor-pointer"
             >
               {downloading ? (
                 <>
@@ -315,7 +422,7 @@ export function PropertyBrochureModal({
               variant="outline"
               onClick={handlePrint}
               disabled={downloading}
-              className="gap-2 rounded-xl border-border/80 text-foreground hover:bg-muted font-semibold"
+              className="gap-2 rounded-xl border-border/80 text-foreground hover:bg-muted font-semibold cursor-pointer"
             >
               <Printer className="h-4 w-4 text-accent" />
               <span>طباعة</span>
@@ -331,191 +438,206 @@ export function PropertyBrochureModal({
             className="w-full max-w-[760px] bg-white text-[#10202D] p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-sm space-y-5 print:p-0 print:border-none print:shadow-none font-sans"
             style={{ direction: "rtl" }}
           >
-            {/* 1. Header with Golden Brand Banner */}
-            <div className="flex items-center justify-between border-b-2 border-[#A9927D]/40 pb-4">
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-[#10202D] flex items-center justify-center text-[#A9927D] font-black text-sm">
-                    ع
+            {/* ── PART 1: Hero, Photos & Complete Specifications Matrix ────── */}
+            <div data-section="part-1" className="space-y-4">
+              {/* 1. Header with Golden Brand Banner */}
+              <div className="flex items-center justify-between border-b-2 border-[#A9927D]/40 pb-4">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-[#10202D] flex items-center justify-center text-[#A9927D] font-black text-base">
+                      ع
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black tracking-wide text-[#10202D]">
+                      {companyName}
+                    </h2>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-black tracking-wide text-[#10202D]">
-                    {companyName}
-                  </h2>
+                  <p className="text-[11px] font-bold text-[#A9927D] tracking-wider uppercase pr-11">
+                    ALAMOUDI REAL ESTATE & INVESTMENT
+                  </p>
                 </div>
-                <p className="text-[11px] font-bold text-[#A9927D] tracking-wider uppercase pr-10">
-                  ALAMOUDI REAL ESTATE & INVESTMENT
-                </p>
+
+                <div className="text-left" dir="ltr">
+                  <div className="inline-block rounded-xl border border-[#A9927D]/40 bg-[#A9927D]/10 px-3.5 py-1 text-xs sm:text-sm font-black text-[#10202D]">
+                    REF: {property.code || "ALM"}
+                  </div>
+                  <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    تاريخ الإصدار: {new Date().toLocaleDateString("ar-SA-u-nu-latn")}
+                  </p>
+                </div>
               </div>
 
-              <div className="text-left" dir="ltr">
-                <div className="inline-block rounded-xl border border-[#A9927D]/40 bg-[#A9927D]/10 px-3 py-1 text-xs font-black text-[#10202D]">
-                  REF: {property.code || "ALM"}
-                </div>
-                <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  تاريخ الإصدار: {new Date().toLocaleDateString("ar-SA-u-nu-latn")}
-                </p>
-              </div>
-            </div>
-
-            {/* 2. Main Title & Golden Price Card */}
-            <div data-header-row className="flex flex-wrap items-start justify-between gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
-              <div className="space-y-2 max-w-lg">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-block rounded-md bg-[#10202D] px-2.5 py-0.5 text-xs font-bold text-white">
-                    {categoryLabel}
-                  </span>
-                  <span className="inline-block rounded-md bg-[#A9927D] px-2.5 py-0.5 text-xs font-bold text-[#10202D]">
-                    {getListingTypeArabic(property.listingType)}
-                  </span>
-                  {propertyType && (
-                    <span className="inline-block rounded-md bg-gray-200 px-2.5 py-0.5 text-xs font-bold text-gray-800">
-                      {propertyType.name}
+              {/* 2. Main Title & Golden Price Card */}
+              <div data-header-row className="flex flex-wrap items-start justify-between gap-4 bg-gray-50/80 p-4 rounded-xl border border-gray-100">
+                <div className="space-y-2 max-w-lg">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-block rounded-md bg-[#10202D] px-2.5 py-0.5 text-xs font-bold text-white">
+                      {categoryLabel}
                     </span>
-                  )}
-                  {region && (
-                    <span className="flex items-center gap-1 text-xs text-gray-600 font-semibold">
-                      <MapPin className="h-3.5 w-3.5 text-[#A9927D]" />
-                      {region.name} {property.subArea ? `- ${property.subArea}` : ""}
+                    <span className="inline-block rounded-md bg-[#A9927D] px-2.5 py-0.5 text-xs font-bold text-[#10202D]">
+                      {getListingTypeArabic(property.listingType)}
                     </span>
-                  )}
+                    {propertyType && (
+                      <span className="inline-block rounded-md bg-gray-200 px-2.5 py-0.5 text-xs font-bold text-gray-800">
+                        {propertyType.name}
+                      </span>
+                    )}
+                    {region && (
+                      <span className="flex items-center gap-1 text-xs text-gray-600 font-bold">
+                        <MapPin className="h-3.5 w-3.5 text-[#A9927D]" />
+                        {region.name} {property.subArea ? `- ${property.subArea}` : ""}
+                      </span>
+                    )}
+                  </div>
+
+                  <h1 className="text-xl sm:text-2xl font-black text-[#10202D] leading-snug">
+                    {property.title}
+                  </h1>
                 </div>
 
-                <h1 className="text-lg sm:text-xl font-extrabold text-[#10202D] leading-snug">
-                  {property.title}
-                </h1>
-              </div>
-
-              <div className="rounded-xl border border-[#A9927D]/40 bg-white p-3 text-left shadow-sm min-w-[150px]" dir="ltr">
-                <span className="block text-[10px] uppercase tracking-wider text-gray-500 font-bold text-right">
-                  السعر المطلوب
-                </span>
-                <div className="text-right mt-0.5">
-                  <span className="text-xl sm:text-2xl font-black text-[#10202D]">
-                    {formatNumber(property.price)}
+                <div className="rounded-xl border border-[#A9927D]/40 bg-white p-3 text-left shadow-sm min-w-[155px]" dir="ltr">
+                  <span className="block text-[11px] uppercase tracking-wider text-gray-500 font-bold text-right">
+                    السعر المطلوب
                   </span>
-                  <span className="text-xs font-bold text-[#A9927D] mr-1">ج.م</span>
+                  <div className="text-right mt-0.5">
+                    <span className="text-2xl sm:text-3xl font-black text-[#10202D]">
+                      {formatNumber(property.price)}
+                    </span>
+                    <span className="text-xs font-bold text-[#A9927D] mr-1">ج.م</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 3. Photo Showcase Grid */}
-            {images.length > 0 && (
-              <div className="grid grid-cols-3 gap-2.5">
-                <div className="col-span-2 overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
-                  <img
-                    src={images[0]}
-                    alt={property.title}
-                    className="h-full w-full object-cover"
-                    crossOrigin="anonymous"
-                  />
-                </div>
-                <div className="grid grid-rows-2 gap-2.5">
-                  {images.slice(1, 3).map((img, i) => (
-                    <div key={i} className="overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
-                      <img
-                        src={img}
-                        alt={`${property.title} - ${i + 2}`}
-                        className="h-full w-full object-cover"
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                  ))}
-                  {images.length === 2 && (
-                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center p-2 text-center text-gray-400">
-                      <Building2 className="h-8 w-8 text-gray-300" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* 4. Specifications Matrix (Dynamic & Pure Data Reflection) */}
-            <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3 text-right">
-                المواصفات والبيانات الأساسية
-              </h3>
-              <div data-specs-grid className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs sm:text-sm text-right">
-                {displaySpecs.map((spec) => {
-                  const IconComp = spec.icon;
-                  return (
-                    <div
-                      key={spec.key}
-                      className="flex items-center gap-2 p-2.5 rounded-lg bg-white border border-gray-200 shadow-xs min-h-[54px]"
-                    >
-                      <IconComp className="h-4 w-4 text-[#A9927D] flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <span className="block text-[10px] text-gray-500 font-medium truncate">{spec.label}</span>
-                        <span className="font-bold text-[#10202D] block truncate text-xs sm:text-sm mt-0.5">
-                          {spec.value}
-                        </span>
+              {/* 3. Photo Showcase Grid (Preloaded & Resilient) */}
+              {displayImages.length > 0 && (
+                <div className="relative grid grid-cols-3 gap-2.5">
+                  {imagesLoading && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10 rounded-xl">
+                      <div className="flex items-center gap-2 bg-[#10202D] text-[#A9927D] px-3.5 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>جاري تحميل الصور...</span>
                       </div>
                     </div>
-                  );
-                })}
+                  )}
+                  <div className="col-span-2 overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
+                    <img
+                      src={displayImages[0]}
+                      alt={property.title}
+                      className="h-full w-full object-cover"
+                      crossOrigin="anonymous"
+                    />
+                  </div>
+                  <div className="grid grid-rows-2 gap-2.5">
+                    {displayImages.slice(1, 3).map((img, i) => (
+                      <div key={i} className="overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
+                        <img
+                          src={img}
+                          alt={`${property.title} - ${i + 2}`}
+                          className="h-full w-full object-cover"
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                    ))}
+                    {displayImages.length === 2 && (
+                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center p-2 text-center text-gray-400">
+                        <Building2 className="h-8 w-8 text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Specifications Matrix (Dynamic & Pure Data Reflection) */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4">
+                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-600 mb-3 text-right">
+                  المواصفات والبيانات الأساسية
+                </h3>
+                <div data-specs-grid className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-right">
+                  {displaySpecs.map((spec) => {
+                    const IconComp = spec.icon;
+                    return (
+                      <div
+                        key={spec.key}
+                        className="flex items-center gap-2.5 p-2.5 rounded-lg bg-white border border-gray-200 shadow-xs min-h-[58px]"
+                      >
+                        <IconComp className="h-4.5 w-4.5 text-[#A9927D] flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <span className="block text-[11px] sm:text-xs text-gray-500 font-bold truncate">{spec.label}</span>
+                          <span className="font-black text-[#10202D] block truncate text-xs sm:text-sm mt-0.5">
+                            {spec.value}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* 5. Property Description & Additional Details */}
-            {property.description && (
-              <div className="space-y-1.5 text-right">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                  تفاصيل ومميزات العقار
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-700 leading-relaxed whitespace-pre-line bg-gray-50 p-3.5 rounded-xl border border-gray-200">
-                  {property.description}
-                </p>
-              </div>
-            )}
-
-            {/* 6. Footer Contact & Dynamic QR Stamps */}
-            <div className="flex items-center justify-between border-t-2 border-[#A9927D]/40 pt-4 text-xs gap-4">
-              <div className="space-y-1 text-right flex-1">
-                <span className="font-bold text-[#10202D] block">للحجز والاستفسار المباشر:</span>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600 font-semibold">
-                  <span className="flex items-center gap-1.5" dir="ltr">
-                    <Phone className="h-3.5 w-3.5 text-[#A9927D]" /> {phone}
-                  </span>
-                  <span className="flex items-center gap-1.5" dir="ltr">
-                    <WhatsAppIcon className="h-3.5 w-3.5 fill-[#A9927D]" /> {whatsapp}
-                  </span>
-                  <span className="flex items-center gap-1.5" dir="ltr">
-                    <Mail className="h-3.5 w-3.5 text-[#A9927D]" /> {email}
-                  </span>
+            {/* ── PART 2: Description, Additional Details & Contact Footer ── */}
+            <div data-section="part-2" className="space-y-4 pt-2">
+              {/* 5. Property Description & Additional Details */}
+              {property.description && (
+                <div className="space-y-1.5 text-right">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-[#A9927D]" />
+                    تفاصيل ومميزات العقار
+                  </h3>
+                  <p className="text-xs sm:text-sm font-medium text-gray-800 leading-relaxed whitespace-pre-line bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    {property.description}
+                  </p>
                 </div>
-              </div>
+              )}
 
-              {/* Dynamic QR Codes Stamp for Brochure (Compact & Professional) */}
-              <div className="flex items-center gap-2.5">
-                {/* 1. Direct Property URL QR */}
-                <div className="flex flex-col items-center text-center">
-                  <QrCodeView
-                    url={propertyUrl}
-                    type="url"
-                    size={46}
-                    alt="رابط صفحة العقار"
-                    className="p-1 rounded-md border border-[#A9927D]/30 shadow-xs bg-white"
-                  />
-                  <span className="text-[7.5px] sm:text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
-                    امسح لفتح العقار
-                  </span>
-                </div>
-
-                {/* 2. Custom Settings Active PDF QR (if configured) */}
-                {activePdfQrs.slice(0, 1).map((q) => (
-                  <div key={q.id} className="flex flex-col items-center text-center">
-                    <QrCodeView
-                      url={q.url}
-                      imageUrl={q.imageUrl}
-                      type={q.type}
-                      size={46}
-                      alt={q.title}
-                      className="p-1 rounded-md border border-[#A9927D]/30 shadow-xs bg-white"
-                    />
-                    <span className="text-[7.5px] sm:text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
-                      {q.title}
+              {/* 6. Footer Contact & Dynamic QR Stamps */}
+              <div className="flex items-center justify-between border-t-2 border-[#A9927D]/40 pt-4 text-xs gap-4">
+                <div className="space-y-1 text-right flex-1">
+                  <span className="font-bold text-[#10202D] text-xs sm:text-sm block">للحجز والاستفسار المباشر:</span>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-gray-700 text-xs sm:text-sm font-bold">
+                    <span className="flex items-center gap-1.5" dir="ltr">
+                      <Phone className="h-3.5 w-3.5 text-[#A9927D]" /> {phone}
+                    </span>
+                    <span className="flex items-center gap-1.5" dir="ltr">
+                      <WhatsAppIcon className="h-3.5 w-3.5 fill-[#A9927D]" /> {whatsapp}
+                    </span>
+                    <span className="flex items-center gap-1.5" dir="ltr">
+                      <Mail className="h-3.5 w-3.5 text-[#A9927D]" /> {email}
                     </span>
                   </div>
-                ))}
+                </div>
+
+                {/* Dynamic QR Codes Stamp for Brochure (Compact & Professional) */}
+                <div className="flex items-center gap-2.5">
+                  {/* 1. Direct Property URL QR */}
+                  <div className="flex flex-col items-center text-center">
+                    <QrCodeView
+                      url={propertyUrl}
+                      type="url"
+                      size={48}
+                      alt="رابط صفحة العقار"
+                      className="p-1 rounded-md border border-[#A9927D]/30 shadow-xs bg-white"
+                    />
+                    <span className="text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
+                      امسح لفتح العقار
+                    </span>
+                  </div>
+
+                  {/* 2. Custom Settings Active PDF QR (if configured) */}
+                  {activePdfQrs.slice(0, 1).map((q) => (
+                    <div key={q.id} className="flex flex-col items-center text-center">
+                      <QrCodeView
+                        url={q.url}
+                        imageUrl={q.imageUrl}
+                        type={q.type}
+                        size={48}
+                        alt={q.title}
+                        className="p-1 rounded-md border border-[#A9927D]/30 shadow-xs bg-white"
+                      />
+                      <span className="text-[8px] text-gray-600 font-bold mt-0.5 whitespace-nowrap">
+                        {q.title}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
