@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
 import { QrCodeView } from "@/components/ui/QrCodeView";
-import { getCardImageUrl } from "@/lib/cloudinaryService";
 
 interface PropertyBrochureModalProps {
   property: Property;
@@ -44,49 +43,6 @@ export function PropertyBrochureModal({
   const printRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const { toast } = useToast();
-
-  // ── Instant Preview Images (Optimized 800px URLs for instant 0ms mobile render) ──
-  const previewImages = useMemo(() => {
-    return (property.images && property.images.length > 0 ? property.images.slice(0, 3) : [])
-      .map(getCardImageUrl)
-      .filter(Boolean);
-  }, [property.images]);
-
-  // ── Background Base64 Cache for PDF Export (100% non-blocking for modal preview) ──
-  const base64ImagesRef = useRef<string[]>([]);
-
-  useEffect(() => {
-    let isMounted = true;
-    if (previewImages.length === 0) {
-      base64ImagesRef.current = [];
-      return;
-    }
-
-    const urlToBase64 = async (url: string): Promise<string> => {
-      try {
-        const res = await fetch(url, { mode: "cors" });
-        const blob = await res.blob();
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve((reader.result as string) || url);
-          reader.onerror = () => resolve(url);
-          reader.readAsDataURL(blob);
-        });
-      } catch {
-        return url;
-      }
-    };
-
-    Promise.all(previewImages.map(urlToBase64)).then((b64List) => {
-      if (isMounted) {
-        base64ImagesRef.current = b64List;
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [previewImages]);
 
   const getListingTypeArabic = (type?: string) => {
     if (type === "rent") return "للإيجار";
@@ -185,36 +141,15 @@ export function PropertyBrochureModal({
     window.print();
   };
 
-  // ── Luxury PDF Exporter (Isolated Off-Screen Canvas & Zero Squashing) ───────
+  // ── Luxury PDF Exporter (Zero Images, Super Fast, 100% Crisp Vector/HTML) ──
   const handleDownloadPdf = async () => {
     if (!printRef.current || downloading) return;
     setDownloading(true);
 
     try {
-      // 1. Ensure all images are converted to Base64 for the export clone so toJpeg never fails or taints canvas
-      const exportImages =
-        base64ImagesRef.current.length === previewImages.length && base64ImagesRef.current.length > 0
-          ? base64ImagesRef.current
-          : await Promise.all(
-              previewImages.map(async (url) => {
-                try {
-                  const res = await fetch(url, { mode: "cors" });
-                  const blob = await res.blob();
-                  return new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve((reader.result as string) || url);
-                    reader.onerror = () => resolve(url);
-                    reader.readAsDataURL(blob);
-                  });
-                } catch {
-                  return url;
-                }
-              })
-            );
-
       const element = printRef.current;
 
-      // 2. Clone to an isolated off-screen sandbox.
+      // 1. Clone to an isolated off-screen sandbox.
       // CRITICAL: The visible element in the dialog is NEVER mutated or resized,
       // so the user's mobile screen and buttons NEVER jump or stretch!
       const clone = element.cloneNode(true) as HTMLElement;
@@ -239,18 +174,10 @@ export function PropertyBrochureModal({
         specsGrid.classList.add("grid-cols-4");
       }
 
-      // Explicitly set clone images to resolved base64 sources
-      const cloneImages = clone.querySelectorAll("img");
-      exportImages.forEach((src, idx) => {
-        if (cloneImages[idx] && src) {
-          cloneImages[idx].src = src;
-        }
-      });
-
       // Small reflow tick
-      await new Promise((resolve) => setTimeout(resolve, 80));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
-      // 3. Dynamically resolve jsPDF constructor
+      // 2. Dynamically resolve jsPDF constructor
       const PDFClass = (jsPDF as any).jsPDF || jsPDF;
       const pdf = new PDFClass({
         orientation: "portrait",
@@ -265,15 +192,15 @@ export function PropertyBrochureModal({
       const maxH = pdfHeight - margin * 2; // 281mm
 
       // Check whether listing warrants multi-page mode (Deterministic & Content-based)
+      // Without photos, 95%+ of listings easily fit on 1 pristine A4 page!
       const desc = property.description?.trim() || "";
       const lineCount = desc.split("\n").length;
-      const isLongDescription = desc.length > 200 || lineCount > 4;
-      const isLargeSpecs = displaySpecs.length > 8;
-      const hasPhotos = previewImages.length > 0;
+      const isLongDescription = desc.length > 700 || lineCount > 15;
+      const isLargeSpecs = displaySpecs.length > 12;
       const totalHeight = clone.scrollHeight;
 
-      // Deterministic check: If photos exist AND (long description OR large specs OR total height exceeds A4)
-      const isMultiPage = hasPhotos && (isLongDescription || isLargeSpecs || totalHeight > 1050);
+      // Deterministic check:
+      const isMultiPage = isLongDescription || isLargeSpecs || totalHeight > 1080;
 
       if (!isMultiPage) {
         // ── Single Page Mode (Standard listings, 100% complete on 1 A4 page) ──
@@ -549,38 +476,7 @@ export function PropertyBrochureModal({
                 </div>
               </div>
 
-              {/* 3. Photo Showcase Grid (Instant & Lightweight) */}
-              {previewImages.length > 0 && (
-                <div className="grid grid-cols-3 gap-2.5">
-                  <div className="col-span-2 overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
-                    <img
-                      src={previewImages[0]}
-                      alt={property.title}
-                      className="h-full w-full object-cover"
-                      loading="eager"
-                    />
-                  </div>
-                  <div className="grid grid-rows-2 gap-2.5">
-                    {previewImages.slice(1, 3).map((img, i) => (
-                      <div key={i} className="overflow-hidden rounded-xl border border-gray-200 aspect-[16/10] bg-gray-100">
-                        <img
-                          src={img}
-                          alt={`${property.title} - ${i + 2}`}
-                          className="h-full w-full object-cover"
-                          loading="eager"
-                        />
-                      </div>
-                    ))}
-                    {previewImages.length === 2 && (
-                      <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center p-2 text-center text-gray-400">
-                        <Building2 className="h-8 w-8 text-gray-300" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 4. Specifications Matrix (Dynamic & Pure Data Reflection) */}
+              {/* 3. Specifications Matrix (Dynamic & Pure Data Reflection) */}
               <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4">
                 <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-600 mb-3 text-right">
                   المواصفات والبيانات الأساسية
