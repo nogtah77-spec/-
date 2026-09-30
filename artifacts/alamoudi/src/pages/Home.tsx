@@ -601,9 +601,9 @@ export default function Home() {
         {!isFiltering && (
           <>
             {/* ── Featured Properties — VIP Carousel ── */}
-            <section className="py-10 md:py-14 bg-transparent border-b border-border/30 relative z-10">
-              <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <section className="py-10 md:py-14 bg-transparent border-b border-border/30 relative z-10 w-full overflow-hidden">
+              <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 mb-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-0.5 relative inline-block">
                       عقارات مميزة
@@ -614,11 +614,14 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                {featuredProps.length === 0 ? (
-                  <div className="text-center py-10 text-muted-foreground">
-                    <p className="text-sm">لا توجد عقارات مميزة حالياً.</p>
-                  </div>
-                ) : (
+              </div>
+
+              {featuredProps.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <p className="text-sm">لا توجد عقارات مميزة حالياً.</p>
+                </div>
+              ) : (
+                <div className="w-full px-0">
                   <PropertyCarousel
                     properties={featuredProps}
                     size={filters.cardSize}
@@ -631,14 +634,14 @@ export default function Home() {
                     motionSpeed={settings.carouselMotionSpeed}
                     infinite
                   />
-                )}
-              </div>
+                </div>
+              )}
             </section>
 
             {/* ── Latest Properties — Carousel ── */}
-            <section className="py-12 md:py-14 bg-transparent relative z-10">
-              <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
-                <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
+            <section className="py-12 md:py-14 bg-transparent relative z-10 w-full overflow-hidden">
+              <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 mb-8">
+                <div className="flex flex-wrap justify-between items-end gap-4">
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground">
                       أحدث العقارات
@@ -648,7 +651,10 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                {latestProps.length === 0 ? (
+              </div>
+
+              {latestProps.length === 0 ? (
+                <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8">
                   <div className="flex gap-4 overflow-hidden">
                     {[1, 2, 3].map((i) => (
                       <div
@@ -659,27 +665,29 @@ export default function Home() {
                       </div>
                     ))}
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <div className="w-full px-0">
                   <PropertyCarousel
                     properties={latestProps}
                     size={filters.cardSize}
                     layout={filters.viewMode}
                     emphasized
-                     detailsScale="home"
+                    detailsScale="home"
                     autoPlay
                     autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                     motionSpeed={settings.carouselMotionSpeed}
                     infinite
                   />
-                )}
-              </div>
+                </div>
+              )}
             </section>
 
             {/* ── Explore All Properties — grouped by region ── */}
             {propertiesByRegion.length > 0 && (
-              <section className="py-12 md:py-14 bg-transparent relative z-10">
-                <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
-                  <div className="mb-10">
+              <section className="py-12 md:py-14 bg-transparent relative z-10 w-full overflow-hidden">
+                <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 mb-8">
+                  <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground relative inline-block">
                       استكشف جميع العقارات
                       <div className="absolute -bottom-2 right-0 w-12 h-0.5 bg-accent rounded-full" />
@@ -688,11 +696,13 @@ export default function Home() {
                       تصفح عقاراتنا مرتبةً حسب المدينة والمنطقة
                     </p>
                   </div>
+                </div>
 
-                  <div className="space-y-12">
-                    {propertiesByRegion.map(({ id, name, items }) => (
-                      <div key={id}>
-                        <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-3 mb-5">
+                <div className="space-y-12 w-full">
+                  {propertiesByRegion.map(({ id, name, items }) => (
+                    <div key={id} className="w-full">
+                      <div className="w-full max-w-[1720px] mx-auto px-3 sm:px-6 lg:px-8 mb-4">
+                        <div className="flex flex-nowrap items-center justify-between gap-2 sm:gap-3">
                           <div className="flex min-w-0 shrink items-center gap-1.5 sm:gap-2.5">
                             <h3 className="min-w-0 truncate text-lg font-bold text-foreground">
                               {name}
@@ -713,20 +723,22 @@ export default function Home() {
                             </Link>
                           </Button>
                         </div>
+                      </div>
+                      <div className="w-full px-0">
                         <PropertyCarousel
                           properties={items.slice(0, 8)}
-                           size={filters.cardSize}
-                           layout={filters.viewMode}
-                           emphasized
-                           detailsScale="home"
+                          size={filters.cardSize}
+                          layout={filters.viewMode}
+                          emphasized
+                          detailsScale="home"
                           autoPlay
                           autoPlayDelay={(settings.carouselAutoPlayDelay ?? 3.5) * 1000}
                           motionSpeed={settings.carouselMotionSpeed}
                           infinite
                         />
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             )}
