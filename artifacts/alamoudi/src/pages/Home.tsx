@@ -621,7 +621,7 @@ export default function Home() {
                   <p className="text-sm">لا توجد عقارات مميزة حالياً.</p>
                 </div>
               ) : (
-                <div className="w-full px-0">
+                <div className="w-full px-1.5 sm:px-2 md:px-2.5">
                   <PropertyCarousel
                     properties={featuredProps}
                     size={filters.cardSize}
@@ -667,7 +667,7 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className="w-full px-0">
+                <div className="w-full px-1.5 sm:px-2 md:px-2.5">
                   <PropertyCarousel
                     properties={latestProps}
                     size={filters.cardSize}
@@ -724,7 +724,7 @@ export default function Home() {
                           </Button>
                         </div>
                       </div>
-                      <div className="w-full px-0">
+                      <div className="w-full px-1.5 sm:px-2 md:px-2.5">
                         <PropertyCarousel
                           properties={items.slice(0, 8)}
                           size={filters.cardSize}
