@@ -204,7 +204,7 @@ export function PropertyCarousel({
           disabled={!infinite && !canScrollPrev}
           className={cn(
             "carousel-nav-btn carousel-nav-right absolute right-0.5 sm:-right-3.5 top-1/2 -translate-y-1/2 z-20",
-            "w-5.5 sm:w-7 h-14 sm:h-20 rounded-full",
+            "w-5.5 sm:w-7 h-14 sm:h-20 rounded-[7px] sm:rounded-[8px]",
             "bg-background/50 dark:bg-[#101418]/60 hover:bg-background/85 dark:hover:bg-[#161B21]/90",
             "border border-[#C5A059]/45 hover:border-[#C5A059]",
             "text-[#C5A059] shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/40",
@@ -228,7 +228,7 @@ export function PropertyCarousel({
           disabled={!infinite && !canScrollNext}
           className={cn(
             "carousel-nav-btn carousel-nav-left absolute left-0.5 sm:-left-3.5 top-1/2 -translate-y-1/2 z-20",
-            "w-5.5 sm:w-7 h-14 sm:h-20 rounded-full",
+            "w-5.5 sm:w-7 h-14 sm:h-20 rounded-[7px] sm:rounded-[8px]",
             "bg-background/50 dark:bg-[#101418]/60 hover:bg-background/85 dark:hover:bg-[#161B21]/90",
             "border border-[#C5A059]/45 hover:border-[#C5A059]",
             "text-[#C5A059] shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/40",
@@ -245,11 +245,11 @@ export function PropertyCarousel({
       )}
 
       <div ref={emblaRef} className="overflow-hidden py-3">
-        <div className="flex gap-3 sm:gap-4 -mr-3 sm:-mr-4">
+        <div className="flex gap-2.5 sm:gap-4 -mr-2.5 sm:-mr-4">
           {properties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 pr-3 sm:pr-4 w-[84vw] sm:w-[58vw] md:w-[380px] lg:w-[420px]"
+              className="flex-shrink-0 pr-2.5 sm:pr-4 w-[90vw] sm:w-[48vw] md:w-[380px] lg:w-[415px]"
             >
               <PropertyCard
                 property={property}

@@ -343,7 +343,7 @@ export default function Home() {
       <main className="flex-1 relative bg-transparent">
 
         {/* ── 3 Action Buttons — Luxury Quick Actions ── */}
-        <div className="container px-2 sm:px-6 pt-3 sm:pt-5 pb-3 sm:pb-4">
+        <div className="w-full max-w-[1720px] mx-auto px-2 sm:px-6 lg:px-8 pt-3 sm:pt-5 pb-3 sm:pb-4">
           <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 max-w-4xl mx-auto">
             <Link
               href="/add-property"
@@ -413,7 +413,7 @@ export default function Home() {
         )}
 
         {/* ── Search / Filter Widget ── */}
-        <div className="container px-3 sm:px-6">
+        <div className="w-full max-w-[1720px] mx-auto px-2 sm:px-6 lg:px-8">
           <PropertyFilterPanel
             filters={filters}
             regions={regions}
@@ -429,7 +429,7 @@ export default function Home() {
         {/* ── Filter / Search Results ── */}
         {isFiltering && (
           <section className="py-10 md:py-12 bg-transparent relative z-10">
-            <div className="container px-3 sm:px-6">
+            <div className="w-full max-w-[1720px] mx-auto px-2 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4 mb-7">
                 <div>
                   <p className="text-accent text-xs font-medium tracking-widest mb-1 uppercase">
@@ -479,7 +479,7 @@ export default function Home() {
         {/* ── TikTok Section ── */}
         {!isFiltering && isTiktokSectionVisible && (
           <section className="py-4 md:py-5 bg-transparent relative z-10">
-              <div className="container px-3 sm:px-6">
+            <div className="w-full max-w-[1720px] mx-auto px-2 sm:px-6 lg:px-8">
               <div className="max-w-3xl mx-auto">
                 <div className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)] p-3 sm:p-4">
                   {/* Top Ambient Highlight Line */}
@@ -602,7 +602,7 @@ export default function Home() {
           <>
             {/* ── Featured Properties — VIP Carousel ── */}
             <section className="py-10 md:py-14 bg-transparent border-b border-border/30 relative z-10">
-              <div className="container px-6">
+              <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-0.5 relative inline-block">
@@ -637,7 +637,7 @@ export default function Home() {
 
             {/* ── Latest Properties — Carousel ── */}
             <section className="py-12 md:py-14 bg-transparent relative z-10">
-              <div className="container px-6">
+              <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
                 <div className="flex flex-wrap justify-between items-end gap-4 mb-8">
                   <div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground">
@@ -678,7 +678,7 @@ export default function Home() {
             {/* ── Explore All Properties — grouped by region ── */}
             {propertiesByRegion.length > 0 && (
               <section className="py-12 md:py-14 bg-transparent relative z-10">
-                <div className="container px-6">
+                <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
                   <div className="mb-10">
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground relative inline-block">
                       استكشف جميع العقارات
@@ -733,7 +733,7 @@ export default function Home() {
 
             {/* ── Finishing Services Preview ── */}
             <section className="py-12 md:py-14 bg-transparent relative z-10">
-              <div className="container px-6">
+              <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
                 <div className="text-center mb-5">
                   <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                     خدمات التشطيبات
@@ -762,7 +762,7 @@ export default function Home() {
 
             {/* ── Add Property CTA ── */}
             <section className="py-12 md:py-14 bg-transparent relative z-10">
-              <div className="container px-6">
+              <div className="w-full max-w-[1720px] mx-auto px-2.5 sm:px-6 lg:px-8">
                 <div className="relative overflow-hidden max-w-2xl mx-auto text-center rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)] p-6 sm:p-8">
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
                   <div className="w-14 h-14 bg-[#C5A059]/15 border border-[#C5A059]/30 rounded-[10px] flex items-center justify-center text-[#C5A059] mx-auto mb-4 backdrop-blur-md">

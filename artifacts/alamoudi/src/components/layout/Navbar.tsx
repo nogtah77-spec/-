@@ -95,7 +95,7 @@ export function Navbar() {
       )}
     >
       {/* Desktop */}
-      <div className="container h-16 hidden md:flex items-center justify-between px-4 lg:px-6 gap-3">
+      <div className="w-full max-w-[1720px] mx-auto h-16 hidden md:flex items-center justify-between px-4 lg:px-8 gap-3">
         {/* Brand — far right (RTL start) */}
         <div className="flex justify-start items-center flex-shrink-0">
           <Link href="/" data-testid="link-brand">
@@ -232,7 +232,7 @@ export function Navbar() {
       </div>
 
       {/* Mobile */}
-      <div className="container h-14 flex md:hidden items-center justify-between px-4">
+      <div className="w-full max-w-[1720px] mx-auto h-14 flex md:hidden items-center justify-between px-3 sm:px-4">
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" data-testid="button-mobile-menu">
