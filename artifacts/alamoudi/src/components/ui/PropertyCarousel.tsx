@@ -205,9 +205,9 @@ export function PropertyCarousel({
           className={cn(
             "carousel-nav-btn carousel-nav-right absolute right-0.5 sm:-right-4 top-1/2 -translate-y-1/2 z-20",
             "w-8 h-8 sm:w-10 sm:h-10 rounded-full",
-            "bg-background/90 dark:bg-[#12161A]/90 hover:bg-background dark:hover:bg-[#1A2026]",
-            "border border-[#C5A059]/40 hover:border-[#C5A059]",
-            "text-[#C5A059] shadow-lg shadow-black/25 hover:shadow-black/40",
+            "bg-background/60 dark:bg-[#101418]/65 hover:bg-background/90 dark:hover:bg-[#161B21]/90",
+            "border border-[#C5A059]/50 hover:border-[#C5A059]",
+            "text-[#C5A059] shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/40",
             "flex items-center justify-center backdrop-blur-md",
             "transition-all duration-200 hover:scale-110 active:scale-95",
             "cursor-pointer disabled:opacity-20 disabled:pointer-events-none select-none touch-manipulation",
@@ -216,7 +216,7 @@ export function PropertyCarousel({
           aria-label="السابق (تمرير لليمين)"
           title="السابق"
         >
-          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2] group-hover:translate-x-0.5 transition-transform" />
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] drop-shadow-xs group-hover:translate-x-0.5 transition-transform" />
         </button>
       )}
 
@@ -229,9 +229,9 @@ export function PropertyCarousel({
           className={cn(
             "carousel-nav-btn carousel-nav-left absolute left-0.5 sm:-left-4 top-1/2 -translate-y-1/2 z-20",
             "w-8 h-8 sm:w-10 sm:h-10 rounded-full",
-            "bg-background/90 dark:bg-[#12161A]/90 hover:bg-background dark:hover:bg-[#1A2026]",
-            "border border-[#C5A059]/40 hover:border-[#C5A059]",
-            "text-[#C5A059] shadow-lg shadow-black/25 hover:shadow-black/40",
+            "bg-background/60 dark:bg-[#101418]/65 hover:bg-background/90 dark:hover:bg-[#161B21]/90",
+            "border border-[#C5A059]/50 hover:border-[#C5A059]",
+            "text-[#C5A059] shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/40",
             "flex items-center justify-center backdrop-blur-md",
             "transition-all duration-200 hover:scale-110 active:scale-95",
             "cursor-pointer disabled:opacity-20 disabled:pointer-events-none select-none touch-manipulation",
@@ -240,7 +240,7 @@ export function PropertyCarousel({
           aria-label="التالي (تمرير لليسار)"
           title="التالي"
         >
-          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2] group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] drop-shadow-xs group-hover:-translate-x-0.5 transition-transform" />
         </button>
       )}
 

@@ -324,82 +324,74 @@ export default function MortgageCalculatorPage() {
           }
         />
 
-        {/* ── Top Summary KPI Cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-accent/40 bg-gradient-to-br from-accent/15 via-card to-card shadow-sm">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">القسط الشهري</span>
-                <div className="w-8 h-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center">
-                  <Wallet className="h-4 w-4" />
-                </div>
+        {/* ── Top Summary KPI Cards (Compact 2-col on Mobile) ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="border-accent/40 bg-gradient-to-br from-accent/15 via-card to-card shadow-xs p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-1 mb-1.5">
+              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">القسط الشهري</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center shrink-0">
+                <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {monthlyInstallment.toLocaleString("en-US")}
-                </span>
-                <span className="text-xs font-bold text-accent">ج.م / شهر</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {totalMonths > 0 ? `${totalMonths} قسط شهري` : "—"}
-              </p>
-            </CardContent>
+            </div>
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span className="text-lg sm:text-2xl lg:text-3xl font-black text-foreground">
+                {monthlyInstallment.toLocaleString("en-US")}
+              </span>
+              <span className="text-[10px] sm:text-xs font-bold text-accent shrink-0">ج.م / شهر</span>
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
+              {totalMonths > 0 ? `${totalMonths} قسط شهري` : "—"}
+            </p>
           </Card>
 
-          <Card className="border-border/80 bg-card shadow-sm">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">الدفعة الأولى (المقدم)</span>
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center">
-                  <DollarSign className="h-4 w-4" />
-                </div>
+          <Card className="border-border/80 bg-card shadow-xs p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-1 mb-1.5">
+              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">الدفعة الأولى (المقدم)</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {downPaymentAmount.toLocaleString("en-US")}
-                </span>
-                <span className="text-xs font-bold text-muted-foreground">ج.م ({downPaymentPercent}%)</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">المتبقي: {loanAmount.toLocaleString("en-US")} ج.م</p>
-            </CardContent>
+            </div>
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span className="text-lg sm:text-2xl lg:text-3xl font-black text-foreground">
+                {downPaymentAmount.toLocaleString("en-US")}
+              </span>
+              <span className="text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0">ج.م ({downPaymentPercent}%)</span>
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">المتبقي: {loanAmount.toLocaleString("en-US")} ج.م</p>
           </Card>
 
-          <Card className="border-border/80 bg-card shadow-sm">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">إجمالي الفوائد</span>
-                <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center">
-                  <Percent className="h-4 w-4" />
-                </div>
+          <Card className="border-border/80 bg-card shadow-xs p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-1 mb-1.5">
+              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">إجمالي الفوائد</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center shrink-0">
+                <Percent className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {totalInterest.toLocaleString("en-US")}
-                </span>
-                <span className="text-xs font-bold text-muted-foreground">ج.م</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {interestRate === 0 ? "بدون فوائد" : `فائدة ${interestRate}% سنوياً`}
-              </p>
-            </CardContent>
+            </div>
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span className="text-lg sm:text-2xl lg:text-3xl font-black text-foreground">
+                {totalInterest.toLocaleString("en-US")}
+              </span>
+              <span className="text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0">ج.م</span>
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">
+              {interestRate === 0 ? "بدون فوائد" : `فائدة ${interestRate}% سنوياً`}
+            </p>
           </Card>
 
-          <Card className="border-border/80 bg-card shadow-sm">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-muted-foreground">إجمالي المبلغ المسدد</span>
-                <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center">
-                  <TrendingDown className="h-4 w-4" />
-                </div>
+          <Card className="border-border/80 bg-card shadow-xs p-3 sm:p-5">
+            <div className="flex items-center justify-between gap-1 mb-1.5">
+              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">إجمالي المبلغ المسدد</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-500/15 text-blue-600 flex items-center justify-center shrink-0">
+                <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </div>
-              <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-black text-foreground">
-                  {totalPayment.toLocaleString("en-US")}
-                </span>
-                <span className="text-xs font-bold text-muted-foreground">ج.م</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">شاملاً المقدم والأقساط</p>
-            </CardContent>
+            </div>
+            <div className="flex items-baseline gap-1 flex-wrap">
+              <span className="text-lg sm:text-2xl lg:text-3xl font-black text-foreground">
+                {totalPayment.toLocaleString("en-US")}
+              </span>
+              <span className="text-[10px] sm:text-xs font-bold text-muted-foreground shrink-0">ج.م</span>
+            </div>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 truncate">شاملاً المقدم والأقساط</p>
           </Card>
         </div>
 
