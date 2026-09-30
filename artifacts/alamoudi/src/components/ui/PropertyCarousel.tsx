@@ -1,9 +1,11 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { PropertyCard, type CardSize } from "./PropertyCard";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useData } from "@/context/DataContext";
 
-interface PropertyCarouselProps {
+export interface PropertyCarouselProps {
   properties: any[];
   size?: CardSize;
   layout?: "grid" | "list";
@@ -17,28 +19,71 @@ interface PropertyCarouselProps {
   motionSpeed?: number;
   infinite?: boolean;
   glass?: boolean;
+  /** Force enable or disable carousel (defaults to settings.carouselEnabled) */
+  enabled?: boolean;
+  /** Show navigation arrows (defaults to true) */
+  showArrows?: boolean;
 }
 
-export function PropertyCarousel({
+export function PropertyCarousel(props: PropertyCarouselProps) {
+  const { settings } = useData();
+  const isEnabled = props.enabled !== undefined ? props.enabled : (settings.carouselEnabled !== false);
+
+  if (!props.properties || props.properties.length === 0) return null;
+
+  // When disabled: render clean static grid for maximum speed and zero animation load
+  if (!isEnabled) {
+    return (
+      <div
+        className={cn(
+          props.layout === "list"
+            ? "grid grid-cols-1 gap-3 sm:gap-4 py-3"
+            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 py-3",
+          props.className
+        )}
+      >
+        {props.properties.map((property, index) => (
+          <PropertyCard
+            key={`${property.id}-${index}`}
+            property={property}
+            size={props.size ?? "compact"}
+            layout={props.layout ?? "grid"}
+            emphasized={props.emphasized ?? false}
+            detailsScale={props.detailsScale ?? "home"}
+            glass={props.glass ?? true}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // When enabled: render the luxury Embla carousel with navigation arrows
+  return <PropertyCarouselEmbla {...props} settingsAutoPlay={settings.carouselAutoPlayEnabled !== false} />;
+}
+
+interface PropertyCarouselEmblaProps extends PropertyCarouselProps {
+  settingsAutoPlay?: boolean;
+}
+
+function PropertyCarouselEmbla({
   properties,
   size = "compact",
   layout = "grid",
   emphasized = false,
   detailsScale = "home",
   className,
-  autoPlay = false,
+  autoPlay = true,
   autoPlayDelay = 3500,
   motionSpeed = 1,
   infinite = true,
   glass = true,
-}: PropertyCarouselProps) {
+  showArrows = true,
+  settingsAutoPlay = true,
+}: PropertyCarouselEmblaProps) {
+  const isAutoPlay = autoPlay && settingsAutoPlay;
   const safeSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
 
-  // Ultra-Soft Silk Physics (Damped Smooth Glide):
-  // At 0.25x -> duration is ~76 (calm, velvet, cinematic glide)
-  // At 0.50x -> duration is ~54
-  // At 1.00x -> duration is ~38 (luxury smooth)
-  // At 2.00x -> duration is ~27
+  // Ultra-Soft Silk Physics (Damped Smooth Glide)
   const emblaDuration = Math.round(38 / Math.sqrt(safeSpeed));
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -49,6 +94,9 @@ export function PropertyCarousel({
     skipSnaps: false,
     dragFree: false,
   });
+
+  const [canScrollPrev, setCanScrollPrev] = useState(true);
+  const [canScrollNext, setCanScrollNext] = useState(true);
 
   const isInteractingRef = useRef(false);
   const timerRef = useRef<number | null>(null);
@@ -63,7 +111,7 @@ export function PropertyCarousel({
   const scheduleNext = useCallback(
     (delay: number) => {
       clearTimer();
-      if (!autoPlay || isInteractingRef.current || !emblaApi || properties.length < 2) {
+      if (!isAutoPlay || isInteractingRef.current || !emblaApi || properties.length < 2) {
         return;
       }
       timerRef.current = window.setTimeout(() => {
@@ -71,7 +119,7 @@ export function PropertyCarousel({
         emblaApi.scrollNext();
       }, delay);
     },
-    [autoPlay, clearTimer, emblaApi, properties.length],
+    [isAutoPlay, clearTimer, emblaApi, properties.length],
   );
 
   const onStart = useCallback(() => {
@@ -82,16 +130,21 @@ export function PropertyCarousel({
   const onEnd = useCallback(() => {
     isInteractingRef.current = false;
     clearTimer();
-    if (!autoPlay || properties.length < 2) return;
+    if (!isAutoPlay || properties.length < 2) return;
 
     // Guaranteed full 4+ seconds grace period after removing mouse or finger
     const postInteractionDelay = Math.max(4000, Number(autoPlayDelay) || 4000);
     scheduleNext(postInteractionDelay);
-  }, [autoPlay, autoPlayDelay, clearTimer, properties.length, scheduleNext]);
+  }, [isAutoPlay, autoPlayDelay, clearTimer, properties.length, scheduleNext]);
 
-  // Hook into Embla's internal touch and pointer drag lifecycle
+  // Hook into Embla's internal touch and pointer drag lifecycle + selection state
   useEffect(() => {
     if (!emblaApi) return;
+
+    const updateScrollButtons = () => {
+      setCanScrollPrev(emblaApi.canScrollPrev());
+      setCanScrollNext(emblaApi.canScrollNext());
+    };
 
     const handlePointerDown = () => {
       onStart();
@@ -102,16 +155,18 @@ export function PropertyCarousel({
     };
 
     const handleSettle = () => {
-      // If user is currently touching or hovering, do NOT schedule
+      updateScrollButtons();
       if (isInteractingRef.current) {
         clearTimer();
         return;
       }
-      // When a slide settles during normal autoplay, wait the full autoPlayDelay (min 3.5s)
       const standardDelay = Math.max(3500, Number(autoPlayDelay) || 3500);
       scheduleNext(standardDelay);
     };
 
+    updateScrollButtons();
+    emblaApi.on("select", updateScrollButtons);
+    emblaApi.on("reInit", updateScrollButtons);
     emblaApi.on("pointerDown", handlePointerDown);
     emblaApi.on("pointerUp", handlePointerUp);
     emblaApi.on("settle", handleSettle);
@@ -122,17 +177,45 @@ export function PropertyCarousel({
 
     return () => {
       clearTimer();
+      emblaApi.off("select", updateScrollButtons);
+      emblaApi.off("reInit", updateScrollButtons);
       emblaApi.off("pointerDown", handlePointerDown);
       emblaApi.off("pointerUp", handlePointerUp);
       emblaApi.off("settle", handleSettle);
     };
   }, [emblaApi, autoPlayDelay, clearTimer, onStart, onEnd, scheduleNext]);
 
-  if (!properties || properties.length === 0) return null;
+  const scrollPrev = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      if (!emblaApi) return;
+      onStart();
+      emblaApi.scrollPrev();
+      window.setTimeout(() => {
+        onEnd();
+      }, 500);
+    },
+    [emblaApi, onStart, onEnd],
+  );
+
+  const scrollNext = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.stopPropagation();
+      if (!emblaApi) return;
+      onStart();
+      emblaApi.scrollNext();
+      window.setTimeout(() => {
+        onEnd();
+      }, 500);
+    },
+    [emblaApi, onStart, onEnd],
+  );
+
+  const hasMultiple = properties.length > 1;
 
   return (
     <div
-      className={cn("relative overflow-hidden", className)}
+      className={cn("relative group/carousel", className)}
       onPointerEnter={onStart}
       onPointerLeave={onEnd}
       onPointerDown={onStart}
@@ -143,6 +226,54 @@ export function PropertyCarousel({
       onTouchCancel={onEnd}
       dir="rtl"
     >
+      {/* Navigation Arrow: Right (Previous in RTL) */}
+      {showArrows && hasMultiple && (
+        <button
+          type="button"
+          onClick={scrollPrev}
+          disabled={!infinite && !canScrollPrev}
+          className={cn(
+            "carousel-nav-btn carousel-nav-right absolute right-0.5 sm:-right-4 top-1/2 -translate-y-1/2 z-20",
+            "w-8 h-8 sm:w-10 sm:h-10 rounded-full",
+            "bg-background/90 dark:bg-[#12161A]/90 hover:bg-background dark:hover:bg-[#1A2026]",
+            "border border-[#C5A059]/40 hover:border-[#C5A059]",
+            "text-[#C5A059] shadow-lg shadow-black/25 hover:shadow-black/40",
+            "flex items-center justify-center backdrop-blur-md",
+            "transition-all duration-200 hover:scale-110 active:scale-95",
+            "cursor-pointer disabled:opacity-20 disabled:pointer-events-none select-none touch-manipulation",
+            "group focus:outline-none focus:ring-2 focus:ring-[#C5A059]/50"
+          )}
+          aria-label="السابق (تمرير لليمين)"
+          title="السابق"
+        >
+          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2] group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      )}
+
+      {/* Navigation Arrow: Left (Next in RTL) */}
+      {showArrows && hasMultiple && (
+        <button
+          type="button"
+          onClick={scrollNext}
+          disabled={!infinite && !canScrollNext}
+          className={cn(
+            "carousel-nav-btn carousel-nav-left absolute left-0.5 sm:-left-4 top-1/2 -translate-y-1/2 z-20",
+            "w-8 h-8 sm:w-10 sm:h-10 rounded-full",
+            "bg-background/90 dark:bg-[#12161A]/90 hover:bg-background dark:hover:bg-[#1A2026]",
+            "border border-[#C5A059]/40 hover:border-[#C5A059]",
+            "text-[#C5A059] shadow-lg shadow-black/25 hover:shadow-black/40",
+            "flex items-center justify-center backdrop-blur-md",
+            "transition-all duration-200 hover:scale-110 active:scale-95",
+            "cursor-pointer disabled:opacity-20 disabled:pointer-events-none select-none touch-manipulation",
+            "group focus:outline-none focus:ring-2 focus:ring-[#C5A059]/50"
+          )}
+          aria-label="التالي (تمرير لليسار)"
+          title="التالي"
+        >
+          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2] group-hover:-translate-x-0.5 transition-transform" />
+        </button>
+      )}
+
       <div ref={emblaRef} className="overflow-hidden py-3">
         <div className="flex gap-3 sm:gap-4 -mr-3 sm:-mr-4">
           {properties.map((property, index) => (

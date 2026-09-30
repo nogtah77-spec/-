@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 import {
   Save,
   Upload,
@@ -2561,7 +2562,72 @@ export default function Settings({ initialTab }: { initialTab?: string } = {}) {
               </CardHeader>
 
               <CardContent className="space-y-6">
-                <div className="space-y-4">
+                {/* 1. Master Toggle for Carousels */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-card/60 border border-border/80 shadow-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5">
+                      <Label htmlFor="carouselEnabled" className="text-sm sm:text-base font-bold cursor-pointer">
+                        تشغيل نظام الكاروسيل في الصفحة الرئيسية
+                      </Label>
+                      <Badge
+                        variant={form.carouselEnabled !== false ? "default" : "secondary"}
+                        className={
+                          form.carouselEnabled !== false
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs"
+                            : "bg-muted text-muted-foreground border border-border text-xs"
+                        }
+                      >
+                        {form.carouselEnabled !== false ? "مفعّل" : "معطّل"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      عند التفعيل، تُعرض البطاقات العقارية بنظام الكاروسيل المنزلق مع أزرار الأسهم والسحب بالإصبع. عند التعطيل، تُعرض العقارات كشبكة ثابتة (Grid) مريحة وسريعة لتخفيف الحمل تماماً.
+                    </p>
+                  </div>
+                  <Switch
+                    id="carouselEnabled"
+                    checked={form.carouselEnabled !== false}
+                    onCheckedChange={(checked) => {
+                      isFormDirtyRef.current = true;
+                      setForm((prev) => ({ ...prev, carouselEnabled: checked }));
+                    }}
+                  />
+                </div>
+
+                {/* 2. Auto-play Toggle */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-card/60 border border-border/80 shadow-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2.5">
+                      <Label htmlFor="carouselAutoPlayEnabled" className="text-sm sm:text-base font-bold cursor-pointer">
+                        التمرير التلقائي للكاروسيل (Auto-play)
+                      </Label>
+                      <Badge
+                        variant={form.carouselAutoPlayEnabled !== false ? "default" : "secondary"}
+                        className={
+                          form.carouselAutoPlayEnabled !== false
+                            ? "bg-accent/15 text-accent border border-accent/30 text-xs"
+                            : "bg-muted text-muted-foreground border border-border text-xs"
+                        }
+                      >
+                        {form.carouselAutoPlayEnabled !== false ? "مفعّل" : "معطّل"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      تحريك الكاروسيل تلقائياً بين العقارات. عند إيقافه، سيبقى الكاروسيل ثابتاً ولا يتحرك إلا عند نقر أزرار الأسهم (يمين/يسار) أو بالسحب باليد.
+                    </p>
+                  </div>
+                  <Switch
+                    id="carouselAutoPlayEnabled"
+                    disabled={form.carouselEnabled === false}
+                    checked={form.carouselAutoPlayEnabled !== false}
+                    onCheckedChange={(checked) => {
+                      isFormDirtyRef.current = true;
+                      setForm((prev) => ({ ...prev, carouselAutoPlayEnabled: checked }));
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-4 border-t pt-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <Label htmlFor="carouselAutoPlayDelay">

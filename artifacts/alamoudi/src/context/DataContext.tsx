@@ -355,6 +355,10 @@ export interface SiteSettings {
   ads: Ad[];
   qrCodes?: QrCodeItem[];
   qrSectionEnabled?: boolean;
+  /** Master switch: whether property carousels on the home page are active */
+  carouselEnabled?: boolean;
+  /** Whether carousels auto-scroll automatically or move only on user swipe/arrows */
+  carouselAutoPlayEnabled?: boolean;
   /** Seconds to wait after each card movement before starting the next one. */
   carouselAutoPlayDelay: number;
   /** Movement speed multiplier: 1 is the natural speed. */
@@ -466,6 +470,8 @@ const DEFAULT_SETTINGS: SiteSettings = {
   },
   qrSectionEnabled: true,
   tiktokSectionEnabled: true,
+  carouselEnabled: true,
+  carouselAutoPlayEnabled: true,
   carouselAutoPlayDelay: 3.5,
   carouselMotionSpeed: 1,
   allowCustomerImageDownloads: true,
