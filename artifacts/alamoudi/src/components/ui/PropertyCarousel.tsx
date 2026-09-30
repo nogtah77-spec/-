@@ -245,11 +245,11 @@ export function PropertyCarousel({
       )}
 
       <div ref={emblaRef} className="overflow-hidden py-3 w-full">
-        <div className="flex gap-2 sm:gap-3.5">
+        <div className="flex -mr-2 sm:-mr-3.5">
           {properties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 w-[91vw] sm:w-[48vw] md:w-[380px] lg:w-[420px]"
+              className="flex-shrink-0 flex-grow-0 pr-2 sm:pr-3.5 w-[90vw] sm:w-[48vw] md:w-[380px] lg:w-[420px]"
             >
               <PropertyCard
                 property={property}
