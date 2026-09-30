@@ -49,19 +49,19 @@ export default function Dashboard() {
         />
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {kpis.map((kpi, i) => (
-            <Card key={i} className="card-luxury relative overflow-hidden group">
+            <Card key={i} className="card-luxury relative overflow-hidden group p-3 sm:p-5">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent z-0 pointer-events-none" />
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-                <div className="p-2 bg-background rounded-md shadow-sm">
-                  <kpi.icon className="h-5 w-5 text-accent" />
+              <div className="flex items-center justify-between relative z-10 mb-2">
+                <span className="text-xs sm:text-sm font-semibold text-muted-foreground truncate">{kpi.title}</span>
+                <div className="p-1.5 sm:p-2 bg-background/80 rounded-md shadow-xs border border-border/40 shrink-0">
+                  <kpi.icon className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
                 </div>
-              </CardHeader>
-              <CardContent className="relative z-10 pt-4">
-                <div className="text-3xl font-bold text-foreground text-center">{kpi.value}</div>
-              </CardContent>
+              </div>
+              <div className="relative z-10 text-xl sm:text-2xl lg:text-3xl font-black text-foreground">
+                {kpi.value.toLocaleString("en-US")}
+              </div>
             </Card>
           ))}
         </div>

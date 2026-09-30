@@ -324,49 +324,45 @@ export default function Analytics() {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {visitorCards.map((c) => (
-              <Card key={c.key} className="card-luxury relative overflow-hidden group hover:border-accent/40 transition-all duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+              <Card key={c.key} className="card-luxury relative overflow-hidden group hover:border-accent/40 transition-all duration-300 p-3 sm:p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs sm:text-sm font-semibold text-muted-foreground flex items-center gap-1.5 truncate">
                     {c.live && (
-                      <span className="relative flex h-2.5 w-2.5">
+                      <span className="relative flex h-2 w-2 shrink-0">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                       </span>
                     )}
-                    {c.title}
-                  </CardTitle>
-                  <div className="p-2 bg-background/80 rounded-lg shadow-sm border border-border/40 group-hover:scale-105 transition-transform">
-                    <c.icon className={`h-4 w-4 ${c.live ? "text-emerald-500" : "text-accent"}`} />
+                    <span className="truncate">{c.title}</span>
+                  </span>
+                  <div className="p-1.5 sm:p-2 bg-background/80 rounded-lg shadow-xs border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
+                    <c.icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${c.live ? "text-emerald-500" : "text-accent"}`} />
                   </div>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  <div className="flex justify-start text-3xl font-extrabold text-foreground tracking-tight" dir="ltr">
-                    <RollingNumber value={c.value} />
-                  </div>
-                </CardContent>
+                </div>
+                <div className="flex justify-start text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight" dir="ltr">
+                  <RollingNumber value={c.value} />
+                </div>
               </Card>
             ))}
           </div>
         </div>
 
         {/* Primary Platform KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {kpis.map((s, i) => (
-            <Card key={i} className="card-luxury relative overflow-hidden group hover:border-accent/40 transition-all duration-300">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">{s.title}</CardTitle>
-                <div className="p-2 bg-background/80 rounded-lg shadow-sm border border-border/40 group-hover:scale-105 transition-transform">
-                  <s.icon className="h-4 w-4 text-accent" />
+            <Card key={i} className="card-luxury relative overflow-hidden group hover:border-accent/40 transition-all duration-300 p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs sm:text-sm font-semibold text-muted-foreground truncate">{s.title}</span>
+                <div className="p-1.5 sm:p-2 bg-background/80 rounded-lg shadow-xs border border-border/40 shrink-0 group-hover:scale-105 transition-transform">
+                  <s.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent" />
                 </div>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="text-3xl font-extrabold text-foreground tracking-tight" dir="ltr">
-                  {s.value.toLocaleString("en-US")}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">{s.sub}</p>
-              </CardContent>
+              </div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight" dir="ltr">
+                {s.value.toLocaleString("en-US")}
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-1 truncate">{s.sub}</p>
             </Card>
           ))}
         </div>
