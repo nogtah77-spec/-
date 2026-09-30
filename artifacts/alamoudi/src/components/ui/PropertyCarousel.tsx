@@ -203,20 +203,20 @@ export function PropertyCarousel({
           onClick={scrollPrev}
           disabled={!infinite && !canScrollPrev}
           className={cn(
-            "carousel-nav-btn carousel-nav-right absolute right-0.5 sm:-right-4 top-1/2 -translate-y-1/2 z-20",
-            "w-8 h-8 sm:w-10 sm:h-10 rounded-full",
-            "bg-background/60 dark:bg-[#101418]/65 hover:bg-background/90 dark:hover:bg-[#161B21]/90",
-            "border border-[#C5A059]/50 hover:border-[#C5A059]",
+            "carousel-nav-btn carousel-nav-right absolute right-0.5 sm:-right-3.5 top-1/2 -translate-y-1/2 z-20",
+            "w-5.5 sm:w-7 h-14 sm:h-20 rounded-full",
+            "bg-background/50 dark:bg-[#101418]/60 hover:bg-background/85 dark:hover:bg-[#161B21]/90",
+            "border border-[#C5A059]/45 hover:border-[#C5A059]",
             "text-[#C5A059] shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/40",
             "flex items-center justify-center backdrop-blur-md",
-            "transition-all duration-200 hover:scale-110 active:scale-95",
+            "transition-all duration-200 hover:scale-105 active:scale-95",
             "cursor-pointer disabled:opacity-20 disabled:pointer-events-none select-none touch-manipulation",
             "group focus:outline-none focus:ring-2 focus:ring-[#C5A059]/50"
           )}
           aria-label="السابق (تمرير لليمين)"
           title="السابق"
         >
-          <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] drop-shadow-xs group-hover:translate-x-0.5 transition-transform" />
+          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5] drop-shadow-xs group-hover:translate-x-0.5 transition-transform" />
         </button>
       )}
 
@@ -227,20 +227,20 @@ export function PropertyCarousel({
           onClick={scrollNext}
           disabled={!infinite && !canScrollNext}
           className={cn(
-            "carousel-nav-btn carousel-nav-left absolute left-0.5 sm:-left-4 top-1/2 -translate-y-1/2 z-20",
-            "w-8 h-8 sm:w-10 sm:h-10 rounded-full",
-            "bg-background/60 dark:bg-[#101418]/65 hover:bg-background/90 dark:hover:bg-[#161B21]/90",
-            "border border-[#C5A059]/50 hover:border-[#C5A059]",
+            "carousel-nav-btn carousel-nav-left absolute left-0.5 sm:-left-3.5 top-1/2 -translate-y-1/2 z-20",
+            "w-5.5 sm:w-7 h-14 sm:h-20 rounded-full",
+            "bg-background/50 dark:bg-[#101418]/60 hover:bg-background/85 dark:hover:bg-[#161B21]/90",
+            "border border-[#C5A059]/45 hover:border-[#C5A059]",
             "text-[#C5A059] shadow-md shadow-black/20 hover:shadow-lg hover:shadow-black/40",
             "flex items-center justify-center backdrop-blur-md",
-            "transition-all duration-200 hover:scale-110 active:scale-95",
+            "transition-all duration-200 hover:scale-105 active:scale-95",
             "cursor-pointer disabled:opacity-20 disabled:pointer-events-none select-none touch-manipulation",
             "group focus:outline-none focus:ring-2 focus:ring-[#C5A059]/50"
           )}
           aria-label="التالي (تمرير لليسار)"
           title="التالي"
         >
-          <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] drop-shadow-xs group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5] drop-shadow-xs group-hover:-translate-x-0.5 transition-transform" />
         </button>
       )}
 
