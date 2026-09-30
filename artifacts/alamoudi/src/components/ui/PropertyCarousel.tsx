@@ -19,53 +19,11 @@ export interface PropertyCarouselProps {
   motionSpeed?: number;
   infinite?: boolean;
   glass?: boolean;
-  /** Force enable or disable carousel (defaults to settings.carouselEnabled) */
-  enabled?: boolean;
   /** Show navigation arrows (defaults to true) */
   showArrows?: boolean;
 }
 
-export function PropertyCarousel(props: PropertyCarouselProps) {
-  const { settings } = useData();
-  const isEnabled = props.enabled !== undefined ? props.enabled : (settings.carouselEnabled !== false);
-
-  if (!props.properties || props.properties.length === 0) return null;
-
-  // When disabled: render clean static grid for maximum speed and zero animation load
-  if (!isEnabled) {
-    return (
-      <div
-        className={cn(
-          props.layout === "list"
-            ? "grid grid-cols-1 gap-3 sm:gap-4 py-3"
-            : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 py-3",
-          props.className
-        )}
-      >
-        {props.properties.map((property, index) => (
-          <PropertyCard
-            key={`${property.id}-${index}`}
-            property={property}
-            size={props.size ?? "compact"}
-            layout={props.layout ?? "grid"}
-            emphasized={props.emphasized ?? false}
-            detailsScale={props.detailsScale ?? "home"}
-            glass={props.glass ?? true}
-          />
-        ))}
-      </div>
-    );
-  }
-
-  // When enabled: render the luxury Embla carousel with navigation arrows
-  return <PropertyCarouselEmbla {...props} settingsAutoPlay={settings.carouselAutoPlayEnabled !== false} />;
-}
-
-interface PropertyCarouselEmblaProps extends PropertyCarouselProps {
-  settingsAutoPlay?: boolean;
-}
-
-function PropertyCarouselEmbla({
+export function PropertyCarousel({
   properties,
   size = "compact",
   layout = "grid",
@@ -78,9 +36,15 @@ function PropertyCarouselEmbla({
   infinite = true,
   glass = true,
   showArrows = true,
-  settingsAutoPlay = true,
-}: PropertyCarouselEmblaProps) {
-  const isAutoPlay = autoPlay && settingsAutoPlay;
+}: PropertyCarouselProps) {
+  const { settings } = useData();
+
+  // Unified auto-play check: enabled by default, paused when user disables the switch
+  const isAutoPlay =
+    autoPlay &&
+    settings.carouselAutoPlayEnabled !== false &&
+    settings.carouselEnabled !== false;
+
   const safeSpeed = Math.min(4, Math.max(0.25, Number(motionSpeed) || 1));
 
   // Ultra-Soft Silk Physics (Damped Smooth Glide)
@@ -171,9 +135,13 @@ function PropertyCarouselEmbla({
     emblaApi.on("pointerUp", handlePointerUp);
     emblaApi.on("settle", handleSettle);
 
-    // Initial autoplay start
-    const initialDelay = Math.max(3500, Number(autoPlayDelay) || 3500);
-    scheduleNext(initialDelay);
+    // Start autoplay only when enabled
+    if (isAutoPlay) {
+      const initialDelay = Math.max(3500, Number(autoPlayDelay) || 3500);
+      scheduleNext(initialDelay);
+    } else {
+      clearTimer();
+    }
 
     return () => {
       clearTimer();
@@ -183,7 +151,7 @@ function PropertyCarouselEmbla({
       emblaApi.off("pointerUp", handlePointerUp);
       emblaApi.off("settle", handleSettle);
     };
-  }, [emblaApi, autoPlayDelay, clearTimer, onStart, onEnd, scheduleNext]);
+  }, [emblaApi, isAutoPlay, autoPlayDelay, clearTimer, onStart, onEnd, scheduleNext]);
 
   const scrollPrev = useCallback(
     (e?: React.MouseEvent) => {
@@ -210,6 +178,8 @@ function PropertyCarouselEmbla({
     },
     [emblaApi, onStart, onEnd],
   );
+
+  if (!properties || properties.length === 0) return null;
 
   const hasMultiple = properties.length > 1;
 
