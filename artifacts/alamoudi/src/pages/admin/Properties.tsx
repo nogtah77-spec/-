@@ -16,7 +16,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
-import { formatNumber } from "@/lib/utils";
+import { cn, formatNumber } from "@/lib/utils";
 import { checkUserPermission } from "@/lib/permissions";
 import { matchesSmartPropertySearch } from "@/lib/propertyFilters";
 
@@ -71,11 +71,12 @@ export default function Properties() {
   const [bulkStatus, setBulkStatus] = useState<PropertyStatus | "">("");
   const { toast } = useToast();
 
-  const draftsCount = properties.filter(p => !p.id?.startsWith("__") && p.status === "draft").length;
-  const activeCount = properties.filter(p => !p.id?.startsWith("__") && (p.status === "active" || p.status === "listed")).length;
+  const safeProperties = Array.isArray(properties) ? properties.filter(Boolean) : [];
+  const draftsCount = safeProperties.filter(p => p && !p.id?.startsWith("__") && p.status === "draft").length;
+  const activeCount = safeProperties.filter(p => p && !p.id?.startsWith("__") && (p.status === "active" || p.status === "listed")).length;
 
-  const filteredProperties = properties
-    .filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__"))
+  const filteredProperties = safeProperties
+    .filter(p => p && !p.id?.startsWith("__") && !p.code?.startsWith("__"))
     .sort((a, b) => {
       const tA = new Date(a.createdAt || a.updatedAt || 0).getTime();
       const tB = new Date(b.createdAt || b.updatedAt || 0).getTime();
