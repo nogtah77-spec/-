@@ -78,9 +78,9 @@ export function DraftRecoveryBanner() {
     dismissDraftBanner();
     setDraft(null);
     toast({
-      title: "تم حفظ المسودة في جهازك بنجاح ✓",
-      description: "يمكنك العودة وإكمال إدخال العقار في أي وقت.",
-      duration: 3500,
+      title: "تم حفظ المسودة في لوحة التحكم ✓",
+      description: "يمكنك العودة وإكمالها في أي وقت من لوحة التحكم > إدارة العقارات > تبويب (المسودات).",
+      duration: 4500,
     });
   };
 

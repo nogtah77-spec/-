@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink, Star } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink, Star, FileText, Bookmark } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -64,11 +64,15 @@ export default function Properties() {
   const canPublishProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-نشر العقارات");
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "sold" | "rented">("all");
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<PropertyStatus | "">("");
   const { toast } = useToast();
+
+  const draftsCount = properties.filter(p => !p.id?.startsWith("__") && p.status === "draft").length;
+  const activeCount = properties.filter(p => !p.id?.startsWith("__") && (p.status === "active" || p.status === "listed")).length;
 
   const filteredProperties = properties
     .filter(p => !p.id?.startsWith("__") && !p.code?.startsWith("__"))
@@ -78,6 +82,10 @@ export default function Properties() {
       return tB - tA;
     })
     .filter((p) => {
+      if (statusFilter === "active" && (p.status !== "active" && p.status !== "listed")) return false;
+      if (statusFilter === "draft" && p.status !== "draft") return false;
+      if (statusFilter === "sold" && p.status !== "sold") return false;
+      if (statusFilter === "rented" && p.status !== "rented") return false;
       if (!search.trim()) return true;
       const typeName = propertyTypes.find((t) => t.id === p.typeId)?.name || "";
       const regionName = regions.find((r) => r.id === p.regionId)?.name || "";
@@ -162,6 +170,84 @@ export default function Properties() {
             ) : undefined
           }
         />
+
+        {/* Status Filter Tabs (All / Active / Drafts / Sold / Rented) */}
+        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-muted/50 border border-border/80 w-fit">
+          <button
+            type="button"
+            onClick={() => setStatusFilter("all")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+              statusFilter === "all"
+                ? "bg-[#C5A059] text-[#10202D] shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+            )}
+          >
+            <span>جميع العقارات</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/15 font-mono">{properties.length}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter("active")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+              statusFilter === "active"
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+            )}
+          >
+            <span>العقارات المعروضة</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/15 font-mono">{activeCount}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter("draft")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+              statusFilter === "draft"
+                ? "bg-amber-500 text-[#10202D] shadow-sm font-black"
+                : "text-amber-500/90 hover:text-amber-400 hover:bg-amber-500/10 border border-amber-500/20"
+            )}
+            title="المسودات المحفوظة سحابياً"
+          >
+            <Bookmark className="h-3.5 w-3.5" />
+            <span>المسودات</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold",
+              statusFilter === "draft" ? "bg-black/20 text-[#10202D]" : "bg-amber-500/20 text-amber-400"
+            )}>
+              {draftsCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter("sold")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+              statusFilter === "sold"
+                ? "bg-purple-600 text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+            )}
+          >
+            <span>تم البيع</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter("rented")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+              statusFilter === "rented"
+                ? "bg-orange-600 text-white shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+            )}
+          >
+            <span>مؤجر</span>
+          </button>
+        </div>
 
         {/* Sticky Search & Action Bar */}
         <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-xl py-3.5 -mx-4 px-4 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8 border-b border-border/80 shadow-md shadow-black/5 transition-all flex flex-col sm:flex-row items-center justify-between gap-3">

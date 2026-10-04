@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2 } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2, FileText, Bookmark } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -581,6 +581,58 @@ export default function PropertyForm() {
     }
   };
 
+  const handleSaveAsDraft = async () => {
+    const rawCode = form.code.trim();
+    const effectiveCode = rawCode || `ALM-DRAFT-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    if (saving) return;
+    setSaving(true);
+    const numericValue = (value: unknown) => {
+      const parsed = Number(toNumericString(value));
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+    const payload = {
+      ...form,
+      code: effectiveCode,
+      status: "draft" as PropertyStatus,
+      sourcePhones: form.sourcePhones.filter((ph: string) => ph && ph.trim()),
+      title: effectiveCode,
+      price: numericValue(form.price),
+      area: numericValue(form.area),
+      beds: numericValue(form.beds),
+      baths: numericValue(form.baths),
+      floors: numericValue(form.floors),
+      floor: typeof form.floor === "string" ? form.floor.trim() : form.floor,
+      images,
+    };
+    try {
+      let finalImages = [...images];
+      const hasBase64 = finalImages.some(img => typeof img === "string" && img.startsWith("data:image/"));
+      if (hasBase64 && form.regionId) {
+        const folder = getPropertyCloudinaryFolder(form.regionId, effectiveCode);
+        finalImages = await uploadMultipleToCloudinary(finalImages, folder);
+      }
+      const finalPayload = { ...payload, images: finalImages };
+
+      const targetId = activeProperty?.id || existing?.id || params.id;
+      const saved = isEdit && targetId
+        ? await updateProperty(targetId, finalPayload)
+        : await addProperty(finalPayload);
+      if (!saved) return;
+
+      toast({
+        title: "تم حفظ المسودة في لوحة التحكم ✓",
+        description: `تم حفظ العقار كمسودة (${effectiveCode}) في السحابة. يمكنك إكماله أو حذفه في أي وقت.`,
+      });
+      clearPropertyDraft();
+      setLocation("/admin/properties");
+    } catch {
+      toast({ title: "حدث خطأ أثناء حفظ المسودة", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const set = <K extends keyof typeof form>(k: K, v: typeof form[K]) => {
     isDirtyRef.current = true;
     setForm(p => ({ ...p, [k]: v }));
@@ -689,6 +741,17 @@ export default function PropertyForm() {
               </label>
             )}
             <Button variant="outline" asChild><Link href="/admin/properties">إلغاء</Link></Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveAsDraft}
+              disabled={saving}
+              className="border-[#C5A059]/40 text-[#C5A059] hover:bg-[#C5A059]/10 gap-1.5"
+              title="حفظ العقار كمسودة في لوحة التحكم لإكماله لاحقاً"
+            >
+              <Bookmark className="h-4 w-4" />
+              <span>حفظ كمسودة</span>
+            </Button>
             <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave} disabled={saving}>
               <Save className="ml-2 h-4 w-4" />{saving ? "جارٍ الحفظ..." : "حفظ ونشر"}
             </Button>
