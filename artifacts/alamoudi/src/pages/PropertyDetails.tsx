@@ -10,7 +10,7 @@ import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
-  Mail, Link as LinkIcon, FileText, Camera, Check, Star, Download, Loader2
+  Mail, Link as LinkIcon, FileText, Camera, Check, Star, Download, Loader2, ShieldCheck, UserCheck, Lock
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
@@ -816,66 +816,139 @@ export default function PropertyDetails() {
                   property.sourceNotes?.trim() ||
                   property.source?.trim()
                 ) && (
-                  <Card className="relative overflow-hidden rounded-[10px] border border-[#C5A059]/30 bg-gradient-to-b from-[#22272D]/90 via-[#181C20]/95 to-[#14171A] backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.45)]">
-                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#C5A059]/40 to-transparent pointer-events-none" />
-                    <CardHeader className="pb-3 border-b border-white/10">
-                      <CardTitle className="text-base flex items-center gap-2 text-[#C5A059] font-bold">
-                        <FileText className="h-4 w-4 text-[#C5A059]" />
-                        بيانات المصدر
-                        <span className="text-[10px] font-bold bg-[#C5A059]/20 text-[#C5A059] border border-[#C5A059]/30 px-2 py-0.5 rounded-full">للمدير فقط</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3 pt-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground w-24 flex-shrink-0">نوع المصدر</span>
-                        <span className="font-semibold text-[#C5A059]">{property.agentType === "broker" ? "بروكر / وسيط" : "مباشر"}</span>
+                  <Card className="relative overflow-hidden rounded-[14px] border border-[#C5A059]/50 bg-[#12161A] backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.65),0_0_25px_rgba(197,160,89,0.08)]">
+                    {/* Top ambient gold light bar */}
+                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#C5A059] to-transparent pointer-events-none z-10" />
+
+                    {/* Dark luxury header with high contrast */}
+                    <div className="px-5 py-3.5 border-b border-[#C5A059]/20 bg-[#0B0E11]/90 flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C5A059] to-[#8C6D2D] flex items-center justify-center text-[#0B0E11] shadow-md shadow-[#C5A059]/30">
+                          <ShieldCheck className="h-4.5 w-4.5 stroke-[2.4]" />
+                        </div>
+                        <h3 className="text-base sm:text-lg font-black text-[#F8FAFC] tracking-tight m-0">
+                          بيانات مصدر العقار
+                        </h3>
                       </div>
-                      {property.assignedStaffId && property.assignedStaffId !== "none" && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground w-24 flex-shrink-0">الموظف المسؤول</span>
-                          <span className="font-medium text-foreground">
-                            {users?.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
+                      
+                      {/* High-contrast solid executive badge */}
+                      <div className="inline-flex items-center gap-1.5 bg-[#C5A059] text-[#0B0E11] px-3 py-1 rounded-full text-xs font-black shadow-md select-none">
+                        <Lock className="h-3 w-3 stroke-[2.8]" />
+                        <span>خاص بالمدير فقط</span>
+                      </div>
+                    </div>
+
+                    <CardContent className="space-y-4 p-5 pt-4">
+                      {/* Top quick badges grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F1317]/80 border border-[#C5A059]/25">
+                          <span className="text-xs text-muted-foreground">نوع المصدر:</span>
+                          <span className={cn(
+                            "text-xs font-bold px-2 py-0.5 rounded-md border",
+                            property.agentType === "broker"
+                              ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                              : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                          )}>
+                            {property.agentType === "broker" ? "بروكر / وسيط عقاري" : "مباشر من المالك"}
                           </span>
                         </div>
-                      )}
+
+                        {property.assignedStaffId && property.assignedStaffId !== "none" && (
+                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F1317]/80 border border-white/10">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <UserCheck className="h-3.5 w-3.5 text-[#C5A059]" />
+                              المسؤول:
+                            </span>
+                            <span className="text-xs font-bold text-foreground">
+                              {users?.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Owner name */}
                       {property.source?.trim() && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground w-24 flex-shrink-0">اسم المالك</span>
-                          <span className="font-medium text-foreground">{property.source}</span>
+                        <div className="p-3 rounded-lg bg-[#0F1317]/60 border border-white/10 flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">اسم المالك / المصدر:</span>
+                          <span className="text-sm font-bold text-[#F8FAFC] tracking-wide">{property.source}</span>
                         </div>
                       )}
+
+                      {/* Phone numbers with call & whatsapp quick actions */}
                       {(Array.isArray(property.sourcePhones) ? property.sourcePhones : []).filter((ph: any) => ph && String(ph).trim()).map((ph: any, i: number) => {
                         const phStr = String(ph).trim();
+                        const waPhone = normalizePhoneForWa(phStr);
                         return (
-                          <div key={i} className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground w-20 flex-shrink-0">{i === 0 ? "رقم التواصل" : " "}</span>
-                            <a href={`tel:${phStr.replace(/\s/g, "")}`} className="flex items-center gap-1.5 text-foreground hover:text-[#C5A059] hover:underline font-medium transition-colors" dir="ltr">
-                              <Phone className="h-3.5 w-3.5 flex-shrink-0 text-[#C5A059]" />{phStr}
-                            </a>
+                          <div key={i} className="p-3 rounded-lg bg-[#0F1317]/80 border border-[#C5A059]/30 flex flex-wrap items-center justify-between gap-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-md bg-[#C5A059]/15 text-[#C5A059] flex items-center justify-center">
+                                <Phone className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="text-sm font-mono font-bold text-[#F8FAFC]" dir="ltr">{phStr}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              {waPhone && (
+                                <a
+                                  href={`https://wa.me/${waPhone}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#25D366] border border-[#25D366]/30 transition-all cursor-pointer shadow-xs"
+                                  title="مراسلة عبر واتساب"
+                                >
+                                  <WhatsAppIcon className="h-3.5 w-3.5" />
+                                  <span>واتساب</span>
+                                </a>
+                              )}
+                              <a
+                                href={`tel:${phStr.replace(/\s/g, "")}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-[#C5A059]/15 hover:bg-[#C5A059]/25 text-[#C5A059] border border-[#C5A059]/30 transition-all cursor-pointer shadow-xs"
+                                title="اتصال مباشر"
+                              >
+                                <Phone className="h-3 w-3" />
+                                <span>اتصال</span>
+                              </a>
+                            </div>
                           </div>
                         );
                       })}
+
+                      {/* Email */}
                       {property.sourceEmail?.trim() && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground w-20 flex-shrink-0">البريد</span>
-                          <a href={`mailto:${property.sourceEmail}`} className="flex items-center gap-1.5 text-foreground hover:text-[#C5A059] hover:underline transition-colors" dir="ltr">
-                            <Mail className="h-3.5 w-3.5 flex-shrink-0 text-[#C5A059]" />{property.sourceEmail}
+                        <div className="p-3 rounded-lg bg-[#0F1317]/60 border border-white/10 flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Mail className="h-3.5 w-3.5 text-[#C5A059]" />
+                            البريد:
+                          </span>
+                          <a href={`mailto:${property.sourceEmail}`} className="text-xs font-medium text-foreground hover:text-[#C5A059] transition-colors" dir="ltr">
+                            {property.sourceEmail}
                           </a>
                         </div>
                       )}
+
+                      {/* Location link */}
                       {property.sourceLocation?.trim() && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground w-20 flex-shrink-0">الموقع</span>
-                          <a href={property.sourceLocation} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-[#C5A059] hover:underline">
-                            <LinkIcon className="h-3.5 w-3.5 flex-shrink-0" />افتح الرابط
+                        <div className="p-3 rounded-lg bg-[#0F1317]/60 border border-white/10 flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <LinkIcon className="h-3.5 w-3.5 text-[#C5A059]" />
+                            رابط المصدر:
+                          </span>
+                          <a href={property.sourceLocation} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#C5A059] hover:underline flex items-center gap-1">
+                            فتح الرابط الخارجي
+                            <ExternalLink className="h-3 w-3" />
                           </a>
                         </div>
                       )}
+
+                      {/* Confidential notes */}
                       {property.sourceNotes?.trim() && (
-                        <div className="flex gap-2 text-sm">
-                          <span className="text-muted-foreground w-20 flex-shrink-0">ملاحظات</span>
-                          <p className="text-sm leading-relaxed whitespace-pre-line text-foreground/90">{property.sourceNotes}</p>
+                        <div className="p-3 rounded-lg bg-[#141008]/80 border border-[#C5A059]/30 space-y-1">
+                          <span className="text-xs font-bold text-[#C5A059] flex items-center gap-1">
+                            ملاحظات الإدارة:
+                          </span>
+                          <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-line text-foreground/90 font-medium">
+                            {property.sourceNotes}
+                          </p>
                         </div>
                       )}
                     </CardContent>
