@@ -79,27 +79,12 @@ export function loadPropertyDraft(): PropertyDraftData | null {
   }
 }
 
-import { deleteFromCloudinary } from "@/lib/cloudinaryService";
-
 /**
- * Clears the active draft and permanently purges any uploaded Cloudinary images associated with it
+ * Clears the active form draft from localStorage and notifies listeners
  */
 export function clearPropertyDraft(): void {
   try {
     if (typeof window === "undefined") return;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw) as PropertyDraftData;
-        if (parsed.images && Array.isArray(parsed.images)) {
-          parsed.images.forEach(img => {
-            if (img && typeof img === "string" && img.includes("cloudinary.com")) {
-              void deleteFromCloudinary(img);
-            }
-          });
-        }
-      } catch {}
-    }
     localStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(DISMISS_SESSION_KEY);
     window.dispatchEvent(new CustomEvent("alm-property-draft-changed", { detail: null }));

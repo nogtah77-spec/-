@@ -126,6 +126,13 @@ export function PropertyGallery({
             fetchPriority="high"
             sizes="(max-width: 640px) calc(100vw - 80px), 800px"
             className="relative w-full h-full object-contain pointer-events-none"
+            onError={(e) => {
+              const target = e.currentTarget;
+              const raw = cleanImages[current];
+              if (raw && target.src !== raw) {
+                target.src = raw;
+              }
+            }}
           />
 
           {/* Dots (bottom of image) */}

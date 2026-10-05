@@ -211,7 +211,7 @@ export default function Home() {
   const featuredProps = useMemo(
     () =>
       properties
-        .filter((p) => p.featured && (p.status as string) !== "archived")
+        .filter((p) => p.featured && (p.status as string) !== "archived" && p.status !== "draft")
         .sort((a, b) => {
           const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
           const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
@@ -256,6 +256,7 @@ export default function Home() {
   const propertiesByRegion = useMemo(() => {
     const groups = new Map<string, { name: string; items: any[] }>();
     for (const p of properties) {
+      if (p.status === "draft" || (p.status as string) === "archived") continue;
       const region = regions.find((r) => r.id === p.regionId);
       if (!region || !region.active) continue;
       if (!groups.has(p.regionId))

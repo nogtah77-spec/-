@@ -433,6 +433,7 @@ export default function PropertyForm() {
         const folder = getPropertyCloudinaryFolder(currentRegion, currentCode);
         const uploaded = await uploadMultipleToCloudinary(optimized, folder);
         setImages(prev => [...prev, ...uploaded]);
+        isDirtyRef.current = true;
         toast({ title: `تم رفع ${uploaded.length} صورة بنجاح إلى مجلد (${currentCode}) في السحابة ✓` });
       }
     } catch (err) {
@@ -520,7 +521,7 @@ export default function PropertyForm() {
       });
       return;
     }
-    if (saving) return;
+    if (saving || compressing) return;
     setSaving(true);
     const numericValue = (value: unknown) => {
       const parsed = Number(toNumericString(value));
@@ -528,6 +529,7 @@ export default function PropertyForm() {
     };
     const payload = {
       ...form,
+      status: (form.status === "draft" || !form.status ? "active" : form.status) as PropertyStatus,
       sourcePhones: form.sourcePhones.filter((ph: string) => ph && ph.trim()),
       title: form.code.trim(),
       price: numericValue(form.price),
@@ -585,7 +587,7 @@ export default function PropertyForm() {
     const rawCode = form.code.trim();
     const effectiveCode = rawCode || `ALM-DRAFT-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    if (saving) return;
+    if (saving || compressing) return;
     setSaving(true);
     const numericValue = (value: unknown) => {
       const parsed = Number(toNumericString(value));
@@ -745,15 +747,15 @@ export default function PropertyForm() {
               type="button"
               variant="outline"
               onClick={handleSaveAsDraft}
-              disabled={saving}
+              disabled={saving || compressing}
               className="border-[#C5A059]/40 text-[#C5A059] hover:bg-[#C5A059]/10 gap-1.5"
               title="حفظ العقار كمسودة في لوحة التحكم لإكماله لاحقاً"
             >
               <Bookmark className="h-4 w-4" />
               <span>حفظ كمسودة</span>
             </Button>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave} disabled={saving}>
-              <Save className="ml-2 h-4 w-4" />{saving ? "جارٍ الحفظ..." : "حفظ ونشر"}
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={handleSave} disabled={saving || compressing}>
+              <Save className="ml-2 h-4 w-4" />{saving ? "جارٍ الحفظ..." : compressing ? "جارٍ معالجة الصور..." : "حفظ ونشر"}
             </Button>
           </div>
         </div>
@@ -1141,7 +1143,7 @@ export default function PropertyForm() {
                     </>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
+                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
                   onChange={e => handleFiles(e.target.files)} disabled={compressing} />
               </CardContent>
             </Card>
