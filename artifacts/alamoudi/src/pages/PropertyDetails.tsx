@@ -871,75 +871,83 @@ export default function PropertyDetails() {
                 </CardContent>
               </Card>
 
-              {/* Source info — admin only */}
+              {/* Source info — admin only (always visible for staff) */}
               {isStaff && (
-                Boolean(
-                  property.sourcePhones?.some((ph: string) => ph.trim()) ||
-                  property.sourceEmail?.trim() ||
-                  property.sourceLocation?.trim() ||
-                  property.sourceNotes?.trim() ||
-                  property.source?.trim()
-                ) && (
-                  <Card className="relative overflow-hidden rounded-[14px] border border-[#C5A059]/50 bg-[#12161A] backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.65),0_0_25px_rgba(197,160,89,0.08)]">
-                    {/* Top ambient gold light bar */}
-                    <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#C5A059] to-transparent pointer-events-none z-10" />
+                <Card className="relative overflow-hidden rounded-[14px] border border-[#C5A059]/50 bg-[#12161A] backdrop-blur-2xl shadow-[0_16px_40px_rgba(0,0,0,0.65),0_0_25px_rgba(197,160,89,0.08)]">
+                  {/* Top ambient gold light bar */}
+                  <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#C5A059] to-transparent pointer-events-none z-10" />
 
-                    {/* Dark luxury header with high contrast */}
-                    <div className="px-5 py-3.5 border-b border-[#C5A059]/20 bg-[#0B0E11]/90 flex items-center justify-between gap-3 flex-wrap">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C5A059] to-[#8C6D2D] flex items-center justify-center text-[#0B0E11] shadow-md shadow-[#C5A059]/30">
-                          <ShieldCheck className="h-4.5 w-4.5 stroke-[2.4]" />
-                        </div>
-                        <h3 className="text-base sm:text-lg font-black text-[#F8FAFC] tracking-tight m-0">
-                          بيانات مصدر العقار
-                        </h3>
+                  {/* Dark luxury header with high contrast */}
+                  <div className="px-5 py-3.5 border-b border-[#C5A059]/20 bg-[#0B0E11]/90 flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#C5A059] to-[#8C6D2D] flex items-center justify-center text-[#0B0E11] shadow-md shadow-[#C5A059]/30">
+                        <ShieldCheck className="h-4.5 w-4.5 stroke-[2.4]" />
                       </div>
-                      
-                      {/* High-contrast solid executive badge */}
-                      <div className="inline-flex items-center gap-1.5 bg-[#C5A059] text-[#0B0E11] px-3 py-1 rounded-full text-xs font-black shadow-md select-none">
-                        <Lock className="h-3 w-3 stroke-[2.8]" />
-                        <span>خاص بالمدير فقط</span>
+                      <h3 className="text-base sm:text-lg font-black text-[#F8FAFC] tracking-tight m-0">
+                        بيانات مصدر العقار
+                      </h3>
+                    </div>
+                    
+                    {/* High-contrast solid executive badge */}
+                    <div className="inline-flex items-center gap-1.5 bg-[#C5A059] text-[#0B0E11] px-3 py-1 rounded-full text-xs font-black shadow-md select-none">
+                      <Lock className="h-3 w-3 stroke-[2.8]" />
+                      <span>خاص بالمدير فقط</span>
+                    </div>
+                  </div>
+
+                  <CardContent className="space-y-4 p-5 pt-4">
+                    {/* Top quick badges grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F1317]/80 border border-[#C5A059]/25">
+                        <span className="text-xs text-muted-foreground">نوع المصدر:</span>
+                        <span className={cn(
+                          "text-xs font-bold px-2 py-0.5 rounded-md border",
+                          property.agentType === "broker"
+                            ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                            : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                        )}>
+                          {property.agentType === "broker" ? "بروكر / وسيط عقاري" : "مباشر من المالك"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F1317]/80 border border-white/10">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <UserCheck className="h-3.5 w-3.5 text-[#C5A059]" />
+                          المسؤول:
+                        </span>
+                        <span className="text-xs font-bold text-foreground">
+                          {property.assignedStaffId && property.assignedStaffId !== "none"
+                            ? (users?.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId)
+                            : "غير محدد"}
+                        </span>
                       </div>
                     </div>
 
-                    <CardContent className="space-y-4 p-5 pt-4">
-                      {/* Top quick badges grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F1317]/80 border border-[#C5A059]/25">
-                          <span className="text-xs text-muted-foreground">نوع المصدر:</span>
-                          <span className={cn(
-                            "text-xs font-bold px-2 py-0.5 rounded-md border",
-                            property.agentType === "broker"
-                              ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-                              : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                          )}>
-                            {property.agentType === "broker" ? "بروكر / وسيط عقاري" : "مباشر من المالك"}
-                          </span>
-                        </div>
-
-                        {property.assignedStaffId && property.assignedStaffId !== "none" && (
-                          <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#0F1317]/80 border border-white/10">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <UserCheck className="h-3.5 w-3.5 text-[#C5A059]" />
-                              المسؤول:
-                            </span>
-                            <span className="text-xs font-bold text-foreground">
-                              {users?.find(u => u.id === property.assignedStaffId)?.name || property.assignedStaffId}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Owner name */}
-                      {property.source?.trim() && (
-                        <div className="p-3 rounded-lg bg-[#0F1317]/60 border border-white/10 flex items-center justify-between gap-2">
-                          <span className="text-xs text-muted-foreground">اسم المالك / المصدر:</span>
-                          <span className="text-sm font-bold text-[#F8FAFC] tracking-wide">{property.source}</span>
-                        </div>
+                    {/* Owner / Broker name */}
+                    <div className="p-3 rounded-lg bg-[#0F1317]/60 border border-white/10 flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {property.agentType === "broker" ? "اسم الوسيط / المصدر:" : "اسم المالك / المصدر:"}
+                      </span>
+                      {property.source?.trim() ? (
+                        <span className="text-sm font-bold text-[#F8FAFC] tracking-wide">{property.source}</span>
+                      ) : (
+                        <span className="text-xs font-medium text-muted-foreground">لم يتم تسجيل الاسم</span>
                       )}
+                    </div>
 
-                      {/* Phone numbers with call & whatsapp quick actions */}
-                      {(Array.isArray(property.sourcePhones) ? property.sourcePhones : []).filter((ph: any) => ph && String(ph).trim()).map((ph: any, i: number) => {
+                    {/* Phone numbers status if none */}
+                    {(!Array.isArray(property.sourcePhones) || !property.sourcePhones.some((ph: any) => ph && String(ph).trim())) && (
+                      <div className="p-2.5 rounded-lg bg-[#0F1317]/40 border border-white/5 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Phone className="h-3 w-3 text-[#C5A059]/70" />
+                          رقم الهاتف:
+                        </span>
+                        <span>لم يتم تسجيل رقم</span>
+                      </div>
+                    )}
+
+                    {/* Phone numbers with call & whatsapp quick actions */}
+                    {(Array.isArray(property.sourcePhones) ? property.sourcePhones : []).filter((ph: any) => ph && String(ph).trim()).map((ph: any, i: number) => {
                         const phStr = String(ph).trim();
                         const waPhone = normalizePhoneForWa(phStr);
                         return (
@@ -1017,7 +1025,6 @@ export default function PropertyDetails() {
                       )}
                     </CardContent>
                   </Card>
-                )
               )}
 
               {/* Map */}
