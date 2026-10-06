@@ -12,7 +12,7 @@ import {
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
   Mail, Link as LinkIcon, FileText, Camera, Check, Star, Download, Loader2, ShieldCheck, UserCheck, Lock
 } from "lucide-react";
-import { WhatsAppIcon } from "@/components/icons/BrandIcons";
+import { WhatsAppIcon, TelegramIcon, TikTokIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
 import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
@@ -53,6 +53,39 @@ const finishingLabels: Record<string, string> = {
   "ultra": "ألترا سوبر لوكس", "finished": "متشطب", "red-brick": "طوب أحمر",
   "under-construction": "تحت الإنشاء", "core-shell": "تحت الإنشاء",
 };
+
+function getExternalLinkInfo(url: string | undefined | null) {
+  if (!url || !url.trim()) return null;
+  const clean = url.trim().toLowerCase();
+  if (clean.includes("t.me") || clean.includes("telegram.me") || clean.includes("telegram.org")) {
+    return {
+      type: "telegram",
+      label: "قناة التليجرام",
+      actionText: "معاينة على Telegram",
+      Icon: TelegramIcon,
+      btnClass: "bg-[#229ED9] hover:bg-[#1f8ec4] text-white shadow-md shadow-[#229ED9]/25",
+      contactBtnClass: "bg-[#229ED9] hover:bg-[#1f8ec4] text-white shadow-md",
+    };
+  }
+  if (clean.includes("tiktok.com")) {
+    return {
+      type: "tiktok",
+      label: "العقار على تيك توك",
+      actionText: "معاينة على TikTok",
+      Icon: TikTokIcon,
+      btnClass: "bg-black hover:bg-neutral-900 text-white border border-white/20 shadow-md shadow-black/40",
+      contactBtnClass: "bg-black hover:bg-neutral-900 text-white border border-white/20 shadow-md",
+    };
+  }
+  return {
+    type: "external",
+    label: "رابط العقار الخارجي",
+    actionText: "فتح رابط العقار",
+    Icon: ExternalLink,
+    btnClass: "bg-[#C5A059] hover:bg-[#B38E46] text-[#10202D] shadow-md shadow-[#C5A059]/25",
+    contactBtnClass: "bg-[#C5A059] hover:bg-[#B38E46] text-[#10202D] shadow-md",
+  };
+}
 
 export default function PropertyDetails() {
   const { id } = useParams<{ id: string }>();
@@ -170,6 +203,8 @@ export default function PropertyDetails() {
     if (!property?.images) return [];
     return parsePropertyImages(property.images);
   }, [property?.images]);
+
+  const extLinkInfo = useMemo(() => getExternalLinkInfo(property?.externalUrl), [property?.externalUrl]);
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
@@ -591,6 +626,20 @@ export default function PropertyDetails() {
                 <span className="text-xs font-bold">تحميل الفيديو</span>
               </button>
             )}
+            {extLinkInfo && property.externalUrl && (
+              <a
+                href={property.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center gap-1.5 font-bold rounded-[10px] px-3 py-2 text-sm transition-all cursor-pointer",
+                  extLinkInfo.btnClass
+                )}
+              >
+                <extLinkInfo.Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="text-xs font-bold">{extLinkInfo.label}</span>
+              </a>
+            )}
           </div>
 
           {/* Gallery */}
@@ -707,6 +756,21 @@ export default function PropertyDetails() {
                     )}
                     <span className="text-xs font-bold">تحميل الفيديو</span>
                   </button>
+                )}
+                {extLinkInfo && property.externalUrl && (
+                  <a
+                    href={property.externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="link-external-property"
+                    className={cn(
+                      "flex items-center gap-1.5 font-bold rounded-[10px] px-3 py-2 text-sm transition-all cursor-pointer",
+                      extLinkInfo.btnClass
+                    )}
+                  >
+                    <extLinkInfo.Icon className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="text-xs font-bold">{extLinkInfo.label}</span>
+                  </a>
                 )}
               </div>
 
@@ -986,7 +1050,7 @@ export default function PropertyDetails() {
                   </div>
 
                   {waHref && (
-                    <a href={waHref} target="_blank" rel="noopener noreferrer">
+                    <a href={waHref} target="_blank" rel="noopener noreferrer" className="block">
                       <Button className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold gap-2 rounded-[10px] shadow-md cursor-pointer transition-all">
                         <WhatsAppIcon className="h-4 w-4" />
                         تواصل عبر واتساب
@@ -994,10 +1058,18 @@ export default function PropertyDetails() {
                     </a>
                   )}
                   {settings.phone1 && (
-                    <a href={`tel:${settings.phone1.replace(/\s/g, "")}`}>
-                      <Button variant="outline" className="w-full gap-2 rounded-[10px] mt-2 border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-foreground font-semibold backdrop-blur-md cursor-pointer transition-all">
+                    <a href={`tel:${settings.phone1.replace(/\s/g, "")}`} className="block">
+                      <Button variant="outline" className="w-full gap-2 rounded-[10px] border border-white/10 bg-[#161B20]/60 hover:bg-white/5 text-foreground font-semibold backdrop-blur-md cursor-pointer transition-all">
                         <Phone className="h-4 w-4 text-[#C5A059]" />
                         {settings.phone1}
+                      </Button>
+                    </a>
+                  )}
+                  {extLinkInfo && property.externalUrl && (
+                    <a href={property.externalUrl} target="_blank" rel="noopener noreferrer" className="block">
+                      <Button className={cn("w-full gap-2 rounded-[10px] font-bold cursor-pointer transition-all", extLinkInfo.contactBtnClass)}>
+                        <extLinkInfo.Icon className="h-4 w-4" />
+                        {extLinkInfo.actionText}
                       </Button>
                     </a>
                   )}
@@ -1009,17 +1081,6 @@ export default function PropertyDetails() {
                     <Share2 className="h-4 w-4 text-[#C5A059]" />
                     مشاركة العقار
                   </Button>
-
-                  {property.externalUrl && (
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 rounded-xl text-accent border-accent/30 hover:bg-accent/10 mt-2"
-                      onClick={() => window.open(property.externalUrl!, "_blank", "noopener,noreferrer")}
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      رابط العقار الخارجي
-                    </Button>
-                  )}
                 </CardContent>
               </Card>
             </div>
