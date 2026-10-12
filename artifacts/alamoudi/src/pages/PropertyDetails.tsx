@@ -18,7 +18,6 @@ import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import { checkUserPermission } from "@/lib/permissions";
 import { useData, type Property } from "@/context/DataContext";
 import { formatNumber, getFeaturedTypeLabel } from "@/lib/utils";
 import { useUserPrefs } from "@/context/UserPrefsContext";
@@ -92,8 +91,6 @@ export default function PropertyDetails() {
   const [, navigate] = useLocation();
   const { properties, propertyTypes, regions, settings, trackPropertyView, ready, users } = useData();
   const { isStaff, currentUser } = useAuth();
-  const isAdmin = currentUser?.role === "admin";
-  const canViewBrochure = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-بروشور العقار PDF");
   const { toggleFavorite, isFavorite, toggleCompare, isInCompare } = useUserPrefs();
   const { toast } = useToast();
 
@@ -534,20 +531,18 @@ export default function PropertyDetails() {
                     <Pencil className="h-4 w-4" />تعديل العقار
                   </Button>
                 )}
-                {canViewBrochure && (
-                  <PropertyBrochureModal
-                    property={property}
-                    region={regions?.find(r => r.id === property.regionId)}
-                    propertyType={propertyTypes?.find(t => t.id === property.typeId)}
-                    categoryLabel={categoryLabels[property.category] || property.category || ""}
-                    finishingLabel={finishingLabels[property.finishing] || property.finishing || ""}
-                    companyName={settings?.companyName}
-                    phone={settings?.phone1}
-                    whatsapp={settings?.whatsapp}
-                    email={settings?.email}
-                    qrCodes={settings?.qrCodes}
-                  />
-                )}
+                <PropertyBrochureModal
+                  property={property}
+                  region={regions?.find(r => r.id === property.regionId)}
+                  propertyType={propertyTypes?.find(t => t.id === property.typeId)}
+                  categoryLabel={categoryLabels[property.category] || property.category || ""}
+                  finishingLabel={finishingLabels[property.finishing] || property.finishing || ""}
+                  companyName={settings?.companyName}
+                  phone={settings?.phone1}
+                  whatsapp={settings?.whatsapp}
+                  email={settings?.email}
+                  qrCodes={settings?.qrCodes}
+                />
                 <PropertyShareModal
                   property={property}
                   regionName={regionName}
