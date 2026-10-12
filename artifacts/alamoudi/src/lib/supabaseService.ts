@@ -891,10 +891,18 @@ export const supabaseService = {
     }
   },
 
-  // Fetch Visitor Stats from Supabase Cloud
-  async fetchVisitorStats(): Promise<{ today: number; week: number; month: number } | null> {
+  // Fetch Visitor Stats from Supabase Cloud (with automatic daily, Saturday-weekly, and monthly resets)
+  async fetchVisitorStats(): Promise<{ today: number; week: number; month: number; allTime: number } | null> {
     if (!supabase) return null;
     try {
+      const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+      const [y, m, d] = todayKey.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      const daysSinceSaturday = (dt.getUTCDay() + 1) % 7;
+      const satDate = new Date(Date.UTC(y, m - 1, d - daysSinceSaturday));
+      const weekKey = satDate.toISOString().slice(0, 10);
+      const monthKey = todayKey.slice(0, 7);
+
       const { data, error } = await supabase
         .from("properties")
         .select("description")
@@ -904,15 +912,72 @@ export const supabaseService = {
         console.warn("Supabase fetch visitor stats warning:", error);
         return null;
       }
+
+      let parsed: any = null;
       if (data && data.description) {
-        const parsed = JSON.parse(data.description);
-        return {
-          today: Number(parsed.today) || 0,
-          week: Number(parsed.week) || 0,
-          month: Number(parsed.month) || 0,
-        };
+        try {
+          parsed = JSON.parse(data.description);
+        } catch {}
       }
-      return null;
+
+      // Migrate from legacy unversioned store (which had hardcoded seed values & never reset)
+      if (!parsed || parsed.schemaVersion !== 2) {
+        const cleanStore = {
+          schemaVersion: 2,
+          lastDate: todayKey,
+          lastWeek: weekKey,
+          lastMonth: monthKey,
+          today: 0,
+          week: 0,
+          month: 0,
+          allTime: 0,
+        };
+        await supabase.from("properties").upsert({
+          id: "__visitor_stats_store__",
+          code: "__VISITOR_STATS__",
+          title: "Visitor Stats Store",
+          description: JSON.stringify(cleanStore),
+          price: 0,
+          area: 0,
+          status: "archived",
+          created_at: new Date().toISOString(),
+        });
+        return { today: 0, week: 0, month: 0, allTime: 0 };
+      }
+
+      const dayChanged = parsed.lastDate !== todayKey;
+      const weekChanged = parsed.lastWeek !== weekKey;
+      const monthChanged = parsed.lastMonth !== monthKey;
+
+      const today = dayChanged ? 0 : (Number(parsed.today) || 0);
+      const week = weekChanged ? 0 : (Number(parsed.week) || 0);
+      const month = monthChanged ? 0 : (Number(parsed.month) || 0);
+      const allTime = Number(parsed.allTime) || 0;
+
+      if (dayChanged || weekChanged || monthChanged) {
+        const syncedStore = {
+          schemaVersion: 2,
+          lastDate: todayKey,
+          lastWeek: weekKey,
+          lastMonth: monthKey,
+          today,
+          week,
+          month,
+          allTime,
+        };
+        await supabase.from("properties").upsert({
+          id: "__visitor_stats_store__",
+          code: "__VISITOR_STATS__",
+          title: "Visitor Stats Store",
+          description: JSON.stringify(syncedStore),
+          price: 0,
+          area: 0,
+          status: "archived",
+          created_at: new Date().toISOString(),
+        });
+      }
+
+      return { today, week, month, allTime };
     } catch (e) {
       console.warn("Supabase fetch visitor stats exception:", e);
       return null;
@@ -920,43 +985,45 @@ export const supabaseService = {
   },
 
   // Record a unique visitor session in Supabase Cloud
-  async recordVisitorVisit(): Promise<{ today: number; week: number; month: number } | null> {
+  async recordVisitorVisit(): Promise<{ today: number; week: number; month: number; allTime: number } | null> {
     if (!supabase) return null;
     try {
-      const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+      const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+      const [y, m, d] = todayKey.split("-").map(Number);
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      const daysSinceSaturday = (dt.getUTCDay() + 1) % 7;
+      const satDate = new Date(Date.UTC(y, m - 1, d - daysSinceSaturday));
+      const weekKey = satDate.toISOString().slice(0, 10);
+      const monthKey = todayKey.slice(0, 7);
+
       const { data } = await supabase
         .from("properties")
         .select("description")
         .eq("id", "__visitor_stats_store__")
         .maybeSingle();
 
-      let current = { lastDate: todayStr, today: 34, week: 218, month: 745 };
+      let parsed: any = null;
       if (data && data.description) {
         try {
-          current = { ...current, ...JSON.parse(data.description) };
+          parsed = JSON.parse(data.description);
         } catch {}
       }
 
-      let nextToday = Number(current.today) || 0;
-      let nextWeek = Number(current.week) || 0;
-      let nextMonth = Number(current.month) || 0;
-
-      if (current.lastDate !== todayStr) {
-        current.lastDate = todayStr;
-        nextToday = 1;
-        nextWeek += 1;
-        nextMonth += 1;
-      } else {
-        nextToday += 1;
-        nextWeek += 1;
-        nextMonth += 1;
-      }
+      const isV2 = parsed && parsed.schemaVersion === 2;
+      const baseToday = isV2 && parsed.lastDate === todayKey ? (Number(parsed.today) || 0) : 0;
+      const baseWeek = isV2 && parsed.lastWeek === weekKey ? (Number(parsed.week) || 0) : 0;
+      const baseMonth = isV2 && parsed.lastMonth === monthKey ? (Number(parsed.month) || 0) : 0;
+      const baseAllTime = isV2 ? (Number(parsed.allTime) || 0) : 0;
 
       const updated = {
-        lastDate: todayStr,
-        today: nextToday,
-        week: nextWeek,
-        month: nextMonth,
+        schemaVersion: 2,
+        lastDate: todayKey,
+        lastWeek: weekKey,
+        lastMonth: monthKey,
+        today: baseToday + 1,
+        week: baseWeek + 1,
+        month: baseMonth + 1,
+        allTime: baseAllTime + 1,
       };
 
       const row = {
@@ -976,6 +1043,7 @@ export const supabaseService = {
         today: updated.today,
         week: updated.week,
         month: updated.month,
+        allTime: updated.allTime,
       };
     } catch (e) {
       console.warn("Supabase record visitor visit exception:", e);

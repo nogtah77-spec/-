@@ -15,6 +15,8 @@ import { RollingNumber } from "@/components/ui/RollingNumber";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { checkUserPermission } from "@/lib/permissions";
 import { formatNumber, cn } from "@/lib/utils";
+import { parsePropertyImages } from "@/lib/supabaseService";
+import { getCardImageUrl } from "@/lib/cloudinaryService";
 import { Link } from "wouter";
 import {
   ResponsiveContainer,
@@ -95,12 +97,17 @@ export default function Analytics() {
     );
   }, [properties]);
 
+  // Published properties (exclude drafts from public market & price tier calculations)
+  const publishedProperties = useMemo(() => {
+    return cleanProperties.filter((p) => p.status !== "draft");
+  }, [cleanProperties]);
+
   // Visitor cards data
   const visitorCards = [
-    { key: "online", title: "متواجدون الآن", value: visitorStats.online, icon: Radio, live: true },
-    { key: "today", title: "زوار اليوم", value: visitorStats.today, icon: CalendarDays, live: false },
-    { key: "week", title: "زوار آخر أسبوع", value: visitorStats.week, icon: CalendarRange, live: false },
-    { key: "month", title: "زوار آخر شهر", value: visitorStats.month, icon: CalendarClock, live: false },
+    { key: "online", title: "متواجدون الآن", sub: "تتبع لحظي للزوار", value: visitorStats.online, icon: Radio, live: true },
+    { key: "today", title: "زوار اليوم", sub: "يتصفر يومياً 12 ص", value: visitorStats.today, icon: CalendarDays, live: false },
+    { key: "week", title: "زوار هذا الأسبوع", sub: "يتصفر كل سبت", value: visitorStats.week, icon: CalendarRange, live: false },
+    { key: "month", title: "زوار هذا الشهر", sub: "يتصفر أول كل شهر", value: visitorStats.month, icon: CalendarClock, live: false },
   ];
 
   // Key Totals
@@ -122,7 +129,7 @@ export default function Analytics() {
   // 1. Region Views & Demand Leaderboard
   const regionLeaderboard = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of cleanProperties) {
+    for (const p of publishedProperties) {
       map.set(p.regionId, (map.get(p.regionId) ?? 0) + (p.views ?? 0));
     }
     const list = regions
@@ -130,7 +137,7 @@ export default function Analytics() {
         id: r.id,
         name: r.name,
         views: map.get(r.id) ?? 0,
-        count: cleanProperties.filter((p) => p.regionId === r.id).length,
+        count: publishedProperties.filter((p) => p.regionId === r.id).length,
       }))
       .filter((d) => d.count > 0 || d.views > 0)
       .sort((a, b) => b.views - a.views);
@@ -142,15 +149,15 @@ export default function Analytics() {
       percentage: totalViews > 0 ? Math.round((item.views / totalViews) * 100) : 0,
       barWidth: Math.max(Math.round((item.views / maxViews) * 100), 8),
     }));
-  }, [cleanProperties, regions, totalViews]);
+  }, [publishedProperties, regions, totalViews]);
 
   // 2. Type Distribution (Donut & Progress Bars)
   const typeDistribution = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of cleanProperties) {
+    for (const p of publishedProperties) {
       map.set(p.typeId, (map.get(p.typeId) ?? 0) + 1);
     }
-    const total = cleanProperties.length || 1;
+    const total = publishedProperties.length || 1;
     return propertyTypes
       .map((t, idx) => {
         const count = map.get(t.id) ?? 0;
@@ -164,14 +171,14 @@ export default function Analytics() {
       })
       .filter((d) => d.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [cleanProperties, propertyTypes]);
+  }, [publishedProperties, propertyTypes]);
 
   // 3. Top Trending / Most Viewed Properties
   const topTrendingProperties = useMemo(() => {
-    return [...cleanProperties]
+    return [...publishedProperties]
       .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
       .slice(0, 4);
-  }, [cleanProperties]);
+  }, [publishedProperties]);
 
   // 4. Price Spectrum & Portfolio Distribution
   const priceSpectrum = useMemo(() => {
@@ -182,11 +189,11 @@ export default function Analytics() {
       { id: "tier4", label: "أكثر من 10 مليون (فاخر)", min: 10_000_000, max: Infinity, color: "from-amber-600 to-accent", bgBadge: "bg-accent/15 text-accent" },
     ];
 
-    const total = cleanProperties.length || 1;
+    const total = publishedProperties.length || 1;
     return ranges.map((r) => {
-      const matching = cleanProperties.filter((p) => (p.price || 0) >= r.min && (p.price || 0) < r.max);
+      const matching = publishedProperties.filter((p) => (p.price || 0) >= r.min && (p.price || 0) < r.max);
       const count = matching.length;
-      const percentage = Math.round((count / total) * 100);
+      const percentage = publishedProperties.length > 0 ? Math.round((count / total) * 100) : 0;
       const totalPrice = matching.reduce((sum, p) => sum + (p.price || 0), 0);
       return {
         ...r,
@@ -195,66 +202,87 @@ export default function Analytics() {
         totalPrice,
       };
     });
-  }, [cleanProperties]);
+  }, [publishedProperties]);
 
-  // 5. Engagement & Conversion Funnel
+  // 5. Engagement & Conversion Funnel (100% Real Data - No synthetic multipliers or fake fallback percentages)
   const funnelSteps = useMemo(() => {
-    const totalTraffic = (visitorStats.month || 0) + (visitorStats.today || 0) * 10 + totalViews;
-    const baseTraffic = Math.max(totalTraffic, totalViews, 100);
-    const viewsCount = Math.max(totalViews, 1);
+    const allTimeVisitors = visitorStats.allTime || 0;
+    const baseTraffic = Math.max(allTimeVisitors + totalViews, totalViews);
+    const viewsCount = totalViews;
     const directLeads = inquiries.length + (customerPropertyRequests?.length || 0);
     const specializedLeads = finishingRequests.length + propertyRequests.length;
+
+    const viewsPct = baseTraffic > 0 ? Math.min(Math.round((viewsCount / baseTraffic) * 100), 100) : 0;
+    const directLeadsPct = viewsCount > 0 ? Math.min(Math.round((directLeads / viewsCount) * 100), 100) : 0;
+    const specializedPct = viewsCount > 0 ? Math.min(Math.round((specializedLeads / viewsCount) * 100), 100) : 0;
 
     return [
       {
         title: "إجمالي الزيارات والاهتمام",
         value: baseTraffic,
-        subtitle: "زوار تصفحوا المنصة ومواقع التواصل",
-        pct: 100,
+        subtitle: "الزوار التراكميون والمشاهدات منذ تأسيس المنصة",
+        pct: baseTraffic > 0 ? 100 : 0,
         color: "bg-blue-500",
       },
       {
         title: "مشاهدات تفاصيل العقارات",
         value: viewsCount,
-        subtitle: "تفاعل مباشر مع تفاصيل الوحدات",
-        pct: Math.min(Math.round((viewsCount / baseTraffic) * 100), 100) || 45,
+        subtitle: "تفاعل الزوار الفعلي مع صفحات الوحدات",
+        pct: viewsPct,
         color: "bg-amber-500",
       },
       {
         title: "استفسارات وتواصل مباشر",
         value: directLeads,
-        subtitle: "رسائل واتساب واستفسارات شراء/إيجار",
-        pct: Math.min(Math.round((directLeads / Math.max(viewsCount, 1)) * 100), 100) || 12,
+        subtitle: "رسائل واستفسارات وطلبات شراء أو إيجار",
+        pct: directLeadsPct,
         color: "bg-emerald-500",
       },
       {
         title: "طلبات تشطيب ومعاينات جادة",
         value: specializedLeads,
-        subtitle: "طلبات خدمات وديكورات معتمدة",
-        pct: Math.min(Math.round((specializedLeads / Math.max(directLeads, 1)) * 100), 100) || 8,
+        subtitle: "طلبات خدمات التشطيب وعرض العقارات",
+        pct: specializedPct,
         color: "bg-purple-500",
       },
     ];
-  }, [visitorStats, totalViews, inquiries, finishingRequests, propertyRequests, customerPropertyRequests]);
+  }, [visitorStats.allTime, totalViews, inquiries, finishingRequests, propertyRequests, customerPropertyRequests]);
 
-  // 6. Category Breakdown
-  const categoryData = useMemo(() => {
+  // 6. Listing Type & Category Breakdown
+  const listingTypeData = useMemo(() => {
     const map = new Map<string, number>();
-    for (const p of cleanProperties) {
-      map.set(p.category || "residential", (map.get(p.category || "residential") ?? 0) + 1);
+    for (const p of publishedProperties) {
+      const lt = p.listingType || "sale";
+      map.set(lt, (map.get(lt) ?? 0) + 1);
     }
-    const total = cleanProperties.length || 1;
+    const total = publishedProperties.length || 1;
     return Array.from(map.entries())
       .map(([key, value]) => ({
         key,
         name: CATEGORY_LABELS[key] ?? key,
         value,
-        percentage: Math.round((value / total) * 100),
+        percentage: publishedProperties.length > 0 ? Math.round((value / total) * 100) : 0,
       }))
       .sort((a, b) => b.value - a.value);
-  }, [cleanProperties]);
+  }, [publishedProperties]);
 
-  // 7. Status Breakdown
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of publishedProperties) {
+      map.set(p.category || "residential", (map.get(p.category || "residential") ?? 0) + 1);
+    }
+    const total = publishedProperties.length || 1;
+    return Array.from(map.entries())
+      .map(([key, value]) => ({
+        key,
+        name: CATEGORY_LABELS[key] ?? key,
+        value,
+        percentage: publishedProperties.length > 0 ? Math.round((value / total) * 100) : 0,
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [publishedProperties]);
+
+  // 7. Status Breakdown (includes all statuses including drafts)
   const statusData = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of cleanProperties) {
@@ -344,6 +372,7 @@ export default function Analytics() {
                 <div className="flex justify-start text-xl sm:text-2xl lg:text-3xl font-black text-foreground tracking-tight" dir="ltr">
                   <RollingNumber value={c.value} />
                 </div>
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-1 truncate">{c.sub}</p>
               </Card>
             ))}
           </div>
@@ -379,11 +408,11 @@ export default function Analytics() {
                     توزيع العقارات حسب النوع
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                    النسبة المئوية لكل فئة من العقارات في المنصة
+                    النسبة المئوية لكل فئة من العقارات المنشورة في المنصة
                   </CardDescription>
                 </div>
                 <Badge variant="secondary" className="font-semibold text-[11px]">
-                  {cleanProperties.length} عقار
+                  {publishedProperties.length} عقار
                 </Badge>
               </div>
             </CardHeader>
@@ -432,7 +461,7 @@ export default function Analytics() {
                     {/* Centered Total Counter */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                       <span className="text-2xl font-black text-foreground tracking-tight">
-                        {cleanProperties.length}
+                        {publishedProperties.length}
                       </span>
                       <span className="text-[11px] font-medium text-muted-foreground uppercase">
                         إجمالي الوحدات
@@ -592,7 +621,9 @@ export default function Analytics() {
                   {topTrendingProperties.map((p) => {
                     const regionName = regions.find((r) => r.id === p.regionId)?.name || "المنطقة";
                     const typeName = propertyTypes.find((t) => t.id === p.typeId)?.name || "عقار";
-                    const thumbnail = p.images?.[0] || "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80";
+                    const parsedImgs = parsePropertyImages(p.images);
+                    const rawThumb = parsedImgs[0] || "";
+                    const thumbnail = rawThumb ? getCardImageUrl(rawThumb) : "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80";
 
                     return (
                       <div
@@ -603,9 +634,17 @@ export default function Analytics() {
                           <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden border border-border/60 bg-muted">
                             <img
                               src={thumbnail}
-                              alt={p.title}
+                              alt={p.title || p.code}
                               className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300"
                               loading="lazy"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                if (rawThumb && target.src !== rawThumb) {
+                                  target.src = rawThumb;
+                                } else {
+                                  target.src = "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=600&q=80";
+                                }
+                              }}
                             />
                             <div className="absolute top-1 right-1 bg-black/70 backdrop-blur-xs px-1.5 py-0.5 rounded text-[9px] font-mono text-white">
                               {p.code}
@@ -614,7 +653,7 @@ export default function Analytics() {
 
                           <div className="flex-1 min-w-0">
                             <h4 className="font-bold text-xs text-foreground truncate group-hover:text-accent transition-colors">
-                              {p.title}
+                              {p.title || p.code}
                             </h4>
                             <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1">
                               <MapPin className="h-3 w-3 text-accent shrink-0" />
@@ -709,7 +748,7 @@ export default function Analytics() {
                     قمع تفاعل وتحويل العملاء
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                    مراحل تفاعل الزوار من التصفح وحتى طلبات الحجز والتشطيب
+                    مراحل تفاعل الزوار الفعلية من التصفح وحتى طلبات الشراء والتشطيب
                   </CardDescription>
                 </div>
                 <Badge variant="secondary" className="text-[11px] font-semibold">
@@ -741,7 +780,7 @@ export default function Analytics() {
                           {step.value.toLocaleString("en-US")}
                         </span>
                         <span className="text-[10px] text-muted-foreground block">
-                          معدل التحويل {step.pct}%
+                          نسبة التفاعل {step.pct}%
                         </span>
                       </div>
                     </div>
@@ -750,7 +789,7 @@ export default function Analytics() {
                     <div className="mt-2 h-1 w-full bg-muted/40 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${step.color} rounded-full transition-all duration-500`}
-                        style={{ width: `${Math.max(step.pct, 6)}%` }}
+                        style={{ width: `${Math.max(step.pct, 4)}%` }}
                       />
                     </div>
                   </div>
@@ -769,7 +808,7 @@ export default function Analytics() {
                     توزيع فئات العرض وحالة السوق
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                    توزيع الوحدات حسب فئة العرض والحالة التشغيلية الحالية
+                    توزيع الوحدات حسب نوع العرض، الفئة، والحالة التشغيلية الحالية
                   </CardDescription>
                 </div>
                 <Badge variant="outline" className="border-accent/30 text-accent text-[11px]">
@@ -778,11 +817,31 @@ export default function Analytics() {
               </div>
             </CardHeader>
 
-            <CardContent className="pt-4 flex-1 space-y-5">
-              {/* Category Breakdown */}
+            <CardContent className="pt-4 flex-1 space-y-4">
+              {/* Listing Type Breakdown */}
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-muted-foreground block">
-                  1. تصنيف العروض (بيع / إيجار / تجاري)
+                  1. نوع العرض (للبيع / للإيجار / مفروش)
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {listingTypeData.map((lt) => (
+                    <div
+                      key={lt.key}
+                      className="p-2.5 rounded-lg border border-border/40 bg-background/50 text-center"
+                    >
+                      <span className="text-xs font-bold text-foreground block">{lt.name}</span>
+                      <span className="text-xs font-mono font-bold text-accent mt-0.5 block">
+                        {lt.value} <span className="text-[10px] text-muted-foreground font-normal">({lt.percentage}%)</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Category Breakdown */}
+              <div className="space-y-2 pt-2 border-t border-border/30">
+                <span className="text-xs font-semibold text-muted-foreground block">
+                  2. التصنيف العقاري (سكني / تجاري / إداري / طبي)
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {categoryData.map((cat) => (
@@ -802,7 +861,7 @@ export default function Analytics() {
               {/* Status Breakdown */}
               <div className="space-y-2 pt-2 border-t border-border/30">
                 <span className="text-xs font-semibold text-muted-foreground block">
-                  2. الحالة التشغيلية للعقارات
+                  3. الحالة التشغيلية للعقارات
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {statusData.map((st) => (

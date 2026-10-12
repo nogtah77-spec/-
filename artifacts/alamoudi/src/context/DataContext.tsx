@@ -484,6 +484,7 @@ export interface VisitorStats {
   today: number;
   week: number;
   month: number;
+  allTime: number;
 }
 
 interface DataContextType {
@@ -1120,18 +1121,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   });
   const [visitorStats, setVisitorStats] = useState<VisitorStats>(() => {
     try {
-      const cached = localStorage.getItem("alm_visitor_stats");
+      const cached = localStorage.getItem("alm_visitor_stats_v2");
       if (cached) {
         const parsed = JSON.parse(cached);
         return {
-          online: 1,
-          today: Number(parsed.today) || 34,
-          week: Number(parsed.week) || 218,
-          month: Number(parsed.month) || 745,
+          online: 0,
+          today: Number(parsed.today) || 0,
+          week: Number(parsed.week) || 0,
+          month: Number(parsed.month) || 0,
+          allTime: Number(parsed.allTime) || 0,
         };
       }
     } catch {}
-    return { online: 1, today: 34, week: 218, month: 745 };
+    return { online: 0, today: 0, week: 0, month: 0, allTime: 0 };
   });
   const [settings, setSettings] = useState<SiteSettings>(() => {
     let localQr: { qrSectionEnabled?: boolean; qrCodes?: QrCodeItem[] } | undefined;
@@ -1303,8 +1305,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             today: stats.today,
             week: stats.week,
             month: stats.month,
+            allTime: stats.allTime,
           };
-          try { localStorage.setItem("alm_visitor_stats", JSON.stringify(next)); } catch {}
+          try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
           return next;
         });
       }
@@ -2354,8 +2357,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     supabaseService.fetchVisitorStats().then((stats) => {
       if (!active || !stats) return;
       setVisitorStats((prev) => {
-        const next = { ...prev, today: stats.today, week: stats.week, month: stats.month };
-        try { localStorage.setItem("alm_visitor_stats", JSON.stringify(next)); } catch {}
+        const next = { ...prev, today: stats.today, week: stats.week, month: stats.month, allTime: stats.allTime };
+        try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
         return next;
       });
     }).catch(() => {});
@@ -2369,8 +2372,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           supabaseService.recordVisitorVisit().then((stats) => {
             if (!active || !stats) return;
             setVisitorStats((prev) => {
-              const next = { ...prev, today: stats.today, week: stats.week, month: stats.month };
-              try { localStorage.setItem("alm_visitor_stats", JSON.stringify(next)); } catch {}
+              const next = { ...prev, today: stats.today, week: stats.week, month: stats.month, allTime: stats.allTime };
+              try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
               return next;
             });
           }).catch(() => {});
