@@ -1300,12 +1300,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const stats = await supabaseService.fetchVisitorStats();
       if (stats) {
         setVisitorStats(prev => {
+          const nextToday = Math.max(stats.today, prev.online);
+          const nextWeek = Math.max(stats.week, nextToday);
+          const nextMonth = Math.max(stats.month, nextWeek);
+          const nextAllTime = Math.max(stats.allTime, nextMonth);
           const next = {
             ...prev,
-            today: stats.today,
-            week: stats.week,
-            month: stats.month,
-            allTime: stats.allTime,
+            today: nextToday,
+            week: nextWeek,
+            month: nextMonth,
+            allTime: nextAllTime,
           };
           try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
           return next;
@@ -2353,37 +2357,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
       sessionId = "vis_" + Math.random().toString(36).substring(2, 9);
     }
 
-    // 2. Initial stats fetch from cloud
-    supabaseService.fetchVisitorStats().then((stats) => {
-      if (!active || !stats) return;
-      setVisitorStats((prev) => {
-        const next = { ...prev, today: stats.today, week: stats.week, month: stats.month, allTime: stats.allTime };
-        try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
-        return next;
-      });
-    }).catch(() => {});
-
-    // 3. Record session visit once per browser session ONLY for regular visitors (exclude staff/admin)
-    try {
-      if (!checkIsStaff()) {
-        const visitRecorded = sessionStorage.getItem("alm_session_visit_recorded");
-        if (!visitRecorded) {
-          sessionStorage.setItem("alm_session_visit_recorded", "1");
-          supabaseService.recordVisitorVisit().then((stats) => {
-            if (!active || !stats) return;
-            setVisitorStats((prev) => {
-              const next = { ...prev, today: stats.today, week: stats.week, month: stats.month, allTime: stats.allTime };
-              try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
-              return next;
-            });
-          }).catch(() => {});
-        }
-      }
-    } catch {}
+    // 2. Initial stats sync: Visitors record & fetch atomically; Staff only fetch
+    if (!checkIsStaff()) {
+      supabaseService.recordVisitorVisit(sessionId).then((stats) => {
+        if (!active || !stats) return;
+        setVisitorStats((prev) => {
+          const next = {
+            ...prev,
+            today: Math.max(stats.today, prev.online),
+            week: Math.max(stats.week, stats.today, prev.online),
+            month: Math.max(stats.month, stats.week, prev.online),
+            allTime: Math.max(stats.allTime, stats.month, prev.online),
+          };
+          try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
+          return next;
+        });
+      }).catch(() => {});
+    } else {
+      supabaseService.fetchVisitorStats().then((stats) => {
+        if (!active || !stats) return;
+        setVisitorStats((prev) => {
+          const next = {
+            ...prev,
+            today: Math.max(stats.today, prev.online),
+            week: Math.max(stats.week, stats.today, prev.online),
+            month: Math.max(stats.month, stats.week, prev.online),
+            allTime: Math.max(stats.allTime, stats.month, prev.online),
+          };
+          try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
+          return next;
+        });
+      }).catch(() => {});
+    }
 
     if (!supabase) return;
 
-    // 4. Supabase Realtime Presence Channel
+    // 3. Supabase Realtime Presence Channel
+    const seenGuestKeys = new Set<string>();
     const presenceChannel = supabase.channel("alm_live_presence", {
       config: {
         presence: {
@@ -2398,17 +2408,62 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const state = presenceChannel.presenceState();
         // Count ONLY non-staff visitors (guests and regular users)
         let guestCount = 0;
+        const newGuestKeys: string[] = [];
         for (const key of Object.keys(state)) {
           const presences = state[key];
           const isStaffSession = Array.isArray(presences) && presences.some((p: any) => p.isStaff === true);
           if (!isStaffSession) {
             guestCount++;
+            if (key && !seenGuestKeys.has(key)) {
+              seenGuestKeys.add(key);
+              newGuestKeys.push(key);
+            }
           }
         }
+
         setVisitorStats((prev) => {
-          if (prev.online === guestCount) return prev;
-          return { ...prev, online: guestCount };
+          const nextToday = Math.max(prev.today, guestCount);
+          const nextWeek = Math.max(prev.week, nextToday);
+          const nextMonth = Math.max(prev.month, nextWeek);
+          const nextAllTime = Math.max(prev.allTime, nextMonth);
+          if (
+            prev.online === guestCount &&
+            prev.today === nextToday &&
+            prev.week === nextWeek &&
+            prev.month === nextMonth &&
+            prev.allTime === nextAllTime
+          ) {
+            return prev;
+          }
+          const next = {
+            ...prev,
+            online: guestCount,
+            today: nextToday,
+            week: nextWeek,
+            month: nextMonth,
+            allTime: nextAllTime,
+          };
+          try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
+          return next;
         });
+
+        // Ensure every live guest session is persisted in Supabase Cloud stats (idempotent per sessionId)
+        for (const gKey of newGuestKeys) {
+          supabaseService.recordVisitorVisit(gKey).then((stats) => {
+            if (!active || !stats) return;
+            setVisitorStats((prev) => {
+              const next = {
+                ...prev,
+                today: Math.max(prev.today, stats.today),
+                week: Math.max(prev.week, stats.week),
+                month: Math.max(prev.month, stats.month),
+                allTime: Math.max(prev.allTime, stats.allTime),
+              };
+              try { localStorage.setItem("alm_visitor_stats_v2", JSON.stringify(next)); } catch {}
+              return next;
+            });
+          }).catch(() => {});
+        }
       } catch {}
     };
 

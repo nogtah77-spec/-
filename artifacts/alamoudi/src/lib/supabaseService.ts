@@ -920,28 +920,7 @@ export const supabaseService = {
         } catch {}
       }
 
-      // Migrate from legacy unversioned store (which had hardcoded seed values & never reset)
       if (!parsed || parsed.schemaVersion !== 2) {
-        const cleanStore = {
-          schemaVersion: 2,
-          lastDate: todayKey,
-          lastWeek: weekKey,
-          lastMonth: monthKey,
-          today: 0,
-          week: 0,
-          month: 0,
-          allTime: 0,
-        };
-        await supabase.from("properties").upsert({
-          id: "__visitor_stats_store__",
-          code: "__VISITOR_STATS__",
-          title: "Visitor Stats Store",
-          description: JSON.stringify(cleanStore),
-          price: 0,
-          area: 0,
-          status: "archived",
-          created_at: new Date().toISOString(),
-        });
         return { today: 0, week: 0, month: 0, allTime: 0 };
       }
 
@@ -949,10 +928,11 @@ export const supabaseService = {
       const weekChanged = parsed.lastWeek !== weekKey;
       const monthChanged = parsed.lastMonth !== monthKey;
 
-      const today = dayChanged ? 0 : (Number(parsed.today) || 0);
-      const week = weekChanged ? 0 : (Number(parsed.week) || 0);
-      const month = monthChanged ? 0 : (Number(parsed.month) || 0);
-      const allTime = Number(parsed.allTime) || 0;
+      const todaySessions: string[] = !dayChanged && Array.isArray(parsed.todaySessions) ? parsed.todaySessions : [];
+      const today = dayChanged ? 0 : Math.max(Number(parsed.today) || 0, todaySessions.length);
+      const week = weekChanged ? 0 : Math.max(Number(parsed.week) || 0, today);
+      const month = monthChanged ? 0 : Math.max(Number(parsed.month) || 0, week);
+      const allTime = Math.max(Number(parsed.allTime) || 0, month);
 
       if (dayChanged || weekChanged || monthChanged) {
         const syncedStore = {
@@ -964,6 +944,7 @@ export const supabaseService = {
           week,
           month,
           allTime,
+          todaySessions,
         };
         await supabase.from("properties").upsert({
           id: "__visitor_stats_store__",
@@ -984,8 +965,8 @@ export const supabaseService = {
     }
   },
 
-  // Record a unique visitor session in Supabase Cloud
-  async recordVisitorVisit(): Promise<{ today: number; week: number; month: number; allTime: number } | null> {
+  // Record a unique visitor session in Supabase Cloud (idempotent per sessionId per day)
+  async recordVisitorVisit(sessionId?: string): Promise<{ today: number; week: number; month: number; allTime: number } | null> {
     if (!supabase) return null;
     try {
       const todayKey = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
@@ -1010,20 +991,42 @@ export const supabaseService = {
       }
 
       const isV2 = parsed && parsed.schemaVersion === 2;
-      const baseToday = isV2 && parsed.lastDate === todayKey ? (Number(parsed.today) || 0) : 0;
-      const baseWeek = isV2 && parsed.lastWeek === weekKey ? (Number(parsed.week) || 0) : 0;
-      const baseMonth = isV2 && parsed.lastMonth === monthKey ? (Number(parsed.month) || 0) : 0;
-      const baseAllTime = isV2 ? (Number(parsed.allTime) || 0) : 0;
+      const prevSessions: string[] =
+        isV2 && parsed.lastDate === todayKey && Array.isArray(parsed.todaySessions)
+          ? parsed.todaySessions
+          : [];
+
+      const baseToday = isV2 && parsed.lastDate === todayKey ? Math.max(Number(parsed.today) || 0, prevSessions.length) : 0;
+      const baseWeek = isV2 && parsed.lastWeek === weekKey ? Math.max(Number(parsed.week) || 0, baseToday) : 0;
+      const baseMonth = isV2 && parsed.lastMonth === monthKey ? Math.max(Number(parsed.month) || 0, baseWeek) : 0;
+      const baseAllTime = isV2 ? Math.max(Number(parsed.allTime) || 0, baseMonth) : 0;
+
+      // If this sessionId was already recorded today, return current totals without double-counting
+      if (sessionId && prevSessions.includes(sessionId)) {
+        return {
+          today: baseToday,
+          week: baseWeek,
+          month: baseMonth,
+          allTime: baseAllTime,
+        };
+      }
+
+      const nextSessions = sessionId ? [...prevSessions.slice(-499), sessionId] : prevSessions;
+      const nextToday = Math.max(baseToday + 1, nextSessions.length);
+      const nextWeek = Math.max(baseWeek + 1, nextToday);
+      const nextMonth = Math.max(baseMonth + 1, nextWeek);
+      const nextAllTime = Math.max(baseAllTime + 1, nextMonth);
 
       const updated = {
         schemaVersion: 2,
         lastDate: todayKey,
         lastWeek: weekKey,
         lastMonth: monthKey,
-        today: baseToday + 1,
-        week: baseWeek + 1,
-        month: baseMonth + 1,
-        allTime: baseAllTime + 1,
+        today: nextToday,
+        week: nextWeek,
+        month: nextMonth,
+        allTime: nextAllTime,
+        todaySessions: nextSessions,
       };
 
       const row = {
