@@ -249,7 +249,7 @@ export function PropertyCarousel({
           {properties.map((property, index) => (
             <div
               key={`${property.id}-${index}`}
-              className="flex-shrink-0 flex-grow-0 pr-2 sm:pr-3.5 w-[90vw] sm:w-[48vw] md:w-[380px] lg:w-[420px]"
+              className="flex-shrink-0 flex-grow-0 pr-2 sm:pr-3.5 w-[88vw] min-[480px]:w-[78vw] sm:w-[360px] md:w-[380px] lg:w-[420px]"
             >
               <PropertyCard
                 property={property}
