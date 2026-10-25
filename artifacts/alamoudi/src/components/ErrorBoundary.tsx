@@ -10,13 +10,28 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  isRecovering?: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    const errorMsg = String(error?.message || "");
+    const errorStack = String(error?.stack || "");
+    const isChunkOrAssetError =
+      error?.name === "ChunkLoadError" ||
+      errorMsg.includes("Failed to fetch dynamically imported module") ||
+      errorMsg.includes("Importing a module script failed") ||
+      errorMsg.includes("error loading dynamically imported module") ||
+      errorMsg.includes("Unexpected token '<'") ||
+      errorMsg.includes("is not valid JSON") ||
+      errorMsg.includes("Loading chunk") ||
+      errorMsg.includes("Load failed") ||
+      errorStack.includes("assets/") ||
+      errorMsg.includes("mime type");
+
+    return { hasError: true, error, isRecovering: isChunkOrAssetError };
   }
 
   componentDidMount() {
@@ -67,9 +82,18 @@ export class ErrorBoundary extends Component<Props, State> {
           const cleanUrl = window.location.href.replace(/([?&])_r=\d+/, "");
           const sep = cleanUrl.includes("?") ? "&" : "?";
           window.location.replace(`${cleanUrl}${sep}_r=${Date.now()}`);
-        }, 100);
+        }, 50);
         return;
       }
+    }
+
+    // Safety fallback: if recovery didn't navigate within 2.5s, reveal the manual retry buttons
+    if (this.state.isRecovering) {
+      setTimeout(() => {
+        if (this.state.hasError && this.state.isRecovering) {
+          this.setState({ isRecovering: false });
+        }
+      }, 2500);
     }
   }
 
@@ -108,6 +132,18 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback !== undefined) {
         return this.props.fallback;
+      }
+
+      // If auto-recovering in background, show clean branded loading indicator instead of scary error box
+      if (this.state.isRecovering) {
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6" dir="rtl">
+            <div className="flex flex-col items-center gap-3 animate-in fade-in duration-300">
+              <div className="w-10 h-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+              <p className="text-sm text-muted-foreground animate-pulse font-medium">جارٍ تجهيز الصفحة بأحدث إصدار…</p>
+            </div>
+          </div>
+        );
       }
 
       return (

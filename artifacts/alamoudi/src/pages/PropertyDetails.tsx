@@ -113,10 +113,14 @@ export default function PropertyDetails() {
   const [directProperty, setDirectProperty] = useState<any>(null);
   const [directLoading, setDirectLoading] = useState(false);
   const [directChecked, setDirectChecked] = useState(false);
+  const [searchGraceExpired, setSearchGraceExpired] = useState(false);
 
   useEffect(() => {
     setDirectProperty(null);
     setDirectChecked(false);
+    setSearchGraceExpired(false);
+    const timer = setTimeout(() => setSearchGraceExpired(true), 2500);
+    return () => clearTimeout(timer);
   }, [cleanId]);
 
   // 1. Find by ID or by Code (case-insensitive) across all properties
@@ -168,17 +172,40 @@ export default function PropertyDetails() {
 
     void (async () => {
       try {
-        // Query by id OR by code, order by created_at desc
-        const { data, error } = await supabase
-          .from("properties")
-          .select("*")
-          .or(`id.eq.${cleanId},code.ilike.${cleanId}`)
-          .order("created_at", { ascending: false })
-          .limit(1);
+        let foundRow: any = null;
+
+        // 1. Query by property CODE first (case-insensitive) — fastest and standard for shared links
+        try {
+          const { data: codeData } = await supabase
+            .from("properties")
+            .select("*")
+            .ilike("code", cleanId)
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (codeData && codeData.length > 0) {
+            foundRow = codeData[0];
+          }
+        } catch {}
+
+        // 2. If not found by code, query by ID (exact ID match)
+        if (!foundRow) {
+          try {
+            const { data: idData } = await supabase
+              .from("properties")
+              .select("*")
+              .eq("id", cleanId)
+              .limit(1);
+
+            if (idData && idData.length > 0) {
+              foundRow = idData[0];
+            }
+          } catch {}
+        }
 
         if (cancelled) return;
-        if (data && data.length > 0) {
-          const primaryProp = rowToProperty(data[0]);
+        if (foundRow) {
+          const primaryProp = rowToProperty(foundRow);
           setDirectProperty(primaryProp);
         }
       } catch (err) {
@@ -313,7 +340,7 @@ export default function PropertyDetails() {
 
   // Handle Loading & Not Found states AFTER all hooks are evaluated
   if (!property) {
-    if (!ready || directLoading || !directChecked) {
+    if (!ready || directLoading || !directChecked || (!searchGraceExpired && (properties || []).length <= 1)) {
       return (
         <div className="min-h-screen flex flex-col">
           <Navbar />
