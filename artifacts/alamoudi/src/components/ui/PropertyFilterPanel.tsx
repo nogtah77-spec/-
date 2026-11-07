@@ -193,13 +193,13 @@ export function PropertyFilterPanel({
 
       {/* ── 2. Segmented Pill Row: نوع العرض (Unified Professional Layout) ── */}
       <div className="mb-2 pb-2 border-b border-white/10">
-        <div className="flex flex-row items-center justify-center gap-1.5 sm:gap-3 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar py-0.5">
-          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[10.5px] sm:text-xs whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-1.5 sm:gap-3 py-0.5">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[11px] sm:text-xs whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-[#C5A059]" />
             <span>نوع العرض:</span>
           </div>
 
-          <div className="flex items-center justify-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="grid grid-cols-4 sm:flex sm:items-center sm:justify-center gap-1 sm:gap-1.5 w-full sm:w-auto">
             {CATEGORY_OPTIONS.map((option) => {
               const active = filters.category === option.value;
               return (
@@ -208,9 +208,9 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ category: option.value }, true)}
                   className={cn(
-                    "px-2 py-0.5 sm:px-3 sm:py-1 rounded-[10px] text-[10.5px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none whitespace-nowrap",
+                    "w-full sm:w-auto px-1.5 py-1 sm:px-3 sm:py-1 rounded-[10px] text-[11px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none whitespace-nowrap text-center flex items-center justify-center",
                     active
-                      ? "bg-[#C5A059] text-[#10202D] border border-[#E5C378] shadow-sm scale-102 font-black"
+                      ? "bg-[#C5A059] text-[#10202D] border border-[#E5C378] shadow-sm font-black"
                       : "bg-[#161B20]/65 text-[#CBD5E1] hover:bg-[#20262D]/90 hover:text-white border border-white/10 shadow-2xs backdrop-blur-xs"
                   )}
                 >
@@ -224,13 +224,13 @@ export function PropertyFilterPanel({
 
       {/* ── 3. Category / Sector Row: فئة العقار (Unified Professional Layout) ── */}
       <div className="mb-2.5 sm:mb-3">
-        <div className="flex flex-row items-center justify-center gap-1.5 sm:gap-3 flex-nowrap sm:flex-wrap overflow-x-auto no-scrollbar py-0.5">
-          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[10.5px] sm:text-xs whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-1.5 sm:gap-3 py-0.5">
+          <div className="flex items-center gap-1.5 shrink-0 text-foreground font-bold text-[11px] sm:text-xs whitespace-nowrap">
             <span className="w-1.5 h-1.5 rounded-full bg-[#C5A059]" />
             <span>فئة العقار:</span>
           </div>
 
-          <div className="flex items-center justify-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="grid grid-cols-5 sm:flex sm:items-center sm:justify-center gap-1 sm:gap-1.5 w-full sm:w-auto">
             {SECTOR_OPTIONS.map((option) => {
               const active = filters.sector === option.value;
               const icon = getSectorIcon(option.value);
@@ -240,7 +240,7 @@ export function PropertyFilterPanel({
                   type="button"
                   onClick={() => update({ sector: option.value }, true)}
                   className={cn(
-                    "inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-[10px] text-[10.5px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none whitespace-nowrap",
+                    "w-full sm:w-auto inline-flex items-center justify-center gap-0.5 sm:gap-1 px-1 py-1 sm:px-3 sm:py-1 rounded-[10px] text-[10.5px] sm:text-xs font-bold transition-all duration-200 cursor-pointer select-none whitespace-nowrap text-center",
                     active
                       ? "bg-[#C5A059] text-[#10202D] border border-[#E5C378] shadow-sm font-black"
                       : "bg-[#161B20]/65 text-[#CBD5E1] hover:bg-[#20262D]/90 hover:text-white border border-white/10 shadow-2xs backdrop-blur-xs"
