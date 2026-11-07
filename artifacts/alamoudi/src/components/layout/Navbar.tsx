@@ -85,6 +85,13 @@ export function Navbar() {
   const telegramHref = settings.telegram || null;
   const mapsHref = settings.mapsUrl || null;
 
+  const handleHomeReset = () => {
+    try {
+      sessionStorage.removeItem("alm_home_search_filters");
+      sessionStorage.removeItem("alm_home_scroll_y");
+    } catch {}
+  };
+
   return (
     <header
       className={cn(
@@ -98,7 +105,7 @@ export function Navbar() {
       <div className="w-full max-w-[1720px] mx-auto h-16 hidden md:flex items-center justify-between px-4 lg:px-8 gap-3">
         {/* Brand — far right (RTL start) */}
         <div className="flex justify-start items-center flex-shrink-0">
-          <Link href="/" data-testid="link-brand">
+          <Link href="/" data-testid="link-brand" onClick={handleHomeReset}>
             <span className="text-2xl font-bold text-foreground dark:text-white tracking-tight leading-none">
               العمودي
             </span>
@@ -114,6 +121,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={link.href === "/" ? handleHomeReset : undefined}
               className={cn(
                 "text-sm font-medium transition-colors hover:text-accent whitespace-nowrap",
                 location === link.href ? "text-accent" : "text-muted-foreground"
@@ -268,6 +276,7 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={link.href === "/" ? handleHomeReset : undefined}
                   className={cn(
                     "py-2.5 px-3 rounded-md text-base font-medium transition-colors",
                     location === link.href
@@ -348,7 +357,7 @@ export function Navbar() {
           </SheetContent>
         </Sheet>
 
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2">
+        <Link href="/" onClick={handleHomeReset} className="absolute left-1/2 -translate-x-1/2">
           <span className="text-2xl font-bold text-foreground dark:text-white">العمودي</span>
         </Link>
 

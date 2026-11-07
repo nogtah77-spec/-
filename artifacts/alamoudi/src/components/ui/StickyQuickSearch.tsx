@@ -94,7 +94,7 @@ export function StickyQuickSearch({
               type="text"
               value={localQuery}
               onChange={(e) => setLocalQuery(e.target.value)}
-              placeholder="ابحث بالاسم، الكود (مثل S66)، أو الحي..."
+              placeholder="ابحث بالسعر (مثل 2,700,000)، الكود (مثل S81)، أو الحي..."
               className="pr-9 pl-8 h-9 text-xs sm:text-sm bg-[#0F1317]/70 border-white/10 text-foreground placeholder:text-muted-foreground/50 rounded-[10px] focus-visible:ring-[#C5A059]/20 focus-visible:border-[#C5A059]/60 backdrop-blur-md"
             />
             {localQuery && (

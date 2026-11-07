@@ -170,26 +170,37 @@ function TiktokCard({
   );
 }
 
+const getInitialHomeFilters = (): PropertyFilterState => {
+  try {
+    const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
+    const medium = cardSize === "medium";
+    const base: PropertyFilterState = {
+      ...DEFAULT_PROPERTY_FILTERS,
+      viewMode: medium ? "grid" : "list",
+      cardSize: medium ? "medium" : "compact",
+    };
+    const saved = sessionStorage.getItem("alm_home_search_filters");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && typeof parsed === "object") {
+        return {
+          ...base,
+          ...parsed,
+          viewMode: base.viewMode,
+          cardSize: base.cardSize,
+        };
+      }
+    }
+    return base;
+  } catch {
+    return DEFAULT_PROPERTY_FILTERS;
+  }
+};
+
 export default function Home() {
   const { properties, regions, propertyTypes, settings } = useData();
-  const [filters, setFilters] = useState<PropertyFilterState>(() => {
-    try {
-      const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
-      const medium = cardSize === "medium";
-      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: medium ? "grid" : "list", cardSize: medium ? "medium" : "compact" };
-    } catch {
-      return DEFAULT_PROPERTY_FILTERS;
-    }
-  });
-  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(() => {
-    try {
-      const cardSize = localStorage.getItem(PROPERTY_CARD_SIZE_KEY);
-      const medium = cardSize === "medium";
-      return { ...DEFAULT_PROPERTY_FILTERS, viewMode: medium ? "grid" : "list", cardSize: medium ? "medium" : "compact" };
-    } catch {
-      return DEFAULT_PROPERTY_FILTERS;
-    }
-  });
+  const [filters, setFilters] = useState<PropertyFilterState>(getInitialHomeFilters);
+  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(getInitialHomeFilters);
   useEffect(() => {
     try {
       localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
@@ -285,7 +296,40 @@ export default function Home() {
     const reset = { ...DEFAULT_PROPERTY_FILTERS, viewMode, cardSize: filters.cardSize };
     setFilters(reset);
     setAppliedFilters(reset);
+    try {
+      sessionStorage.removeItem("alm_home_search_filters");
+      sessionStorage.removeItem("alm_home_scroll_y");
+    } catch {}
   };
+
+  useEffect(() => {
+    try {
+      if (hasActivePropertyFilters(appliedFilters)) {
+        sessionStorage.setItem("alm_home_search_filters", JSON.stringify(appliedFilters));
+      } else {
+        sessionStorage.removeItem("alm_home_search_filters");
+      }
+    } catch {}
+  }, [appliedFilters]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const savedY = sessionStorage.getItem("alm_home_scroll_y");
+      if (savedY !== null && properties.length > 0) {
+        const y = parseInt(savedY, 10);
+        if (!isNaN(y) && y > 0) {
+          timer = setTimeout(() => {
+            window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
+            sessionStorage.removeItem("alm_home_scroll_y");
+          }, 80);
+        }
+      }
+    } catch {}
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [properties.length]);
 
   const heroImage =
     settings.heroImageUrl ||

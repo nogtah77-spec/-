@@ -68,23 +68,75 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     }
   };
 
-  const [filters, setFilters] = useState<PropertyFilterState>({
-    ...DEFAULT_PROPERTY_FILTERS,
-    regionId,
-    viewMode: getInitialCardSize() === "medium" ? "grid" : "list",
-    cardSize: getInitialCardSize(),
-  });
-  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>({
-    ...DEFAULT_PROPERTY_FILTERS,
-    regionId,
-    viewMode: getInitialCardSize() === "medium" ? "grid" : "list",
-    cardSize: getInitialCardSize(),
-  });
+  const getInitialRegionFilters = (rId: string): PropertyFilterState => {
+    const cardSize = getInitialCardSize();
+    const base: PropertyFilterState = {
+      ...DEFAULT_PROPERTY_FILTERS,
+      regionId: rId,
+      viewMode: cardSize === "medium" ? "grid" : "list",
+      cardSize,
+    };
+    try {
+      const saved = sessionStorage.getItem(`alm_region_filters_${rId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object") {
+          return {
+            ...base,
+            ...parsed,
+            regionId: rId,
+            viewMode: base.viewMode,
+            cardSize: base.cardSize,
+          };
+        }
+      }
+    } catch {}
+    return base;
+  };
+
+  const [filters, setFilters] = useState<PropertyFilterState>(() => getInitialRegionFilters(regionId));
+  const [appliedFilters, setAppliedFilters] = useState<PropertyFilterState>(() => getInitialRegionFilters(regionId));
+
+  useEffect(() => {
+    const initial = getInitialRegionFilters(regionId);
+    setFilters(initial);
+    setAppliedFilters(initial);
+  }, [regionId]);
+
   useEffect(() => {
     try {
       localStorage.setItem(PROPERTY_CARD_SIZE_KEY, filters.cardSize);
     } catch {}
   }, [filters.cardSize]);
+
+  useEffect(() => {
+    try {
+      if (hasActivePropertyFilters(appliedFilters)) {
+        sessionStorage.setItem(`alm_region_filters_${regionId}`, JSON.stringify(appliedFilters));
+      } else {
+        sessionStorage.removeItem(`alm_region_filters_${regionId}`);
+      }
+    } catch {}
+  }, [appliedFilters, regionId]);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const savedY = sessionStorage.getItem("alm_region_scroll_y");
+      if (savedY !== null && properties.length > 0) {
+        const y = parseInt(savedY, 10);
+        if (!isNaN(y) && y > 0) {
+          timer = setTimeout(() => {
+            window.scrollTo({ top: y, behavior: "instant" as ScrollBehavior });
+            sessionStorage.removeItem("alm_region_scroll_y");
+          }, 80);
+        }
+      }
+    } catch {}
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [properties.length, regionId]);
   const [heroImageFailed, setHeroImageFailed] = useState(false);
   const resolve = useCallback((p: any) => ({
     ...p,
@@ -107,6 +159,10 @@ export default function RegionPage({ params }: { params: { regionId: string } })
     const reset = { ...DEFAULT_PROPERTY_FILTERS, regionId, viewMode: filters.viewMode, cardSize: filters.cardSize };
     setFilters(reset);
     setAppliedFilters(reset);
+    try {
+      sessionStorage.removeItem(`alm_region_filters_${regionId}`);
+      sessionStorage.removeItem("alm_region_scroll_y");
+    } catch {}
   };
 
   const overlayColor = settings.regionHeroOverlayColor || "#000000";

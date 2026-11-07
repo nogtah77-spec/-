@@ -91,6 +91,14 @@ function VisitorTracker() {
 function ScrollToTop() {
   const [location] = useLocation();
   useEffect(() => {
+    try {
+      if (
+        (location === "/" && sessionStorage.getItem("alm_home_scroll_y")) ||
+        (location.startsWith("/region/") && sessionStorage.getItem("alm_region_scroll_y"))
+      ) {
+        return;
+      }
+    } catch {}
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location]);
   return null;

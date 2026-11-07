@@ -48,12 +48,13 @@ interface PropertyFilterPanelProps {
 }
 
 const SEARCH_PROMPTS = [
-  "شقة تشطيب ألترا سوبر لوكس في التجمع...",
-  "فيلا مستقلة بحديقة ومسبح خاص...",
-  "مكتب إداري بموقع متميز في الشروق...",
-  "دوبلكس استلام فوري في مدينة بدر...",
+  "2,700,000 ج.م شقة في الشروق...",
+  "3,500,000 ج.م تشطيب سوبر لوكس...",
+  "كود العقار (مثل S81 أو R10)...",
+  "فيلا بحديقة ومسبح خاص...",
+  "شقة 3 غرف في التجمع الخامس...",
+  "4,200,000 ج.م دوبلكس استلام فوري...",
   "محل تجاري استثماري في مدينتي...",
-  "بنتهاوس روف بإطلالة بانورامية...",
   "تاون هاوس راقي في كمبوند وصال...",
   "شقة مفروشة للإيجار في مدينة نصر...",
   "عقار للبيع في بيت الوطن...",
@@ -131,13 +132,16 @@ export function PropertyFilterPanel({
                 onClick={() => inputRef.current?.focus()}
                 className="absolute inset-0 flex items-center pr-2.5 pl-3 select-none overflow-hidden cursor-text"
               >
-                <span className="text-muted-foreground/45 font-normal text-xs sm:text-sm ml-2 shrink-0 select-none">
-                  جرب البحث عن:
+                <span className="text-foreground/75 font-semibold text-xs sm:text-sm ml-1.5 shrink-0 select-none">
+                  جرّب البحث
+                </span>
+                <span className="text-[#C5A059] font-bold text-xs sm:text-sm ml-2 shrink-0 select-none drop-shadow-[0_1px_4px_rgba(197,160,89,0.35)]">
+                  بالسعر أو:
                 </span>
                 <div className="relative overflow-hidden h-6 flex items-center flex-1">
                   <span
                     className={cn(
-                      "text-xs sm:text-sm text-muted-foreground/40 font-normal transition-all duration-300 transform truncate block text-right select-none",
+                      "text-xs sm:text-sm text-muted-foreground/70 font-medium transition-all duration-300 transform truncate block text-right select-none",
                       isAnimating
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-4 opacity-0"

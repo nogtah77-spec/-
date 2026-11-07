@@ -124,7 +124,19 @@ export function PropertyCard({
       return false;
     }
   };
-  const goToDetails = () => navigate(`/properties/${property.id}`);
+  const goToDetails = () => {
+    try {
+      if (typeof window !== "undefined") {
+        const path = window.location.pathname;
+        if (path === "/" || path === "") {
+          sessionStorage.setItem("alm_home_scroll_y", String(window.scrollY));
+        } else if (path.startsWith("/region/")) {
+          sessionStorage.setItem("alm_region_scroll_y", String(window.scrollY));
+        }
+      }
+    } catch {}
+    navigate(`/properties/${property.id}`);
+  };
 
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
