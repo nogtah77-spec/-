@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "./card";
 import { Badge } from "./badge";
 import { Button } from "./button";
-import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Star } from "lucide-react";
+import { Heart, Scale, Bed, Bath, Square, Share2, Phone, Copy, Camera, Play, Video, ExternalLink, MapPin, Star, Clock } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon } from "../icons/BrandIcons";
 import { Skeleton } from "./skeleton";
 import type { Property } from "@/context/DataContext";
@@ -11,7 +11,8 @@ import { normalizePhoneForWa } from "@/lib/phone";
 import { useUserPrefs } from "@/context/UserPrefsContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn, formatNumber, getFeaturedTypeLabel } from "@/lib/utils";
-import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
+import { getVideoThumbnailUrl, hasVideo, isYouTubePlaceholder } from "@/lib/videoThumbnail";
+import { ScheduledVideoCover } from "./ScheduledVideoCover";
 import { getCardImageUrl } from "@/lib/cloudinaryService";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -58,10 +59,40 @@ export function PropertyCard({
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [thumbFailed, setThumbFailed] = useState(false);
+  const [isScheduledVideo, setIsScheduledVideo] = useState<boolean>(() => {
+    return Boolean(
+      (property as any)?.isScheduled ||
+      (property as any)?.videoStatus === "scheduled" ||
+      (property as any)?.isPremiere
+    );
+  });
   const compactHomeCard = size === "compact" && layout === "list" && detailsScale === "home";
   const compactCityCard = size === "compact" && layout === "list" && detailsScale === "city";
 
-  useEffect(() => { setThumbFailed(false); }, [property?.id]);
+  useEffect(() => {
+    setThumbFailed(false);
+    setIsScheduledVideo(
+      Boolean(
+        (property as any)?.isScheduled ||
+        (property as any)?.videoStatus === "scheduled" ||
+        (property as any)?.isPremiere
+      )
+    );
+  }, [property?.id, property?.videoUrl]);
+
+  const handleVideoThumbLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (isYouTubePlaceholder(e.currentTarget)) {
+      setIsScheduledVideo(true);
+    }
+  };
+
+  const handleVideoThumbError = () => {
+    if (hasVideo(property?.videoUrl)) {
+      setIsScheduledVideo(true);
+    } else {
+      setThumbFailed(true);
+    }
+  };
 
   if (isLoading || !property) {
     if (size === "compact" && layout === "list") {
@@ -105,14 +136,15 @@ export function PropertyCard({
   const heroImg = property.images?.[0];
   const propHasVideo = hasVideo(property.videoUrl);
   const videoFirst = property.coverPriority === "video" && propHasVideo;
+  const isCoverScheduled = isScheduledVideo && (videoFirst || !heroImg);
   const videoThumb = (videoFirst || !heroImg) ? getVideoThumbnailUrl(property.videoUrl) : null;
-  const showVideoCover = videoFirst
+  const showVideoCover = !isCoverScheduled && (videoFirst
     ? !!videoThumb && !thumbFailed
-    : !heroImg && !!videoThumb && !thumbFailed;
-  const showVideoPoster = videoFirst
+    : !heroImg && !!videoThumb && !thumbFailed);
+  const showVideoPoster = !isCoverScheduled && (videoFirst
     ? (!videoThumb || thumbFailed)
-    : !heroImg && propHasVideo && (!videoThumb || thumbFailed);
-  const coverImg = videoFirst ? null : (heroImg ? getCardImageUrl(heroImg) : null);
+    : !heroImg && propHasVideo && (!videoThumb || thumbFailed));
+  const coverImg = (videoFirst && !isCoverScheduled) ? null : (heroImg ? getCardImageUrl(heroImg) : null);
   const imageCount = property.images?.length || 0;
   const isNew = () => {
     try {
@@ -194,15 +226,19 @@ export function PropertyCard({
         )}
         {/* Right Side: Image Box (Locked size & aspect with absolute image) */}
         <div className={cn("relative self-stretch shrink-0 overflow-hidden bg-muted/80", emphasized ? "w-[118px] min-[380px]:w-[130px] min-[540px]:w-36 lg:w-40" : "w-[110px] min-[380px]:w-[120px] min-[540px]:w-32 lg:w-36")}>
-          {showVideoCover ? (
+          {isCoverScheduled ? (
+            <ScheduledVideoCover variant="card-compact" videoUrl={property.videoUrl} />
+          ) : showVideoCover ? (
             <img
               src={videoThumb!}
               alt={property.title}
+              crossOrigin="anonymous"
               loading="lazy"
               decoding="async"
               fetchPriority="low"
               sizes="160px"
-              onError={() => setThumbFailed(true)}
+              onLoad={handleVideoThumbLoad}
+              onError={handleVideoThumbError}
               className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
             />
           ) : coverImg ? (
@@ -226,10 +262,16 @@ export function PropertyCard({
           )}
           
           {/* Subtle Dark Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 z-[5]" />
+          {!isCoverScheduled && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 z-[5]" />}
 
           {/* Top Left Listing Type & Status Badges */}
           <div className="absolute top-2 right-2 z-20 flex items-center gap-1 flex-wrap">
+            {isCoverScheduled && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-gradient-to-r from-[#C5A059] to-[#9E7D3B] text-[#10202D] backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                <Clock className="h-2.5 w-2.5 shrink-0" />
+                <span>عرض أول</span>
+              </span>
+            )}
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
@@ -275,9 +317,13 @@ export function PropertyCard({
             {propHasVideo && (
               <span 
                 className="flex items-center justify-center shrink-0 w-5 h-5 rounded bg-black/70 text-white backdrop-blur-md border border-white/20 shadow-xs" 
-                title="يحتوي على فيديو"
+                title={isCoverScheduled ? "فيديو مجدول للعرض قريباً" : "يحتوي على فيديو"}
               >
-                <Play className="h-2.5 w-2.5 fill-white text-white ml-0.5" />
+                {isCoverScheduled ? (
+                  <Clock className="h-2.5 w-2.5 text-[#C5A059]" />
+                ) : (
+                  <Play className="h-2.5 w-2.5 fill-white text-white ml-0.5" />
+                )}
               </span>
             )}
           </div>
@@ -439,15 +485,19 @@ export function PropertyCard({
       )}
       {/* Card Header Media Container (Locked 16:10 Aspect Ratio with Absolute Image Fill) */}
       <div className="relative w-full aspect-[16/10] overflow-hidden bg-muted flex-shrink-0">
-        {showVideoCover ? (
+        {isCoverScheduled ? (
+          <ScheduledVideoCover variant="card-grid" videoUrl={property.videoUrl} />
+        ) : showVideoCover ? (
           <img
             src={videoThumb!}
             alt={property.title}
+            crossOrigin="anonymous"
             loading="lazy"
             decoding="async"
             fetchPriority="low"
             sizes="(max-width: 640px) 90vw, 400px"
-            onError={() => setThumbFailed(true)}
+            onLoad={handleVideoThumbLoad}
+            onError={handleVideoThumbError}
             className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
           />
         ) : coverImg ? (
@@ -471,12 +521,18 @@ export function PropertyCard({
         )}
         
         {/* Subtle Dark Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 z-[5]" />
+        {!isCoverScheduled && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25 z-[5]" />}
 
         {/* Top Badges & Actions inside Image */}
         <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
           {/* Listing Type, Status & Featured Badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
+            {isCoverScheduled && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-black bg-gradient-to-r from-[#C5A059] to-[#9E7D3B] text-[#10202D] backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                <Clock className="h-2.5 w-2.5 shrink-0" />
+                <span>عرض أول قريباً</span>
+              </span>
+            )}
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
@@ -560,7 +616,15 @@ export function PropertyCard({
           <div className="flex items-center gap-1">
             {propHasVideo && (
               <span className="flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-md px-2 py-1 text-[10px] text-white">
-                <Play className="h-2.5 w-2.5 fill-white" /> فيديو
+                {isCoverScheduled ? (
+                  <>
+                    <Clock className="h-2.5 w-2.5 text-[#C5A059]" /> عرض أول
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-2.5 w-2.5 fill-white" /> فيديو
+                  </>
+                )}
               </span>
             )}
             {imageCount > 0 && (

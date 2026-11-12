@@ -10,11 +10,12 @@ import { ZoomableLightbox } from "@/components/ui/ZoomableLightbox";
 import {
   Bed, Bath, Square, MapPin, Share2, Heart, Scale, Phone, Play,
   Copy, Video, ExternalLink, ChevronRight, ChevronLeft, X, Building2, Layers, Pencil,
-  Mail, Link as LinkIcon, FileText, Camera, Check, Star, Download, Loader2, ShieldCheck, UserCheck, Lock
+  Mail, Link as LinkIcon, FileText, Camera, Check, Star, Download, Loader2, ShieldCheck, UserCheck, Lock, Clock
 } from "lucide-react";
 import { WhatsAppIcon, TelegramIcon, TikTokIcon } from "@/components/icons/BrandIcons";
 import { normalizePhoneForWa } from "@/lib/phone";
-import { getVideoThumbnailUrl, hasVideo } from "@/lib/videoThumbnail";
+import { getVideoThumbnailUrl, hasVideo, isYouTubePlaceholder } from "@/lib/videoThumbnail";
+import { ScheduledVideoCover } from "@/components/ui/ScheduledVideoCover";
 import { VideoPlayerModal } from "@/components/ui/VideoPlayerModal";
 import { useParams, useLocation, Link } from "wouter";
 import { useAuth } from "@/context/AuthContext";
@@ -232,11 +233,41 @@ export default function PropertyDetails() {
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [detailThumbFailed, setDetailThumbFailed] = useState(false);
+  const [detailIsScheduled, setDetailIsScheduled] = useState<boolean>(() => {
+    return Boolean(
+      (property as any)?.isScheduled ||
+      (property as any)?.videoStatus === "scheduled" ||
+      (property as any)?.isPremiere
+    );
+  });
   const [downloadAllPending, setDownloadAllPending] = useState(false);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [copiedDesc, setCopiedDesc] = useState(false);
 
-  useEffect(() => { setDetailThumbFailed(false); }, [id]);
+  useEffect(() => {
+    setDetailThumbFailed(false);
+    setDetailIsScheduled(
+      Boolean(
+        (property as any)?.isScheduled ||
+        (property as any)?.videoStatus === "scheduled" ||
+        (property as any)?.isPremiere
+      )
+    );
+  }, [id, property?.id, property?.videoUrl]);
+
+  const handleDetailVideoThumbLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (isYouTubePlaceholder(e.currentTarget)) {
+      setDetailIsScheduled(true);
+    }
+  };
+
+  const handleDetailVideoThumbError = () => {
+    if (hasVideo(property?.videoUrl)) {
+      setDetailIsScheduled(true);
+    } else {
+      setDetailThumbFailed(true);
+    }
+  };
 
   // Track property view ONCE per visit / session — never infinite loop
   const trackedPropIdRef = useRef<string | null>(null);
@@ -471,9 +502,10 @@ export default function PropertyDetails() {
   };
 
   const propHasVideo = hasVideo(property.videoUrl);
+  const isVideoScheduled = detailIsScheduled && propHasVideo;
   const detailVideoThumb = images.length === 0 ? getVideoThumbnailUrl(property.videoUrl) : null;
-  const showDetailVideoCover = images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
-  const showDetailVideoPoster = images.length === 0 && propHasVideo && (!detailVideoThumb || detailThumbFailed);
+  const showDetailVideoCover = !isVideoScheduled && images.length === 0 && !!detailVideoThumb && !detailThumbFailed;
+  const showDetailVideoPoster = !isVideoScheduled && images.length === 0 && propHasVideo && (!detailVideoThumb || detailThumbFailed);
 
   const isNew = () => {
     if (!property) return false;
@@ -626,11 +658,21 @@ export default function PropertyDetails() {
             )}
             {property.videoUrl && (
               <button
-                onClick={() => setVideoModalOpen(true)}
+                onClick={() => {
+                  if (isVideoScheduled && property.videoUrl) {
+                    window.open(property.videoUrl, "_blank", "noopener,noreferrer");
+                  } else {
+                    setVideoModalOpen(true);
+                  }
+                }}
                 className="flex items-center gap-1.5 bg-[#C5A059] text-[#10202D] font-bold rounded-[10px] px-3 py-2 text-sm hover:bg-[#B38E46] transition-colors cursor-pointer shadow-md"
               >
-                <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
-                <span className="text-xs font-bold">فيديو العقار</span>
+                {isVideoScheduled ? (
+                  <Clock className="h-3.5 w-3.5 text-[#10202D] flex-shrink-0" />
+                ) : (
+                  <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
+                )}
+                <span className="text-xs font-bold">{isVideoScheduled ? "عرض أول قريباً" : "فيديو العقار"}</span>
               </button>
             )}
             {property.videoUrl && isDirectVideoUrl(property.videoUrl) && (
@@ -678,6 +720,11 @@ export default function PropertyDetails() {
               videoDownloadPending={videoDownloading}
               className="mb-10"
             />
+          ) : (isVideoScheduled || (!detailVideoThumb && propHasVideo)) && images.length === 0 ? (
+            <ScheduledVideoCover
+              variant="detail"
+              videoUrl={property.videoUrl}
+            />
           ) : showDetailVideoCover || showDetailVideoPoster ? (
             <div
               role="button"
@@ -693,7 +740,9 @@ export default function PropertyDetails() {
                   <img
                     src={detailVideoThumb!}
                     alt={property.title}
-                    onError={() => setDetailThumbFailed(true)}
+                    crossOrigin="anonymous"
+                    onLoad={handleDetailVideoThumbLoad}
+                    onError={handleDetailVideoThumbError}
                     className="relative w-full h-full object-contain"
                   />
                 </>
@@ -756,12 +805,22 @@ export default function PropertyDetails() {
                 )}
                 {property.videoUrl && (
                   <button
-                    onClick={() => setVideoModalOpen(true)}
+                    onClick={() => {
+                      if (isVideoScheduled && property.videoUrl) {
+                        window.open(property.videoUrl, "_blank", "noopener,noreferrer");
+                      } else {
+                        setVideoModalOpen(true);
+                      }
+                    }}
                     data-testid="link-watch-video"
                     className="flex items-center gap-1.5 bg-[#C5A059] text-[#10202D] font-bold rounded-[10px] px-3 py-2 text-sm hover:bg-[#B38E46] transition-colors cursor-pointer shadow-md"
                   >
-                    <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
-                    <span className="text-xs font-bold">فيديو العقار</span>
+                    {isVideoScheduled ? (
+                      <Clock className="h-3.5 w-3.5 text-[#10202D] flex-shrink-0" />
+                    ) : (
+                      <Play className="h-3.5 w-3.5 fill-[#10202D] flex-shrink-0" />
+                    )}
+                    <span className="text-xs font-bold">{isVideoScheduled ? "عرض أول قريباً" : "فيديو العقار"}</span>
                   </button>
                 )}
                 {property.videoUrl && isDirectVideoUrl(property.videoUrl) && (
