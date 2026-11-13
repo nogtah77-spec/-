@@ -1,4 +1,4 @@
-import { Video, Clock, Play, ExternalLink } from "lucide-react";
+import { Video, Clock, Play, ExternalLink, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ScheduledVideoCoverProps {
@@ -126,8 +126,8 @@ export function ScheduledVideoCover({
           }}
           className="relative z-10 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#9E7D3B] hover:brightness-110 text-[#10202D] font-bold text-xs sm:text-sm shadow-xl transition-all active:scale-95"
         >
-          <Play className="h-4 w-4 fill-current" />
-          <span>مشاهدة وتفعيل التذكير على يوتيوب</span>
+          <Bell className="h-4 w-4 fill-current" />
+          <span>مشاهدة وتفعيل الجرس على يوتيوب</span>
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
       )}

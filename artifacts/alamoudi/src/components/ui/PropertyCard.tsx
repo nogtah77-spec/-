@@ -266,12 +266,6 @@ export function PropertyCard({
 
           {/* Top Left Listing Type & Status Badges */}
           <div className="absolute top-2 right-2 z-20 flex items-center gap-1 flex-wrap">
-            {isCoverScheduled && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-gradient-to-r from-[#C5A059] to-[#9E7D3B] text-[#10202D] backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                <Clock className="h-2.5 w-2.5 shrink-0" />
-                <span>عرض أول</span>
-              </span>
-            )}
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
@@ -527,12 +521,6 @@ export function PropertyCard({
         <div className="absolute inset-x-3 top-3 z-20 flex items-start justify-between gap-2">
           {/* Listing Type, Status & Featured Badges */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            {isCoverScheduled && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10.5px] font-black bg-gradient-to-r from-[#C5A059] to-[#9E7D3B] text-[#10202D] backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                <Clock className="h-2.5 w-2.5 shrink-0" />
-                <span>عرض أول قريباً</span>
-              </span>
-            )}
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-black bg-accent/40 text-white backdrop-blur-md border border-white/35 shadow-[0_2px_8px_rgba(0,0,0,0.3)] tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
               {listingTypeLabels[property.listingType || ""] || categoryLabels[property.category] || "للبيع"}
             </span>
@@ -618,7 +606,7 @@ export function PropertyCard({
               <span className="flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-md px-2 py-1 text-[10px] text-white">
                 {isCoverScheduled ? (
                   <>
-                    <Clock className="h-2.5 w-2.5 text-[#C5A059]" /> عرض أول
+                    <Clock className="h-2.5 w-2.5 text-[#C5A059]" /> فيديو
                   </>
                 ) : (
                   <>
