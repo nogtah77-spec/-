@@ -224,17 +224,10 @@ export const supabaseService = {
           if (!existing) {
             codeMap.set(codeKey, prop);
           } else {
-            // Combine all unique images across rows
-            const existImgs = Array.isArray(existing.images) ? existing.images : [];
-            const newImgs = Array.isArray(prop.images) ? prop.images : [];
-            const mergedImgs = [...existImgs];
-            for (const img of newImgs) {
-              if (img && !mergedImgs.includes(img)) {
-                mergedImgs.push(img);
-              }
-            }
-            const newer = new Date(prop.updatedAt || prop.createdAt || 0) >= new Date(existing.updatedAt || existing.createdAt || 0) ? prop : existing;
-            codeMap.set(codeKey, { ...existing, ...newer, images: mergedImgs });
+            const propTime = new Date(prop.updatedAt || prop.createdAt || 0).getTime();
+            const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+            const newer = propTime >= existTime ? prop : existing;
+            codeMap.set(codeKey, newer);
           }
         });
 
@@ -252,6 +245,18 @@ export const supabaseService = {
       const row = propertyToRow(property);
       const { error } = await supabase.from("properties").upsert(row);
       if (error) throw error;
+
+      // Clean up any outdated duplicate rows with the same code
+      if (property.code && property.code.trim()) {
+        try {
+          await supabase
+            .from("properties")
+            .delete()
+            .ilike("code", property.code.trim())
+            .neq("id", property.id);
+        } catch {}
+      }
+
       return true;
     } catch (e) {
       console.warn("Supabase save property error:", e);

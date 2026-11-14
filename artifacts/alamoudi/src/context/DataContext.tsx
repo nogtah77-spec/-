@@ -803,14 +803,12 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
       map.set(codeKey, fp);
       if (fp.id) map.set(fp.id, fp);
     } else {
-      const existImgs = parsePropertyImages(existing.images);
-      const fpImgs = parsePropertyImages(fp.images);
-      const chosenImgs = fpImgs.length > 0 ? fpImgs : existImgs;
-      const newer = new Date(fp.updatedAt || fp.createdAt || 0) >= new Date(existing.updatedAt || existing.createdAt || 0) ? fp : existing;
-      const mergedProp = { ...existing, ...newer, images: chosenImgs };
-      map.set(codeKey, mergedProp);
-      if (fp.id) map.set(fp.id, mergedProp);
-      if (existing.id) map.set(existing.id, mergedProp);
+      const fpTime = new Date(fp.updatedAt || fp.createdAt || 0).getTime();
+      const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+      const newer = fpTime >= existTime ? { ...existing, ...fp } : { ...fp, ...existing };
+      map.set(codeKey, newer);
+      if (fp.id) map.set(fp.id, newer);
+      if (existing.id) map.set(existing.id, newer);
     }
   }
 
@@ -824,10 +822,7 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
       if (!isPropertyDeleted(item.property, deletedSet)) {
         const codeKey = (item.property.code || item.property.id).trim().toLowerCase();
         const existing = map.get(codeKey) || map.get(item.property.id);
-        const existImgs = parsePropertyImages(existing?.images);
-        const inImgs = parsePropertyImages(item.property.images);
-        const chosenImgs = inImgs.length > 0 ? inImgs : existImgs;
-        const mergedProp = { ...existing, ...item.property, images: chosenImgs };
+        const mergedProp = existing ? { ...existing, ...item.property } : item.property;
         map.set(codeKey, mergedProp);
         map.set(item.property.id, mergedProp);
       }
@@ -846,10 +841,7 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
           if (!isPropertyDeleted(it.property, deletedSet)) {
             const codeKey = (it.property.code || it.property.id).trim().toLowerCase();
             const existing = map.get(codeKey) || map.get(it.property.id);
-            const existImgs = parsePropertyImages(existing?.images);
-            const inImgs = parsePropertyImages(it.property.images);
-            const chosenImgs = inImgs.length > 0 ? inImgs : existImgs;
-            const mergedProp = { ...existing, ...it.property, images: chosenImgs };
+            const mergedProp = existing ? { ...existing, ...it.property } : it.property;
             map.set(codeKey, mergedProp);
             map.set(it.property.id, mergedProp);
           }
@@ -867,10 +859,10 @@ export function mergeFreshWithRecentEdits(freshList: Property[]): Property[] {
     if (!existing) {
       uniqueMap.set(key, p);
     } else {
-      const existImgs = parsePropertyImages(existing.images);
-      const newImgs = parsePropertyImages(p.images);
-      const chosenImgs = newImgs.length > 0 ? newImgs : existImgs;
-      uniqueMap.set(key, { ...existing, ...p, images: chosenImgs });
+      const pTime = new Date(p.updatedAt || p.createdAt || 0).getTime();
+      const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+      const newer = pTime >= existTime ? { ...existing, ...p } : { ...p, ...existing };
+      uniqueMap.set(key, newer);
     }
   }
 
@@ -1233,10 +1225,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const codeKey = (fresh.code || fresh.id).toLowerCase().trim();
             const existing = prevMap.get(codeKey) || prevMap.get(fresh.id);
             if (!existing) return fresh;
-            const freshImgs = parsePropertyImages(fresh.images);
-            const existImgs = parsePropertyImages(existing.images);
-            const chosenImgs = freshImgs.length > 0 ? freshImgs : existImgs;
-            return { ...existing, ...fresh, images: chosenImgs };
+            const freshTime = new Date(fresh.updatedAt || fresh.createdAt || 0).getTime();
+            const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+            return freshTime >= existTime ? { ...existing, ...fresh } : { ...fresh, ...existing };
           });
           writeCache({ regions, types: propertyTypes, properties: merged, settings });
           return merged;
@@ -1485,10 +1476,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const codeKey = (fresh.code || fresh.id).toLowerCase().trim();
             const existing = prevMap.get(codeKey) || prevMap.get(fresh.id);
             if (!existing) return fresh;
-            const freshImgs = parsePropertyImages(fresh.images);
-            const existImgs = parsePropertyImages(existing.images);
-            const chosenImgs = freshImgs.length > 0 ? freshImgs : existImgs;
-            return { ...existing, ...fresh, images: chosenImgs };
+            const freshTime = new Date(fresh.updatedAt || fresh.createdAt || 0).getTime();
+            const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+            return freshTime >= existTime ? { ...existing, ...fresh } : { ...fresh, ...existing };
           });
           writeCache({
             regions: cached?.regions?.length ? cached.regions : DEFAULT_REGIONS,
@@ -1742,10 +1732,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               if (p.id === property.id || (p.code && p.code.toLowerCase() === property.code.toLowerCase())) {
                 const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
                 const inTime = property.updatedAt ? new Date(property.updatedAt).getTime() : Date.now();
-                const existImgs = Array.isArray(p.images) ? p.images : [];
-                const inImgs = Array.isArray(property.images) ? property.images : [];
-                const bestImages = inImgs.length >= existImgs.length ? inImgs : existImgs;
-                return inTime >= prevTime ? { ...p, ...property, images: bestImages } : p;
+                return inTime >= prevTime ? { ...p, ...property } : p;
               }
               return p;
             });
@@ -1765,10 +1752,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
               const merged = protectedList.map(fresh => {
                 const existing = prevMap.get(fresh.id);
                 if (!existing) return fresh;
-                const freshImgs = Array.isArray(fresh.images) ? fresh.images : [];
-                const existImgs = Array.isArray(existing.images) ? existing.images : [];
-                const bestImgs = freshImgs.length >= existImgs.length ? freshImgs : existImgs;
-                return { ...existing, ...fresh, images: bestImgs };
+                const freshTime = new Date(fresh.updatedAt || fresh.createdAt || 0).getTime();
+                const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+                return freshTime >= existTime ? { ...existing, ...fresh } : { ...fresh, ...existing };
               });
               writeCache({ regions, types: propertyTypes, properties: merged, settings });
               return merged;
@@ -1783,10 +1769,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (match) {
               const prevTime = p.updatedAt ? new Date(p.updatedAt).getTime() : 0;
               const inTime = property.updatedAt ? new Date(property.updatedAt).getTime() : Date.now();
-              const existImgs = Array.isArray(p.images) ? p.images : [];
-              const inImgs = Array.isArray(property.images) ? property.images : [];
-              const bestImages = inImgs.length >= existImgs.length ? inImgs : existImgs;
-              return inTime >= prevTime ? { ...p, ...property, images: bestImages } : p;
+              return inTime >= prevTime ? { ...p, ...property } : p;
             }
             return p;
           });
@@ -2184,10 +2167,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
               const merged = protectedList.map(fresh => {
                 const existing = prevMap.get(fresh.id);
                 if (!existing) return fresh;
-                const freshImgs = Array.isArray(fresh.images) ? fresh.images : [];
-                const existImgs = Array.isArray(existing.images) ? existing.images : [];
-                const bestImgs = freshImgs.length >= existImgs.length ? freshImgs : existImgs;
-                return { ...existing, ...fresh, images: bestImgs };
+                const freshTime = new Date(fresh.updatedAt || fresh.createdAt || 0).getTime();
+                const existTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+                return freshTime >= existTime ? { ...existing, ...fresh } : { ...fresh, ...existing };
               });
               writeCache({ regions, types: propertyTypes, properties: merged, settings });
               return merged;

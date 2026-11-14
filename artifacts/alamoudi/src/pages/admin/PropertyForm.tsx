@@ -550,6 +550,15 @@ export default function PropertyForm() {
       }
       const finalPayload = { ...payload, images: finalImages };
 
+      // Permanently remove any deleted images from Cloudinary
+      const originalImgs: string[] = Array.isArray(activeProperty?.images) ? activeProperty.images : [];
+      const removedImgs = originalImgs.filter((orig: string) => !finalImages.includes(orig) && typeof orig === "string" && orig.includes("cloudinary.com"));
+      if (removedImgs.length > 0) {
+        removedImgs.forEach((img: string) => {
+          void deleteFromCloudinary(img);
+        });
+      }
+
       const targetId = activeProperty?.id || existing?.id || params.id;
       const saved = isEdit && targetId
         ? await updateProperty(targetId, finalPayload)
@@ -615,6 +624,15 @@ export default function PropertyForm() {
         finalImages = await uploadMultipleToCloudinary(finalImages, folder);
       }
       const finalPayload = { ...payload, images: finalImages };
+
+      // Permanently remove any deleted images from Cloudinary
+      const originalImgs: string[] = Array.isArray(activeProperty?.images) ? activeProperty.images : [];
+      const removedImgs = originalImgs.filter((orig: string) => !finalImages.includes(orig) && typeof orig === "string" && orig.includes("cloudinary.com"));
+      if (removedImgs.length > 0) {
+        removedImgs.forEach((img: string) => {
+          void deleteFromCloudinary(img);
+        });
+      }
 
       const targetId = activeProperty?.id || existing?.id || params.id;
       const saved = isEdit && targetId

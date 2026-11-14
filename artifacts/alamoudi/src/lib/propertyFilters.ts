@@ -506,6 +506,9 @@ export function filterProperties(
   const regionNames = new Map(regions.map((region) => [region.id, region.name]));
 
   const filtered = properties.filter((property) => {
+    // Exclude draft and archived properties from public search and listings
+    if (property.status === "draft" || (property.status as string) === "archived") return false;
+
     if (filters.regionId && property.regionId !== filters.regionId) return false;
     if (filters.category !== "all") {
       const isMatch = property.listingType === filters.category || property.category === (filters.category as any);

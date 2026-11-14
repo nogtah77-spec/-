@@ -51,9 +51,9 @@ export async function savePropertiesToIndexedDb(properties: any[]): Promise<bool
           const old = existingMap.get(p.id) || (p.code ? existingMap.get(p.code.toLowerCase().trim()) : null);
           const newImgs: string[] = (Array.isArray(p.images) ? p.images : []).filter((u: any) => typeof u === "string" && !u.startsWith("data:image/"));
           if (old) {
-            const oldImgs: string[] = (Array.isArray(old.images) ? old.images : []).filter((u: any) => typeof u === "string" && !u.startsWith("data:image/"));
-            const chosenImgs = newImgs.length > 0 ? newImgs : oldImgs;
-            return { ...old, ...p, images: chosenImgs };
+            const pTime = new Date(p.updatedAt || p.createdAt || 0).getTime();
+            const oldTime = new Date(old.updatedAt || old.createdAt || 0).getTime();
+            return pTime >= oldTime ? { ...old, ...p, images: newImgs } : { ...p, ...old };
           }
           return { ...p, images: newImgs };
         });

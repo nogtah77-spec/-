@@ -138,27 +138,34 @@ export default function PropertyDetails() {
 
     let bestFound: Property | null = null;
     for (const m of matches) {
-      if (!bestFound || (m.images?.length || 0) > (bestFound.images?.length || 0)) {
+      if (!bestFound) {
         bestFound = m;
+      } else {
+        const mTime = new Date(m.updatedAt || m.createdAt || 0).getTime();
+        const bestTime = new Date(bestFound.updatedAt || bestFound.createdAt || 0).getTime();
+        if (mTime > bestTime) {
+          bestFound = m;
+        }
       }
     }
 
     if (directProperty) {
-      return { ...bestFound, ...directProperty };
+      const directTime = new Date(directProperty.updatedAt || directProperty.createdAt || 0).getTime();
+      const bestTime = new Date(bestFound?.updatedAt || bestFound?.createdAt || 0).getTime();
+      return directTime >= bestTime ? { ...bestFound, ...directProperty } : { ...directProperty, ...bestFound };
     }
     return bestFound;
   }, [properties, cleanId, directProperty]);
 
-  // 2. Direct fallback to Supabase if not in memory or if memory has <= 1 image
+  // 2. Direct fallback to Supabase if not in memory
   useEffect(() => {
     if (!cleanId) {
       setDirectChecked(true);
       return;
     }
 
-    const currentImgs = property && Array.isArray(property.images) ? property.images : [];
-    // Only skip fetching if we already have the full multi-image gallery (> 1 image)
-    if (property && currentImgs.length > 1) {
+    // Skip fetching if we already have the property in state
+    if (property) {
       setDirectChecked(true);
       return;
     }
@@ -307,7 +314,7 @@ export default function PropertyDetails() {
   const similar = useMemo(() => {
     if (!property || !properties || properties.length <= 1) return [];
 
-    const candidates = properties.filter(p => p && p.id !== property.id);
+    const candidates = properties.filter(p => p && p.id !== property.id && p.status !== "draft" && (p.status as string) !== "archived");
 
     const scored = candidates.map(p => {
       let score = 0;
@@ -370,8 +377,11 @@ export default function PropertyDetails() {
   }, [property, properties]);
 
   // Handle Loading & Not Found states AFTER all hooks are evaluated
-  if (!property) {
-    if (!ready || directLoading || !directChecked || (!searchGraceExpired && (properties || []).length <= 1)) {
+  const isDraftOrArchived = property && (property.status === "draft" || (property.status as string) === "archived");
+  const isBlockedForPublic = isDraftOrArchived && !isStaff;
+
+  if (!property || isBlockedForPublic) {
+    if (!property && (!ready || directLoading || !directChecked || (!searchGraceExpired && (properties || []).length <= 1))) {
       return (
         <div className="min-h-screen flex flex-col">
           <Navbar />
@@ -389,10 +399,16 @@ export default function PropertyDetails() {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 flex items-center justify-center bg-background">
-          <div className="text-center">
+          <div className="text-center p-6">
             <Building2 className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-foreground mb-2">العقار غير موجود</h1>
-            <p className="text-muted-foreground mb-6">لم يتم العثور على هذا العقار أو قد يكون تم نقله.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              {isDraftOrArchived ? "العقار غير متاح حالياً" : "العقار غير موجود"}
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              {isDraftOrArchived
+                ? "هذا العقار في وضع المسودة أو تمت أرشفته."
+                : "لم يتم العثور على هذا العقار أو قد يكون تم نقله."}
+            </p>
             <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">
               <Link href="/">العودة للرئيسية</Link>
             </Button>
