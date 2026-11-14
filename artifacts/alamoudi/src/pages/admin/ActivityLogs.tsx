@@ -22,6 +22,7 @@ const ACTION_LABELS: Record<string, string> = {
   imported: "استيراد",
   login: "تسجيل دخول",
   logout: "تسجيل خروج",
+  session_start: "جلسة عمل",
 };
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -61,7 +62,23 @@ export default function ActivityLogs() {
 
   useEffect(() => {
     void refreshCurrentUser();
-  }, [refreshCurrentUser]);
+    void reload();
+
+    // Live auto-refresh every 25 seconds while watching Activity Logs
+    const interval = setInterval(() => {
+      void reload();
+    }, 25000);
+
+    const onFocus = () => {
+      void reload();
+    };
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [refreshCurrentUser, reload]);
 
   if (!canViewLogs) {
     return (

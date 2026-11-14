@@ -1264,7 +1264,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (freshUsers.status === "fulfilled" && freshUsers.value) setUsers(freshUsers.value);
       if (freshInqs.status === "fulfilled" && freshInqs.value) setInquiries(freshInqs.value);
       if (freshCustomerReqs.status === "fulfilled" && freshCustomerReqs.value) setCustomerPropertyRequests(freshCustomerReqs.value);
-      if (freshLogs.status === "fulfilled" && freshLogs.value) setActivityLogs(freshLogs.value);
+      if (freshLogs.status === "fulfilled" && freshLogs.value && Array.isArray(freshLogs.value) && freshLogs.value.length > 0) {
+        setActivityLogs(prev => {
+          const map = new Map<string, ActivityLog>();
+          freshLogs.value!.forEach((l: any) => { if (l && l.id) map.set(l.id, l); });
+          prev.forEach(l => { if (l && l.id && !map.has(l.id)) map.set(l.id, l); });
+          const merged = Array.from(map.values())
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, 500);
+          try { localStorage.setItem("alm_activity_logs", JSON.stringify(merged)); } catch {}
+          return merged;
+        });
+      }
     } catch (e) {
       console.warn("Reload error:", e);
     }
@@ -2532,13 +2543,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     title: string;
     actor?: string;
   }) => {
-    let currentActor = entry.actor;
+    let currentActor = entry.actor ? String(entry.actor).trim() : "";
     if (!currentActor) {
       try {
         const savedAuth = localStorage.getItem("alm_auth_user");
         if (savedAuth) {
           const u = JSON.parse(savedAuth);
-          if (u?.name) currentActor = u.name;
+          if (u?.name && String(u.name).trim()) {
+            currentActor = String(u.name).trim();
+          } else if (u?.username && String(u.username).trim()) {
+            currentActor = String(u.username).trim();
+          }
         }
       } catch {}
     }

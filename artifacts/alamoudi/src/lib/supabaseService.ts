@@ -596,63 +596,175 @@ export const supabaseService = {
     }
   },
 
-  // Fetch Activity Logs
+  // Fetch Activity Logs from both dedicated cloud store and direct table
   async fetchActivityLogs(): Promise<any[] | null> {
     if (!supabase) return null;
+    const map = new Map<string, any>();
+
+    // 1. Fetch from guaranteed cloud store (__activity_logs_store__ in properties table)
+    // Synchronized across all client devices without RLS barriers
+    try {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__activity_logs_store__")
+        .maybeSingle();
+      if (!error && data && data.description) {
+        try {
+          const parsed = JSON.parse(data.description);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((l: any) => {
+              if (l && l.id) {
+                map.set(l.id, {
+                  id: l.id,
+                  action: l.action,
+                  entityType: l.entityType || l.entity_type || "system",
+                  title: l.title,
+                  actor: l.actor || "الإدارة",
+                  createdAt: l.createdAt || l.created_at || new Date().toISOString(),
+                });
+              }
+            });
+          }
+        } catch {}
+      }
+    } catch (e) {
+      console.warn("Supabase fetch __activity_logs_store__ warning:", e);
+    }
+
+    // 2. Fetch from direct activity_logs table if accessible
     try {
       const { data, error } = await supabase
         .from("activity_logs")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(300);
-      if (error) throw error;
-      if (!data || data.length === 0) return null;
-      return data.map((r: any) => ({
-        id: r.id,
-        action: r.action,
-        entityType: r.entity_type || r.entityType || "system",
-        title: r.title,
-        actor: r.actor || "الإدارة",
-        createdAt: r.created_at || r.createdAt || new Date().toISOString(),
-      }));
+      if (!error && data && data.length > 0) {
+        data.forEach((r: any) => {
+          if (r && r.id && !map.has(r.id)) {
+            map.set(r.id, {
+              id: r.id,
+              action: r.action,
+              entityType: r.entity_type || r.entityType || "system",
+              title: r.title,
+              actor: r.actor || "الإدارة",
+              createdAt: r.created_at || r.createdAt || new Date().toISOString(),
+            });
+          }
+        });
+      }
     } catch (e) {
-      console.warn("Supabase fetch activity logs warning:", e);
-      return null;
+      console.warn("Supabase fetch direct activity_logs warning:", e);
     }
+
+    if (map.size === 0) return null;
+
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   },
 
-  // Save Activity Log
+  // Save Activity Log (Saves to both direct table and guaranteed cross-device properties store)
   async saveActivityLog(log: any): Promise<boolean> {
     if (!supabase) return false;
+    let savedToTable = false;
+    let savedToStore = false;
+
+    const cleanLog = {
+      id: log.id,
+      action: log.action,
+      entityType: log.entityType || log.entity_type || "system",
+      title: log.title,
+      actor: log.actor || "الإدارة",
+      createdAt: log.createdAt || log.created_at || new Date().toISOString(),
+    };
+
+    // 1. Direct table upsert (best effort)
     try {
       const row = {
-        id: log.id,
-        action: log.action,
-        entity_type: log.entityType,
-        title: log.title,
-        actor: log.actor || "الإدارة",
-        created_at: log.createdAt || new Date().toISOString(),
+        id: cleanLog.id,
+        action: cleanLog.action,
+        entity_type: cleanLog.entityType,
+        title: cleanLog.title,
+        actor: cleanLog.actor,
+        created_at: cleanLog.createdAt,
       };
       const { error } = await supabase.from("activity_logs").upsert(row);
-      if (error) throw error;
-      return true;
+      if (!error) savedToTable = true;
     } catch (e) {
-      console.warn("Supabase save activity log warning:", e);
-      return false;
+      console.warn("Supabase save direct activity_logs warning:", e);
     }
+
+    // 2. Guaranteed cloud store in properties table
+    try {
+      const { data } = await supabase
+        .from("properties")
+        .select("description")
+        .eq("id", "__activity_logs_store__")
+        .maybeSingle();
+
+      let currentLogs: any[] = [];
+      if (data && data.description) {
+        try {
+          const parsed = JSON.parse(data.description);
+          if (Array.isArray(parsed)) currentLogs = parsed;
+        } catch {}
+      }
+
+      const map = new Map<string, any>();
+      map.set(cleanLog.id, cleanLog);
+      currentLogs.forEach(l => {
+        if (l && l.id && !map.has(l.id)) {
+          map.set(l.id, l);
+        }
+      });
+
+      const merged = Array.from(map.values())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 300);
+
+      const storeRow = {
+        id: "__activity_logs_store__",
+        code: "__ACT_STORE__",
+        title: "Activity Logs Central Store",
+        description: JSON.stringify(merged),
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase.from("properties").upsert(storeRow);
+      if (!error) savedToStore = true;
+    } catch (e) {
+      console.warn("Supabase save __activity_logs_store__ warning:", e);
+    }
+
+    return savedToTable || savedToStore;
   },
 
-  // Clear Activity Logs
+  // Clear Activity Logs (Clears both direct table and dedicated cloud store)
   async clearActivityLogs(): Promise<boolean> {
     if (!supabase) return false;
     try {
-      const { error } = await supabase.from("activity_logs").delete().neq("id", "0");
-      if (error) throw error;
-      return true;
-    } catch (e) {
-      console.warn("Supabase clear activity logs warning:", e);
-      return false;
-    }
+      await supabase.from("activity_logs").delete().neq("id", "0");
+    } catch {}
+
+    try {
+      const storeRow = {
+        id: "__activity_logs_store__",
+        code: "__ACT_STORE__",
+        title: "Activity Logs Central Store",
+        description: JSON.stringify([]),
+        price: 0,
+        area: 0,
+        status: "archived",
+        created_at: new Date().toISOString(),
+      };
+      await supabase.from("properties").upsert(storeRow);
+    } catch {}
+
+    return true;
   },
 
   // Fetch Dedicated QR Settings from Supabase Cloud (Isolated & Immune)

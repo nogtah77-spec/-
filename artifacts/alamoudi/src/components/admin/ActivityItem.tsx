@@ -12,6 +12,7 @@ const ACTION_META: Record<string, { label: string; icon: typeof Activity; badgeC
   imported: { label: "استيراد", icon: Upload, badgeCls: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30", iconCls: "text-purple-600 bg-purple-500/15" },
   login: { label: "تسجيل دخول", icon: LogIn, badgeCls: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30", iconCls: "text-indigo-600 bg-indigo-500/15" },
   logout: { label: "تسجيل خروج", icon: LogOut, badgeCls: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30", iconCls: "text-slate-600 bg-slate-500/15" },
+  session_start: { label: "جلسة عمل", icon: ShieldCheck, badgeCls: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30", iconCls: "text-teal-600 bg-teal-500/15" },
 };
 
 const ENTITY_LABELS: Record<string, string> = {

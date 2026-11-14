@@ -88,10 +88,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const trackDailySession = useCallback((user: User) => {
+    try {
+      if (!user || !user.name) return;
+      const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+      const sessionKey = `alm_session_${user.id}_${today}`;
+      const alreadyLogged = sessionStorage.getItem(sessionKey);
+      if (!alreadyLogged) {
+        sessionStorage.setItem(sessionKey, "1");
+        const dayKey = `alm_day_logged_${user.id}_${today}`;
+        const isFirstOfDay = !localStorage.getItem(dayKey);
+        if (isFirstOfDay) {
+          localStorage.setItem(dayKey, new Date().toISOString());
+        }
+
+        const roleDesc = user.role === "admin" ? "المدير العام" : (user.role === "agent" ? "الموظف / الوكيل" : "المستخدم");
+        const title = isFirstOfDay
+          ? `بدء جلسة عمل يومية جديدة للموظف (${user.name}) - ${roleDesc}`
+          : `استئناف جلسة العمل للموظف (${user.name})`;
+
+        logActivity({
+          action: "session_start",
+          entityType: "auth",
+          title,
+          actor: user.name,
+        });
+      }
+    } catch (e) {
+      console.warn("Track daily session warning:", e);
+    }
+  }, [logActivity]);
+
   useEffect(() => {
     refreshCurrentUser()
+      .then(u => {
+        if (u && u.name) {
+          trackDailySession(u);
+        }
+      })
       .finally(() => setAuthReady(true));
-  }, [refreshCurrentUser]);
+  }, [refreshCurrentUser, trackDailySession]);
 
   useEffect(() => {
     try {
@@ -130,6 +166,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user && user.id && !deletedIds.includes(user.id)) {
         setCurrentUser(user);
         try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user)); } catch {}
+        try {
+          const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+          sessionStorage.setItem(`alm_session_${user.id}_${today}`, "1");
+          localStorage.setItem(`alm_day_logged_${user.id}_${today}`, new Date().toISOString());
+        } catch {}
+        logActivity({
+          action: "login",
+          entityType: "auth",
+          title: `تسجيل دخول ناجح للمستخدم (${user.name})`,
+          actor: user.name,
+        });
         await reload().catch(() => {});
         return { ok: true };
       }
@@ -217,6 +264,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCurrentUser(loggedUser);
         try { localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(loggedUser)); } catch {}
 
+        try {
+          const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+          sessionStorage.setItem(`alm_session_${loggedUser.id}_${today}`, "1");
+          localStorage.setItem(`alm_day_logged_${loggedUser.id}_${today}`, new Date().toISOString());
+        } catch {}
+
         // Persist password to local storage so future logins match consistently
         if (!matchedUser.password) {
           const updatedList = allUsers.map(x => (x.id === matchedUser.id ? { ...x, password: passClean } : x));
@@ -276,6 +329,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: `تسجيل خروج للمستخدم (${currentUser.name})`,
         actor: currentUser.name,
       });
+      try {
+        const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Riyadh" }).format(new Date());
+        sessionStorage.removeItem(`alm_session_${currentUser.id}_${today}`);
+      } catch {}
     }
     setCurrentUser(null);
     try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch {}
