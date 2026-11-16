@@ -1132,18 +1132,18 @@ export default function PropertyForm() {
                   </div>
                 )}
                 {images.length > 0 && (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-accent/5 border border-accent/20 text-xs text-foreground">
-                      <span className="flex items-center gap-2 font-bold">
-                        <Move className="h-4 w-4 text-accent animate-pulse" />
-                        <span>اسحب أي صورة بإصبعك لتغيير ترتيبها، أو اضغط على ⭐ لجعلها الغلاف الرئيسي:</span>
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 p-2 rounded-lg bg-accent/5 border border-accent/20 text-[11px] text-foreground">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <Move className="h-3.5 w-3.5 text-accent animate-pulse" />
+                        <span>اسحب الصورة بإصبعك لتغيير ترتيبها، أو اضغط ⭐ لتعيين الغلاف:</span>
                       </span>
-                      <span className="text-[11px] text-muted-foreground font-mono">
-                        (الصورة الأولى #1 هي التي تظهر كغلاف في بطاقة العقار)
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        (الصورة #1 تظهر كغلاف في بطاقة العقار)
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
                       {images.map((img, idx) => {
                         const isCover = idx === 0;
                         const isBeingDragged = draggedImgIdx === idx;
@@ -1203,33 +1203,33 @@ export default function PropertyForm() {
                               setDragOverImgIdx(null);
                             }}
                             className={cn(
-                              "relative rounded-xl overflow-hidden aspect-square bg-muted/80 group transition-all duration-200 select-none cursor-grab active:cursor-grabbing",
-                              isCover ? "ring-2 ring-amber-500 shadow-md ring-offset-2 ring-offset-background" : "border border-border/70 hover:border-accent/60",
+                              "relative rounded-lg overflow-hidden aspect-square bg-muted/80 group transition-all duration-200 select-none cursor-grab active:cursor-grabbing",
+                              isCover ? "ring-2 ring-amber-500 shadow-sm ring-offset-1 ring-offset-background" : "border border-border/70 hover:border-accent/60",
                               isBeingDragged && "opacity-40 scale-95 border-dashed border-2 border-accent",
                               isDragOver && "scale-105 ring-2 ring-accent border-accent bg-accent/15"
                             )}
                           >
                             <img src={getThumbnailImageUrl(img)} alt="" className="w-full h-full object-cover pointer-events-none" />
 
-                            {/* شارة الغلاف الرئيسي للأولى */}
+                            {/* شارة الغلاف للأولى */}
                             {isCover ? (
-                              <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md pointer-events-none z-10">
-                                <Star className="h-3 w-3 fill-slate-950" />
-                                <span>الغلاف الرئيسي</span>
+                              <div className="absolute top-1 right-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm pointer-events-none z-10">
+                                <Star className="h-2.5 w-2.5 fill-slate-950" />
+                                <span>الغلاف</span>
                               </div>
                             ) : (
                               /* زر تعيين كغلاف سريع بنقرة واحدة */
                               <button
                                 type="button"
-                                title="تعيين كغلاف رئيسي للبطاقة"
+                                title="تعيين كغلاف"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   makeCoverImage(idx);
                                 }}
-                                className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-black/75 hover:bg-amber-500 hover:text-slate-950 text-white text-[10px] font-bold flex items-center gap-1 shadow-md backdrop-blur-xs transition active:scale-95 z-10"
+                                className="absolute top-1 right-1 px-1.5 py-0.5 rounded-full bg-black/75 hover:bg-amber-500 hover:text-slate-950 text-white text-[9px] font-bold flex items-center gap-0.5 shadow-sm backdrop-blur-xs transition active:scale-95 z-10"
                               >
-                                <Star className="h-3 w-3 fill-current text-amber-400 group-hover:text-current" />
-                                <span>تعيين كغلاف</span>
+                                <Star className="h-2.5 w-2.5 fill-current text-amber-400 group-hover:text-current" />
+                                <span>غلاف</span>
                               </button>
                             )}
 
@@ -1245,30 +1245,30 @@ export default function PropertyForm() {
                                 }
                                 setImages(p => p.filter((_, i) => i !== idx));
                               }}
-                              className="absolute top-2 left-2 w-7 h-7 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-md ring-2 ring-white/50 hover:bg-rose-700 active:scale-95 transition z-10"
+                              className="absolute top-1 left-1 w-6 h-6 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-sm ring-1 ring-white/50 hover:bg-rose-700 active:scale-95 transition z-10"
                             >
-                              <X className="h-3.5 w-3.5" />
+                              <X className="h-3 w-3" />
                             </button>
 
                             {/* شريط التحكم السفلي والترقيم والأسهم */}
-                            <div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/85 via-black/50 to-transparent flex items-center justify-between text-white text-xs z-10">
-                              <span className="text-[10px] font-mono font-bold bg-white/20 backdrop-blur-xs px-1.5 py-0.5 rounded">
+                            <div className="absolute bottom-0 inset-x-0 p-1 bg-gradient-to-t from-black/85 via-black/40 to-transparent flex items-center justify-between text-white z-10">
+                              <span className="text-[9px] font-mono font-bold bg-white/20 backdrop-blur-xs px-1 py-0.2 rounded">
                                 #{idx + 1}
                               </span>
 
                               {/* أزرار التقديم والتأخير بالأسهم */}
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-0.5">
                                 {idx > 0 && (
                                   <button
                                     type="button"
-                                    title="تحريك للأمام (نحو الغلاف)"
+                                    title="تحريك للأمام"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       moveImage(idx, idx - 1);
                                     }}
-                                    className="p-1 rounded bg-white/20 hover:bg-white/40 active:scale-90 transition text-white"
+                                    className="p-0.5 rounded bg-white/20 hover:bg-white/40 active:scale-90 transition text-white"
                                   >
-                                    <ChevronRight className="h-3.5 w-3.5" />
+                                    <ChevronRight className="h-3 w-3" />
                                   </button>
                                 )}
                                 {idx < images.length - 1 && (
@@ -1279,9 +1279,9 @@ export default function PropertyForm() {
                                       e.stopPropagation();
                                       moveImage(idx, idx + 1);
                                     }}
-                                    className="p-1 rounded bg-white/20 hover:bg-white/40 active:scale-90 transition text-white"
+                                    className="p-0.5 rounded bg-white/20 hover:bg-white/40 active:scale-90 transition text-white"
                                   >
-                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                    <ChevronLeft className="h-3 w-3" />
                                   </button>
                                 )}
                               </div>
