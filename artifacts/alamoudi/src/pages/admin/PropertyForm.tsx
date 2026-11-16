@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2, FileText, Bookmark } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2, FileText, Bookmark, ChevronRight, ChevronLeft, Move } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -162,6 +162,34 @@ export default function PropertyForm() {
     coverPriority: activeProperty?.coverPriority ?? "image",
   });
   const [images, setImages] = useState<string[]>(activeProperty?.images ?? []);
+  const [draggedImgIdx, setDraggedImgIdx] = useState<number | null>(null);
+  const [dragOverImgIdx, setDragOverImgIdx] = useState<number | null>(null);
+  const touchStartIndexRef = useRef<number | null>(null);
+
+  const moveImage = useCallback((fromIndex: number, toIndex: number) => {
+    setImages(prev => {
+      if (toIndex < 0 || toIndex >= prev.length || fromIndex === toIndex) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const makeCoverImage = useCallback((index: number) => {
+    if (index <= 0) return;
+    setImages(prev => {
+      if (index >= prev.length) return prev;
+      const next = [...prev];
+      const [chosen] = next.splice(index, 1);
+      next.unshift(chosen);
+      return next;
+    });
+    toast({
+      title: "تم تعيين الغلاف الرئيسي ✓",
+      description: "أصبحت هذه الصورة هي الغلاف الرئيسي لبطاقة العقار.",
+    });
+  }, [toast]);
 
   // Sync activeProperty to form if user hasn't made changes yet
   const lastSyncedKeyRef = useRef("");
@@ -1104,26 +1132,164 @@ export default function PropertyForm() {
                   </div>
                 )}
                 {images.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                    {images.map((img, idx) => (
-                      <div key={idx} className="relative rounded-lg overflow-hidden aspect-square bg-muted group">
-                        <img src={getThumbnailImageUrl(img)} alt="" className="w-full h-full object-cover" />
-                        {idx === 0 && <div className="absolute bottom-0 inset-x-0 bg-accent/80 text-accent-foreground text-[9px] font-bold text-center py-0.5">رئيسية</div>}
-                        <button
-                          type="button"
-                          aria-label="حذف الصورة"
-                          onClick={() => {
-                            const targetImg = images[idx];
-                            if (targetImg && targetImg.includes("cloudinary.com")) {
-                              void deleteFromCloudinary(targetImg);
-                            }
-                            setImages(p => p.filter((_, i) => i !== idx));
-                          }}
-                          className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center shadow-md ring-2 ring-white/70 hover:bg-destructive/90 active:scale-95 transition">
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-accent/5 border border-accent/20 text-xs text-foreground">
+                      <span className="flex items-center gap-2 font-bold">
+                        <Move className="h-4 w-4 text-accent animate-pulse" />
+                        <span>اسحب أي صورة بإصبعك لتغيير ترتيبها، أو اضغط على ⭐ لجعلها الغلاف الرئيسي:</span>
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        (الصورة الأولى #1 هي التي تظهر كغلاف في بطاقة العقار)
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {images.map((img, idx) => {
+                        const isCover = idx === 0;
+                        const isBeingDragged = draggedImgIdx === idx;
+                        const isDragOver = dragOverImgIdx === idx && draggedImgIdx !== idx;
+
+                        return (
+                          <div
+                            key={`${img}-${idx}`}
+                            data-img-idx={idx}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("text/plain", idx.toString());
+                              setDraggedImgIdx(idx);
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              if (dragOverImgIdx !== idx) setDragOverImgIdx(idx);
+                            }}
+                            onDragLeave={() => {
+                              if (dragOverImgIdx === idx) setDragOverImgIdx(null);
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              const fromIdx = draggedImgIdx !== null ? draggedImgIdx : parseInt(e.dataTransfer.getData("text/plain"), 10);
+                              if (!isNaN(fromIdx) && fromIdx !== idx) {
+                                moveImage(fromIdx, idx);
+                              }
+                              setDraggedImgIdx(null);
+                              setDragOverImgIdx(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggedImgIdx(null);
+                              setDragOverImgIdx(null);
+                            }}
+                            onTouchStart={() => {
+                              touchStartIndexRef.current = idx;
+                              setDraggedImgIdx(idx);
+                            }}
+                            onTouchMove={(e) => {
+                              const touch = e.touches[0];
+                              if (!touch) return;
+                              const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+                              const targetCard = elem?.closest("[data-img-idx]");
+                              if (targetCard) {
+                                const targetIdx = parseInt(targetCard.getAttribute("data-img-idx") || "-1", 10);
+                                if (targetIdx >= 0 && targetIdx !== dragOverImgIdx) {
+                                  setDragOverImgIdx(targetIdx);
+                                }
+                              }
+                            }}
+                            onTouchEnd={() => {
+                              if (draggedImgIdx !== null && dragOverImgIdx !== null && draggedImgIdx !== dragOverImgIdx) {
+                                moveImage(draggedImgIdx, dragOverImgIdx);
+                              }
+                              touchStartIndexRef.current = null;
+                              setDraggedImgIdx(null);
+                              setDragOverImgIdx(null);
+                            }}
+                            className={cn(
+                              "relative rounded-xl overflow-hidden aspect-square bg-muted/80 group transition-all duration-200 select-none cursor-grab active:cursor-grabbing",
+                              isCover ? "ring-2 ring-amber-500 shadow-md ring-offset-2 ring-offset-background" : "border border-border/70 hover:border-accent/60",
+                              isBeingDragged && "opacity-40 scale-95 border-dashed border-2 border-accent",
+                              isDragOver && "scale-105 ring-2 ring-accent border-accent bg-accent/15"
+                            )}
+                          >
+                            <img src={getThumbnailImageUrl(img)} alt="" className="w-full h-full object-cover pointer-events-none" />
+
+                            {/* شارة الغلاف الرئيسي للأولى */}
+                            {isCover ? (
+                              <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md pointer-events-none z-10">
+                                <Star className="h-3 w-3 fill-slate-950" />
+                                <span>الغلاف الرئيسي</span>
+                              </div>
+                            ) : (
+                              /* زر تعيين كغلاف سريع بنقرة واحدة */
+                              <button
+                                type="button"
+                                title="تعيين كغلاف رئيسي للبطاقة"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  makeCoverImage(idx);
+                                }}
+                                className="absolute top-2 right-2 px-2.5 py-1 rounded-full bg-black/75 hover:bg-amber-500 hover:text-slate-950 text-white text-[10px] font-bold flex items-center gap-1 shadow-md backdrop-blur-xs transition active:scale-95 z-10"
+                              >
+                                <Star className="h-3 w-3 fill-current text-amber-400 group-hover:text-current" />
+                                <span>تعيين كغلاف</span>
+                              </button>
+                            )}
+
+                            {/* زر الحذف */}
+                            <button
+                              type="button"
+                              aria-label="حذف الصورة"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const targetImg = images[idx];
+                                if (targetImg && targetImg.includes("cloudinary.com")) {
+                                  void deleteFromCloudinary(targetImg);
+                                }
+                                setImages(p => p.filter((_, i) => i !== idx));
+                              }}
+                              className="absolute top-2 left-2 w-7 h-7 rounded-full bg-rose-600/90 text-white flex items-center justify-center shadow-md ring-2 ring-white/50 hover:bg-rose-700 active:scale-95 transition z-10"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+
+                            {/* شريط التحكم السفلي والترقيم والأسهم */}
+                            <div className="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/85 via-black/50 to-transparent flex items-center justify-between text-white text-xs z-10">
+                              <span className="text-[10px] font-mono font-bold bg-white/20 backdrop-blur-xs px-1.5 py-0.5 rounded">
+                                #{idx + 1}
+                              </span>
+
+                              {/* أزرار التقديم والتأخير بالأسهم */}
+                              <div className="flex items-center gap-1">
+                                {idx > 0 && (
+                                  <button
+                                    type="button"
+                                    title="تحريك للأمام (نحو الغلاف)"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveImage(idx, idx - 1);
+                                    }}
+                                    className="p-1 rounded bg-white/20 hover:bg-white/40 active:scale-90 transition text-white"
+                                  >
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                                {idx < images.length - 1 && (
+                                  <button
+                                    type="button"
+                                    title="تحريك للخلف"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveImage(idx, idx + 1);
+                                    }}
+                                    className="p-1 rounded bg-white/20 hover:bg-white/40 active:scale-90 transition text-white"
+                                  >
+                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
                 <div
