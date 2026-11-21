@@ -840,9 +840,9 @@ function StaffPropertyCard({
           href={`/properties/${p.id}`}
           target="_blank"
           className="h-7 px-2 rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground text-[10.5px] font-bold flex items-center gap-1 transition"
-          title="معاينة بطاقة العقار الكاملة"
+          title="معاينة بطاقة العقار الكاملة في صفحة مستقلة"
         >
-          <Eye className="h-3 w-3" />
+          <ExternalLink className="h-3 w-3 text-accent" />
           <span className="hidden sm:inline">معاينة</span>
         </Link>
 
