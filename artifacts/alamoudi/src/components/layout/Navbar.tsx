@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { Button } from "../ui/button";
-import { Menu, MapPin, Sparkles, Smartphone, Download, LayoutDashboard, RotateCw } from "lucide-react";
+import { Menu, MapPin, Sparkles, Smartphone, Download, LayoutDashboard, RotateCw, Building2 } from "lucide-react";
 import { WhatsAppIcon, TikTokIcon, TelegramIcon } from "../icons/BrandIcons";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "../ui/sheet";
 import { cn } from "@/lib/utils";
@@ -219,14 +219,24 @@ export function Navbar() {
             <span>تحميل التطبيق</span>
           </button>
           {isStaff ? (
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1.5 px-3.5 h-7.5 rounded-full text-xs font-bold text-accent-foreground bg-accent hover:bg-accent/90 border border-accent/40 shadow-xs transition-all duration-200 active:scale-95 whitespace-nowrap flex-shrink-0 cursor-pointer"
-              data-testid="button-nav-dashboard"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              <span>لوحة التحكم</span>
-            </Link>
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/staff-properties"
+                className="inline-flex items-center gap-1.5 px-3 h-7.5 rounded-full text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 shadow-xs transition-all duration-200 active:scale-95 whitespace-nowrap flex-shrink-0 cursor-pointer"
+                title="دليل عقارات الموظفين"
+              >
+                <Building2 className="h-3.5 w-3.5" />
+                <span>عقارات الموظفين</span>
+              </Link>
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 px-3.5 h-7.5 rounded-full text-xs font-bold text-accent-foreground bg-accent hover:bg-accent/90 border border-accent/40 shadow-xs transition-all duration-200 active:scale-95 whitespace-nowrap flex-shrink-0 cursor-pointer"
+                data-testid="button-nav-dashboard"
+              >
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                <span>لوحة التحكم</span>
+              </Link>
+            </div>
           ) : (
             <Link
               href="/login"
@@ -304,10 +314,24 @@ export function Navbar() {
                 اعرض عقارك
               </Link>
               {isStaff ? (
-                <Link href="/admin" className="flex items-center gap-2 py-2.5 px-3 rounded-xl text-base font-bold text-accent bg-accent/10 border border-accent/25 hover:bg-accent/15 transition-colors">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span>لوحة التحكم</span>
-                </Link>
+                <>
+                  <Link
+                    href="/staff-properties"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-xl text-base font-bold text-amber-500 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all shadow-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-amber-500" />
+                      <span>دليل عقارات الموظفين</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-mono">
+                      خاص
+                    </span>
+                  </Link>
+                  <Link href="/admin" className="flex items-center gap-2 py-2.5 px-3 rounded-xl text-base font-bold text-accent bg-accent/10 border border-accent/25 hover:bg-accent/15 transition-colors">
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>لوحة التحكم</span>
+                  </Link>
+                </>
               ) : (
                 <Link href="/login" className="py-2.5 px-3 rounded-md text-base font-medium text-foreground hover:text-accent hover:bg-accent/5 transition-colors">
                   تسجيل الدخول

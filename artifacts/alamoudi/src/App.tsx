@@ -59,6 +59,7 @@ const WhatsAppBot          = lazyWithRetry(() => import("@/pages/admin/WhatsAppB
 const MortgageCalculatorPage = lazyWithRetry(() => import("@/pages/admin/MortgageCalculatorPage"));
 const FinishingGallery     = lazyWithRetry(() => import("@/pages/admin/FinishingGallery"));
 const PushNotifications    = lazyWithRetry(() => import("@/pages/admin/PushNotifications"));
+const StaffProperties       = lazyWithRetry(() => import("@/pages/admin/StaffProperties"));
 const AIChatWidget = lazyWithRetry(() => import("@/components/ai/AIChatWidget").then((module) => ({ default: module.AIChatWidget })));
 import { PushNotificationPrompt } from "@/components/ui/PushNotificationPrompt";
 import { DraftRecoveryBanner } from "@/components/ui/DraftRecoveryBanner";
@@ -225,6 +226,8 @@ function Router() {
       <Route path="/region/:regionId" component={RegionPage} />
 
       <Route path="/admin">{() => <Protected component={Dashboard} />}</Route>
+      <Route path="/staff-properties">{() => <Protected component={StaffProperties} />}</Route>
+      <Route path="/admin/staff-properties">{() => <Protected component={StaffProperties} />}</Route>
       <Route path="/admin/properties">{() => <Protected component={Properties} />}</Route>
       <Route path="/admin/mortgage-calculator">{() => <Protected component={MortgageCalculatorPage} />}</Route>
       <Route path="/admin/properties/new">{() => <Protected component={PropertyForm} />}</Route>

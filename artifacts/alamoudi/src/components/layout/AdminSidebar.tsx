@@ -40,7 +40,8 @@ const sidebarSections: SidebarSection[] = [
   {
     title: "العقارات والمعاملات",
     items: [
-      { href: "/admin/properties", label: "العقارات", icon: Building2 },
+      { href: "/staff-properties", label: "دليل عقارات الموظفين", icon: Building2 },
+      { href: "/admin/properties", label: "إدارة العقارات", icon: Building2 },
       { href: "/admin/mortgage-calculator", label: "حاسبة التمويل والأقساط", icon: Calculator },
       { href: "/admin/regions", label: "المناطق", icon: MapPin, permission: "الإعدادات-إدارة المناطق" },
       { href: "/admin/property-types", label: "أنواع العقارات", icon: Home, permission: "الإعدادات-إدارة الأنواع" },
