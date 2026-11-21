@@ -357,45 +357,47 @@ export default function StaffProperties() {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-              <button
-                type="button"
-                onClick={() => setSelectedRegionId("all")}
-                className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5",
-                  selectedRegionId === "all"
-                    ? "bg-accent text-accent-foreground shadow-xs"
-                    : "bg-muted/70 hover:bg-muted text-muted-foreground"
-                )}
-              >
-                <span>كل المدن</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10">
-                  {properties.length}
-                </span>
-              </button>
+            <div className="relative">
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 no-scrollbar touch-pan-x overscroll-x-contain scroll-smooth">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRegionId("all")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5 select-none",
+                    selectedRegionId === "all"
+                      ? "bg-accent text-accent-foreground shadow-xs ring-1 ring-accent"
+                      : "bg-muted/70 hover:bg-muted text-muted-foreground"
+                  )}
+                >
+                  <span>كل المدن</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 font-bold">
+                    {properties.length}
+                  </span>
+                </button>
 
-              {regions.filter(r => r.active).map(reg => {
-                const count = properties.filter(p => p.regionId === reg.id).length;
-                const isSel = selectedRegionId === reg.id;
-                return (
-                  <button
-                    key={reg.id}
-                    type="button"
-                    onClick={() => setSelectedRegionId(reg.id)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5",
-                      isSel
-                        ? "bg-accent text-accent-foreground shadow-xs"
-                        : "bg-muted/70 hover:bg-muted text-muted-foreground"
-                    )}
-                  >
-                    <span>{reg.name}</span>
-                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10">
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+                {regions.filter(r => r.active).map(reg => {
+                  const count = properties.filter(p => p.regionId === reg.id).length;
+                  const isSel = selectedRegionId === reg.id;
+                  return (
+                    <button
+                      key={reg.id}
+                      type="button"
+                      onClick={() => setSelectedRegionId(reg.id)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0 flex items-center gap-1.5 select-none",
+                        isSel
+                          ? "bg-accent text-accent-foreground shadow-xs ring-1 ring-accent"
+                          : "bg-muted/70 hover:bg-muted text-muted-foreground"
+                      )}
+                    >
+                      <span>{reg.name}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 font-bold">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -817,20 +819,20 @@ function StaffPropertyCard({
           size="sm"
           onClick={onCopySpecs}
           className={cn(
-            "h-7 text-[10.5px] font-bold px-2 flex-1 flex items-center justify-center gap-1 transition active:scale-95",
+            "h-7 text-[10.5px] font-bold px-2 flex-1 min-w-0 flex items-center justify-center gap-1 transition active:scale-95 whitespace-nowrap",
             isCopied ? "bg-emerald-500/15 text-emerald-600 border-emerald-500" : ""
           )}
           title="نسخ مواصفات العقار بدون بيانات المالك أو البروكر لإرسالها للعميل"
         >
           {isCopied ? (
             <>
-              <Check className="h-3 w-3 text-emerald-600" />
-              <span>تم النسخ ✓</span>
+              <Check className="h-3 w-3 text-emerald-600 shrink-0" />
+              <span className="truncate">تم النسخ ✓</span>
             </>
           ) : (
             <>
-              <Copy className="h-3 w-3 text-muted-foreground" />
-              <span>نسخ للعميل</span>
+              <Copy className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="truncate">نسخ للعميل</span>
             </>
           )}
         </Button>
@@ -839,10 +841,10 @@ function StaffPropertyCard({
         <Link
           href={`/properties/${p.id}`}
           target="_blank"
-          className="h-7 px-2 rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground text-[10.5px] font-bold flex items-center gap-1 transition"
+          className="h-7 px-2 shrink-0 rounded-md border border-border hover:bg-muted text-muted-foreground hover:text-foreground text-[10.5px] font-bold flex items-center gap-1 transition whitespace-nowrap"
           title="معاينة بطاقة العقار الكاملة في صفحة مستقلة"
         >
-          <ExternalLink className="h-3 w-3 text-accent" />
+          <ExternalLink className="h-3 w-3 text-accent shrink-0" />
           <span className="hidden sm:inline">معاينة</span>
         </Link>
 
@@ -864,10 +866,10 @@ function StaffPropertyCard({
         {/* Edit Link */}
         <Link
           href={`/admin/properties/${p.id}/edit`}
-          className="h-7 px-2 rounded-md border border-border hover:bg-accent/10 hover:text-accent hover:border-accent/30 text-muted-foreground text-[10.5px] font-bold flex items-center gap-1 transition"
+          className="h-7 px-2 shrink-0 rounded-md border border-border hover:bg-accent/10 hover:text-accent hover:border-accent/30 text-muted-foreground text-[10.5px] font-bold flex items-center gap-1 transition whitespace-nowrap"
           title="تعديل بيانات العقار"
         >
-          <Pencil className="h-3 w-3" />
+          <Pencil className="h-3 w-3 shrink-0" />
           <span className="hidden sm:inline">تعديل</span>
         </Link>
       </div>
