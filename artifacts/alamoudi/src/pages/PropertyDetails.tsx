@@ -378,7 +378,8 @@ export default function PropertyDetails() {
 
   // Handle Loading & Not Found states AFTER all hooks are evaluated
   const isDraftOrArchived = property && (property.status === "draft" || (property.status as string) === "archived");
-  const isBlockedForPublic = isDraftOrArchived && !isStaff;
+  const isHiddenForPublic = Boolean(property && property.hiddenFromPublic);
+  const isBlockedForPublic = (isDraftOrArchived || isHiddenForPublic) && !isStaff;
 
   if (!property || isBlockedForPublic) {
     if (!property && (!ready || directLoading || !directChecked || (!searchGraceExpired && (properties || []).length <= 1))) {
@@ -402,11 +403,13 @@ export default function PropertyDetails() {
           <div className="text-center p-6">
             <Building2 className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              {isDraftOrArchived ? "العقار غير متاح حالياً" : "العقار غير موجود"}
+              {isDraftOrArchived ? "العقار غير متاح حالياً" : isHiddenForPublic ? "عقار خاص بالشركة" : "العقار غير موجود"}
             </h1>
             <p className="text-muted-foreground mb-6">
               {isDraftOrArchived
                 ? "هذا العقار في وضع المسودة أو تمت أرشفته."
+                : isHiddenForPublic
+                ? "هذا العقار خاص وغير معروض للجمهور في الواجهة العامة."
                 : "لم يتم العثور على هذا العقار أو قد يكون تم نقله."}
             </p>
             <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-full px-8">

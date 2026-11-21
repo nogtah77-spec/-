@@ -37,6 +37,7 @@ export interface Property {
   status: PropertyStatus;
   featured: boolean;
   agentType?: "direct" | "broker" | "unspecified" | string;
+  hiddenFromPublic?: boolean;
   images: string[];
   videoUrl: string;
   externalUrl: string;

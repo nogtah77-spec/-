@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink, Star, FileText, Bookmark } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Home as HomeIcon, X, ExternalLink, Star, FileText, Bookmark, Eye, EyeOff } from "lucide-react";
 import { Link } from "wouter";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -64,7 +64,7 @@ export default function Properties() {
   const canPublishProperty = isAdmin || checkUserPermission(currentUser, "إدارة العقارات-نشر العقارات");
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "sold" | "rented">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "draft" | "sold" | "rented" | "hidden">("all");
   const [deleteTarget, setDeleteTarget] = useState<Property | null>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -74,6 +74,7 @@ export default function Properties() {
   const safeProperties = Array.isArray(properties) ? properties.filter(Boolean) : [];
   const draftsCount = safeProperties.filter(p => p && !p.id?.startsWith("__") && p.status === "draft").length;
   const activeCount = safeProperties.filter(p => p && !p.id?.startsWith("__") && (p.status === "active" || p.status === "listed")).length;
+  const hiddenCount = safeProperties.filter(p => p && !p.id?.startsWith("__") && p.hiddenFromPublic).length;
 
   const filteredProperties = safeProperties
     .filter(p => p && !p.id?.startsWith("__") && !p.code?.startsWith("__"))
@@ -87,6 +88,7 @@ export default function Properties() {
       if (statusFilter === "draft" && p.status !== "draft") return false;
       if (statusFilter === "sold" && p.status !== "sold") return false;
       if (statusFilter === "rented" && p.status !== "rented") return false;
+      if (statusFilter === "hidden" && !p.hiddenFromPublic) return false;
       if (!search.trim()) return true;
       const typeName = propertyTypes.find((t) => t.id === p.typeId)?.name || "";
       const regionName = regions.find((r) => r.id === p.regionId)?.name || "";
@@ -247,6 +249,27 @@ export default function Properties() {
             )}
           >
             <span>مؤجر</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter(statusFilter === "hidden" ? "all" : "hidden")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+              statusFilter === "hidden"
+                ? "bg-purple-600 text-white shadow-sm font-black"
+                : "text-purple-600 dark:text-purple-400 hover:bg-purple-500/10 border border-purple-500/25"
+            )}
+            title="العقارات المخفية عن الزوار (مرئية للموظفين فقط)"
+          >
+            <EyeOff className="h-3.5 w-3.5" />
+            <span>مخفي عن الزوار</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold",
+              statusFilter === "hidden" ? "bg-black/20 text-white" : "bg-purple-500/20 text-purple-600 dark:text-purple-400"
+            )}>
+              {hiddenCount}
+            </span>
           </button>
         </div>
 
@@ -434,6 +457,12 @@ export default function Properties() {
                         <span>{property.code}</span>
                         <ExternalLink className="h-3 w-3 opacity-60" />
                       </a>
+                      {property.hiddenFromPublic && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex items-center gap-0.5" title="مخفي عن الواجهة العامة">
+                          <EyeOff className="h-3 w-3" />
+                          <span>مخفي</span>
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -450,25 +479,57 @@ export default function Properties() {
                   <TableCell>{regions.find(r => r.id === property.regionId)?.name}</TableCell>
                   <TableCell>{formatNumber(property.price)} EGP</TableCell>
                   <TableCell>
-                    {canPublishProperty ? (
-                      <Select
-                        value={property.status}
-                        onValueChange={(val) => handleStatusChange(property.id, val as PropertyStatus)}
-                      >
-                        <SelectTrigger className={`w-[120px] h-8 text-xs ${statusColors[property.status]} border-none font-semibold`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(statusLabels).map(([key, label]) => (
-                            <SelectItem key={key} value={key}>{label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${statusColors[property.status]}`}>
-                        {statusLabels[property.status]}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {canPublishProperty ? (
+                        <Select
+                          value={property.status}
+                          onValueChange={(val) => handleStatusChange(property.id, val as PropertyStatus)}
+                        >
+                          <SelectTrigger className={`w-[110px] h-8 text-xs ${statusColors[property.status]} border-none font-semibold`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(statusLabels).map(([key, label]) => (
+                              <SelectItem key={key} value={key}>{label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${statusColors[property.status]}`}>
+                          {statusLabels[property.status]}
+                        </span>
+                      )}
+
+                      {/* 1-Click Visibility Toggle (Eye / EyeOff) */}
+                      {canEditProperty && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newHidden = !property.hiddenFromPublic;
+                            updateProperty(property.id, { hiddenFromPublic: newHidden });
+                            toast({
+                              title: newHidden ? "تم إخفاء العقار عن الواجهة 👁️‍🗨️" : "تم إظهار العقار للعامة 👁️",
+                              description: newHidden
+                                ? `أصبح العقار (${property.code}) مخفياً عن الزوار ومتاحاً فقط للموظفين`
+                                : `أصبح العقار (${property.code}) معروضاً للزوار في الصفحة الرئيسية والبحث العام`,
+                            });
+                          }}
+                          title={property.hiddenFromPublic ? "العقار مخفي عن الزوار (اضغط لإظهاره للعامة)" : "العقار معروض للعامة (اضغط لإخفائه عن الزوار)"}
+                          className={cn(
+                            "w-8 h-8 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0",
+                            property.hiddenFromPublic
+                              ? "bg-purple-500/15 text-purple-600 dark:text-purple-400 hover:bg-purple-500/25 border border-purple-500/30 shadow-xs"
+                              : "text-muted-foreground/40 hover:text-foreground hover:bg-muted/70"
+                          )}
+                        >
+                          {property.hiddenFromPublic ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">

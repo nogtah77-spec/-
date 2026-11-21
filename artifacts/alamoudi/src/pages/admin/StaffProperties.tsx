@@ -4,7 +4,7 @@ import {
   Building2, Search, Phone, MessageSquare, Copy, Check, ExternalLink,
   Pencil, Filter, ChevronLeft, MapPin, Sparkles, Home, Handshake,
   DollarSign, CheckCircle2, RefreshCw, Plus, ArrowUpDown, Layers,
-  PhoneCall, ShieldAlert, Eye
+  PhoneCall, ShieldAlert, Eye, EyeOff
 } from "lucide-react";
 import { useData, Property, PropertyStatus } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
@@ -34,12 +34,13 @@ const statusLabels: Record<PropertyStatus, { label: string; class: string }> = {
 
 export default function StaffProperties() {
   const [, setLocation] = useLocation();
-  const { properties, regions, propertyTypes, brokers, settings } = useData();
+  const { properties, regions, propertyTypes, brokers, settings, updateProperty } = useData();
   const { currentUser } = useAuth();
   const { toast } = useToast();
 
   const [selectedRegionId, setSelectedRegionId] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "direct" | "broker">("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "hidden">("all");
   const [listingTypeFilter, setListingTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("active_only");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -91,6 +92,10 @@ export default function StaffProperties() {
       if (sourceFilter === "broker") {
         if (p.agentType !== "broker" && !p.brokerId) return false;
       }
+
+      // Visibility filter (Public vs Hidden)
+      if (visibilityFilter === "public" && p.hiddenFromPublic) return false;
+      if (visibilityFilter === "hidden" && !p.hiddenFromPublic) return false;
 
       // Listing type filter
       if (listingTypeFilter !== "all") {
@@ -169,6 +174,18 @@ export default function StaffProperties() {
   // Stats calculation
   const totalDirect = useMemo(() => properties.filter(p => p.agentType === "direct").length, [properties]);
   const totalBroker = useMemo(() => properties.filter(p => p.agentType === "broker" || p.brokerId).length, [properties]);
+  const totalHidden = useMemo(() => properties.filter(p => p.hiddenFromPublic).length, [properties]);
+
+  const handleToggleVisibility = (p: Property) => {
+    const newHidden = !p.hiddenFromPublic;
+    updateProperty(p.id, { hiddenFromPublic: newHidden });
+    toast({
+      title: newHidden ? "تم إخفاء العقار عن الواجهة 👁️‍🗨️" : "تم إظهار العقار للعامة 👁️",
+      description: newHidden
+        ? `أصبح العقار (${p.code}) مخفياً عن الزوار ومتاحاً فقط للموظفين`
+        : `أصبح العقار (${p.code}) معروضاً للزوار في الصفحة الرئيسية والبحث العام`,
+    });
+  };
 
   // Copy clean specs for customer (No broker or owner contacts)
   const handleCopyClientSpecs = (p: Property) => {
@@ -420,6 +437,43 @@ export default function StaffProperties() {
               </button>
             </div>
 
+            {/* Visibility Filter (All / Public / Hidden) */}
+            <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/60">
+              <button
+                type="button"
+                onClick={() => setVisibilityFilter("all")}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-bold transition cursor-pointer",
+                  visibilityFilter === "all" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
+                )}
+              >
+                الكل
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibilityFilter("public")}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1",
+                  visibilityFilter === "public" ? "bg-background text-foreground shadow-xs font-black" : "text-muted-foreground"
+                )}
+              >
+                <Eye className="h-3 w-3" />
+                <span>معروض بالعامة</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibilityFilter("hidden")}
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1",
+                  visibilityFilter === "hidden" ? "bg-purple-600 text-white shadow-xs" : "text-purple-600 dark:text-purple-400"
+                )}
+                title="العقارات المخفية عن الزوار"
+              >
+                <EyeOff className="h-3 w-3" />
+                <span>مخفي ({totalHidden})</span>
+              </button>
+            </div>
+
             {/* Listing Type (Sale / Rent / Furnished) */}
             <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/60">
               {["all", "sale", "rent", "furnished"].map(t => (
@@ -558,6 +612,7 @@ export default function StaffProperties() {
                       brokerInfo={p.brokerId ? brokerMap.get(p.brokerId) : null}
                       isCopied={copiedCode === p.code}
                       onCopySpecs={() => handleCopyClientSpecs(p)}
+                      onToggleVisibility={() => handleToggleVisibility(p)}
                     />
                   ))}
                 </div>
@@ -576,6 +631,7 @@ export default function StaffProperties() {
                 brokerInfo={p.brokerId ? brokerMap.get(p.brokerId) : null}
                 isCopied={copiedCode === p.code}
                 onCopySpecs={() => handleCopyClientSpecs(p)}
+                onToggleVisibility={() => handleToggleVisibility(p)}
               />
             ))}
           </div>
@@ -593,6 +649,7 @@ function StaffPropertyCard({
   brokerInfo,
   isCopied,
   onCopySpecs,
+  onToggleVisibility,
 }: {
   property: Property;
   regionName: string;
@@ -600,6 +657,7 @@ function StaffPropertyCard({
   brokerInfo?: { name: string; phone: string; company?: string } | null;
   isCopied: boolean;
   onCopySpecs: () => void;
+  onToggleVisibility: () => void;
 }) {
   const isDirect = p.agentType === "direct";
   const isBroker = p.agentType === "broker" || !!p.brokerId;
@@ -632,10 +690,18 @@ function StaffPropertyCard({
             </span>
           </div>
 
-          {/* Status Badge */}
-          <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border", statusInfo.class)}>
-            {statusInfo.label}
-          </span>
+          {/* Status & Visibility Badge */}
+          <div className="flex items-center gap-1">
+            {p.hiddenFromPublic && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex items-center gap-0.5" title="العقار مخفي عن الواجهة العامة">
+                <EyeOff className="h-3 w-3" />
+                <span>مخفي</span>
+              </span>
+            )}
+            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full border", statusInfo.class)}>
+              {statusInfo.label}
+            </span>
+          </div>
         </div>
 
         {/* Source Badge (Direct vs Broker) - Prominent and Clear */}
@@ -779,6 +845,21 @@ function StaffPropertyCard({
           <Eye className="h-3 w-3" />
           <span className="hidden sm:inline">معاينة</span>
         </Link>
+
+        {/* Visibility Toggle Button */}
+        <button
+          type="button"
+          onClick={onToggleVisibility}
+          className={cn(
+            "h-7 w-7 rounded-md border flex items-center justify-center transition active:scale-95 shrink-0",
+            p.hiddenFromPublic
+              ? "bg-purple-500/15 text-purple-600 border-purple-500/35 hover:bg-purple-500/25 shadow-xs"
+              : "border-border text-muted-foreground/60 hover:text-foreground hover:bg-muted"
+          )}
+          title={p.hiddenFromPublic ? "العقار مخفي عن الزوار (اضغط لإظهاره للعامة)" : "العقار معروض للعامة (اضغط لإخفائه عن الزوار)"}
+        >
+          {p.hiddenFromPublic ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+        </button>
 
         {/* Edit Link */}
         <Link

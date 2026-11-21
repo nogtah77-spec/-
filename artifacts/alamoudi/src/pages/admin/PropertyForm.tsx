@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2, FileText, Bookmark, ChevronRight, ChevronLeft, Move } from "lucide-react";
+import { Save, UploadCloud, X, Star, Link as LinkIcon, Plus, Phone, Mail, Camera, Play, Wand2, Sparkles, CheckCircle2, MessageSquare, Handshake, Bot, RefreshCw, ShieldCheck, ShieldAlert, Bell, Folder, AlertCircle, Trash2, FileText, Bookmark, ChevronRight, ChevronLeft, Move, Eye, EyeOff } from "lucide-react";
 import { useParams, useLocation, Link } from "wouter";
 import { useData, PropertyCategory, PropertyStatus } from "@/context/DataContext";
 import { useToast } from "@/hooks/use-toast";
@@ -139,6 +139,7 @@ export default function PropertyForm() {
     listingType: (activeProperty?.listingType ?? "sale") as "sale" | "rent" | "furnished",
     status: activeProperty?.status ?? "active" as PropertyStatus,
     featured: activeProperty?.featured ?? false,
+    hiddenFromPublic: activeProperty?.hiddenFromPublic ?? false,
     agentType: (activeProperty?.agentType ?? "unspecified") as "direct" | "broker" | "unspecified",
     videoUrl: activeProperty?.videoUrl ?? "",
     externalUrl: activeProperty?.externalUrl ?? "",
@@ -216,6 +217,7 @@ export default function PropertyForm() {
         listingType: (activeProperty.listingType ?? "sale") as "sale" | "rent" | "furnished",
         status: activeProperty.status ?? "active" as PropertyStatus,
         featured: activeProperty.featured ?? false,
+        hiddenFromPublic: activeProperty.hiddenFromPublic ?? false,
         agentType: (activeProperty.agentType ?? "unspecified") as "direct" | "broker" | "unspecified",
         videoUrl: activeProperty.videoUrl ?? "",
         externalUrl: activeProperty.externalUrl ?? "",
@@ -333,6 +335,7 @@ export default function PropertyForm() {
         listingType: "sale" as "sale" | "rent" | "furnished",
         status: "active" as PropertyStatus,
         featured: false,
+        hiddenFromPublic: false,
         agentType: "unspecified" as "direct" | "broker" | "unspecified",
         videoUrl: "",
         externalUrl: "",
@@ -1614,6 +1617,37 @@ export default function PropertyForm() {
                     checked={form.featured}
                     onCheckedChange={v => set("featured", v)}
                     className="data-[state=checked]:bg-yellow-500"
+                  />
+                </div>
+
+                {/* Hide from public toggle */}
+                <div className={cn(
+                  "flex items-center justify-between p-2.5 rounded-xl border transition-all",
+                  form.hiddenFromPublic
+                    ? "bg-purple-500/10 border-purple-500/40 text-purple-950 dark:text-purple-100"
+                    : "bg-muted/40 border-border/70"
+                )}>
+                  <div className="space-y-0.5 pr-1">
+                    <div className="flex items-center gap-1.5">
+                      {form.hiddenFromPublic ? (
+                        <EyeOff className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      <Label className="text-xs font-bold cursor-pointer">
+                        إخفاء عن الواجهة العامة (مرئي للموظفين فقط)
+                      </Label>
+                    </div>
+                    <p className="text-[10.5px] text-muted-foreground leading-relaxed">
+                      {form.hiddenFromPublic
+                        ? "العقار مخفي عن الزوار في الصفحة الرئيسية والبحث العام، ويظهر فقط للموظفين في لوحة التحكم ودليل الموظفين."
+                        : "العقار يظهر بشكل طبيعي للزوار والعملاء في الصفحة الرئيسية وقوائم البحث."}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={form.hiddenFromPublic}
+                    onCheckedChange={v => set("hiddenFromPublic", v)}
+                    className="data-[state=checked]:bg-purple-600"
                   />
                 </div>
 

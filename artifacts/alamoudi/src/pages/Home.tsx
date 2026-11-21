@@ -222,7 +222,7 @@ export default function Home() {
   const featuredProps = useMemo(
     () =>
       properties
-        .filter((p) => p.featured && (p.status as string) !== "archived" && p.status !== "draft")
+        .filter((p) => p.featured && (p.status as string) !== "archived" && p.status !== "draft" && !p.hiddenFromPublic)
         .sort((a, b) => {
           const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
           const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
@@ -236,9 +236,9 @@ export default function Home() {
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
     const now = Date.now();
 
-    // 1. Available active properties
+    // 1. Available active properties (not draft, not hidden, not archived, not sold/rented)
     const activeCandidates = [...properties].filter(
-      (p) => (p.status as string) !== "archived" && p.status !== "sold" && p.status !== "rented" && p.status !== "draft"
+      (p) => (p.status as string) !== "archived" && p.status !== "sold" && p.status !== "rented" && p.status !== "draft" && !p.hiddenFromPublic
     );
 
     // 2. Sort all by newest creation date first
@@ -267,7 +267,7 @@ export default function Home() {
   const propertiesByRegion = useMemo(() => {
     const groups = new Map<string, { name: string; items: any[] }>();
     for (const p of properties) {
-      if (p.status === "draft" || (p.status as string) === "archived") continue;
+      if (p.status === "draft" || (p.status as string) === "archived" || p.hiddenFromPublic) continue;
       const region = regions.find((r) => r.id === p.regionId);
       if (!region || !region.active) continue;
       if (!groups.has(p.regionId))
